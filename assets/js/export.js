@@ -176,13 +176,14 @@ function renderExport() {
   if (exTab === 'css') {
     lastExport = css;
     $('#codeOut').innerHTML = highlight(css, 'css');
-    $('#exNote').textContent = fl.length ? T('noteFiles', { files: fl.join(T('joiner')) }) : T('noteCss');
+    $('#exNote').textContent = fl.length ? T('noteFiles', { files: fl.join(T('joiner')) }) : '';
   } else if (exTab === 'js') {
     lastExport = js || '';
     $('#codeOut').innerHTML = js ? highlight(js, 'js') : `<span class="cm">${esc(T('jsNone'))}</span>`;
     $('#exNote').textContent = js ? T('noteJs') : T('noteNoJs');
   }
   $('#copyBtn').disabled = !lastExport;
+  $('#exBar').hidden = !$('#exNote').textContent;
 }
 const renderExportSoon = debounce(() => renderExport(), 150);
 
@@ -218,7 +219,7 @@ function renderWeightMap() {
     for (const { f, W, k } of items) { const el = box.querySelector(`.wmap-st[data-k="${CSS.escape(k)}"]`); if (el) { const [c, t] = wmapStatus(f, W, k); el.className = 'wmap-st ' + c; el.textContent = t; } }
     return;
   }
-  box.innerHTML = `<h3>${esc(T('mapTitle'))}</h3><p class="hint" style="margin:0">${esc(T('mapHint'))}</p>` + items.map(({ f, W, k }) => {
+  box.innerHTML = `<h3 class="lab-i">${esc(T('mapTitle'))}<button type="button" class="info" data-info="mapInfo" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}">i</button></h3>` + items.map(({ f, W, k }) => {
     const val = state.weightNames[k] || (f.kind === 'local' ? autoLocal(f, W).name : guessPath(f.fileName, W));
     const [c, t] = wmapStatus(f, W, k);
     return `<div class="wmap-row"><span>${esc(fontLabel(f))}</span><span class="mono">${W}</span>

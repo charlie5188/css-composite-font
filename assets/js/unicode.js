@@ -58,18 +58,18 @@ function parseChars(input) {
 
 /* ================= 字符类别（对应 InDesign 复合字体的行） ================= */
 const CLASSES = [
-  { id: 'han', name: { zh: '汉字', ja: '漢字' }, note: { zh: '基础字体，也负责未分类的字符', ja: 'ベースフォント。分類外の文字も受け持つ' }, sample: '永国字體',
+  { id: 'han', name: { zh: '汉字', ja: '漢字' }, note: { zh: '基础字体', ja: 'ベースフォント' }, desc: { zh: '基础字体。负责 CJK 统一汉字及扩展区，也兜底所有未归类的字符（如谚文、emoji）。', ja: 'ベースフォント。CJK 統合漢字と拡張領域を受け持ち、分類外の文字（ハングル、絵文字など）もここで表示します。' }, sample: '永国字體',
     ranges: '2E80-2FDF, 2FF0-2FFF, 3005-3007, 3021-3029, 3038-303B, 31C0-31EF, 3400-4DBF, 4E00-9FFF, F900-FAFF, 20000-2FA1F, 30000-323AF' },
-  { id: 'latin', name: { zh: '半角西文', ja: '半角欧文' }, note: { zh: '拉丁、希腊、西里尔字母与标点', ja: 'ラテン・ギリシャ・キリル文字と約物' }, sample: 'Aa Gg Rr',
+  { id: 'latin', name: { zh: '半角西文', ja: '半角欧文' }, desc: { zh: '拉丁、希腊、西里尔字母，以及半角标点、货币符号等。', ja: 'ラテン・ギリシャ・キリル文字と、半角の約物や通貨記号など。' }, sample: 'Aa Gg Rr',
     ranges: '0020-002F, 003A-007E, 00A0-00B6, 00B8-024F, 0250-036F, 0370-03FF, 0400-04FF, 1E00-1EFF, 2000-2013, 2016-2017, 201A-201B, 201E-2024, 2027-203A, 203C-206F, 20A0-20CF, 2122, FB00-FB06' },
-  { id: 'digit', name: { zh: '半角数字', ja: '半角数字' }, note: { zh: '仅 0–9；全角数字归全角符号', ja: '0–9 のみ。全角数字は全角記号へ' }, sample: '0123', follow: 'latin', ranges: '0030-0039' },
-  { id: 'kana', name: { zh: '假名', ja: 'かな' }, note: { zh: '含半角片假名', ja: '半角カナを含む' }, sample: 'あいアイ', follow: 'han',
+  { id: 'digit', name: { zh: '半角数字', ja: '半角数字' }, note: { zh: '0–9', ja: '0–9' }, desc: { zh: '只含半角 0–9；全角数字 ０–９ 属于全角符号。', ja: '半角の 0–9 のみ。全角数字 ０–９ は全角記号に含まれます。' }, sample: '0123', follow: 'latin', ranges: '0030-0039' },
+  { id: 'kana', name: { zh: '假名', ja: 'かな' }, desc: { zh: '平假名、片假名，含半角片假名。', ja: 'ひらがな・カタカナ。半角カナを含みます。' }, sample: 'あいアイ', follow: 'han',
     ranges: '3040-309F, 30A0-30FA, 30FC-30FF, 31F0-31FF, FF66-FF9F, 1AFF0-1AFFF, 1B000-1B16F' },
-  { id: 'punct', name: { zh: '全角标点', ja: '全角約物' }, note: { zh: '句读、括号等', ja: '句読点・括弧など' }, sample: '，。「」《》', follow: 'han',
+  { id: 'punct', name: { zh: '全角标点', ja: '全角約物' }, desc: { zh: '句读、括号等全角标点，如 、。「」《》（）。', ja: '句読点や括弧などの全角約物。例：、。「」（）' }, sample: '，。「」《》', follow: 'han',
     ranges: '3000-3004, 3008-3020, 3030, 303D, 30FB, FE10-FE1F, FE30-FE4F, FE50-FE6F, FF01-FF0F, FF1A-FF20, FF3B-FF40, FF5B-FF65' },
-  { id: 'symbol', name: { zh: '全角符号', ja: '全角記号' }, note: { zh: '含全角英数、箭头、数学符号', ja: '全角英数・矢印・数学記号を含む' }, sample: '①※→℃', follow: 'han',
+  { id: 'symbol', name: { zh: '全角符号', ja: '全角記号' }, note: { zh: '含全角英数', ja: '全角英数を含む' }, desc: { zh: '※、全角英数、带圈字符、箭头、数学符号、几何图形等。可用齿轮把部分组改由半角西文显示。', ja: '※、全角英数、丸囲み文字、矢印、数学記号、幾何学図形など。歯車から一部のグループを半角欧文に回せます。' }, sample: '①※→℃', follow: 'han',
     ranges: '203B, 2103, 2109, 2116, 2121, 2150-218F, 2190-21FF, 2200-22FF, 2460-24FF, 2500-27BF, 3200-33FF, FF10-FF19, FF21-FF3A, FF41-FF5A, FFE0-FFEF' },
-  { id: 'shared', name: { zh: '中西共用标点', ja: '和欧共通の約物' }, note: { zh: '引号、破折号、省略号、间隔号', ja: '引用符・ダッシュ・リーダー・中点' }, sample: '“‘—…·', follow: 'han',
+  { id: 'shared', name: { zh: '中西共用标点', ja: '和欧共通の約物' }, note: { zh: '引号 破折号 省略号 间隔号', ja: '引用符・ダッシュ・リーダー・中点' }, desc: { zh: '引号 “ ” ‘ ’、破折号 —、省略号 …、间隔号 ·。中西文共用这些码位，可用齿轮逐组决定归属。', ja: '引用符 “ ” ‘ ’、ダッシュ —、リーダー …、中点 ·。和文と欧文で同じ符号位置を使うため、歯車からグループごとに振り分けられます。' }, sample: '“‘—…·', follow: 'han',
     ranges: '00B7, 2014-2015, 2018-2019, 201C-201D, 2025-2026, 2E3A-2E3B' },
 ].map(c => ({ ...c, r: parseRanges(c.ranges) }));
 const CLS = Object.fromEntries(CLASSES.map(c => [c.id, c]));

@@ -50,7 +50,7 @@ function renderEditor() {
     const groups = GROUPS[c.id] || [];
     const nMoved = groups.filter(g => isMoved(c.id, g)).length;
     const nIn = c.id === 'latin' ? Object.entries(GROUPS).reduce((n, [cid, gs]) => n + gs.filter(g => isMoved(cid, g)).length, 0) : 0;
-    const note = (c.note ? tr(c.note) : '') + (nMoved ? T('movedNote', { n: nMoved }) : '') + (nIn ? T('movedIn', { n: nIn }) : '');
+    const note = [c.note ? tr(c.note) : '', nMoved ? T('movedNote', { n: nMoved }) : '', nIn ? T('movedIn', { n: nIn }) : ''].filter(Boolean).join(' · ');
     const gear = groups.length ? `<button type="button" class="gear${nMoved ? ' on' : ''}" data-act="groups" data-cls="${c.id}" popovertarget="grpPop" aria-label="${esc(T('gearAria', { c: tr(c.name) }))}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.76 2.85L6.8 0.8L9.2 0.8L9.24 2.85A5.3 5.3 0 0 1 10.77 3.48L12.24 2.06L13.94 3.76L12.52 5.23A5.3 5.3 0 0 1 13.15 6.76L15.2 6.8L15.2 9.2L13.15 9.24A5.3 5.3 0 0 1 12.52 10.77L13.94 12.24L12.24 13.94L10.77 12.52A5.3 5.3 0 0 1 9.24 13.15L9.2 15.2L6.8 15.2L6.76 13.15A5.3 5.3 0 0 1 5.23 12.52L3.76 13.94L2.06 12.24L3.48 10.77A5.3 5.3 0 0 1 2.85 9.24L0.8 9.2L0.8 6.8L2.85 6.76A5.3 5.3 0 0 1 3.48 5.23L2.06 3.76L3.76 2.06L5.23 3.48A5.3 5.3 0 0 1 6.76 2.85Z" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.25"/></svg></button>` : '';
     return `<div class="ct-row" data-id="${c.id}" style="--c:var(--c-${c.id})">
       <span class="ct-glyph" aria-hidden="true">${esc(GLYPH[c.id])}</span>
@@ -58,14 +58,14 @@ function renderEditor() {
       <span class="ct-font">${fontCell(c.id, o, c.id === 'han', c.id !== 'latin')}</span>
       ${numCell('size', c.id)}${numCell('shift', c.id)}<span></span>${errRow(c.id, o)}
     </div>`;
-  }).join('') + `<p class="ct-hint">${esc(T('inheritHint'))}</p>`;
+  }).join('');
   $('#customRows').innerHTML = state.custom.length ? state.custom.map((cu, i) => `<div class="ct-row" data-ci="${i}">
       <input class="chars" type="text" value="${esc(cu.chars)}" placeholder="${esc(T('customPh'))}" aria-label="${esc(T('custom'))}" spellcheck="false">
       <span class="ct-font">${fontCell('#' + i, cu, false, true)}</span>
       ${numCell('size', '#' + i)}${numCell('shift', '#' + i)}
       <button class="x" type="button" data-act="remove" aria-label="${esc(T('customRemove'))}">×</button>${errRow('#' + i, cu)}
     </div>`).join('')
-    : `<div class="empty">${T('customIntro')}</div>`;
+    : '';
 }
 /* 齿轮弹出的分组开关：打开 = 留在本类别，关闭 = 改由半角西文显示 */
 function renderGroups() {
@@ -97,7 +97,7 @@ function renderHeroMeta() {
     const k = shortName(p.font) + (p.size !== 100 ? ` ${p.size}%` : '');
     if (!seen.has(k)) { seen.add(k); items.push(k); }
   }
-  $('#heroMeta').innerHTML = `${esc(T('heroSetIn'))}<br>` + items.map(x => `<b>${esc(x)}</b>`).join(' × ');
+  $('#heroMeta').innerHTML = `<span class="label">${esc(T('heroSetIn'))}</span><br>` + items.map(x => `<b>${esc(x)}</b>`).join(' × ');
 }
 
 /* ================= 渲染：校样 ================= */
@@ -174,7 +174,6 @@ function syncToolbar() {
   $('#mBasis').value = state.metric.basis;
   $('#mTarget').value = state.metric.target;
   $('#mTargetWrap').hidden = state.metric.basis === 'mix';
-  $('#mMixTo').hidden = state.metric.basis !== 'mix';
   $('#exName').value = state.name;
   $('#exWeights').innerHTML = WEIGHTS.map(w => `<button type="button" data-w="${w}" aria-pressed="${state.weights.includes(w)}">${w}</button>`).join('');
   $('#exBase').value = state.baseMode;

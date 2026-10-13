@@ -70,6 +70,36 @@ $('#editor').addEventListener('keydown', e => {
   inp.value = round(base + (e.key === 'ArrowUp' ? 1 : -1) * (e.shiftKey ? 5 : 0.5));
   setNum(inp, true);
 });
+/* (i) 说明：所有说明文字共用一个弹层，打开时按 data-info 填入内容 */
+const INFO = {
+  presetInfo: () => esc(T('presetInfo')),
+  classInfo: () => `<p>${esc(T('inheritHint'))}</p><dl>${CLASSES.map(c => `<dt>${esc(tr(c.name))}</dt><dd>${esc(tr(c.desc))}</dd>`).join('')}</dl>`,
+  customInfo: () => T('customIntro'),
+  cmpInfo: () => esc(state.view.cmp === 'fsa' ? T('hintFsa', { r: lastFsaR ?? '…' }) : T('hintPlain')),
+  metricsInfo: () => `<p>${esc(T('metricsHint'))}</p><p>${esc(T('mixInfo'))}</p><p>${T('refNote')}</p>`,
+  typoInfo: () => T('typoFoot'),
+  mapInfo: () => esc(T('mapHint')),
+};
+function infoHtml(key) {
+  if (key.startsWith('typo:')) { const t = TYPO.find(x => x.key === key.slice(5)); return t?.note ? esc(tr(t.note)) : ''; }
+  return INFO[key] ? INFO[key]() : '';
+}
+function placePop(pop, btn) {
+  const r = btn?.getBoundingClientRect(); if (!r) return;
+  pop.style.left = Math.max(8, Math.min(r.left - 12, innerWidth - pop.offsetWidth - 8)) + 'px';
+  pop.style.top = (r.bottom + 8 + pop.offsetHeight > innerHeight ? Math.max(8, r.top - pop.offsetHeight - 8) : r.bottom + 8) + 'px';
+}
+let infoBtn = null;
+document.addEventListener('click', e => {
+  const b = e.target.closest('.info'); if (!b) return;
+  infoBtn = b; $('#infoPop').dataset.key = b.dataset.info;
+}, true);
+$('#infoPop').addEventListener('toggle', e => {
+  if (e.newState !== 'open') return;
+  const pop = $('#infoPop');
+  pop.innerHTML = infoHtml(pop.dataset.key || '');
+  placePop(pop, infoBtn);
+});
 let gearBtn = null;
 $('#editor').addEventListener('click', e => {
   const g = e.target.closest('[data-act="groups"]');
@@ -223,10 +253,9 @@ function renderTypoRows() {
     const sup = t.sup ? ['chrome', 'firefox', 'safari'].map(b =>
       `<span class="${b === ENGINE.id ? 'cur' : ''}">${{ chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' }[b]} ${esc(t.sup[b])}</span>`).join('') : `<span>${esc(T('allBrowsers'))}</span>`;
     return `<div class="typo-row">
-      <label class="typo-name" for="ty-${t.key}"><b>${esc(tr(t.label))}</b><code>${t.attr ? esc(T('langAttr')) : t.prop}</code></label>
+      <span class="typo-name"><label for="ty-${t.key}"><b>${esc(tr(t.label))}</b></label><span class="lab-i"><code>${t.attr ? esc(T('langAttr')) : t.prop}</code>${t.note ? `<button type="button" class="info" data-info="typo:${t.key}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}">i</button>` : ''}</span></span>
       <select id="ty-${t.key}">${opts}</select>
       <div class="typo-sup" data-key="${t.key}">${sup}</div>
-      ${t.note ? `<div class="typo-note">${esc(tr(t.note))}</div>` : ''}
     </div>`;
   }).join('');
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }

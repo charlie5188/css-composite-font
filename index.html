@@ -39,7 +39,7 @@
   <div class="warn" id="sizeAdjustWarn" data-th="warnSizeAdjust" hidden></div>
 
   <section class="presets" aria-labelledby="presetsLabel">
-    <div class="sec-row"><h2 class="label" id="presetsLabel" data-t="preset"></h2><span class="hint" data-t="presetHint"></span></div>
+    <div class="sec-row"><h2 class="label lab-i" id="presetsLabel"><span data-t="preset"></span><button type="button" class="info" data-info="presetInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2></div>
     <div class="rail">
       <div id="presetCards"></div>
       <div class="pcard-wrap" id="saveCard">
@@ -55,10 +55,10 @@
 
   <div class="bench">
     <section class="compose" id="editor" data-ta="aria-label:classes">
-      <div class="sec-row"><h2 class="label" data-t="classes"></h2></div>
+      <div class="sec-row"><h2 class="label lab-i"><span data-t="classes"></span><button type="button" class="info" data-info="classInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2></div>
       <div class="wbanner" id="wBanner" hidden></div>
       <div id="classRows"></div>
-      <div class="sec-row sub"><h3 class="label" data-t="custom"></h3><button class="tbtn" id="addCustom" type="button" data-t="add"></button></div>
+      <div class="sec-row sub"><h3 class="label lab-i"><span data-t="custom"></span><button type="button" class="info" data-info="customInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h3><button class="tbtn" id="addCustom" type="button" data-t="add"></button></div>
       <div id="customRows"></div>
     </section>
 
@@ -87,8 +87,7 @@
           <div class="divider"></div>
           <div class="compare-label" style="margin-top:24px"><b data-t="cmp"></b>
             <select id="cmpMode" data-ta="aria-label:cmpAria"><option value="plain" data-t="cmpPlain"></option><option value="fsa" data-t="cmpFsa"></option></select>
-            <code id="naiveCode"></code></div>
-          <p class="naive-hint" id="naiveHint"></p>
+            <button type="button" class="info" data-info="cmpInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button><code id="naiveCode"></code></div>
           <div class="proof-text naive" id="naiveText"></div>
         </div>
       </div>
@@ -101,7 +100,7 @@
       <div class="legend" id="legend" hidden></div>
 
       <section class="panel" aria-labelledby="metricsLabel">
-        <div class="panel-head"><h2 class="label" id="metricsLabel" data-t="metrics"></h2><span class="hint" data-t="metricsHint"></span></div>
+        <div class="panel-head"><h2 class="label lab-i" id="metricsLabel"><span data-t="metrics"></span><button type="button" class="info" data-info="metricsInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2></div>
         <div class="spec-wrap"><canvas id="spec" data-ta="aria-label:specAria"></canvas></div>
         <dl class="readout">
           <div><dt data-t="mCap"></dt><dd id="mCap">–</dd></div>
@@ -112,7 +111,6 @@
         <div class="match">
           <label for="mBasis" data-t="basis"></label>
           <select id="mBasis"><option value="mix" data-t="basisMix"></option><option value="cap" data-t="basisCap"></option><option value="x" data-t="basisX"></option></select>
-          <span id="mMixTo" data-t="mixTo"></span>
           <span id="mTargetWrap" style="display:inline-flex;gap:6px;align-items:center"><label for="mTarget" data-t="targetTo"></label><input id="mTarget" type="number" min="30" max="120" step="0.5"><span>%</span></span>
           <button class="btn" id="mApply" type="button" data-t="applySize"></button>
           <button class="tbtn" id="mCenter" type="button" data-t="center"></button>
@@ -121,11 +119,10 @@
       </section>
 
       <details class="typo" id="typoBox">
-        <summary><span class="typo-sum"><b data-t="typoTitle"></b><span class="hint" data-t="typoSumHint"></span></span><span class="typo-changed" id="typoChanged"></span></summary>
+        <summary><span class="typo-sum"><b data-t="typoTitle"></b></span><span class="typo-changed" id="typoChanged"></span></summary>
         <div class="typo-body">
-          <div class="hint" id="browserName"></div>
+          <div class="hint lab-i"><span id="browserName"></span><button type="button" class="info" data-info="typoInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></div>
           <div id="typoRows"></div>
-          <p class="typo-foot" data-th="typoFoot"></p>
         </div>
       </details>
     </section>
@@ -149,7 +146,7 @@
       <button role="tab" type="button" id="tabNotes" aria-selected="false" aria-controls="paneNotes" data-t="tabNotes"></button>
     </div>
     <div id="paneCode" role="tabpanel">
-      <div class="ex-bar"><span class="hint" id="exNote"></span></div>
+      <div class="ex-bar" id="exBar" hidden><span class="hint" id="exNote"></span></div>
       <div class="code"><pre id="codeOut"></pre></div>
     </div>
     <div id="paneNotes" role="tabpanel" hidden>
@@ -247,7 +244,6 @@
         <div class="field"><label for="gfFamily" data-t="gfFamily"></label><input id="gfFamily" list="gfList" autocomplete="off" spellcheck="false"></div>
         <div class="field"><label for="gfWeight" data-t="gfWeight"></label><select id="gfWeight"></select></div>
       </div>
-      <p class="hint" style="margin-top:8px" data-t="gfHint"></p>
     </div>
     <div data-pane="local" hidden>
       <div class="field"><label for="lfName" data-t="lfName"></label><input id="lfName" list="lfList" autocomplete="off" spellcheck="false" data-ta="placeholder:lfPh"></div>
@@ -271,6 +267,7 @@
 <datalist id="gfList"></datalist>
 <datalist id="lfList"></datalist>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="infoPop" class="info-pop" popover></div>
 <div id="grpPop" class="grp-pop" popover></div>
 </body>
 </html>

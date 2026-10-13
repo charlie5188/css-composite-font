@@ -446,6 +446,7 @@ function hanCapRatio(han) {
   ctx.font = `100px "${han.family}"`;
   return ctx.measureText('H').actualBoundingBoxAscent / 100;
 }
+let lastFsaR = null;
 function updateNaive() {
   const latF = resolveCls('latin', state.view.weight, true).font, hanF = resolveCls('han', state.view.weight, true).font;
   const lat = sources.get(fontKey(latF)), han = sources.get(fontKey(hanF));
@@ -457,10 +458,9 @@ function updateNaive() {
     const r = +hanCapRatio(han).toFixed(3);
     el.style.fontSizeAdjust = `cap-height ${r}`;
     code.push(`font-size-adjust: cap-height ${r};`);
-    $('#naiveHint').textContent = T('hintFsa', { r });
+    lastFsaR = r;
   } else {
     el.style.fontSizeAdjust = '';
-    $('#naiveHint').textContent = T('hintPlain');
   }
   $('#naiveCode').textContent = code.join(' ');
 }
