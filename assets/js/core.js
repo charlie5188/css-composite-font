@@ -218,10 +218,10 @@ function freshClasses(p) {
 }
 function stateFromPreset(p, prev) {
   return {
-    v: 2,
+    v: 3,
     preset: p.id,
     name: prev?.name || 'My Composite',
-    weights: prev?.weights || [400],
+    weights: prev?.weights || [100, 200, 300, 400, 500, 600, 700, 800, 900],
     baseMode: prev?.baseMode || 'link',
     weightNames: prev?.weightNames || {},
     moved: prev?.moved ? { ...prev.moved } : {},
@@ -242,9 +242,13 @@ function validState(s) {
 }
 let state = validState(lsGet(LS_STATE)) ? lsGet(LS_STATE) : stateFromPreset(PRESETS.find(p => p.id === (UI === 'ja' ? 'mincho-jp' : 'serif-sc')));
 function normalizeState() {
-  if (state.v !== 2) {    // 旧版本里「跟随」连大小、基线一起跟随，迁移为继承
+  if (!(state.v >= 2)) {    // 旧版本里「跟随」连大小、基线一起跟随，迁移为继承
     for (const o of [...Object.values(state.classes), ...state.custom]) if (o.follow) { o.size = null; o.shift = null; }
     state.v = 2;
+  }
+  if (state.v === 2) {      // v2 默认只导出 400；v3 起默认导出全部字重，让每个字重都能单独调整
+    if (Array.isArray(state.weights) && state.weights.length === 1 && state.weights[0] === 400) state.weights = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+    state.v = 3;
   }
   state.typo = { ...TYPO_DEFAULTS, ...(state.typo || {}) };
   state.view.cmp = state.view.cmp || 'plain';
