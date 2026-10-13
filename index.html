@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="zh-Hans">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>合成字体 · CSS Composite Font</title>
+<meta name="description" content="像 InDesign 的合成字体一样，为汉字、假名和西文分别指定字体与大小，导出纯 CSS（@font-face + unicode-range + size-adjust）。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script src="assets/js/i18n.js" defer></script>
+<script src="assets/js/unicode.js" defer></script>
+<script src="assets/js/core.js" defer></script>
+<script src="assets/js/render.js" defer></script>
+<script src="assets/js/export.js" defer></script>
+<script src="assets/js/ui.js" defer></script>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <span class="brand">Composite Font</span>
+    <div class="seg" role="radiogroup" aria-label="界面语言 / 表示言語" id="uiSeg">
+      <button type="button" role="radio" data-ui-lang="zh" aria-checked="true">中文</button>
+      <button type="button" role="radio" data-ui-lang="ja" aria-checked="false">日本語</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1 data-t="title">纯 CSS 合成字体</h1>
+    <div class="hero-side">
+      <p class="lede" data-t="lede"></p>
+      <p class="hero-meta" id="heroMeta"></p>
+    </div>
+  </section>
+  <div class="warn" id="sizeAdjustWarn" data-th="warnSizeAdjust" hidden></div>
+
+  <section class="presets" aria-labelledby="presetsLabel">
+    <div class="sec-row"><h2 class="label" id="presetsLabel" data-t="preset"></h2><span class="hint" data-t="presetHint"></span></div>
+    <div class="rail">
+      <div id="presetCards"></div>
+      <div class="pcard-wrap" id="saveCard">
+        <button type="button" class="pcard add" id="savePresetBtn"><span style="font-size:26px;line-height:1">+</span><span data-t="presetSaveAs"></span></button>
+        <div class="save-form" id="saveRow" hidden>
+          <label class="hint" for="presetName" data-t="presetName"></label>
+          <input id="presetName" type="text" spellcheck="false">
+          <div><button class="btn primary" id="presetSave" type="button" data-t="save"></button><button class="tbtn" id="presetCancel" type="button" data-t="cancel"></button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="bench">
+    <section class="compose" id="editor" data-ta="aria-label:classes">
+      <div class="sec-row"><h2 class="label" data-t="classes"></h2></div>
+      <div class="wbanner" id="wBanner" hidden></div>
+      <div id="classRows"></div>
+      <div class="sec-row sub"><h3 class="label" data-t="custom"></h3><button class="tbtn" id="addCustom" type="button" data-t="add"></button></div>
+      <div id="customRows"></div>
+    </section>
+
+    <section class="tester" data-ta="aria-label:proof">
+      <div class="tester-head">
+        <div class="sample-tabs" id="sampleTabs" role="tablist" data-ta="aria-label:sample"></div>
+        <button class="tbtn" type="button" id="editTextBtn" aria-expanded="false" aria-controls="sampleBox" data-t="editText"></button>
+      </div>
+      <div class="tester-ctrl">
+        <label class="ctl" for="vSize"><span data-t="fontSize"></span><input type="range" id="vSize" min="12" max="160" step="1"><output id="vSizeOut" for="vSize"></output></label>
+        <label class="ctl" for="vLh"><span data-t="lineHeight"></span><input type="range" id="vLh" min="1" max="2.6" step="0.05"><output id="vLhOut" for="vLh"></output></label>
+        <span class="ctl" id="vWeightLab" hidden><span data-t="previewWeight"></span><span class="seg mono" id="vWeight" role="radiogroup" data-ta="aria-label:previewWeight"></span></span>
+        <span class="busy" id="busy" aria-live="polite"></span>
+      </div>
+      <div class="sample-box" id="sampleBox" hidden>
+        <label class="hint" for="sample" data-t="sampleText"></label>
+        <textarea id="sample" spellcheck="false"></textarea>
+      </div>
+
+      <div class="sheet" id="sheet">
+        <div>
+          <div class="compare-label" id="liveLabel" hidden><b data-t="liveLabel"></b><span>unicode-range + size-adjust</span></div>
+          <div class="proof-text" id="proofText"></div>
+        </div>
+        <div id="naiveWrap" hidden>
+          <div class="divider"></div>
+          <div class="compare-label" style="margin-top:24px"><b data-t="cmp"></b>
+            <select id="cmpMode" data-ta="aria-label:cmpAria"><option value="plain" data-t="cmpPlain"></option><option value="fsa" data-t="cmpFsa"></option></select>
+            <code id="naiveCode"></code></div>
+          <p class="naive-hint" id="naiveHint"></p>
+          <div class="proof-text naive" id="naiveText"></div>
+        </div>
+      </div>
+      <div class="tester-foot">
+        <label class="ctl" for="vLang"><span data-t="langLabel"></span><select id="vLang"></select></label>
+        <button class="tog" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
+        <button class="tog" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
+        <button class="tog" type="button" id="vCompare" aria-pressed="false" data-t="compare"></button>
+      </div>
+      <div class="legend" id="legend" hidden></div>
+
+      <section class="panel" aria-labelledby="metricsLabel">
+        <div class="panel-head"><h2 class="label" id="metricsLabel" data-t="metrics"></h2><span class="hint" data-t="metricsHint"></span></div>
+        <div class="spec-wrap"><canvas id="spec" data-ta="aria-label:specAria"></canvas></div>
+        <dl class="readout">
+          <div><dt data-t="mCap"></dt><dd id="mCap">–</dd></div>
+          <div><dt data-t="mX"></dt><dd id="mX">–</dd></div>
+          <div><dt data-t="mMid"></dt><dd id="mMid">–</dd></div>
+        </dl>
+        <div class="ref-line" id="mRef"></div>
+        <div class="match">
+          <label for="mBasis" data-t="basis"></label>
+          <select id="mBasis"><option value="mix" data-t="basisMix"></option><option value="cap" data-t="basisCap"></option><option value="x" data-t="basisX"></option></select>
+          <span id="mMixTo" data-t="mixTo"></span>
+          <span id="mTargetWrap" style="display:inline-flex;gap:6px;align-items:center"><label for="mTarget" data-t="targetTo"></label><input id="mTarget" type="number" min="30" max="120" step="0.5"><span>%</span></span>
+          <button class="btn" id="mApply" type="button" data-t="applySize"></button>
+          <button class="tbtn" id="mCenter" type="button" data-t="center"></button>
+        </div>
+        <p class="ref-note" data-th="refNote"></p>
+      </section>
+
+      <details class="typo" id="typoBox">
+        <summary><span class="typo-sum"><b data-t="typoTitle"></b><span class="hint" data-t="typoSumHint"></span></span><span class="typo-changed" id="typoChanged"></span></summary>
+        <div class="typo-body">
+          <div class="hint" id="browserName"></div>
+          <div id="typoRows"></div>
+          <p class="typo-foot" data-th="typoFoot"></p>
+        </div>
+      </details>
+    </section>
+  </div>
+
+  <section class="export" data-ta="aria-label:export">
+    <div class="export-head">
+      <div><span class="label" data-t="export"></span><h2 data-t="exportTitle"></h2><div class="hint" id="exStats"></div></div>
+      <div class="ex-actions"><button class="btn" id="dlBtn" type="button" data-t="download" hidden></button><button class="btn primary" id="copyBtn" type="button" data-t="copy"></button></div>
+    </div>
+    <div class="ex-fields">
+      <div class="field"><label for="exName" data-t="exName"></label><input id="exName" type="text" spellcheck="false"></div>
+      <div class="field"><span class="flabel" data-t="exWeights"></span><div class="chips" id="exWeights" role="group" data-ta="aria-label:exWeights"></div></div>
+      <div class="field" id="exBaseField"><label for="exBase" data-t="exBase"></label><select id="exBase"><option value="link" data-t="exBaseLink"></option><option value="expand" data-t="exBaseExpand"></option></select></div>
+      <div class="field"><label for="exGeneric" data-t="exGeneric"></label><select id="exGeneric"><option value="auto" data-t="auto"></option><option value="serif">serif</option><option value="sans-serif">sans-serif</option></select></div>
+    </div>
+    <div class="wmap" id="wmap" hidden></div>
+    <div class="tabs ex-tabs" role="tablist" data-ta="aria-label:exportAria">
+      <button role="tab" type="button" id="tabCss" aria-selected="true" aria-controls="paneCode">CSS</button>
+      <button role="tab" type="button" id="tabJs" aria-selected="false" aria-controls="paneCode" data-t="tabJs"></button>
+      <button role="tab" type="button" id="tabNotes" aria-selected="false" aria-controls="paneNotes" data-t="tabNotes"></button>
+    </div>
+    <div id="paneCode" role="tabpanel">
+      <div class="ex-bar"><span class="hint" id="exNote"></span></div>
+      <div class="code"><pre id="codeOut"></pre></div>
+    </div>
+    <div id="paneNotes" role="tabpanel" hidden>
+      <div class="notes" data-ui="zh">
+        <h3>匹配规则</h3>
+        <p>同一个 font-family 下可以写多条 <code>@font-face</code>。浏览器为每个字符从最后一条往前找，选第一条 <code>unicode-range</code> 包含它、且字体里真有这个字形的规则。所以基础字体（汉字）写在最前，不限范围，负责兜底；半角西文、半角数字等类别写在后面接管各自的范围；例外字符写在最后，优先级最高。</p>
+        <h3>大小：size-adjust</h3>
+        <p><code>size-adjust</code> 按百分比缩放一个字体的字形和度量。Chrome/Edge 92+、Firefox 92+、Safari 17+ 支持。它也会放大这个字体的上伸、下伸度量，<code>line-height: normal</code> 时行距可能不均匀，建议写固定的 <code>line-height</code>。</p>
+        <h3>基线偏移需要 JS</h3>
+        <p><code>@font-face</code> 没有基线描述符。同一行里所有字形都对齐在字母基线上，CSS 无法按字体单独移动。工具里的「基线」会在导出时附带一段脚本，把对应字符包进 <code>&lt;span&gt;</code> 用相对定位移动，不影响行高。想要纯 CSS，就把所有基线保持为 0。</p>
+        <h3>本机字体：local()</h3>
+        <p><code>local()</code> 按字体的完整名或 PostScript 名匹配，而不是字族名。例如写 <code>Hiragino Sans GB W3</code> 或 <code>HiraginoSansGB-W3</code>，而不是 <code>Hiragino Sans GB</code>。字体卡片上的绿点表示当前浏览器找到了它。Safari 只允许网页使用系统预装字体，自己安装的字体在 Safari 里不生效。访客电脑上没有这个字体时，会回退到前面一条规则。</p>
+        <h3>Google Fonts</h3>
+        <p>中日韩字体在 Google Fonts 上被切成上百个分片，每片有自己的 <code>unicode-range</code>。导出时工具会把分片范围和类别范围求交集，只保留需要的分片，所以西文类别通常只剩一两条。url 指向 fonts.gstatic.com，正式项目建议下载后自托管。</p>
+        <h3>导出多个字重</h3>
+        <p>在「字重」里多选，会为每个字重各生成一组规则。工具里设定的字体对应 400；其他字重里，Google Fonts 的字体按同样的差值换算（例如 500 的字体在 700 时取 800），没有这个字重就取最接近的；本机字体会按名称推测粗体（例如 W3 → W6、Regular → Bold），并在这台电脑上检测，结果可以在导出区修改。各字体的粗细分布并不一致，在工具栏切换到某个字重后，可以单独调整这个字重下各类别用的粗细和大小。</p>
+        <p>各字重的规则没法合并。CSS 变量（<code>var()</code>）在 <code>@font-face</code> 里无效，浏览器会直接丢掉这条描述。同一个 font-family 里，如果有的规则写 <code>font-weight: 700</code>、有的写 <code>400 700</code>，实测 Chrome 会把它们分成两组，只用其中一组，合成就失效了。</p>
+        <p>真正占体积的是汉字字体在 Google Fonts 上的上百个分片。「基础字体：引用 Google Fonts」会用 <code>@import</code> 直接引用 Google 的 CSS，把这个字体排在 font-family 的第二位，自己只写需要覆盖它的类别，导出的 CSS 通常只有几 KB。服务器一般会用 gzip 压缩 CSS，导出区显示的 gzip 体积更接近实际传输量。字体文件只按页面用到的字符下载，与 CSS 长度无关。</p>
+        <h3>为什么不用 font-size-adjust</h3>
+        <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支持双值语法）也能统一字号，但它对元素里的每个字体都生效：把西文调到目标大写高的同时，汉字字体也会按它自带的西文度量被缩放。它也不能按字符类别分配字体，解决不了引号归属。更关键的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同时出现时，<code>size-adjust</code> 不再起作用。所以使用合成字体的元素上不要再写 <code>font-size-adjust</code>。校样的「对照其他做法」里可以切换到这个做法比较效果。</p>
+        <h3>CSS 原生 CJK 排版属性</h3>
+        <p>这些属性和合成字体互不冲突，可以叠加使用。下表是 2026 年 10 月 MDN 兼容性数据里各浏览器开始支持的版本。</p>
+        <div class="sup-table"><table>
+          <thead><tr><th>属性</th><th>作用</th><th>Chrome / Edge</th><th>Firefox</th><th>Safari</th></tr></thead>
+          <tbody>
+            <tr><td class="v">text-autospace</td><td>汉字、假名与西文、数字之间自动加 1/8 em。Chrome 只支持 normal / no-autospace，实测初始值是 no-autospace（规范写的是 normal），需要显式写出。</td><td class="v">140</td><td class="v">145</td><td class="v">18.4</td></tr>
+            <tr><td class="v">text-spacing-trim</td><td>全角标点挤压：相邻标点合并、行首开括号半角化。目前只实现了 normal / space-all / space-first / trim-start。</td><td class="v">123</td><td class="v">—</td><td class="v">—</td></tr>
+            <tr><td class="v">word-break: auto-phrase</td><td>按词组（文節）换行，避免把一个词拆在两行。只对 lang="ja" 和 lang="ko" 生效。</td><td class="v">119</td><td class="v">—</td><td class="v">预览版</td></tr>
+            <tr><td class="v">line-break</td><td>禁则强度：strict 更严格地禁止行首出现小假名、长音符等。</td><td class="v">58</td><td class="v">69</td><td class="v">11</td></tr>
+            <tr><td class="v">text-wrap: pretty</td><td>避免段落末行只剩一两个字。Chrome 只调整段落最后四行。</td><td class="v">117</td><td class="v">—</td><td class="v">26</td></tr>
+            <tr><td class="v">text-wrap: balance</td><td>让各行长度接近，适合标题。</td><td class="v">114</td><td class="v">121</td><td class="v">17.5</td></tr>
+            <tr><td class="v">text-justify</td><td>两端对齐的方式：inter-character 在字间分配空隙。</td><td class="v">145</td><td class="v">55</td><td class="v">—</td></tr>
+            <tr><td class="v">hanging-punctuation</td><td>标点悬挂到版心外。</td><td class="v">—</td><td class="v">—</td><td class="v">10</td></tr>
+            <tr><td class="v">text-box</td><td>裁掉首行上方、末行下方的半行距。ideographic 边缘目前只有 Firefox 支持。</td><td class="v">133</td><td class="v">154</td><td class="v">18.2</td></tr>
+            <tr><td class="v">text-combine-upright: all</td><td>竖排中的纵中横，需要把数字包进单独的元素。digits 值没有浏览器实现。</td><td class="v">48</td><td class="v">48</td><td class="v">15.4</td></tr>
+          </tbody>
+        </table></div>
+        <p>来源：<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/text-autospace" target="_blank" rel="noopener">MDN text-autospace</a>、<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/text-spacing-trim" target="_blank" rel="noopener">text-spacing-trim</a>、<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/font-size-adjust" target="_blank" rel="noopener">font-size-adjust</a>、<a href="https://github.com/mdn/browser-compat-data" target="_blank" rel="noopener">MDN browser-compat-data</a>、<a href="https://developer.chrome.com/blog/css-i18n-features" target="_blank" rel="noopener">Chrome：CSS 国际化新特性</a>。</p>
+      </div>
+      <div class="notes" data-ui="ja" lang="ja" hidden>
+        <h3>照合の規則</h3>
+        <p>同じ font-family 名で複数の <code>@font-face</code> を書けます。ブラウザは文字ごとに最後の規則からさかのぼり、<code>unicode-range</code> にその文字を含み、実際にグリフを持つ最初の規則を使います。そのため、ベースフォント（漢字）を最初に範囲指定なしで書いてすべてを受け持たせ、半角欧文や半角数字などのクラスを後に書いて担当範囲を引き受けさせます。例外文字は最後に書くので、優先度が最も高くなります。</p>
+        <h3>サイズ：size-adjust</h3>
+        <p><code>size-adjust</code> はフォントのグリフとメトリクスをパーセントで拡大縮小します。Chrome/Edge 92+、Firefox 92+、Safari 17+ が対応しています。アセンダーとディセンダーも拡大されるため、<code>line-height: normal</code> では行送りが不揃いになることがあります。<code>line-height</code> は固定値で指定するのがおすすめです。</p>
+        <h3>ベースラインシフトには JS が必要</h3>
+        <p><code>@font-face</code> にはベースラインの記述子がありません。同じ行のグリフはすべて欧文ベースラインにそろうため、CSS だけではフォントごとに上下させられません。ツールの「ベースライン」を使うと、書き出し時に小さなスクリプトが付きます。対象の文字を <code>&lt;span&gt;</code> で包んで相対位置で動かすので、行の高さは変わりません。CSS だけで済ませたい場合は、すべてのベースラインを 0 にしてください。</p>
+        <h3>ローカルフォント：local()</h3>
+        <p><code>local()</code> はファミリー名ではなく、フルネームか PostScript 名で照合します。たとえば <code>Hiragino Sans GB</code> ではなく、<code>Hiragino Sans GB W3</code> または <code>HiraginoSansGB-W3</code> と書きます。フォントカードの緑の点は、現在のブラウザがそのフォントを見つけたことを示します。Safari はシステムにプリインストールされたフォントしか Web で使わせないため、自分でインストールしたフォントは Safari では効きません。閲覧者の環境にフォントがない場合は、ひとつ前の規則にフォールバックします。</p>
+        <h3>Google Fonts</h3>
+        <p>CJK フォントは Google Fonts で 100 以上のサブセットに分割され、それぞれに <code>unicode-range</code> があります。書き出し時にサブセットの範囲とクラスの範囲の共通部分を取り、必要なサブセットだけを残すので、欧文クラスは通常 1〜2 件になります。url は fonts.gstatic.com を指しています。本番ではダウンロードしてセルフホストすることをおすすめします。</p>
+        <h3>複数のウェイトを書き出す</h3>
+        <p>「ウェイト」で複数を選ぶと、ウェイトごとに規則を 1 組ずつ生成します。ツールで設定したフォントは 400 に対応します。ほかのウェイトでは、Google Fonts のフォントは同じ差分で換算し（500 のフォントなら 700 のとき 800）、そのウェイトがなければ最も近いものを使います。ローカルフォントは名前から太字の名前を推測し（W3 → W6、Regular → Bold など）、このマシンで確認します。結果は書き出し欄で修正できます。フォントごとにウェイトの分布は異なるので、ツールバーでウェイトを切り替えると、そのウェイトでの各クラスの太さとサイズを個別に調整できます。</p>
+        <p>ウェイトごとの規則はまとめられません。CSS 変数（<code>var()</code>）は <code>@font-face</code> の中では無効で、ブラウザはその記述を捨てます。同じ font-family の中に <code>font-weight: 700</code> の規則と <code>400 700</code> の規則が混ざると、Chrome は実測で別のグループとして扱い、片方しか使わないため、合成が効かなくなります。</p>
+        <p>容量の大半は、Google Fonts で 100 以上に分割された漢字フォントの規則です。「ベースフォント：Google Fonts を参照」では Google の CSS を <code>@import</code> で直接参照し、そのフォントを font-family の 2 番目に置いて、上書きするクラスだけを書き出します。書き出す CSS は通常数 KB です。サーバーは CSS を gzip で圧縮するのが一般的なので、書き出し欄の gzip 後のサイズが実際の転送量に近い値です。フォントファイルはページで使う文字の分だけダウンロードされ、CSS の長さとは関係ありません。</p>
+        <h3>font-size-adjust を使わない理由</h3>
+        <p><code>font-size-adjust</code>（2 値構文は Chrome 127、Firefox 92、Safari 17 が対応）でもサイズをそろえられますが、要素内のすべてのフォントに効きます。欧文を目標のキャップハイトに合わせると、漢字フォントも付属欧文のメトリクスに応じて拡大縮小されます。文字クラスごとにフォントを割り当てることもできないため、引用符の問題も解決しません。さらに MDN によれば、<code>@font-face</code> の <code>size-adjust</code> と併用すると <code>size-adjust</code> が効かなくなります。合成フォントを使う要素には <code>font-size-adjust</code> を指定しないでください。校正刷りの「他の方法と比較」で違いを確認できます。</p>
+        <h3>CSS ネイティブの CJK 組版プロパティ</h3>
+        <p>これらのプロパティは合成フォントと干渉せず、組み合わせて使えます。下の表は 2026 年 10 月時点の MDN 互換性データで、各ブラウザが対応を始めたバージョンです。</p>
+        <div class="sup-table"><table>
+          <thead><tr><th>プロパティ</th><th>働き</th><th>Chrome / Edge</th><th>Firefox</th><th>Safari</th></tr></thead>
+          <tbody>
+            <tr><td class="v">text-autospace</td><td>漢字・かなと欧文・数字の間に 1/8 em のアキを自動で入れる。Chrome は normal / no-autospace のみ対応。実測の初期値は no-autospace（仕様では normal）なので、明示的に書く必要がある。</td><td class="v">140</td><td class="v">145</td><td class="v">18.4</td></tr>
+            <tr><td class="v">text-spacing-trim</td><td>全角約物の詰め。隣接する約物の詰めや、行頭の始め括弧の半角化。実装済みは normal / space-all / space-first / trim-start のみ。</td><td class="v">123</td><td class="v">—</td><td class="v">—</td></tr>
+            <tr><td class="v">word-break: auto-phrase</td><td>文節単位で改行し、語の途中で行が分かれるのを避ける。lang="ja" と lang="ko" でのみ有効。</td><td class="v">119</td><td class="v">—</td><td class="v">プレビュー版</td></tr>
+            <tr><td class="v">line-break</td><td>禁則の強さ。strict では小書きのかなや長音記号の行頭をより厳しく禁止する。</td><td class="v">58</td><td class="v">69</td><td class="v">11</td></tr>
+            <tr><td class="v">text-wrap: pretty</td><td>段落の最終行に 1〜2 文字だけ残るのを避ける。Chrome は段落の最後の 4 行だけを調整する。</td><td class="v">117</td><td class="v">—</td><td class="v">26</td></tr>
+            <tr><td class="v">text-wrap: balance</td><td>各行の長さをそろえる。見出し向き。</td><td class="v">114</td><td class="v">121</td><td class="v">17.5</td></tr>
+            <tr><td class="v">text-justify</td><td>両端揃えの方法。inter-character は字間でアキを配分する。</td><td class="v">145</td><td class="v">55</td><td class="v">—</td></tr>
+            <tr><td class="v">hanging-punctuation</td><td>約物を版面の外にぶら下げる。</td><td class="v">—</td><td class="v">—</td><td class="v">10</td></tr>
+            <tr><td class="v">text-box</td><td>最初の行の上と最後の行の下のハーフレディングを削る。ideographic エッジに対応しているのは今のところ Firefox のみ。</td><td class="v">133</td><td class="v">154</td><td class="v">18.2</td></tr>
+            <tr><td class="v">text-combine-upright: all</td><td>縦組みの縦中横。数字を別の要素で包む必要がある。digits 値はどのブラウザも未実装。</td><td class="v">48</td><td class="v">48</td><td class="v">15.4</td></tr>
+          </tbody>
+        </table></div>
+        <p>出典：<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/text-autospace" target="_blank" rel="noopener">MDN text-autospace</a>、<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/text-spacing-trim" target="_blank" rel="noopener">text-spacing-trim</a>、<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/font-size-adjust" target="_blank" rel="noopener">font-size-adjust</a>、<a href="https://github.com/mdn/browser-compat-data" target="_blank" rel="noopener">MDN browser-compat-data</a>、<a href="https://developer.chrome.com/blog/css-i18n-features" target="_blank" rel="noopener">Chrome：CSS の新しい国際化機能</a>。</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span data-t="footSupport"></span>
+    <span class="mono">@font-face · unicode-range · size-adjust</span>
+  </footer>
+</div>
+
+<dialog id="picker" aria-labelledby="pkTitle">
+  <div class="pk">
+    <h3 id="pkTitle"><span data-t="pickTitle" style="color:inherit;font-weight:600"></span> <span id="pkFor"></span></h3>
+    <div class="tabs" role="tablist" data-ta="aria-label:srcAria">
+      <button role="tab" type="button" data-src="google" aria-selected="true">Google Fonts</button>
+      <button role="tab" type="button" data-src="local" aria-selected="false" data-t="srcLocal"></button>
+      <button role="tab" type="button" data-src="file" aria-selected="false" data-t="srcFile"></button>
+    </div>
+    <div data-pane="google">
+      <div class="pk-grid">
+        <div class="field"><label for="gfFamily" data-t="gfFamily"></label><input id="gfFamily" list="gfList" autocomplete="off" spellcheck="false"></div>
+        <div class="field"><label for="gfWeight" data-t="gfWeight"></label><select id="gfWeight"></select></div>
+      </div>
+      <p class="hint" style="margin-top:8px" data-t="gfHint"></p>
+    </div>
+    <div data-pane="local" hidden>
+      <div class="field"><label for="lfName" data-t="lfName"></label><input id="lfName" list="lfList" autocomplete="off" spellcheck="false" data-ta="placeholder:lfPh"></div>
+      <p class="hint" style="margin-top:8px" data-th="lfHint"></p>
+      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px"><button class="tbtn" type="button" id="lfQuery" data-t="lfQuery"></button><span class="hint" id="lfMsg"></span></div>
+    </div>
+    <div data-pane="file" hidden>
+      <div class="field"><label for="ffFile">woff2 / woff / otf / ttf</label><input id="ffFile" type="file" accept=".woff2,.woff,.otf,.ttf"></div>
+      <p class="hint" style="margin-top:8px" data-th="ffHint"></p>
+    </div>
+    <div class="pk-preview">
+      <div id="pkSample"></div>
+      <div class="hint" id="pkStatus" aria-live="polite"></div>
+    </div>
+    <div class="pk-actions">
+      <button class="tbtn" type="button" id="pkCancel" data-t="cancel"></button>
+      <button class="btn primary" type="button" id="pkOk" data-t="pkUse" disabled></button>
+    </div>
+  </div>
+</dialog>
+<datalist id="gfList"></datalist>
+<datalist id="lfList"></datalist>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<div id="grpPop" class="grp-pop" popover></div>
+</body>
+</html>
