@@ -30,7 +30,7 @@ const GF_LIST = ['Noto Sans SC', 'Noto Serif SC', 'Noto Sans TC', 'Noto Serif TC
   'LXGW WenKai TC', 'Shippori Mincho', 'Zen Old Mincho', 'Zen Kaku Gothic New', 'Zen Maru Gothic', 'BIZ UDPGothic', 'BIZ UDPMincho', 'M PLUS 2', 'Klee One',
   'ZCOOL XiaoWei', 'Ma Shan Zheng', 'Inter', 'IBM Plex Sans', 'IBM Plex Serif', 'Source Sans 3', 'Source Serif 4', 'EB Garamond', 'Cormorant Garamond',
   'Libre Caslon Text', 'Libre Baskerville', 'Crimson Pro', 'Lora', 'Newsreader', 'Literata', 'Spectral', 'Fraunces', 'Playfair Display', 'DM Sans',
-  'Work Sans', 'Manrope', 'Instrument Sans', 'Instrument Serif', 'Roboto', 'Roboto Serif', 'Lato', 'Open Sans', 'Montserrat', 'JetBrains Mono', 'IBM Plex Mono'];
+  'Work Sans', 'Manrope', 'Instrument Sans', 'Instrument Serif', 'Roboto', 'Roboto Serif', 'Lato', 'Open Sans', 'Montserrat', 'Jost', 'JetBrains Mono', 'IBM Plex Mono'];
 
 const files = new Map();          // fileId -> {name, buffer}
 const sources = new Map();        // fontKey -> {status, faces, family, error, promise}
@@ -197,7 +197,8 @@ const PRESETS = [
   { id: 'serif-sc', name: { zh: '宋体 × Garamond', ja: '宋体 × Garamond' }, tag: { zh: '简体中文', ja: '簡体字中国語' }, han: G('Noto Serif SC'), latin: G('EB Garamond'), latinSize: 115, sample: 'zh' },
   { id: 'sans-sc', name: { zh: '黑体 × Inter', ja: '黒体 × Inter' }, tag: { zh: '简体中文', ja: '簡体字中国語' }, han: G('Noto Sans SC'), latin: G('Inter'), latinSize: 100, sample: 'zh' },
   { id: 'mincho-jp', name: { zh: '明朝 × Cormorant', ja: '明朝 × Cormorant' }, tag: { zh: '日文', ja: '日本語' }, han: G('Shippori Mincho'), latin: G('Cormorant Garamond', 500), latinSize: 120, sample: 'ja' },
-  { id: 'gothic-jp', name: { zh: 'ゴシック × Plex Sans', ja: 'ゴシック × Plex Sans' }, tag: { zh: '日文', ja: '日本語' }, han: G('Noto Sans JP'), latin: G('IBM Plex Sans'), latinSize: 105, sample: 'ja' },
+  /* Jost は Futura 系のジオメトリック。公式式は 107.9% だが、108% だと中線偏差が 2% em を超えるので 107% */
+  { id: 'gothic-jp', name: { zh: 'ゴシック × Jost', ja: 'ゴシック × Jost' }, tag: { zh: '日文', ja: '日本語' }, han: G('Noto Sans JP'), latin: G('Jost'), latinSize: 107, sample: 'ja' },
   /* アンチゴチ：漢字はゴシック体、かなはアンチック体。欧文と約物はゴシックに従う。Zen Antique のかなは太いので、漢字は 500 で釣り合う */
   { id: 'antigochi', name: { zh: 'アンチゴチ', ja: 'アンチゴチ' }, tag: { zh: '漫画对白', ja: 'マンガの台詞' }, han: G('Zen Kaku Gothic New', 500), latin: null, classes: { kana: { font: G('Zen Antique') } }, sample: 'manga', vertical: true },
   { id: 'mac', name: { zh: '苹方 × Helvetica', ja: 'PingFang × Helvetica' }, tag: { zh: 'macOS 系统字体 · 简体中文', ja: 'macOS 標準・簡体字' }, han: L('PingFang SC Regular', ['PingFangSC-Regular']), latin: L('Helvetica Neue', ['HelveticaNeue']), latinSize: 100, sample: 'zh' },
