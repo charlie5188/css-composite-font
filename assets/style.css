@@ -280,7 +280,7 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .export{margin-top:72px;border-top:1px solid var(--ink);padding-top:22px;min-width:0}
 .export-head{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
 .ex-actions{display:flex;gap:10px;flex-wrap:wrap}
-.export-head h2{margin:6px 0 4px;font-size:clamp(26px,3vw,36px);font-weight:500;letter-spacing:-.015em;line-height:1.1}
+.export-head h2{margin:0 0 4px;font-size:clamp(26px,3vw,36px);font-weight:500;letter-spacing:-.015em;line-height:1.1}
 #exStats{font-family:var(--mono);font-size:11.5px}
 .ex-fields{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-end;padding-bottom:20px;border-bottom:1px solid var(--line)}
 .field{display:grid;gap:6px}
