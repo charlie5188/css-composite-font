@@ -168,19 +168,26 @@ function renderExport() {
   ensureExportSources();
   const { css, count, files: fl } = buildCss();
   const js = buildJs();
-  const head = T('stats', { n: count, kb: (new Blob([css]).size / 1024).toFixed(1) }), tail = js ? T('statsJs') : T('statsCss');
-  $('#exStats').textContent = head + tail;
-  const tok = ++gzTok;
-  gzipSize(css).then(n => { if (n != null && tok === gzTok) $('#exStats').textContent = head + T('gz', { kb: (n / 1024).toFixed(1) }) + tail; });
+  const kb = s => (new Blob([s]).size / 1024).toFixed(1);
+  let stat = null;   // [代码, 前半, 后半]：gzip 大小算好后插在中间
   $('#exBaseField').hidden = !state.weights.every(W => canLinkBase(buildPlan(W)));
   if (exTab === 'css') {
     lastExport = css;
     $('#codeOut').innerHTML = highlight(css, 'css');
     $('#exNote').textContent = fl.length ? T('noteFiles', { files: fl.join(T('joiner')) }) : '';
+    stat = [css, T('stats', { n: count, kb: kb(css) }), js ? T('statsJs') : T('statsCss')];
   } else if (exTab === 'js') {
     lastExport = js || '';
     $('#codeOut').innerHTML = js ? highlight(js, 'js') : `<span class="cm">${esc(T('jsNone'))}</span>`;
     $('#exNote').textContent = js ? T('noteJs') : T('noteNoJs');
+    if (js) stat = [js, kb(js) + ' KB', ''];
+  }
+  const meta = $('#exStats'), tok = ++gzTok;
+  meta.hidden = !stat;
+  if (stat) {
+    const [text, head, tail] = stat;
+    meta.textContent = head + tail;
+    gzipSize(text).then(n => { if (n != null && tok === gzTok) meta.textContent = head + T('gz', { kb: (n / 1024).toFixed(1) }) + tail; });
   }
   $('#copyBtn').disabled = !lastExport;
   $('#exBar').hidden = !$('#exNote').textContent;

@@ -8,12 +8,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=018421dc">
-<script src="assets/js/i18n.js?v=9f6c9776" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=f08f74d7">
+<script src="assets/js/i18n.js?v=f15185d4" defer></script>
 <script src="assets/js/unicode.js?v=cab968d0" defer></script>
 <script src="assets/js/core.js?v=c2c221c7" defer></script>
 <script src="assets/js/render.js?v=39932ed8" defer></script>
-<script src="assets/js/export.js?v=8bb4b50a" defer></script>
+<script src="assets/js/export.js?v=a34bdc5f" defer></script>
 <script src="assets/js/ui.js?v=539ef2df" defer></script>
 </head>
 <body>
@@ -129,7 +129,7 @@
 
   <section class="export" data-ta="aria-label:export">
     <div class="export-head">
-      <div><h2 data-t="exportTitle"></h2><div class="hint" id="exStats"></div></div>
+      <h2 data-t="exportTitle"></h2>
       <div class="ex-actions"><button class="btn" id="dlBtn" type="button" data-t="download" hidden></button><button class="btn primary" id="copyBtn" type="button" data-t="copy"></button></div>
     </div>
     <div class="ex-fields">
@@ -146,7 +146,7 @@
     </div>
     <div id="paneCode" role="tabpanel">
       <div class="ex-bar" id="exBar" hidden><span class="hint" id="exNote"></span></div>
-      <div class="code"><pre id="codeOut"></pre></div>
+      <div class="code"><div class="code-meta" id="exStats"></div><pre id="codeOut"></pre></div>
     </div>
     <div id="paneNotes" role="tabpanel" hidden>
       <div class="notes" data-ui="zh">

@@ -281,7 +281,6 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .export-head{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
 .ex-actions{display:flex;gap:10px;flex-wrap:wrap}
 .export-head h2{margin:0 0 4px;font-size:clamp(26px,3vw,36px);font-weight:500;letter-spacing:-.015em;line-height:1.1}
-#exStats{font-family:var(--mono);font-size:11.5px}
 .ex-fields{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-end;padding-bottom:20px;border-bottom:1px solid var(--line)}
 .field{display:grid;gap:6px}
 .field label,.field .flabel{font-size:12px;color:var(--muted)}
@@ -303,8 +302,9 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .tabs button:hover{color:var(--ink)}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
 .ex-bar{padding:10px 0 12px}
-.code{background:var(--code-bg);color:var(--code-ink);border-radius:4px;max-height:560px;overflow:auto}
-.code pre{margin:0;padding:18px 20px;font-family:var(--mono);font-size:12.5px;line-height:1.65;white-space:pre;tab-size:2}
+.code{background:var(--code-bg);color:var(--code-ink);border-radius:4px;overflow:hidden}
+.code-meta{font-family:var(--mono);font-size:11.5px;color:var(--code-cm);padding:11px 20px;border-bottom:1px solid color-mix(in srgb,var(--code-ink) 12%,transparent)}
+.code pre{max-height:560px;overflow:auto;margin:0;padding:18px 20px;font-family:var(--mono);font-size:12.5px;line-height:1.65;white-space:pre;tab-size:2}
 .code .cm{color:var(--code-cm)} .code .at{color:var(--code-at)} .code .pr{color:var(--code-prop)}
 .notes{padding:8px 0 18px;display:grid;gap:12px;max-width:76ch}
 .notes h3{margin:12px 0 0;font-size:15px;font-weight:600}
