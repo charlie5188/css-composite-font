@@ -278,17 +278,6 @@ function presetFonts(cls) {
   const kana = cls.kana.follow === 'latin' ? lat : cls.kana.follow ? han : cls.kana.font;
   return { han, lat, kana, size: cls.latin.size ?? 100 };
 }
-/* 卡片上列出实际用到的字体：跟随汉字的类别不重复列出 */
-function fontList(han, kana, lat, size) {
-  const out = [], names = new Set();
-  for (const [f, sz] of [[han, 100], [kana, 100], [lat, size]]) {
-    if (!f) continue;
-    const n = shortName(f);
-    if (names.has(n) && sz === 100) continue;
-    names.add(n); out.push(n + (sz !== 100 ? ' · ' + sz + '%' : ''));
-  }
-  return out;
-}
 function famOf(f) {
   if (!f) return 'var(--ui)';
   const s = source(f);
@@ -301,7 +290,7 @@ function presetCard({ id, name, tag, cls, ja, user, active }) {
       <span class="pspec" aria-hidden="true"><span style="font-family:${famOf(han)}">永</span><span style="font-family:${famOf(ja ? kana : han)}">${ja ? 'あ' : '字'}</span><span style="font-family:${famOf(lat)};font-size:${size}%">Ag</span></span>
       <span class="ptag">${esc(tag)}</span>
       <span class="pname">${esc(name)}</span>
-      <span class="psub">${fontList(han, ja ? kana : null, lat, size).map(esc).join('<br>')}${miss ? `<br><span class="miss">${esc(T('presetMissing'))}</span>` : ''}</span>
+      ${miss ? `<span class="pmiss">${esc(T('presetMissing'))}</span>` : ''}
     </button>${user ? `<button type="button" class="pdel" data-del="${esc(id.slice(5))}" aria-label="${esc(T('presetDelete'))} ${esc(name)}">×</button>` : ''}</div>`;
 }
 function renderPresetCards() {

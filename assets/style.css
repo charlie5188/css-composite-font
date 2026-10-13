@@ -103,20 +103,19 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .rail{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(200px,218px);gap:10px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x proximity;scrollbar-width:thin}
 #presetCards{display:contents}
 .pcard-wrap{position:relative;scroll-snap-align:start;display:grid}
-.pcard{display:grid;gap:6px;align-content:start;text-align:left;padding:14px 14px 13px;border:1px solid var(--line);background:var(--sheet);border-radius:4px;color:inherit;min-height:158px}
+.pcard{display:grid;gap:6px;align-content:start;text-align:left;padding:14px 14px 13px;border:1px solid var(--line);background:var(--sheet);border-radius:4px;color:inherit}
 .pcard:hover{border-color:var(--faint)}
 .pcard[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 .pspec{font-size:46px;line-height:1.05;white-space:nowrap;overflow:hidden;margin-bottom:6px;font-feature-settings:normal}
 .ptag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .pname{font-size:14px;font-weight:600;line-height:1.3}
-.psub{font-family:var(--mono);font-size:10.5px;color:var(--muted);line-height:1.5;overflow-wrap:anywhere}
-.psub .miss{color:var(--warn)}
+.pmiss{font-size:11.5px;line-height:1.4;color:var(--warn)}
 .pdel{position:absolute;top:8px;right:8px;border:0;background:none;color:var(--faint);font-size:16px;line-height:1;padding:4px 6px;border-radius:3px}
 .pdel:hover,.pdel.armed{color:var(--warn)}
 .pdel.armed{font-size:11px}
 .pcard.add{border-style:dashed;background:transparent;place-content:center;justify-items:center;gap:10px;color:var(--muted)}
 .pcard.add:hover{color:var(--ink);border-color:var(--ink)}
-.save-form{display:grid;gap:8px;align-content:center;padding:14px;border:1px solid var(--ink);border-radius:4px;background:var(--sheet);min-height:158px}
+.save-form{display:grid;gap:8px;align-content:center;padding:14px;border:1px solid var(--ink);border-radius:4px;background:var(--sheet)}
 .save-form input{width:100%}
 .save-form div{display:flex;gap:12px;align-items:center}
 
