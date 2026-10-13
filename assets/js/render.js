@@ -91,14 +91,6 @@ function renderChipsStatus() {
     el.title = s?.status === 'error' ? srcError(s) : s?.status === 'ok' ? T('stOk') : T('stLoading');
   });
 }
-function renderHeroMeta() {
-  const seen = new Set(), items = [];
-  for (const p of buildPlan()) {
-    const k = shortName(p.font) + (p.size !== 100 ? ` ${p.size}%` : '');
-    if (!seen.has(k)) { seen.add(k); items.push(k); }
-  }
-  $('#heroMeta').innerHTML = `<span class="label">${esc(T('heroSetIn'))}</span><br>` + items.map(x => `<b>${esc(x)}</b>`).join(' × ');
-}
 
 /* ================= 渲染：校样 ================= */
 function renderPreview() {

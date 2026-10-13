@@ -93,8 +93,6 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .hero-side{display:grid;gap:14px;padding-bottom:.6em}
 .hero-side p{margin:0}
 .lede{font-size:15px;line-height:1.65;color:var(--ink-2)}
-.hero-meta{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.04em;line-height:1.7}
-.hero-meta b{font-weight:500;color:var(--ink)}
 @media (max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}}
 .warn{background:var(--warn);color:#fff;padding:8px 12px;border-radius:3px;font-size:13px;margin-bottom:16px}
 .warn code{font-family:var(--mono)}

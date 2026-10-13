@@ -466,6 +466,6 @@ function updateNaive() {
 }
 function onSourcesChanged() {
   if (!$('#editor').contains(document.activeElement)) renderEditor(); else renderChipsStatus();
-  renderExportSoon(); renderPresetCardsSoon(); renderHeroMeta();
+  renderExportSoon(); renderPresetCardsSoon();
 }
 function setBusy(t) { $('#busy').textContent = t; }

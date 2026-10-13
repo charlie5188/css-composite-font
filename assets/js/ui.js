@@ -11,7 +11,6 @@ function changed({ fonts = false, editor = true } = {}) {
   renderPreview();
   if (fonts) rebuild(); else { drawSpecimen(); renderExport(); }
   markCustomPreset();
-  renderHeroMeta();
   saveState();
 }
 function markCustomPreset() {
@@ -325,7 +324,7 @@ function applyPreset(id) {
     if (!keepText) { state.view.sample = p.sample; state.view.text = SAMPLES[p.sample].text; state.typo.lang = SAMPLES[p.sample].lang; state.view.vertical = !!p.vertical; }
   }
   normalizeState();
-  refreshCustomRanges(); syncToolbar(); renderEditor(); renderWeightMap(); renderPreview(); renderPresetCards(); renderHeroMeta(); rebuild(); saveState();
+  refreshCustomRanges(); syncToolbar(); renderEditor(); renderWeightMap(); renderPreview(); renderPresetCards(); rebuild(); saveState();
 }
 function initPresets() {
   let armed = null;
@@ -458,7 +457,7 @@ function applyUI() {
   document.querySelectorAll('[data-ta]').forEach(el => el.dataset.ta.split(';').forEach(p => { const [a, k] = p.split(':'); el.setAttribute(a, T(k)); }));
   document.querySelectorAll('[data-ui]').forEach(el => { el.hidden = el.dataset.ui !== UI; });
   document.querySelectorAll('#uiSeg [data-ui-lang]').forEach(b => b.setAttribute('aria-checked', b.dataset.uiLang === UI));
-  renderLangOptions(); renderPresetCards(); renderTypoRows(); renderEditor(); renderWeightMap(); renderHeroMeta();
+  renderLangOptions(); renderPresetCards(); renderTypoRows(); renderEditor(); renderWeightMap();
   syncToolbar(); renderPreview(); drawSpecimen(); renderExport();
 }
 $('#uiSeg').addEventListener('click', e => {

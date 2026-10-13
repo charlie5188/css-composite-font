@@ -13,7 +13,6 @@ const I18N = {
   zh: {
     title: '纯 CSS 复合字体', ghAria: '在 GitHub 上查看源代码（新标签页）',
     lede: '像 InDesign 的复合字体一样，为汉字、假名和西文分别指定字体与大小。全部用 CSS 实现，无需插件。',
-    heroSetIn: '标题字体',
     footSupport: '大小调整（size-adjust）需要 Chrome / Edge 92+、Firefox 92+、Safari 17+；更旧的浏览器会忽略它，字体分配照常生效。',
     preset: '预设', presetInfo: '点击卡片即可套用，会替换当前的搭配。「存为预设」只保存在这个浏览器里。', presetMine: '我的预设', presetMissing: '这台电脑上缺少其中的字体',
     presetSaveAs: '存为预设', presetDelete: '删除', presetDeleteConfirm: '确认删除', presetName: '预设名称', save: '保存', cancel: '取消',
@@ -88,7 +87,6 @@ const I18N = {
   ja: {
     title: 'CSS だけの合成フォント', ghAria: 'GitHub でソースコードを見る（新しいタブ）',
     lede: 'InDesign の合成フォントのように、漢字・かな・欧文にそれぞれのフォントとサイズを指定します。どちらも CSS だけで実現でき、プラグインは不要です。',
-    heroSetIn: '見出しの書体',
     footSupport: 'サイズ調整（size-adjust）は Chrome / Edge 92+、Firefox 92+、Safari 17+ が対応。古いブラウザでは無視されますが、フォントの割り当ては有効です。',
     preset: 'プリセット', presetInfo: 'カードをクリックすると適用され、現在の設定は置き換わります。「プリセットに保存」はこのブラウザにのみ保存されます。', presetMine: 'マイプリセット', presetMissing: 'このマシンにないフォントを含みます',
     presetSaveAs: 'プリセットに保存', presetDelete: '削除', presetDeleteConfirm: '削除する', presetName: 'プリセット名', save: '保存', cancel: 'キャンセル',
