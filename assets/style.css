@@ -85,6 +85,9 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 /* ---------- top bar & hero ---------- */
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-block:16px;border-bottom:1px solid var(--ink)}
 .brand{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+.top-right{display:flex;align-items:center;gap:18px}
+.gh{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-decoration:none;padding-bottom:1px;border-bottom:1px solid var(--faint)}
+.gh:hover{color:var(--accent);border-bottom-color:var(--accent)}
 .hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,340px);gap:24px 48px;align-items:end;padding-block:clamp(40px,7vw,88px) clamp(32px,5vw,56px)}
 .hero h1{margin:0;font-family:var(--cf),var(--generic);font-weight:400;font-size:clamp(46px,7.6vw,112px);line-height:1.04;letter-spacing:-.005em;text-wrap:balance}
 .hero-side{display:grid;gap:14px;padding-bottom:.6em}

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>合成字体 · CSS Composite Font</title>
-<meta name="description" content="像 InDesign 的合成字体一样，为汉字、假名和西文分别指定字体与大小，导出纯 CSS（@font-face + unicode-range + size-adjust）。">
+<title>复合字体 · CSS Composite Font</title>
+<meta name="description" content="像 InDesign 的复合字体一样，为汉字、假名和西文分别指定字体与大小，导出纯 CSS（@font-face + unicode-range + size-adjust）。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -20,14 +20,17 @@
 <div class="app">
   <header class="topbar">
     <span class="brand">Composite Font</span>
-    <div class="seg" role="radiogroup" aria-label="界面语言 / 表示言語" id="uiSeg">
-      <button type="button" role="radio" data-ui-lang="zh" aria-checked="true">中文</button>
-      <button type="button" role="radio" data-ui-lang="ja" aria-checked="false">日本語</button>
+    <div class="top-right">
+      <a class="gh" href="https://github.com/charlie5188/css-composite-font" target="_blank" rel="noopener" data-ta="aria-label:ghAria">GitHub <span aria-hidden="true">↗</span></a>
+      <div class="seg" role="radiogroup" aria-label="界面语言 / 表示言語" id="uiSeg">
+        <button type="button" role="radio" data-ui-lang="zh" aria-checked="true">中文</button>
+        <button type="button" role="radio" data-ui-lang="ja" aria-checked="false">日本語</button>
+      </div>
     </div>
   </header>
 
   <section class="hero">
-    <h1 data-t="title">纯 CSS 合成字体</h1>
+    <h1 data-t="title">纯 CSS 复合字体</h1>
     <div class="hero-side">
       <p class="lede" data-t="lede"></p>
       <p class="hero-meta" id="heroMeta"></p>
@@ -166,9 +169,9 @@
         <p>各字重的规则没法合并。CSS 变量（<code>var()</code>）在 <code>@font-face</code> 里无效，浏览器会直接丢掉这条描述。同一个 font-family 里，如果有的规则写 <code>font-weight: 700</code>、有的写 <code>400 700</code>，实测 Chrome 会把它们分成两组，只用其中一组，合成就失效了。</p>
         <p>真正占体积的是汉字字体在 Google Fonts 上的上百个分片。「基础字体：引用 Google Fonts」会用 <code>@import</code> 直接引用 Google 的 CSS，把这个字体排在 font-family 的第二位，自己只写需要覆盖它的类别，导出的 CSS 通常只有几 KB。服务器一般会用 gzip 压缩 CSS，导出区显示的 gzip 体积更接近实际传输量。字体文件只按页面用到的字符下载，与 CSS 长度无关。</p>
         <h3>为什么不用 font-size-adjust</h3>
-        <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支持双值语法）也能统一字号，但它对元素里的每个字体都生效：把西文调到目标大写高的同时，汉字字体也会按它自带的西文度量被缩放。它也不能按字符类别分配字体，解决不了引号归属。更关键的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同时出现时，<code>size-adjust</code> 不再起作用。所以使用合成字体的元素上不要再写 <code>font-size-adjust</code>。校样的「对照其他做法」里可以切换到这个做法比较效果。</p>
+        <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支持双值语法）也能统一字号，但它对元素里的每个字体都生效：把西文调到目标大写高的同时，汉字字体也会按它自带的西文度量被缩放。它也不能按字符类别分配字体，解决不了引号归属。更关键的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同时出现时，<code>size-adjust</code> 不再起作用。所以使用复合字体的元素上不要再写 <code>font-size-adjust</code>。校样的「对照其他做法」里可以切换到这个做法比较效果。</p>
         <h3>CSS 原生 CJK 排版属性</h3>
-        <p>这些属性和合成字体互不冲突，可以叠加使用。下表是 2026 年 10 月 MDN 兼容性数据里各浏览器开始支持的版本。</p>
+        <p>这些属性和复合字体互不冲突，可以叠加使用。下表是 2026 年 10 月 MDN 兼容性数据里各浏览器开始支持的版本。</p>
         <div class="sup-table"><table>
           <thead><tr><th>属性</th><th>作用</th><th>Chrome / Edge</th><th>Firefox</th><th>Safari</th></tr></thead>
           <tbody>

@@ -56,7 +56,7 @@ function parseChars(input) {
   return norm(out);
 }
 
-/* ================= 字符类别（对应 InDesign 合成字体的行） ================= */
+/* ================= 字符类别（对应 InDesign 复合字体的行） ================= */
 const CLASSES = [
   { id: 'han', name: { zh: '汉字', ja: '漢字' }, note: { zh: '基础字体，也负责未分类的字符', ja: 'ベースフォント。分類外の文字も受け持つ' }, sample: '永国字體',
     ranges: '2E80-2FDF, 2FF0-2FFF, 3005-3007, 3021-3029, 3038-303B, 31C0-31EF, 3400-4DBF, 4E00-9FFF, F900-FAFF, 20000-2FA1F, 30000-323AF' },

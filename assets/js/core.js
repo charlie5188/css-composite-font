@@ -116,7 +116,7 @@ function parseFontFaceCss(css) {
 /* ================= 示例、属性、预设 ================= */
 const SAMPLES = {
   zh: { label: { zh: '中文正文', ja: '中国語の本文' }, lang: 'zh-Hans', text:
-`西文和汉字放在一起时，西文常常显得偏小、偏轻。InDesign和Illustrator用「合成字体」解决这个问题：汉字、假名、标点、符号、西文和数字，各自指定字体、大小和基线。
+`西文和汉字放在一起时，西文常常显得偏小、偏轻。InDesign和Illustrator用「复合字体」解决这个问题：汉字、假名、标点、符号、西文和数字，各自指定字体、大小和基线。
 
 网页也能做到。@font-face的unicode-range决定一个字体负责哪些字符，size-adjust调整它的大小。几条规则共用一个font-family名称，浏览器就会逐字挑选字体。Chrome 92、Firefox 92和Safari 17以后都支持。中西文之间的空隙交给text-autospace，不必手动敲空格。
 
@@ -129,7 +129,7 @@ Webでも同じことができます。@font-faceのunicode-rangeで担当する
 `Latin type set beside Chinese characters usually looks a size too small. A CJK glyph fills most of its em square, while a Latin x-height often covers less than half of it. 汉字几乎占满字身框，而西文的x高通常不到字身的一半。
 
 A composite font fixes this one character class at a time. Quotes, dashes and the ellipsis (“ ” — …) are the hard cases, because Chinese and English share the same code points.` },
-  title: { label: { zh: '标题', ja: '見出し' }, lang: 'zh-Hans', text: `合成字体\nComposite Type\n2026年10月13日` },
+  title: { label: { zh: '标题', ja: '見出し' }, lang: 'zh-Hans', text: `复合字体\nComposite Type\n2026年10月13日` },
   manga: { label: { zh: '漫画对白', ja: 'マンガの台詞' }, lang: 'ja', text:
 `「なんだって！？　そんな馬鹿な話があるか…」
 「ここは危険だ、早く逃げろ！」
@@ -228,7 +228,7 @@ function stateFromPreset(p, prev) {
     generic: prev?.generic || 'auto',
     classes: freshClasses(p),
     custom: [],
-    view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 34, lh: 1.85, vertical: !!p.vertical, colorize: false, compare: false, cmp: 'plain', weight: 400 },
+    view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, compare: false, cmp: 'plain', weight: 400 },
     typo: prev?.typo ? { ...prev.typo } : { ...TYPO_DEFAULTS, lang: SAMPLES[p.sample].lang },
     metric: prev?.metric || { basis: 'mix', target: 83 },
   };

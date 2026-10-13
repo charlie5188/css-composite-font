@@ -1,5 +1,5 @@
 'use strict';
-/* ================= 渲染：字符类别表（对应 InDesign 的合成字体对话框） ================= */
+/* ================= 渲染：字符类别表（对应 InDesign 的复合字体对话框） ================= */
 const GLYPH = { han: '永', latin: 'Ag', digit: '01', kana: 'あ', punct: '」、', symbol: '※', shared: '“…' };
 const shortName = f => !f ? '' : f.kind === 'google' ? f.family : f.kind === 'local' ? f.name : f.kind === 'path' ? f.path : f.fileName;
 const keyName = key => key[0] === '#' ? T('customName', { c: state.custom[+key.slice(1)]?.chars || '…' }) : tr(CLS[key].name);
