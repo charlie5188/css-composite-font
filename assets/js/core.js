@@ -296,7 +296,7 @@ const PRESETS = [
   /* アンチゴチ：漢字はゴシック体、かなはアンチック体。欧文と約物はゴシックに従う。Zen Antique のかなは太いので、漢字は 500 で釣り合う */
   { id: 'antigochi', name: { zh: 'アンチゴチ', ja: 'アンチゴチ' }, tag: { zh: '漫画对白', ja: 'マンガの台詞' }, han: G('Zen Kaku Gothic New', 500), latin: null, classes: { kana: { font: G('Zen Antique') } }, sample: 'manga', vertical: true },
   { id: 'mac', name: { zh: '苹方 × Helvetica', ja: 'PingFang × Helvetica' }, tag: { zh: 'macOS 系统字体 · 简体中文', ja: 'macOS 標準・簡体字' }, han: L('PingFang SC Regular', ['PingFangSC-Regular']), latin: L('Helvetica Neue', ['HelveticaNeue']), latinSize: 100,
-    classes: { kana: { font: L('Hiragino Sans W3', ['HiraginoSans-W3']) } }, sample: 'zh' },   /* 苹方没有假名，假名交给冬青黑体 */
+    classes: { kana: { font: L('Hiragino Sans W3', ['HiraginoSans-W3']) } }, sample: 'zh' },   /* 苹方也有假名，但日文里用冬青黑体为日文设计的假名 */
   { id: 'mac-jp', name: { zh: 'ヒラギノ角ゴ × Helvetica', ja: 'ヒラギノ角ゴ × Helvetica' }, tag: { zh: 'macOS 系统字体 · 日文', ja: 'macOS 標準・日本語' }, han: L('Hiragino Sans W3', ['HiraginoSans-W3']), latin: L('Helvetica Neue', ['HelveticaNeue']), latinSize: 106.5, sample: 'ja' },
   { id: 'win', name: { zh: '雅黑 × Segoe UI', ja: 'YaHei × Segoe UI' }, tag: { zh: 'Windows 系统字体 · 简体中文', ja: 'Windows 標準・簡体字' }, han: L('Microsoft YaHei', ['MicrosoftYaHei']), latin: L('Segoe UI', ['SegoeUI']), latinSize: 100, sample: 'zh' },
 ];
