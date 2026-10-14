@@ -59,7 +59,11 @@ $('#editor').addEventListener('change', e => {
   } else if (el.dataset.act === 'wsel') {
     const v = +el.value;
     if (W === BASE_W) o.font = G(o.font.family, v);
-    else { const ov = ((state.wOver[W] ||= {})[keyOf(t)] ||= {}); if (v) ov.weight = v; else delete ov.weight; }
+    else {
+      const ov = ((state.wOver[W] ||= {})[keyOf(t)] ||= {});
+      if (ov.font) ov.font = G(ov.font.family, v);          // 单独换过字体时，改的是那个字体的粗细
+      else if (v) ov.weight = v; else delete ov.weight;
+    }
     changed({ fonts: true }); saveState();
   }
 });
@@ -390,6 +394,7 @@ function candFromFields() {
 function updateCand() {
   const f = candFromFields();
   pickCand = f;
+  updateScope();
   const ok = $('#pkOk'), st = $('#pkStatus'), sample = $('#pkSample');
   st.classList.remove('caution'); sample.hidden = false;
   if (!f) { ok.disabled = true; st.textContent = ''; sample.style.fontFamily = 'var(--ui)'; return; }
@@ -411,6 +416,12 @@ function updateCand() {
 const updateCandSoon = debounce(updateCand, 700);
 /* 本机字体名去掉粗细部分（W3、Bold 等），用来判断是不是同一个字体 */
 const localStem = n => n.replace(/\bW\d$/, '').replace(WORD_RE, '').trim().toLowerCase();
+/* 选的是不是这一行原来那个字体（同一字体的其他粗细 / 名称 / 文件） */
+const sameFontAs = (c, base) => !!c && !!base && c.kind === base.kind && (c.kind === 'google' ? c.family === base.family : c.kind === 'local' ? localStem(c.name) === localStem(base.name) : c === base);
+function updateScope() {
+  const show = !!pickW && !!pickCand && !sameFontAs(pickCand, objOf(pickTarget).font);
+  $('#pkScope').hidden = !show;
+}
 function openPicker(t) {
   pickTarget = t;
   const o = objOf(t), W = state.view.weight, key = keyOf(t);
@@ -421,6 +432,9 @@ function openPicker(t) {
   if (pickW) $('#pkWNote').textContent = T('pkWNote', { w: W });
   picker.querySelectorAll('[data-src]').forEach(b => { b.hidden = false; });
   const cur = resolvedOf(t).font, k = pickW ? fontKey(o.font) + '|' + W : '';
+  const ovf = pickW ? state.wOver[W]?.[key]?.font : null;      // 这个字重已经单独换过的字体
+  $('#pkScopeW').textContent = T('pkScopeW', { w: W });
+  picker.querySelector(`[name="pkScope"][value="${ovf ? 'w' : 'all'}"]`).checked = true;
   /* Google Fonts：平时选具体粗细；按字重指定时第一项是「自动」，字体名固定 */
   let wOpts = WEIGHTS.map(w => `<option value="${w}">${w}</option>`).join('');
   if (pickW && o.font.kind === 'google') {
@@ -428,19 +442,19 @@ function openPicker(t) {
     wOpts = `<option value="0">${esc(T('wAuto', { w: auto }))}</option>` + wOpts;
   }
   $('#gfWeight').innerHTML = wOpts;
-  $('#gfFamily').value = pickW ? (o.font.kind === 'google' ? o.font.family : '') : cur?.kind === 'google' ? cur.family : '';
-  $('#gfWeight').value = pickW ? (state.wOver[W]?.[key]?.weight || 0) : cur?.kind === 'google' ? cur.weight : 400;
+  $('#gfFamily').value = ovf?.kind === 'google' ? ovf.family : pickW ? (o.font.kind === 'google' ? o.font.family : '') : cur?.kind === 'google' ? cur.family : '';
+  $('#gfWeight').value = ovf?.kind === 'google' ? ovf.weight : pickW ? (state.wOver[W]?.[key]?.weight || 0) : cur?.kind === 'google' ? cur.weight : 400;
   const autoName = pickW && o.font.kind === 'local' ? autoLocal(o.font, W).name : '';
   $('#lfName').placeholder = pickW ? autoName : T('lfPh');
-  $('#lfName').value = pickW ? (state.weightNames[k] || autoName) : cur?.kind === 'local' ? cur.name : '';
+  $('#lfName').value = ovf?.kind === 'local' ? ovf.name : pickW ? (state.weightNames[k] || autoName) : cur?.kind === 'local' ? cur.name : '';
   $('#ffPathField').hidden = !(pickW && o.font.kind === 'file');
   if (pickW && o.font.kind === 'file') { const g = guessPath(o.font.fileName, W); $('#ffPath').placeholder = g; $('#ffPath').value = state.weightNames[k] || g; }
   $('#ffFile').value = '';
   $('#lfMsg').textContent = T('lfMsg'); $('#lfMsg').classList.remove('caution');
-  pickCand = cur?.kind === 'file' ? cur : null;
+  pickCand = ovf?.kind === 'file' ? ovf : cur?.kind === 'file' ? cur : null;
   $('#pkSample').textContent = `${t.type === 'class' ? CLS[t.id].sample : (state.custom[t.i].chars || '')} · 永国字體 あア Hamburg 0123`;
   picker.showModal();
-  setPickTab(pickW ? o.font.kind : cur?.kind || 'google');
+  setPickTab(pickW ? (ovf || o.font).kind : cur?.kind || 'google');
 }
 function initPicker() {
   picker.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => setPickTab(b.dataset.src)));
@@ -478,10 +492,20 @@ function initPicker() {
     if (!pickCand || !pickTarget) return;
     const o = objOf(pickTarget);
     /* 400 以外的字重：选的是同一个字体的其他粗细 / 名称 / 文件，就只记在这个字重；换成别的字体，则替换所有字重 */
-    const base = o.font, c = pickCand;
-    const sameFont = pickW && base && c.kind === base.kind && (c.kind === 'google' ? c.family === base.family : c.kind === 'local' ? localStem(c.name) === localStem(base.name) : c === base);
+    const base = o.font, c = pickCand, key = keyOf(pickTarget);
+    const sameFont = pickW && sameFontAs(c, base);
+    const onlyW = pickW && !sameFont && picker.querySelector('[name="pkScope"]:checked')?.value === 'w';
+    if (onlyW) {          // 只为这个字重换成另一个字体；Google Fonts 选「自动」时用这个字重本身
+      const ov = ((state.wOver[pickW] ||= {})[key] ||= {});
+      ov.font = c.kind === 'google' ? G(c.family, +$('#gfWeight').value || pickW) : c;
+      delete ov.weight;
+      picker.close();
+      changed({ fonts: true }); renderExport(); saveState();
+      return;
+    }
+    if (pickW) delete state.wOver[pickW]?.[key]?.font;
     if (sameFont) {       // 只记下这个字重用的粗细 / 字体名 / 文件，和自动推算相同时清掉
-      const key = keyOf(pickTarget), k = fontKey(o.font) + '|' + pickW;
+      const k = fontKey(o.font) + '|' + pickW;
       if (o.font.kind === 'google') {
         const v = +$('#gfWeight').value, ov = ((state.wOver[pickW] ||= {})[key] ||= {});
         if (v) ov.weight = v; else delete ov.weight;

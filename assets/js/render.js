@@ -7,7 +7,7 @@ const keyName = key => key[0] === '#' ? T('customName', { c: state.custom[+key.s
 function hasWeightOverride(key, W) {
   if (W === BASE_W) return false;
   const o = objByKey(key);
-  return !!state.wOver[W]?.[key]?.weight || (!!o?.font && (fontKey(o.font) + '|' + W) in state.weightNames);
+  return !!state.wOver[W]?.[key]?.weight || !!state.wOver[W]?.[key]?.font || (!!o?.font && (fontKey(o.font) + '|' + W) in state.weightNames);
 }
 function fontCell(key, o, isHan, allowLatin) {
   const W = state.view.weight, ov = W !== BASE_W ? state.wOver[W]?.[key] : null;
@@ -18,8 +18,9 @@ function fontCell(key, o, isHan, allowLatin) {
   }
   /* 每个字重都是同一个下拉菜单：这一项显示该字重实际用的字体，单独设定通过「选择字体…」 */
   const own = o.font ? ownFontAt(o, ov, W, true) : null, shown = o.font ? ownFontAt(o, ov, W, false) : null;
-  const gw = !o.follow && o.font?.kind === 'google';      // Google Fonts：粗细放在旁边的小菜单里，菜单项只写字体名
-  if (own) opts.push(['own', (gw ? o.font.family : fontLabel(shown)) + (hasWeightOverride(key, W) ? ' · ' + T('ownSet') : '')]);
+  const eff = ov?.font || o.font;                          // 这个字重实际用的字体（可能单独换成了别的字体）
+  const gw = !o.follow && eff?.kind === 'google';      // Google Fonts：粗细放在旁边的小菜单里，菜单项只写字体名
+  if (own) opts.push(['own', (gw ? eff.family : fontLabel(shown)) + (hasWeightOverride(key, W) ? ' · ' + T('ownSet') : '')]);
   opts.push(['pick', T('optPick')]);
   const cur = o.follow || 'own';
   const s = !o.follow && own ? sources.get(fontKey(own)) : null;
@@ -29,9 +30,9 @@ function fontCell(key, o, isHan, allowLatin) {
   /* 每个字重都有同一个粗细菜单：400 时改的是字体本身，其他字重时第一项是「自动」 */
   if (gw) {
     const autoF = fontAtWeight(o.font, W), auto = sources.get(fontKey(autoF))?.actualWeight || autoF.weight;
-    const val = W === BASE_W ? o.font.weight : (ov?.weight || 0);
+    const val = W === BASE_W ? o.font.weight : ov?.font ? ov.font.weight : (ov?.weight || 0);
     html += `<select class="wsel" data-act="wsel" aria-label="${esc(T('wselAria', { w: W }))}">` +
-      (W === BASE_W ? '' : `<option value="0">${esc(T('wAuto', { w: auto }))}</option>`) +
+      (W === BASE_W || ov?.font ? '' : `<option value="0">${esc(T('wAuto', { w: auto }))}</option>`) +
       WEIGHTS.map(w => `<option value="${w}"${val === w ? ' selected' : ''}>${w}</option>`).join('') + '</select>';
   }
   return html;

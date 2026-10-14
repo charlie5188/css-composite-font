@@ -350,6 +350,7 @@ function rootOf(id, depth = 0) { const c = state.classes[id]; return c.follow &&
    400 用类别本身的设定；其他字重的字体按差值换算，再叠加该字重的单独调整（wOver） */
 function ownFontAt(o, ov, W, live) {
   let font = o.font;
+  if (font && W !== BASE_W && ov?.font) return ov.font;      // 这个字重单独换成了另一个字体
   if (font && W !== BASE_W) font = font.kind === 'google' && ov?.weight ? G(font.family, ov.weight) : fontAtWeight(font, W, live);
   return font;
 }
