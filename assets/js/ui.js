@@ -436,7 +436,7 @@ function openPicker(t) {
   $('#ffPathField').hidden = !(pickW && o.font.kind === 'file');
   if (pickW && o.font.kind === 'file') { const g = guessPath(o.font.fileName, W); $('#ffPath').placeholder = g; $('#ffPath').value = state.weightNames[k] || g; }
   $('#ffFile').value = '';
-  $('#lfMsg').textContent = T('lfMsg');
+  $('#lfMsg').textContent = T('lfMsg'); $('#lfMsg').classList.remove('caution');
   pickCand = cur?.kind === 'file' ? cur : null;
   $('#pkSample').textContent = `${t.type === 'class' ? CLS[t.id].sample : (state.custom[t.i].chars || '')} · 永国字體 あア Hamburg 0123`;
   picker.showModal();
@@ -458,7 +458,8 @@ function initPicker() {
   });
   $('#lfQuery').addEventListener('click', async () => {
     const msg = $('#lfMsg');
-    if (!('queryLocalFonts' in window)) { msg.textContent = T('lfNoApi'); return; }
+    msg.classList.remove('caution');
+    if (!('queryLocalFonts' in window)) { msg.textContent = T('lfNoApi'); msg.classList.add('caution'); return; }
     try {
       msg.textContent = T('lfWait');
       const list = await window.queryLocalFonts();
@@ -469,6 +470,7 @@ function initPicker() {
       $('#lfName').focus();
     } catch (e) {
       msg.textContent = e && e.name === 'SecurityError' ? T('lfSec') : T('lfDenied');
+      msg.classList.add('caution');
     }
   });
   $('#pkCancel').addEventListener('click', () => picker.close());

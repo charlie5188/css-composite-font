@@ -357,7 +357,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-actions{display:flex;justify-content:flex-end;gap:16px;align-items:center}
 .pk .hint{margin:0}
 /* 本机找不到字体：黄色提示，不显示回退字体的预览 */
-#pkStatus.caution{background:var(--caution-bg);color:var(--caution);padding:9px 12px;border-radius:3px;font-size:12.5px}
+#pkStatus.caution,#lfMsg.caution{background:var(--caution-bg);color:var(--caution);padding:9px 12px;border-radius:3px;font-size:12.5px}
 
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--sheet);padding:9px 16px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.on{opacity:1}
