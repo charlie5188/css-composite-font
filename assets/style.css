@@ -194,7 +194,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .info-pop dd{margin:0}
 .info-pop code,.info-pop .mono{font-family:var(--mono);font-size:.92em}
 .empty{padding:2px 0 10px;font-size:12px;color:var(--muted);line-height:1.6}
-@media (max-width:440px){.ct-row{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 50px 50px 14px}.ct-glyph{display:none}.ct-row .chars{grid-column:1/2}}
+@media (max-width:440px){.ct-row{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 50px 50px 14px}.ct-glyph{display:none}.ct-row .chars{grid-column:1/2}.ct-row .ct-ax{grid-column:2/3}}
 
 /* ---------- tester ---------- */
 .tester{min-width:0}
@@ -398,7 +398,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .ax-row.mode{grid-template-columns:minmax(96px,auto) minmax(0,1fr)}
 .ax-row.mode.fix{grid-template-columns:minmax(96px,auto) auto minmax(0,1fr) 70px}
 .ax-row.mode.fix .ax-mode{grid-column:auto}
-.ct-ax{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:2px 12px;font-size:11px;color:var(--muted);margin:-4px 0 4px}
+.ct-ax{grid-column:3/4;display:flex;flex-wrap:wrap;gap:2px 12px;font-size:11px;color:var(--muted);margin:-4px 0 4px}      /* 可变轴的设定写在字体列下面 */
 .ct-ax b{font-family:var(--mono);font-weight:500;color:var(--accent)}
 .ax-row .tbtn:disabled{visibility:hidden}
 .pk-axes details{display:grid;gap:8px}
