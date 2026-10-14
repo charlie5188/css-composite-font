@@ -211,7 +211,9 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .busy{position:absolute;right:0;top:-1px;transform:translateY(-100%);padding-bottom:12px;font-size:11px;color:var(--muted);pointer-events:none;font-family:var(--mono)}
 .sample-box{display:grid;gap:6px;margin-bottom:14px}
 textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);border:1px solid var(--ink);border-radius:3px;padding:12px 14px;font-family:var(--ui);font-size:14px;line-height:1.7}
-.sheet{background:var(--sheet);border:1px solid var(--line);padding:clamp(22px,4.6vw,68px);min-width:0;display:grid;gap:32px}
+.sheet{--pad:clamp(22px,4.6vw,68px);background:var(--sheet);border:1px solid var(--line);padding:var(--pad);min-width:0;display:grid;gap:32px}
+/* 校样的显示方式：贴在白纸右上角，像纸面上的选项 */
+.sheet-bar{justify-content:flex-end;align-items:center;line-height:1.4;font-family:var(--ui);margin:calc(14px - var(--pad)) calc(14px - var(--pad)) -12px 0}
 .sheet>div{min-width:0}
 .proof-text{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0;
   background-image:linear-gradient(to bottom,transparent calc(100% - 1px),var(--rule) calc(100% - 1px));background-size:100% calc(1em * var(--lh,1.8))}
@@ -231,7 +233,7 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .naive-hint{font-size:12px;color:var(--muted);margin:-4px 0 12px;max-width:80ch}
 .sheet .divider{border-top:1px dashed var(--line)}
 /* 竖排、类别着色、对照：和字号、行高一样是看校样的方式，放在同一排 */
-.togs{display:inline-flex;flex-wrap:wrap;gap:8px}
+.togs{display:flex;flex-wrap:wrap;gap:8px}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);padding-top:10px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:8px;height:8px;border-radius:2px;background:var(--c)}
