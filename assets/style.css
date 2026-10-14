@@ -209,6 +209,8 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .tester-head .tbtn{padding-bottom:12px;flex:none}
 .tester-ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:10px 28px;padding:14px 0;position:relative}
 .ctl{display:inline-flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);white-space:nowrap}
+#vWeightLab{max-width:100%;min-width:0}
+#vWeight{flex:0 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}      /* 窄屏上 9 个字重放不下时横向滚动 */
 .ctl input[type=range]{width:120px}
 .ctl output{display:inline-block;font-family:var(--mono);font-size:11.5px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;width:4ch}
 .ctl #vSizeOut{width:19ch}
@@ -219,7 +221,7 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 /* 校样的显示方式：贴在白纸右上角，像纸面上的选项 */
 .sheet-bar{justify-content:flex-end;align-items:center;line-height:1.4;font-family:var(--ui);margin:calc(14px - var(--pad)) calc(14px - var(--pad)) -12px 0}
 .sheet>div{min-width:0}
-.proof-text{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0;
+.proof-text{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:var(--fst,normal);font-stretch:var(--fsw,100%);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0;
   background-image:linear-gradient(to bottom,transparent calc(100% - 1px),var(--rule) calc(100% - 1px));background-size:100% calc(1em * var(--lh,1.8))}
 .proof-text.naive{font-family:var(--cf-naive),var(--generic);font-synthesis-weight:none}
 .sheet.vertical .proof-text{writing-mode:vertical-rl;width:100%;height:min(62vh,560px);overflow-x:auto;overflow-y:hidden;
@@ -384,6 +386,25 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .cov-note i{display:inline-block;width:10px;height:10px;vertical-align:-1px;margin-right:4px}
 #pkSample .miss{color:var(--warn)}
 .pk-check{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:10px}
+/* 可变轴：每行「名称 · 滑块 · 数值 · 默认」 */
+.pk-axes{display:grid;gap:8px}
+.pk-axes-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:13px}
+.ax-row{display:grid;grid-template-columns:minmax(96px,auto) minmax(0,1fr) 70px auto;gap:10px;align-items:center;font-size:12.5px}
+.ax-row .ax-name{display:flex;flex-direction:column;line-height:1.25}
+.ax-row .ax-name small{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.ax-row input[type=number]{width:70px;font-family:var(--mono);font-size:12px;padding:4px 6px}
+.ax-row .ax-mode{grid-column:2/-1}
+.ax-row .ax-lock{grid-column:2/-1;color:var(--muted);font-size:12px}
+.ax-row.mode{grid-template-columns:minmax(96px,auto) minmax(0,1fr)}
+.ax-row.mode.fix{grid-template-columns:minmax(96px,auto) auto minmax(0,1fr) 70px}
+.ax-row.mode.fix .ax-mode{grid-column:auto}
+.ct-ax{grid-column:2/-1;display:flex;flex-wrap:wrap;gap:2px 12px;font-size:11px;color:var(--muted);margin:-4px 0 4px}
+.ct-ax b{font-family:var(--mono);font-weight:500;color:var(--accent)}
+.ax-row .tbtn:disabled{visibility:hidden}
+.pk-axes details{display:grid;gap:8px}
+.pk-axes summary{cursor:pointer;font-size:12.5px;color:var(--muted);margin-bottom:8px}
+.pk-axes details[open]>summary{margin-bottom:8px}
+.pk-ital{flex-basis:100%;font-size:12px;color:var(--muted)}
 .pk-scope{display:flex;gap:18px;flex-wrap:wrap;font-size:13px}
 .pk-scope label{display:inline-flex;gap:6px;align-items:center}
 #pkStatus.caution,#lfMsg.caution{background:var(--caution-bg);color:var(--caution);padding:9px 12px;border-radius:3px;font-size:12.5px}

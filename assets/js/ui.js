@@ -172,7 +172,7 @@ function initToolbar() {
     pop.style.left = Math.max(8, r.right - pop.offsetWidth) + 'px';
     pop.style.top = (r.bottom + 6 + pop.offsetHeight > innerHeight ? Math.max(8, r.top - pop.offsetHeight - 6) : r.bottom + 6) + 'px';
   });
-  for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vCompare', 'compare']])
+  for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vCompare', 'compare'], ['vItalic', 'italic']])
     $('#' + id).addEventListener('click', () => { v()[key] = !v()[key]; syncToolbar(); renderPreview(); renderExport(); saveState(); });
   $('#cmpMode').addEventListener('change', e => { v().cmp = e.target.value; updateNaive(); saveState(); });
   $('#vWeight').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) setPreviewWeight(+b.dataset.w); });
@@ -263,6 +263,15 @@ function initToolbar() {
   $('#exWPresets').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b) setWRange(...b.dataset.r.split(',').map(Number)); });
   for (const id of ['exWLo', 'exWHi']) $('#' + id).addEventListener('change', () => setWRange(parseFloat($('#exWLo').value), parseFloat($('#exWHi').value)));
   $('#exBase').addEventListener('change', e => { state.baseMode = e.target.value; renderExport(); saveState(); });
+  /* 斜体：导出时另写一组 font-style: italic 的规则；校样的「斜体」开关用来看效果 */
+  $('#exItalic').addEventListener('change', e => { state.italic = e.target.value === '1'; renderEditor(); rebuild(); renderExport(); saveState(); });
+  /* 字宽跟随页面：所有规则写同一个 font-stretch 范围，类别里固定的 wdth 不再生效 */
+  $('#exStretch').addEventListener('change', e => { state.stretch = e.target.value === '1'; renderEditor(); rebuild(); renderExport(); saveState(); });
+  $('#vStretch').addEventListener('input', e => {
+    v().wstretch = +e.target.value; $('#vStretchOut').textContent = v().wstretch + '%';
+    root.style.setProperty('--fsw', v().wstretch + '%');
+    saveState();
+  });
   $('#exGeneric').addEventListener('change', e => { state.generic = e.target.value; renderPreview(); renderExport(); saveState(); });
   /* 选了语言时校样也按这个语言排（字形地区差异、禁则），不限语言时校样沿用示例文字的语言 */
   $('#exLang').addEventListener('change', e => {
@@ -423,13 +432,78 @@ function candFromFields() {
   }
   if (pickTab === 'local') {
     const n = $('#lfName').value.trim() || (base ? $('#lfName').placeholder : ''); if (!n) return null;
-    const ps = localAlt.get(n), f = L(n, ps && ps !== n ? [ps] : []);
-    if ($('#lfVar').checked) { f.axis = [100, 900]; f.weight = pickW || 400; }      // 自己声明的可变字体，范围交给字体本身去夹
+    const ps = localAlt.get(n), f = L(n, ps && ps !== n ? [ps] : []), fa = localAxesOf(n);
+    if (fa) { setFontAxes(f, fa, pickW || 400); if (f.axis) $('#lfVar').checked = true; }      // 列出过本机字体时，直接读字体里的轴
+    else if ($('#lfVar').checked) { f.axis = [100, 900]; f.weight = pickW || 400; }      // 自己声明的可变字体，范围交给字体本身去夹
     return f;
   }
   if (pickCand?.kind === 'file' && pickCand !== base) return pickCand;
   if (pickW && base.kind === 'file') return base;      // 字体文件：没上传新文件时，校样仍用原来的文件，这里只定导出时的文件名
   return null;
+}
+/* 本机字体的轴：「列出本机字体」授权后，能读到字体文件本身 */
+const localData = new Map(), localAxes = new Map();      // 字体全名 → FontData；→ 读到的轴（undefined = 读取中）
+function localAxesOf(name) {
+  if (localAxes.has(name)) return localAxes.get(name);
+  const fd = localData.get(name);
+  if (!fd) return null;
+  localAxes.set(name, undefined);
+  fd.blob().then(b => b.arrayBuffer()).then(fileAxes).then(fa => { localAxes.set(name, fa); if (pickTab === 'local' && $('#lfName').value.trim() === name) updateCand(); }, () => localAxes.set(name, null));
+  return undefined;
+}
+/* ================= 可变轴（粗细、斜体以外）：对这个类别的所有字重生效 ================= */
+let pickVary = {};
+const axStep = (lo, hi) => hi - lo <= 2 ? 0.01 : hi - lo <= 30 ? 0.1 : 1;
+function renderAxes() {
+  const box = $('#pkAxes'), f = pickCand, ax = f ? extraAxes(f) : [];
+  box.hidden = !ax.length && !f?.axesUnknown;
+  if (!box.hidden && !ax.length) box.innerHTML = `<p class="hint">${esc(T('axUnknown'))}</p>`;
+  else if (!box.hidden) {
+    const g = f.kind === 'google';
+    /* 常用的轴在前（宽度、光学尺寸、笔画粗细、倾斜），其他（多是参数轴）收进「更多」，有设定时展开 */
+    const MAIN = ['wdth', 'opsz', 'GRAD', 'slnt'], rank = t => MAIN.includes(t) ? MAIN.indexOf(t) : 9;
+    const sorted = [...ax].sort((x, y) => rank(x[0]) - rank(y[0]) || (x[0] < y[0] ? -1 : 1));
+    const main = sorted.filter(a => MAIN.includes(a[0])), more = sorted.filter(a => !MAIN.includes(a[0]));
+    const row = ([t, lo, hi, def]) => {
+      const v = pickVary[t], st = axStep(lo, hi), lab = esc(axisLabel(t));
+      const name = `<span class="ax-name">${lab}<small>${esc(t)} · ${lo}–${hi}</small></span>`;
+      const ctl = val => `<input type="range" data-ax="${t}" min="${lo}" max="${hi}" step="${st}" value="${val}" aria-label="${lab}"><input type="number" data-ax="${t}" min="${lo}" max="${hi}" step="${st}" value="${val}" aria-label="${lab}">`;
+      if (t === 'wdth' && state.stretch) return `<div class="ax-row">${name}<span class="ax-lock">${esc(T('axStretchLock'))}</span></div>`;
+      if (t === 'opsz') {      // 光学尺寸：Google 默认固定在默认值；可以改成跟随字号（文件里保留这个轴），或固定一个值
+        const mode = typeof v === 'number' ? 'fix' : v === 'auto' || !g ? 'auto' : 'def';
+        const opts = [...(g ? [['def', T('axOpszOff', { d: def })]] : []), ['auto', T('axOpszAuto')], ['fix', T('axFix')]];
+        return `<div class="ax-row mode${mode === 'fix' ? ' fix' : ''}">${name}<select class="ax-mode" data-axmode="${t}" aria-label="${lab}">${opts.map(([k, l]) => `<option value="${k}"${k === mode ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>${mode === 'fix' ? ctl(v) : ''}</div>`;
+      }
+      return `<div class="ax-row">${name}${ctl(typeof v === 'number' ? v : def)}<button type="button" class="tbtn" data-axreset="${t}"${typeof v === 'number' ? '' : ' disabled'}>${esc(T('axReset'))}</button></div>`;
+    };
+    const rows = (main.length ? main : more).map(row).join(''), rest = main.length ? more : [];
+    box.innerHTML = `<div class="pk-axes-head"><b>${esc(T('axHead'))}</b><span class="hint">${esc(T(g ? 'axNoteG' : 'axNote'))}</span></div>` + rows +
+      (rest.length ? `<details${rest.some(a => a[0] in pickVary) ? ' open' : ''}><summary>${esc(T('axMore', { n: rest.length }))}</summary>${rest.map(row).join('')}</details>` : '');
+  }
+  applySampleAxes();
+}
+/* 对话框里的预览：Google Fonts 加载的是保留了所有轴的文件，这里用 font-variation-settings 直接显示调过的值 */
+function applySampleAxes() {
+  const f = pickCand, parts = [];
+  for (const [t, , , def] of f ? extraAxes(f) : []) {
+    const v = pickVary[t];
+    if (t === 'wdth' && state.stretch) continue;
+    if (typeof v === 'number') parts.push(`"${t}" ${v}`);
+    else if (t === 'opsz' && f.kind === 'google' && v !== 'auto') parts.push(`"opsz" ${def}`);
+  }
+  $('#pkSample').style.fontVariationSettings = parts.join(', ');
+}
+const previewFont = f => f?.kind === 'google' && extraAxes(f).length ? { ...f, xa: extraAxes(f).map(a => a[0]).sort() } : f;
+const cleanVary = f => { const o = Object.fromEntries(Object.entries(pickVary).filter(([t]) => axisOf(f, t))); return Object.keys(o).length ? o : undefined; };
+/* 导出斜体时：这个字体斜体用什么 */
+function renderItal() {
+  const el = $('#pkItal'), f = pickCand;
+  el.hidden = !state.italic || !f;
+  if (el.hidden) return;
+  if (f.kind === 'local' && italicLocal(f) === undefined) { el.textContent = T('pkItalChecking'); setTimeout(() => { if (pickCand === f) renderItal(); }, 400); return; }
+  const it = italOf(f);
+  el.textContent = !it ? T('pkItalNo') : it.slant ? T('pkItalSlant', { t: it.slant, v: it.slant === 'slnt' ? axisOf(f, 'slnt')[1] : 1 })
+    : T('pkItalYes', { name: it.kind === 'google' ? `${it.family} Italic` : it.kind === 'local' ? it.name : it.fileName || it.path });
 }
 /* ================= 字符覆盖：这个字体有哪些字 ================= */
 /* 每个字符集抽查一组有代表性的字（简体、繁体、日本汉字各取彼此不同的字形） */
@@ -488,11 +562,14 @@ function updateCand() {
   const f = candFromFields();
   pickCand = f;
   updateScope();
+  renderAxes(); renderItal();
+  $('#ffItalField').hidden = f?.kind !== 'file';
+  $('#ffItalName').textContent = f?.italic?.fileName || '';
   const ok = $('#pkOk'), st = $('#pkStatus'), sample = $('#pkSample');
   /* 预览只在字体真正可用时显示：没选字体、检测中、加载失败时，界面字体画出来的完整文字会让人误以为这个字体都有 */
   st.classList.remove('caution'); sample.hidden = true; showVfTag(null); resetCoverage();
   if (!f) { ok.disabled = true; st.textContent = T('pkEmpty'); sample.style.fontFamily = 'var(--ui)'; return; }
-  const s = source(f, { retry: true });
+  const s = source(previewFont(f), { retry: true });
   ok.disabled = true; st.textContent = T('pkChecking'); sample.style.fontFamily = 'var(--ui)';
   s.promise.then(() => {
     if (pickCand !== f) return;
@@ -546,6 +623,7 @@ function gfWeightVal() {
 function openPicker(t) {
   pickTarget = t;
   const o = objOf(t), W = state.view.weight, key = keyOf(t);
+  pickVary = { ...(o.vary || {}) };
   pickW = W !== BASE_W && !o.follow && o.font ? W : null;
   const name = t.type === 'class' ? tr(CLS[t.id].name) : T('customName', { c: state.custom[t.i].chars || '…' });
   $('#pkFor').textContent = '· ' + name + (pickW ? ' · ' + T('pkForW', { w: W }) : '');
@@ -575,7 +653,7 @@ function openPicker(t) {
   $('#lfName').value = ovf?.kind === 'local' ? ovf.name : pickW ? (state.weightNames[k] || autoName) : cur?.kind === 'local' ? cur.name : '';
   $('#ffPathField').hidden = !(pickW && o.font.kind === 'file');
   if (pickW && o.font.kind === 'file') { const g = guessPath(o.font.fileName, W); $('#ffPath').placeholder = g; $('#ffPath').value = state.weightNames[k] || g; }
-  $('#ffFile').value = '';
+  $('#ffFile').value = ''; $('#ffItal').value = '';
   $('#lfMsg').textContent = T('lfMsg'); $('#lfMsg').classList.remove('caution');
   pickCand = ovf?.kind === 'file' ? ovf : cur?.kind === 'file' ? cur : null;
   $('#pkSample').textContent = $('#pkSample').dataset.text = `${t.type === 'class' ? CLS[t.id].sample : (state.custom[t.i].chars || '')} · 永国字體 あア Hamburg 0123`;
@@ -597,11 +675,34 @@ function initPicker() {
     const file = e.target.files[0]; if (!file) return;
     const id = 'f' + Date.now().toString(36);
     files.set(id, { name: file.name, buffer: await file.arrayBuffer() });
-    pickCand = { kind: 'file', fileId: id, fileName: file.name };
-    const ax = fileAxis(files.get(id).buffer);
-    if (ax) { pickCand.axis = ax; pickCand.weight = clampW(pickW || 400, ax); }
+    pickCand = setFontAxes({ kind: 'file', fileId: id, fileName: file.name }, await fileAxes(files.get(id).buffer), pickW || 400);
     updateCand();
   });
+  /* 斜体文件：记在这个字体文件上，导出斜体时这个类别用它（其他字重按文件名推算） */
+  $('#ffItal').addEventListener('change', async e => {
+    const file = e.target.files[0]; if (!file || pickCand?.kind !== 'file') return;
+    const id = 'f' + Date.now().toString(36) + 'i', buffer = await file.arrayBuffer();
+    files.set(id, { name: file.name, buffer });
+    pickCand = { ...pickCand, italic: setFontAxes({ fileId: id, fileName: file.name }, await fileAxes(buffer), pickCand.weight) };
+    updateCand();
+  });
+  const axBox = $('#pkAxes');
+  axBox.addEventListener('input', e => {
+    const t = e.target.dataset.ax; if (!t || e.target.value === '') return;
+    const a = axisOf(pickCand, t); if (!a) return;
+    const v = Math.min(a[2], Math.max(a[1], +e.target.value));
+    if (v === a[3] && t !== 'opsz') delete pickVary[t]; else pickVary[t] = v;
+    axBox.querySelectorAll(`[data-ax="${t}"]`).forEach(el => { if (el !== e.target) el.value = v; });
+    const rb = axBox.querySelector(`[data-axreset="${t}"]`); if (rb) rb.disabled = !(t in pickVary);
+    applySampleAxes();
+  });
+  axBox.addEventListener('change', e => {
+    const t = e.target.dataset.axmode; if (!t) return;
+    const a = axisOf(pickCand, t), m = e.target.value;
+    if (m === 'fix') pickVary[t] = a[3]; else if (m === 'auto' && pickCand.kind === 'google') pickVary[t] = 'auto'; else delete pickVary[t];
+    renderAxes();
+  });
+  axBox.addEventListener('click', e => { const t = e.target.closest('[data-axreset]')?.dataset.axreset; if (t) { delete pickVary[t]; renderAxes(); } });
   $('#lfQuery').addEventListener('click', async () => {
     const msg = $('#lfMsg');
     msg.classList.remove('caution');
@@ -610,7 +711,7 @@ function initPicker() {
       msg.textContent = T('lfWait');
       const list = await window.queryLocalFonts();
       const seen = new Set(), opts = [];
-      for (const f of list) { if (seen.has(f.fullName)) continue; seen.add(f.fullName); localAlt.set(f.fullName, f.postscriptName); opts.push(`<option value="${esc(f.fullName)}">${esc(f.family)} · ${esc(f.style)}</option>`); }
+      for (const f of list) { if (seen.has(f.fullName)) continue; seen.add(f.fullName); localAlt.set(f.fullName, f.postscriptName); localData.set(f.fullName, f); opts.push(`<option value="${esc(f.fullName)}">${esc(f.family)} · ${esc(f.style)}</option>`); }
       $('#lfList').innerHTML = opts.join('');
       msg.textContent = T('lfCount', { n: opts.length });
       $('#lfName').focus();
@@ -631,6 +732,7 @@ function initPicker() {
       const ov = ((state.wOver[pickW] ||= {})[key] ||= {});
       ov.font = c.kind === 'google' ? G(c.family, gfWeightVal() || pickW) : c;
       delete ov.weight;
+      o.vary = { ...(o.vary || {}), ...cleanVary(c) };
       picker.close();
       changed({ fonts: true }); renderExport(); saveState();
       return;
@@ -638,6 +740,7 @@ function initPicker() {
     if (pickW) delete state.wOver[pickW]?.[key]?.font;
     if (sameFont) {       // 只记下这个字重用的粗细 / 字体名 / 文件，和自动推算相同时清掉
       const k = fontKey(o.font) + '|' + pickW;
+      o.vary = cleanVary(o.font);
       if (o.font.kind === 'google') {
         const v = gfWeightVal(), ov = ((state.wOver[pickW] ||= {})[key] ||= {});
         if (v) ov.weight = v; else delete ov.weight;
@@ -651,6 +754,7 @@ function initPicker() {
     }
     o.follow = null;     // 选了字体就改为独立字体，大小和基线保留各自的设定
     o.font = pickW && c.kind === 'google' && !gfWeightVal() ? G(c.family, 400) : c;
+    o.vary = cleanVary(c);
     picker.close();
     changed({ fonts: true });
   });

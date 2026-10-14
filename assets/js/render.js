@@ -23,8 +23,8 @@ function fontCell(key, o, isHan, allowLatin) {
   if (own) opts.push(['own', (gw ? eff.family : fontLabel(shown)) + (hasWeightOverride(key, W) ? ' · ' + T('ownSet') : '')]);
   opts.push(['pick', T('optPick')]);
   const cur = o.follow || 'own';
-  const s = !o.follow && own ? sources.get(fontKey(own)) : null;
-  let html = `<span class="status ${o.follow ? 'none' : (s ? s.status : 'loading')}"${o.follow ? '' : ` data-key="${esc(fontKey(own))}"`}></span>` +
+  const ownKey = own ? fontKey(finalFont(own, o.vary).font) : '', s = !o.follow && own ? sources.get(ownKey) : null;     // 带上轴之后实际加载的那个
+  let html = `<span class="status ${o.follow ? 'none' : (s ? s.status : 'loading')}"${o.follow ? '' : ` data-key="${esc(ownKey)}"`}></span>` +
     `<select class="fsel${o.follow ? ' follow' : ''}" data-act="fsel" title="${esc((opts.find(([v]) => v === cur) || [])[1] || '')}" aria-label="${esc(T('fontAria', { c: keyName(key) }))}">` +
     opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select>';
   /* 可变字体：粗细是可以填任意值的数字框（范围限制在 wght 轴内）；空着表示自动 */
@@ -58,10 +58,17 @@ function numCell(field, key) {
   return `<input class="num${cls}" type="text" inputmode="decimal" autocomplete="off" data-field="${field}" value="${own ?? ''}" placeholder="${inh}"
     aria-label="${esc(T(field === 'size' ? 'sizeAria' : 'shiftAria', { c: keyName(key) }))}">`;
 }
+/* 调过的可变轴：写在这一行下面，例如「宽度 80 · 光学尺寸 跟随字号」 */
+function axRow(key, o) {
+  if (o.follow || !o.vary) return '';
+  const W = state.view.weight, f = ownFontAt(o, W !== BASE_W ? state.wOver[W]?.[key] : null, W, true);
+  const list = Object.entries(o.vary).filter(([t]) => axisOf(f, t) && !(t === 'wdth' && state.stretch));
+  return list.length ? `<span class="ct-ax">${list.map(([t, v]) => `<span>${esc(axisLabel(t))} <b>${esc(v === 'auto' ? T('axOpszAuto') : String(v))}</b></span>`).join('')}</span>` : '';
+}
 function errRow(key, o) {
   if (o.follow || !o.font) return '';
   const W = state.view.weight, f = ownFontAt(o, W !== BASE_W ? state.wOver[W]?.[key] : null, W, true);
-  const s = sources.get(fontKey(f));
+  const s = sources.get(fontKey(finalFont(f, o.vary).font));
   if (s?.status === 'error') return `<span class="ct-err">${esc(srcError(s))}</span>`;
   /* CJK 字体（Google 上切成上百个分片）用了非整百的粗细，就会加载可变版本：每个分片约为静态的 1.9 倍 */
   if (f.kind === 'google' && f.weight % 100 && s?.status === 'ok' && s.faces.length > 30) return `<span class="ct-note">${esc(T('vfCjkCost'))}</span>`;
@@ -85,14 +92,14 @@ function renderEditor() {
       <span class="ct-glyph" aria-hidden="true">${esc(GLYPH[c.id])}</span>
       <span class="ct-name"${tip ? ` title="${esc(tip)}"` : ''}><span class="nm"><i class="dot"></i>${esc(tr(c.name))}${gear}</span>${note ? `<small>${esc(note)}</small>` : ''}</span>
       <span class="ct-font">${fontCell(c.id, o, c.id === 'han', c.id !== 'latin')}</span>
-      ${numCell('size', c.id)}${numCell('shift', c.id)}<span></span>${errRow(c.id, o)}
+      ${numCell('size', c.id)}${numCell('shift', c.id)}<span></span>${axRow(c.id, o)}${errRow(c.id, o)}
     </div>`;
   }).join('');
   $('#customRows').innerHTML = state.custom.length ? state.custom.map((cu, i) => `<div class="ct-row" data-ci="${i}">
       <input class="chars" type="text" value="${esc(cu.chars)}" placeholder="${esc(T('customPh'))}" aria-label="${esc(T('custom'))}" spellcheck="false">
       <span class="ct-font">${fontCell('#' + i, cu, false, true)}</span>
       ${numCell('size', '#' + i)}${numCell('shift', '#' + i)}
-      <button class="x" type="button" data-act="remove" aria-label="${esc(T('customRemove'))}">×</button>${errRow('#' + i, cu)}
+      <button class="x" type="button" data-act="remove" aria-label="${esc(T('customRemove'))}">×</button>${axRow('#' + i, cu)}${errRow('#' + i, cu)}
     </div>`).join('')
     : '';
 }
@@ -129,6 +136,7 @@ function renderPreview() {
   root.classList.toggle('show-colors', v.colorize);
   root.style.setProperty('--fs', v.size + 'px');
   root.style.setProperty('--lh', v.lh);
+  root.style.setProperty('--fst', v.italic ? 'italic' : 'normal');
   for (const el of [pt, $('#naiveText')]) {
     for (const t of TYPO) {
       if (t.attr) el.lang = state.typo[t.key];
@@ -214,6 +222,19 @@ function contIgnored() {
   state.custom.forEach((cu, i) => check('#' + i, cu, keyName('#' + i)));
   return out;
 }
+/* 字宽：有宽度轴的字体时才显示导出选项；跟随页面时校样多一个字宽滑块（范围是各字体 wdth 轴合起来） */
+function renderAxisFields() {
+  const wr = wdthRange(), on = !!(wr && state.stretch), v = state.view;
+  $('#exStretchField').hidden = !wr;
+  if (wr) { $('#exStretchOn').textContent = T('exStretchOn', { a: wr[0], b: wr[1] }); $('#exStretch').value = state.stretch ? '1' : '0'; }
+  $('#vStretchLab').hidden = !on;
+  if (on) {
+    v.wstretch = Math.min(wr[1], Math.max(wr[0], v.wstretch));
+    Object.assign($('#vStretch'), { min: wr[0], max: wr[1] });
+    $('#vStretch').value = v.wstretch; $('#vStretchOut').textContent = v.wstretch + '%';
+  }
+  root.style.setProperty('--fsw', on ? v.wstretch + '%' : '100%');
+}
 function renderSampleTabs() {
   const cur = state.view.sample;
   $('#sampleTabs').innerHTML = Object.entries(SAMPLES).map(([k, s]) => `<button type="button" role="tab" data-sample="${k}" aria-selected="${cur === k}">${esc(tr(s.label))}</button>`).join('') +
@@ -230,7 +251,8 @@ function syncToolbar() {
   $('#vVertical').setAttribute('aria-pressed', v.vertical);
   $('#vColor').setAttribute('aria-pressed', v.colorize);
   $('#vCompare').setAttribute('aria-pressed', v.compare);
-  const nOn = [v.vertical, v.colorize, v.compare].filter(Boolean).length;
+  $('#vItalic').setAttribute('aria-pressed', !!v.italic);
+  const nOn = [v.vertical, v.colorize, v.compare, v.italic].filter(Boolean).length;
   $('#viewCount').textContent = nOn ? ` · ${nOn}` : '';
   $('#cmpMode').value = v.cmp;
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }
@@ -255,6 +277,7 @@ function syncToolbar() {
   if (ign.length) $('#vWNote').textContent = T('wContNote', { list: ign.join(T('joiner')) });
   $('#exWeightsField').hidden = cont;
   $('#exGeneric').value = state.generic;
+  $('#exItalic').value = state.italic ? '1' : '0';
   $('#exLang').value = state.scope;
 }
 
@@ -263,7 +286,7 @@ let lastMeasure = null, lastRef = null;
 function cssVar(n) { return getComputedStyle(root).getPropertyValue(n).trim(); }
 /* 汉字字体自带西文的比例：用汉字字体单独排「国」「H」「x」 */
 function measureRef() {
-  const han = sources.get(fontKey(resolveCls('han', state.view.weight, true).font));
+  const han = sources.get(fontKey(usedFont(resolveCls('han', state.view.weight, true))));
   if (!han || han.status !== 'ok') return null;
   const c = document.createElement('canvas').getContext('2d'), fs = 200;
   c.font = `${fs}px "${han.family}", monospace`; const a = c.measureText('H').width;

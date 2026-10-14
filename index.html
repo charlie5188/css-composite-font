@@ -8,13 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=af97c28c">
-<script src="assets/js/i18n.js?v=5465ac60" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=f606b51d">
+<script src="assets/js/i18n.js?v=f4c0b4bf" defer></script>
 <script src="assets/js/unicode.js?v=cab968d0" defer></script>
-<script src="assets/js/core.js?v=018a563f" defer></script>
-<script src="assets/js/render.js?v=9e46fcc6" defer></script>
-<script src="assets/js/export.js?v=7615111f" defer></script>
-<script src="assets/js/ui.js?v=ced62e4d" defer></script>
+<script src="assets/js/gfmeta.js?v=9d744a7e" defer></script>
+<script src="assets/js/core.js?v=0fc20c74" defer></script>
+<script src="assets/js/render.js?v=5570a339" defer></script>
+<script src="assets/js/export.js?v=402783dc" defer></script>
+<script src="assets/js/ui.js?v=12be787f" defer></script>
 </head>
 <body>
 <div class="app">
@@ -80,6 +81,7 @@
         <span class="ctl" id="vWeightLab" hidden><span data-t="previewWeight"></span><span class="seg mono" id="vWeight" role="radiogroup" data-ta="aria-label:previewWeight"></span></span>
         <span class="seg" id="vWMode" role="radiogroup" data-ta="aria-label:exWMode"><button type="button" role="radio" data-m="steps" data-t="wmStepsShort" data-ta="title:wmStepsTip"></button><button type="button" role="radio" data-m="cont" data-t="wmContShort" data-ta="title:wmContTip"></button></span>
         <span class="busy" id="busy" aria-live="polite"></span>
+        <label class="ctl" id="vStretchLab" for="vStretch" hidden><span data-t="previewStretch"></span><input type="range" id="vStretch" min="50" max="150" step="0.5"><output id="vStretchOut" for="vStretch"></output></label>
         <div class="wmode-note" id="vWNote" hidden></div>
       </div>
       <div class="sample-box" id="sampleBox" hidden>
@@ -94,6 +96,7 @@
             <button class="tog" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
             <button class="tog" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
             <button class="tog" type="button" id="vCompare" aria-pressed="false" data-t="compare"></button>
+            <button class="tog" type="button" id="vItalic" aria-pressed="false" data-t="vItalic"></button>
           </div>
         </div>
         <div>
@@ -144,6 +147,8 @@
       <div class="field" id="exBaseField"><label for="exBase" data-t="exBase"></label><select id="exBase"><option value="link" data-t="exBaseLink"></option><option value="expand" data-t="exBaseExpand"></option></select></div>
       <div class="field"><label for="exGeneric" data-t="exGeneric"></label><select id="exGeneric"><option value="auto" data-t="auto"></option><option value="serif">serif</option><option value="sans-serif">sans-serif</option></select></div>
       <div class="field"><label for="exLang" data-t="exLang"></label><select id="exLang"></select></div>
+      <div class="field"><label for="exItalic" data-t="exItalic"></label><select id="exItalic"><option value="0" data-t="exItalicOff"></option><option value="1" data-t="exItalicOn"></option></select></div>
+      <div class="field" id="exStretchField" hidden><label for="exStretch" data-t="exStretch"></label><select id="exStretch"><option value="0" data-t="exStretchOff"></option><option value="1" id="exStretchOn"></option></select></div>
     </div>
     <div class="tabs ex-tabs" role="tablist" data-ta="aria-label:exportAria">
       <button role="tab" type="button" id="tabCss" aria-selected="true" aria-controls="paneCode">CSS</button>
@@ -170,6 +175,11 @@
         <p>在「字重」里多选，会为每个字重各生成一组规则。工具里设定的字体对应 400；其他字重里，Google Fonts 的字体按同样的差值换算（例如 500 的字体在 700 时取 800），没有这个字重就取最接近的；本机字体会按名称推测粗体（例如 W3 → W6、Regular → Bold），并在这台电脑上检测。各字体的粗细分布并不一致：在校样上方切换到某个字重后，可以单独调整这个字重下各类别的大小，并在「选择字体…」里指定用的粗细、本机字体名或文件。</p>
         <p>各字重的规则没法合并。CSS 变量（<code>var()</code>）在 <code>@font-face</code> 里无效，浏览器会直接丢掉这条描述。同一个 font-family 里，如果有的规则写 <code>font-weight: 700</code>、有的写 <code>400 700</code>，实测 Chrome 会把它们分成两组，只用其中一组，合成就失效了。</p>
         <p>真正占体积的是汉字字体在 Google Fonts 上的上百个分片。「基础字体：引用 Google Fonts」会用 <code>@import</code> 直接引用 Google 的 CSS，把这个字体排在 font-family 的第二位，自己只写需要覆盖它的类别，导出的 CSS 通常只有几 KB。服务器一般会用 gzip 压缩 CSS，导出区显示的 gzip 体积更接近实际传输量。字体文件只按页面用到的字符下载，与 CSS 长度无关。</p>
+        <h3>斜体</h3>
+        <p>没有斜体规则时，<code>&lt;em&gt;</code> 和 <code>&lt;i&gt;</code> 里的字全部由浏览器模拟倾斜，汉字也会歪掉。导出斜体后，每组规则另有一份 <code>font-style: italic</code>：西文用真正的斜体（Google Fonts 的 Italic、上传的斜体文件、本机的「… Italic」，或者可变字体的 slnt / ital 轴）；没有斜体的类别用正体文件、也声明成 italic，浏览器就不会去模拟。基础字体用 <code>@import</code> 引用时，Google 那边只有正体，所以使用规则里加了 <code>font-synthesis-style: none</code>，让它同样保持正体。</p>
+        <h3>可变轴和字宽</h3>
+        <p>「选择字体…」里可以调可变字体的其他轴，例如宽度、笔画粗细（GRAD）、光学尺寸。Google Fonts 只保留请求里写了的轴，其余固定在默认值、从文件里去掉，所以调过的轴会加进请求，文件大约变成两倍。固定的值写在 <code>@font-face</code> 的 <code>font-variation-settings</code> 里，Safari 不认这一行，会按默认值显示。光学尺寸选「跟随字号」时，浏览器按实际字号设定 opsz；实测 Chrome 用的是 size-adjust 放大之后的字号，正好对应西文实际显示的大小。</p>
+        <p>「字宽：跟随页面的 font-stretch」会让所有规则写同一个 <code>font-stretch</code> 范围。页面上用 <code>font-stretch</code> 调宽窄时，有宽度轴（wdth）的字体跟着变，其他字体不受影响；这时类别里固定的宽度不再生效。</p>
         <h3>为什么不用 font-size-adjust</h3>
         <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支持双值语法）也能统一字号，但它对元素里的每个字体都生效：把西文调到目标大写高的同时，汉字字体也会按它自带的西文度量被缩放。它也不能按字符类别分配字体，解决不了引号归属。更关键的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同时出现时，<code>size-adjust</code> 不再起作用。所以使用复合字体的元素上不要再写 <code>font-size-adjust</code>。校样的「对照其他做法」里可以切换到这个做法比较效果。</p>
         <h3>CSS 原生 CJK 排版属性</h3>
@@ -206,6 +216,11 @@
         <p>「ウェイト」で複数を選ぶと、ウェイトごとに規則を 1 組ずつ生成します。ツールで設定したフォントは 400 に対応します。ほかのウェイトでは、Google Fonts のフォントは同じ差分で換算し（500 のフォントなら 700 のとき 800）、そのウェイトがなければ最も近いものを使います。ローカルフォントは名前から太字の名前を推測し（W3 → W6、Regular → Bold など）、このデバイスで確認します。フォントごとにウェイトの分布は異なるので、校正刷りの上でウェイトを切り替えると、そのウェイトでの各クラスのサイズを個別に調整でき、「フォントを選択…」で使う太さ・ローカルフォント名・ファイルを指定できます。</p>
         <p>ウェイトごとの規則はまとめられません。CSS 変数（<code>var()</code>）は <code>@font-face</code> の中では無効で、ブラウザはその記述を捨てます。同じ font-family の中に <code>font-weight: 700</code> の規則と <code>400 700</code> の規則が混ざると、Chrome は実測で別のグループとして扱い、片方しか使わないため、合成が効かなくなります。</p>
         <p>容量の大半は、Google Fonts で 100 以上に分割された漢字フォントの規則です。「ベースフォント：Google Fonts を参照」では Google の CSS を <code>@import</code> で直接参照し、そのフォントを font-family の 2 番目に置いて、上書きするクラスだけを書き出します。書き出す CSS は通常数 KB です。サーバーは CSS を gzip で圧縮するのが一般的なので、書き出し欄の gzip 後のサイズが実際の転送量に近い値です。フォントファイルはページで使う文字の分だけダウンロードされ、CSS の長さとは関係ありません。</p>
+        <h3>イタリック</h3>
+        <p>イタリックの規則がないと、<code>&lt;em&gt;</code> や <code>&lt;i&gt;</code> の中の文字はすべてブラウザが擬似的に傾け、漢字まで斜めになります。イタリックを書き出すと、各組の規則に <code>font-style: italic</code> の版が加わります。欧文は本物のイタリック（Google Fonts の Italic、読み込んだイタリックのファイル、ローカルの「… Italic」、または可変フォントの slnt / ital 軸）を使い、イタリックのないクラスは正体のファイルを italic として宣言するので、ブラウザは擬似的に傾けません。ベースフォントを <code>@import</code> で参照する場合、Google 側には正体しかないため、使用側の規則に <code>font-synthesis-style: none</code> を加えて正体のままにしています。</p>
+        <h3>可変軸と字幅</h3>
+        <p>「フォントを選択…」で、幅・グレード（GRAD）・オプティカルサイズなど、可変フォントのほかの軸を調整できます。Google Fonts はリクエストに書いた軸だけを残し、残りは既定値に固定してファイルから取り除くため、調整した軸はリクエストに加わり、ファイルはおよそ 2 倍になります。固定した値は <code>@font-face</code> の <code>font-variation-settings</code> に書かれ、Safari はこの行を無視して既定値で表示します。オプティカルサイズを「文字サイズに追従」にすると、ブラウザが実際の文字サイズから opsz を決めます。Chrome は実測で size-adjust で拡大した後のサイズを使うので、欧文が実際に表示される大きさと一致します。</p>
+        <p>「字幅：ページの font-stretch に従う」では、すべての規則に同じ <code>font-stretch</code> の範囲を書きます。ページで <code>font-stretch</code> を変えると、幅の軸（wdth）を持つフォントだけが変わり、ほかのフォントには影響しません。このとき、クラスで固定した幅は効きません。</p>
         <h3>font-size-adjust を使わない理由</h3>
         <p><code>font-size-adjust</code>（2 値構文は Chrome 127、Firefox 92、Safari 17 が対応）でもサイズをそろえられますが、要素内のすべてのフォントに効きます。欧文を目標のキャップハイトに合わせると、漢字フォントも付属欧文のメトリクスに応じて拡大縮小されます。文字クラスごとにフォントを割り当てることもできないため、引用符の問題も解決しません。さらに MDN によれば、<code>@font-face</code> の <code>size-adjust</code> と併用すると <code>size-adjust</code> が効かなくなります。合成フォントを使う要素には <code>font-size-adjust</code> を指定しないでください。校正刷りの「他の方法と比較」で違いを確認できます。</p>
         <h3>CSS ネイティブの CJK 組版プロパティ</h3>
@@ -259,15 +274,17 @@
     </div>
     <div data-pane="file" hidden>
       <div class="field" id="ffFileField"><label for="ffFile">woff2 / woff / otf / ttf</label><input id="ffFile" type="file" accept=".woff2,.woff,.otf,.ttf"></div>
+      <div class="field" id="ffItalField" hidden><label for="ffItal" data-t="ffItal"></label><input id="ffItal" type="file" accept=".woff2,.woff,.otf,.ttf"><span class="hint" id="ffItalName"></span></div>
       <div class="field" id="ffPathField" hidden><label for="ffPath" data-t="ffPath"></label><input id="ffPath" type="text" autocomplete="off" spellcheck="false"></div>
       <p class="hint" style="margin-top:8px" data-th="ffHint"></p>
     </div>
+    <div class="pk-axes" id="pkAxes" hidden></div>
     <p class="hint pk-wnote" id="pkWNote" hidden></p>
     <div class="pk-scope" id="pkScope" role="radiogroup" hidden><label><input type="radio" name="pkScope" value="w"><span id="pkScopeW"></span></label><label><input type="radio" name="pkScope" value="all"><span data-t="pkScopeAll"></span></label></div>
     <div class="pk-preview">
       <div class="pk-cov" id="pkCov"></div>
       <div id="pkSample"></div>
-      <div class="pk-st"><span class="vf-tag" id="pkVfTag" hidden></span><div class="hint" id="pkStatus" aria-live="polite"></div></div>
+      <div class="pk-st"><span class="vf-tag" id="pkVfTag" hidden></span><div class="hint" id="pkStatus" aria-live="polite"></div><span class="pk-ital" id="pkItal" hidden></span></div>
     </div>
     <div class="pk-actions">
       <button class="tbtn" type="button" id="pkCancel" data-t="cancel"></button>
