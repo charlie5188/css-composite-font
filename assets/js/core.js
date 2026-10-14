@@ -129,12 +129,6 @@ Webでも同じことができます。@font-faceのunicode-rangeで担当する
 `Latin type set beside Chinese characters usually looks a size too small. A CJK glyph fills most of its em square, while a Latin x-height often covers less than half of it. 汉字几乎占满字身框，而西文的x高通常不到字身的一半。
 
 A composite font fixes this one character class at a time. Quotes, dashes and the ellipsis (“ ” — …) are the hard cases, because Chinese and English share the same code points.` },
-  /* 文章和界面里常见的标题：中西文、数字、标点混在一行，切到这个页签时用标题字号 */
-  title: { label: { zh: '标题', ja: '見出し' }, lang: 'zh-Hans', size: 40, lh: 1.45, text:
-`iPhone 17 Pro 深度评测
-2026 年 Q3 营收增长 12.5%
-第 4 章　CSS Grid 排版
-设置 › 双重认证（2FA）` },
   /* 吹き出しのように括弧なし・句点なしで短く改行し、空行で吹き出しを分ける */
   manga: { label: { zh: '漫画对白', ja: 'マンガの台詞' }, lang: 'ja', text:
 `なんだって！？
@@ -274,6 +268,10 @@ function normalizeState() {
   state.weightNames = state.weightNames || {};
   state.wOver = state.wOver || {};
   state.moved = state.moved || {};
+  if (state.view.sample === 'title') {   // 「标题」示例已删除，回到正文
+    const k = state.typo.lang?.startsWith('ja') ? 'ja' : 'zh';
+    Object.assign(state.view, { sample: k, text: SAMPLES[k].text, size: 24, lh: 1.85 });
+  }
   if (!state.weights.includes(state.view.weight)) state.view.weight = state.weights.includes(400) ? 400 : state.weights[0];
   rebuildClassRanges();
 }

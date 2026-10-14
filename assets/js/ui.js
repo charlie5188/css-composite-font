@@ -137,10 +137,7 @@ function initToolbar() {
   const v = () => state.view;
   $('#sampleTabs').addEventListener('click', e => {
     const b = e.target.closest('[data-sample]'); if (!b) return;
-    const k = b.dataset.sample, prev = SAMPLES[v().sample];
-    /* 标题页签自带字号和行高；离开时如果还是它的字号，就恢复正文的 24px / 1.85 */
-    if (SAMPLES[k].size) { v().size = SAMPLES[k].size; v().lh = SAMPLES[k].lh; }
-    else if (prev?.size && v().size === prev.size) { v().size = 24; v().lh = 1.85; }
+    const k = b.dataset.sample;
     v().sample = k; v().text = SAMPLES[k].text; state.typo.lang = SAMPLES[k].lang;
     syncToolbar(); renderPreview(); renderExport(); rebuild(); saveState();
   });
