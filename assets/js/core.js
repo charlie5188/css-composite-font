@@ -429,8 +429,8 @@ function loadText() {
   return (state.view.text.slice(0, 2500) + '国Hxg' + CLASSES.map(c => c.sample).join('') + state.custom.map(c => c.chars).join(''));
 }
 async function rebuildNow() {
-  const my = ++gen;
-  const plan = buildPlan(state.view.weight, true);
+  const my = ++gen, W = state.view.weight;
+  const plan = buildPlan(W, true);
   setBusy(T('loading'));
   await Promise.all(plan.map(p => source(p.font).promise));
   if (my !== gen) return;
@@ -438,7 +438,8 @@ async function rebuildNow() {
   const faces = [];
   for (const x of expandPlan(plan, true)) {
     if (x.missing) continue;
-    const d = { display: 'swap' };
+    /* 规则带上当前字重，校样也用这个字重：这样落到系统字体的字（比如日文字体里没有的简体字）也会跟着变粗细 */
+    const d = { display: 'swap', weight: String(W) };
     if (x.range) d.unicodeRange = fmtRanges(x.range);
     if (x.p.size !== 100) d.sizeAdjust = `${x.p.size}%`;
     try { faces.push(new FontFace(fam, x.face.buffer || x.face.src, d)); } catch (e) { /* 忽略无效的规则 */ }
@@ -452,6 +453,7 @@ async function rebuildNow() {
   const old = liveFaces;
   liveFaces = faces; liveFamily = fam;
   root.style.setProperty('--cf', `"${fam}"`);
+  root.style.setProperty('--fw', W);
   old.forEach(f => document.fonts.delete(f));
   setBusy('');
   updateNaive();

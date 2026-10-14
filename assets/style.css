@@ -209,9 +209,9 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);border:1px solid var(--ink);border-radius:3px;padding:12px 14px;font-family:var(--ui);font-size:14px;line-height:1.7}
 .sheet{background:var(--sheet);border:1px solid var(--line);padding:clamp(22px,4.6vw,68px);min-width:0;display:grid;gap:32px}
 .sheet>div{min-width:0}
-.proof-text{font-family:var(--cf),var(--generic);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0;
+.proof-text{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0;
   background-image:linear-gradient(to bottom,transparent calc(100% - 1px),var(--rule) calc(100% - 1px));background-size:100% calc(1em * var(--lh,1.8))}
-.proof-text.naive{font-family:var(--cf-naive),var(--generic)}
+.proof-text.naive{font-family:var(--cf-naive),var(--generic);font-synthesis-weight:none}
 .sheet.vertical .proof-text{writing-mode:vertical-rl;width:100%;height:min(62vh,560px);overflow-x:auto;overflow-y:hidden;
   background-image:linear-gradient(to left,transparent calc(100% - 1px),var(--rule) calc(100% - 1px));background-size:calc(1em * var(--lh,1.8)) 100%;background-position:right top}
 .r{position:relative;inset-block-start:calc(var(--sh,0) * -1em)}
