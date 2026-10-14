@@ -230,9 +230,8 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .compare-label select{font-size:12px;padding:3px 6px}
 .naive-hint{font-size:12px;color:var(--muted);margin:-4px 0 12px;max-width:80ch}
 .sheet .divider{border-top:1px dashed var(--line)}
-.tester-foot{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;padding:14px 0 0}
-.tester-foot .ctl{margin-right:8px}
-.tester-foot select{font-size:12px;padding:4px 6px}
+/* 竖排、类别着色、对照：和字号、行高一样是看校样的方式，放在同一排 */
+.togs{display:inline-flex;flex-wrap:wrap;gap:8px}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);padding-top:10px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:8px;height:8px;border-radius:2px;background:var(--c)}

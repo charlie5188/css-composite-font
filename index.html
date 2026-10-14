@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=fde51389">
+<link rel="stylesheet" href="assets/style.css?v=3bd8fdbe">
 <script src="assets/js/i18n.js?v=ad1103f2" defer></script>
 <script src="assets/js/unicode.js?v=cab968d0" defer></script>
 <script src="assets/js/core.js?v=e4c9b8be" defer></script>
@@ -77,6 +77,11 @@
         <label class="ctl" for="vSize"><span data-t="fontSize"></span><input type="range" id="vSize" min="12" max="160" step="1"><output id="vSizeOut" for="vSize"></output></label>
         <label class="ctl" for="vLh"><span data-t="lineHeight"></span><input type="range" id="vLh" min="1" max="2.6" step="0.05"><output id="vLhOut" for="vLh"></output></label>
         <span class="ctl" id="vWeightLab" hidden><span data-t="previewWeight"></span><span class="seg mono" id="vWeight" role="radiogroup" data-ta="aria-label:previewWeight"></span></span>
+        <span class="togs">
+          <button class="tog" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
+          <button class="tog" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
+          <button class="tog" type="button" id="vCompare" aria-pressed="false" data-t="compare"></button>
+        </span>
         <span class="busy" id="busy" aria-live="polite"></span>
       </div>
       <div class="sample-box" id="sampleBox" hidden>
@@ -96,11 +101,6 @@
             <button type="button" class="info" data-info="cmpInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button><code id="naiveCode"></code></div>
           <div class="proof-text naive" id="naiveText"></div>
         </div>
-      </div>
-      <div class="tester-foot">
-        <button class="tog" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
-        <button class="tog" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
-        <button class="tog" type="button" id="vCompare" aria-pressed="false" data-t="compare"></button>
       </div>
       <div class="legend" id="legend" hidden></div>
 
