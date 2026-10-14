@@ -58,7 +58,10 @@ function errRow(key, o) {
   if (o.follow || !o.font) return '';
   const W = state.view.weight, f = ownFontAt(o, W !== BASE_W ? state.wOver[W]?.[key] : null, W, true);
   const s = sources.get(fontKey(f));
-  return s?.status === 'error' ? `<span class="ct-err">${esc(srcError(s))}</span>` : '';
+  if (s?.status === 'error') return `<span class="ct-err">${esc(srcError(s))}</span>`;
+  /* CJK 字体（Google 上切成上百个分片）用了非整百的粗细，就会加载可变版本：每个分片约为静态的 1.9 倍 */
+  if (f.kind === 'google' && f.weight % 100 && s?.status === 'ok' && s.faces.length > 30) return `<span class="ct-note">${esc(T('vfCjkCost'))}</span>`;
+  return '';
 }
 function renderEditor() {
   const W = state.view.weight, banner = $('#wBanner');

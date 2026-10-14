@@ -160,6 +160,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 @keyframes pulse{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.status.loading{animation:none}}
 .ct-err{grid-column:2/-1;font-size:11.5px;color:var(--warn);margin-top:-2px}
+.ct-note{grid-column:2/-1;font-size:11.5px;line-height:1.5;color:var(--caution);background:var(--caution-bg);padding:5px 8px;border-radius:3px;margin:-2px 0 4px}
 .ct-row .x{border:0;background:none;color:var(--faint);font-size:15px;line-height:1;padding:0}
 .gear{border:0;background:none;padding:2px;margin-left:1px;color:var(--faint);line-height:0;border-radius:3px}
 .gear:hover{color:var(--ink)}
