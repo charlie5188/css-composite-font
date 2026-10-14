@@ -200,6 +200,20 @@ function guessGeneric() {
   const l = fontLabel(resolveCls('han').font);
   return /serif|mincho|song|ming|明朝|宋|明|kai|楷|garamond|times/i.test(l) && !/sans/i.test(l) ? 'serif' : 'sans-serif';
 }
+/* 连续字重下不生效的设定：可变字体相对档位单独设定的粗细（设定本身保留，切回分档就恢复） */
+function contIgnored() {
+  const out = [];
+  const check = (key, o, label) => {
+    if (!o || o.follow || !o.font || !Array.isArray(vfAxisNow(o.font))) return;
+    const parts = [], base = o.font.weight || 400;
+    if (base !== BASE_W) parts.push(String(base));
+    for (const W of WEIGHTS) { const ov = state.wOver[W]?.[key]; if (ov?.weight && ov.weight !== W) parts.push(`${W}→${ov.weight}`); }
+    if (parts.length) out.push(`${label} · ${o.font.family || o.font.name || o.font.fileName} ${parts.join(', ')}`);
+  };
+  for (const c of CLASSES) check(c.id, state.classes[c.id], tr(c.name));
+  state.custom.forEach((cu, i) => check('#' + i, cu, keyName('#' + i)));
+  return out;
+}
 function renderSampleTabs() {
   const cur = state.view.sample;
   $('#sampleTabs').innerHTML = Object.entries(SAMPLES).map(([k, s]) => `<button type="button" role="tab" data-sample="${k}" aria-selected="${cur === k}">${esc(tr(s.label))}</button>`).join('') +
@@ -233,7 +247,11 @@ function syncToolbar() {
   $('#vWeightLab').hidden = cont || state.weights.length < 2;
   $('#vWcontLab').hidden = !cont;
   $('#vWcont').value = v.wcont; $('#vWcontOut').textContent = v.wcont;
-  $('#exWMode').value = state.wmode;
+  document.querySelectorAll('#vWMode [data-m]').forEach(b => b.setAttribute('aria-checked', b.dataset.m === state.wmode));
+  $('#exContField').hidden = !cont;
+  const ign = cont ? contIgnored() : [];
+  $('#vWNote').hidden = !ign.length;
+  if (ign.length) $('#vWNote').textContent = T('wContNote', { list: ign.join(T('joiner')) });
   $('#exWeightsField').hidden = cont;
   $('#exGeneric').value = state.generic;
   $('#exLang').value = state.scope;

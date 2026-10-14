@@ -242,8 +242,10 @@ function initToolbar() {
     syncToolbar(); renderExport(); saveState();
     if (state.view.weight !== prevW) { renderEditor(); rebuild(); }
   });
-  $('#exWMode').addEventListener('change', e => {
-    state.wmode = e.target.value;
+  /* 字重模式：分档 / 连续（可变字体）。切换不会删掉任何设定 */
+  $('#vWMode').addEventListener('click', e => {
+    const b = e.target.closest('[data-m]'); if (!b || b.dataset.m === state.wmode) return;
+    state.wmode = b.dataset.m;
     if (state.wmode === 'cont') { state.weights = [...WEIGHTS]; v().wcont = v().weight; }      // 连续模式导出 100–900 全部
     syncToolbar(); renderEditor(); rebuild(); renderExport(); saveState();
   });
