@@ -129,7 +129,12 @@ Webでも同じことができます。@font-faceのunicode-rangeで担当する
 `Latin type set beside Chinese characters usually looks a size too small. A CJK glyph fills most of its em square, while a Latin x-height often covers less than half of it. 汉字几乎占满字身框，而西文的x高通常不到字身的一半。
 
 A composite font fixes this one character class at a time. Quotes, dashes and the ellipsis (“ ” — …) are the hard cases, because Chinese and English share the same code points.` },
-  title: { label: { zh: '标题', ja: '見出し' }, lang: 'zh-Hans', text: `复合字体\nComposite Type\n2026年10月13日` },
+  /* 文章和界面里常见的标题：中西文、数字、标点混在一行，切到这个页签时用标题字号 */
+  title: { label: { zh: '标题', ja: '見出し' }, lang: 'zh-Hans', size: 40, lh: 1.45, text:
+`iPhone 17 Pro 深度评测
+2026 年 Q3 营收增长 12.5%
+第 4 章　CSS Grid 排版
+设置 › 双重认证（2FA）` },
   manga: { label: { zh: '漫画对白', ja: 'マンガの台詞' }, lang: 'ja', text:
 `「なんだって！？　そんな馬鹿な話があるか…」
 「ここは危険だ、早く逃げろ！」
