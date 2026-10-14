@@ -25,7 +25,7 @@ function fontCell(key, o, isHan, allowLatin) {
   const cur = o.follow || 'own';
   const s = !o.follow && own ? sources.get(fontKey(own)) : null;
   let html = `<span class="status ${o.follow ? 'none' : (s ? s.status : 'loading')}"${o.follow ? '' : ` data-key="${esc(fontKey(own))}"`}></span>` +
-    `<select class="fsel${o.follow ? ' follow' : ''}" data-act="fsel" aria-label="${esc(T('fontAria', { c: keyName(key) }))}">` +
+    `<select class="fsel${o.follow ? ' follow' : ''}" data-act="fsel" title="${esc((opts.find(([v]) => v === cur) || [])[1] || '')}" aria-label="${esc(T('fontAria', { c: keyName(key) }))}">` +
     opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select>';
   /* 可变字体：粗细是可以填任意值的数字框（范围限制在 wght 轴内）；空着表示自动 */
   const axis = !o.follow ? vfAxisNow(eff) : null;
