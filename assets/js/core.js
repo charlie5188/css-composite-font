@@ -327,6 +327,7 @@ function stateFromPreset(p, prev) {
     generic: prev?.generic || 'auto',
     scope: prev?.scope ?? '',
     wmode: prev?.wmode || 'steps',
+    wrange: prev?.wrange || [100, 900],
     classes: freshClasses(p),
     custom: [],
     view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, compare: false, cmp: 'plain', weight: 400 },
@@ -364,7 +365,10 @@ function normalizeState() {
   state.weightNames = state.weightNames || {};
   state.scope = state.scope || '';
   state.wmode = state.wmode === 'cont' ? 'cont' : 'steps';        // 字重：分档 / 连续（可变字体）
-  if (!Number.isFinite(state.view.wcont)) state.view.wcont = state.view.weight || 400;     // 导出的 CSS 只在这个语言里生效；空 = 不限语言
+  const wr = Array.isArray(state.wrange) ? state.wrange.map(Math.round) : [];
+  state.wrange = wr[0] >= 100 && wr[1] <= 900 && wr[0] < wr[1] ? wr : [100, 900];      // 连续模式导出的粗细范围
+  if (!Number.isFinite(state.view.wcont)) state.view.wcont = state.view.weight || 400;
+  state.view.wcont = Math.min(state.wrange[1], Math.max(state.wrange[0], state.view.wcont));
   state.wOver = state.wOver || {};
   state.moved = state.moved || {};
   if (state.view.sample === 'title') {   // 「标题」示例已删除，回到正文
@@ -508,7 +512,8 @@ function buildPlan(W = BASE_W, live = false) {
 /* ================= 连续字重：按档位分段 =================
    所有类别共用同一套分段，每段的 font-weight 都是同一个范围（描述不一致时 Chrome 的复合字体会失效）。
    可变字体每段都用同一个可变字体文件，段内可以任意粗细；静态字体每段用最接近的那一档。
-   相邻两段所有类别都一样时合并：全是可变字体、大小也不随字重变化时，最后只剩 100–900 一段 */
+   相邻两段所有类别都一样时合并：全是可变字体、大小也不随字重变化时，最后只剩一段。
+   只导出 state.wrange 里的粗细：页面用到范围以外的值时，浏览器按最接近的一段显示 */
 function contFont(f) {
   if (!f) return f;
   if (f.kind === 'google') {
@@ -518,15 +523,31 @@ function contFont(f) {
   }
   return f.axis ? { ...f, weight: undefined, cont: true } : f;
 }
+/* 这一档在连续模式里负责的粗细（和导出范围取交集）；不在范围里时为 null */
+function stepSpan(W) {
+  const [a, b] = state.wrange, lo = Math.max(a, W === 100 ? 100 : W - 49), hi = Math.min(b, W === 900 ? 900 : W + 50);
+  return lo <= hi ? [lo, hi] : null;
+}
 function buildSegments(live = false, skipBase = false) {      // skipBase：汉字基础字体用 @import 引用时，不参与分段
   const segs = [];
   for (const W of WEIGHTS) {
+    const span = stepSpan(W);
+    if (!span) continue;
     const plan = buildPlan(W, live).map(p => ({ ...p, font: contFont(p.font) }));
     const key = plan.slice(skipBase ? 1 : 0).map(p => `${fontKey(p.font)}|${p.size}|${p.owners.join(',')}`).join(';');
-    const lo = W === 100 ? 100 : W - 49, hi = W === 900 ? 900 : W + 50, last = segs[segs.length - 1];
-    if (last && last.key === key) last.hi = hi; else segs.push({ lo, hi, W, plan, key });
+    const last = segs[segs.length - 1];
+    if (last && last.key === key) last.hi = span[1]; else segs.push({ lo: span[0], hi: span[1], W, plan, key });
   }
   return segs;
+}
+/* 用到的可变字体和各自的粗细范围：导出范围的「最大 / 共同」按钮由这些算出 */
+function vfAxes() {
+  const m = new Map();
+  for (const W of WEIGHTS) for (const p of buildPlan(W)) {
+    const f = p.font, axis = vfAxisNow(f);
+    if (Array.isArray(axis)) m.set(f.family || f.name || f.fileName, axis);
+  }
+  return [...m];
 }
 function expandPlan(plan, live) {
   const out = [];

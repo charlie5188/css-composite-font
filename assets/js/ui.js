@@ -246,9 +246,22 @@ function initToolbar() {
   $('#vWMode').addEventListener('click', e => {
     const b = e.target.closest('[data-m]'); if (!b || b.dataset.m === state.wmode) return;
     state.wmode = b.dataset.m;
-    if (state.wmode === 'cont') { state.weights = [...WEIGHTS]; v().wcont = v().weight; }      // 连续模式导出 100–900 全部
+    if (state.wmode === 'cont') { state.weights = [...WEIGHTS]; v().wcont = Math.min(state.wrange[1], Math.max(state.wrange[0], v().weight)); }
     syncToolbar(); renderEditor(); rebuild(); renderExport(); saveState();
   });
+  /* 连续模式的导出范围：校样的滑块也只走这个范围 */
+  const setWRange = (lo, hi) => {
+    if (!Number.isFinite(lo) || !Number.isFinite(hi)) return renderExport();
+    if (lo > hi) [lo, hi] = [hi, lo];
+    lo = Math.min(899, Math.max(100, Math.round(lo))); hi = Math.min(900, Math.max(lo + 1, Math.round(hi)));
+    state.wrange = [lo, hi];
+    $('#exWLo').value = lo; $('#exWHi').value = hi;
+    v().wcont = Math.min(hi, Math.max(lo, v().wcont));
+    v().weight = Math.min(900, Math.max(100, Math.round(v().wcont / 100) * 100));
+    syncToolbar(); renderEditor(); rebuild(); renderExport(); saveState();
+  };
+  $('#exWPresets').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b) setWRange(...b.dataset.r.split(',').map(Number)); });
+  for (const id of ['exWLo', 'exWHi']) $('#' + id).addEventListener('change', () => setWRange(parseFloat($('#exWLo').value), parseFloat($('#exWHi').value)));
   $('#exBase').addEventListener('change', e => { state.baseMode = e.target.value; renderExport(); saveState(); });
   $('#exGeneric').addEventListener('change', e => { state.generic = e.target.value; renderPreview(); renderExport(); saveState(); });
   /* 选了语言时校样也按这个语言排（字形地区差异、禁则），不限语言时校样沿用示例文字的语言 */

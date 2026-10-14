@@ -32,7 +32,7 @@ For each character the browser checks the rules from the last one backwards. The
 - Font sources: Google Fonts, installed fonts (`local()`) and font files.
 - Multi-weight export. The CJK base font can be pulled in with `@import` from Google Fonts, so the exported CSS is usually a few KB.
 - Variable fonts. When a class uses a variable font (Google Fonts, a font file with an `fvar` table, or a local font marked as variable), its weight can be any value, such as 430 to match the stroke weight of the CJK font. Every rule keeps the same `font-weight` step and the fine weight goes into `font-variation-settings` (Chrome 140+, Firefox 62+; Safari shows the step weight).
-- Continuous weight mode. The export can declare `font-weight` as ranges so the page can use any weight from 100 to 900. All classes share the same weight segments (Chrome breaks a composite whose rules declare weights differently): variable fonts use the same file in every segment and change smoothly, static fonts sit at the nearest weight, and segments that are identical for every class are merged — with only variable fonts the whole thing is one `100 900` rule per class.
+- Continuous weight mode. The export can declare `font-weight` as ranges so the page can use any weight from 100 to 900. All classes share the same weight segments (Chrome breaks a composite whose rules declare weights differently): variable fonts use the same file in every segment and change smoothly, static fonts sit at the nearest weight, and segments that are identical for every class are merged — with only variable fonts the whole thing is one `100 900` rule per class. The exported range can be narrowed (for example to 400–800, the range every variable font in the composite covers, so all classes get heavier together); weights outside it render at the nearest end. Google Fonts serves the same files for any range, so narrowing does not reduce download size. If the upper limit is below 600, browsers draw bold text with synthetic bold.
 - Metric matching: measures the cap height and x-height of the Latin font against the ideographic face and adjusts the Latin size in one click.
 - Native CSS properties for CJK text (`text-autospace`, `text-spacing-trim`, `word-break: auto-phrase` and more), with the browser versions that support them.
 - Chinese and Japanese interface, light and dark themes.
@@ -82,7 +82,7 @@ InDesign / Illustrator の「合成フォント」のように、漢字・かな
 - フォントの入手先：Google Fonts、ローカルフォント（`local()`）、フォントファイル。
 - 複数ウェイトの書き出し。漢字フォントは Google Fonts を `@import` で参照できるので、書き出す CSS は通常数 KB です。
 - 可変フォント。クラスのフォントが可変フォント（Google Fonts、`fvar` を含むフォントファイル、可変と指定したローカルフォント）なら、430 のような任意の太さを指定できます。規則の `font-weight` は段階のまま揃え、細かい太さは `font-variation-settings` に書き出します（Chrome 140+、Firefox 62+。Safari では段階の太さで表示）。
-- 連続ウェイト。書き出す `font-weight` を範囲にして、ページで 100〜900 の任意の太さを使えます。全クラスが同じ区間分けを共有し（規則ごとに書き方が違うと Chrome で合成フォントが崩れるため）、可変フォントはどの区間も同じファイルで無段階に、静的フォントは最も近い太さで表示されます。全クラスが同じ区間はまとめるので、可変フォントだけなら各クラス `100 900` の 1 規則になります。
+- 連続ウェイト。書き出す `font-weight` を範囲にして、ページで 100〜900 の任意の太さを使えます。全クラスが同じ区間分けを共有し（規則ごとに書き方が違うと Chrome で合成フォントが崩れるため）、可変フォントはどの区間も同じファイルで無段階に、静的フォントは最も近い太さで表示されます。全クラスが同じ区間はまとめるので、可変フォントだけなら各クラス `100 900` の 1 規則になります。書き出す範囲は狭められます（例：すべての可変フォントが対応する 400〜800 にすると、全クラスが同じ比率で太くなります）。範囲外の太さは最も近い端で表示されます。Google Fonts はどの範囲でも同じファイルを返すので、狭めてもダウンロード量は減りません。上限が 600 未満だと、太字はブラウザの擬似ボールドになります。
 - メトリクス合わせ、CSS ネイティブの組版プロパティ、中国語・日本語の UI。
 
 ### 対応ブラウザと制限
@@ -109,7 +109,7 @@ InDesign / Illustrator の「合成フォント」のように、漢字・かな
 - 字体来源：Google Fonts、本机字体（`local()`）、字体文件。
 - 多字重导出。汉字字体可以直接 `@import` Google Fonts，导出的 CSS 通常只有几 KB。
 - 可变字体。某一类用的是可变字体（Google Fonts、含 `fvar` 表的字体文件、标记为可变的本机字体）时，粗细可以填任意值，例如用 430 去配汉字的笔画粗细。各条规则的 `font-weight` 保持同一档，细调的粗细写进 `font-variation-settings`（Chrome 140+、Firefox 62+；Safari 按那一档显示）。
-- 连续字重模式。导出的 `font-weight` 写成范围，页面上可以用 100–900 之间的任意粗细。所有类别共用同一套分段（各条规则字重写法不一致时，Chrome 的复合字体会失效）：可变字体每段用同一个文件、无级变化，静态字体停在最接近的档位；所有类别都相同的分段会合并，全是可变字体时每个类别只有一条 `100 900` 的规则。
+- 连续字重模式。导出的 `font-weight` 写成范围，页面上可以用 100–900 之间的任意粗细。所有类别共用同一套分段（各条规则字重写法不一致时，Chrome 的复合字体会失效）：可变字体每段用同一个文件、无级变化，静态字体停在最接近的档位；所有类别都相同的分段会合并，全是可变字体时每个类别只有一条 `100 900` 的规则。导出范围可以缩小（例如设为所有可变字体都支持的 400–800，各类别就会一起变粗）；范围以外的粗细按最接近的端点显示。Google Fonts 不论请求什么范围都返回同样的文件，缩小范围不会减少下载量。上限低于 600 时，粗体会变成浏览器模拟的加粗。
 - 度量对齐、CSS 原生 CJK 排版属性、中文 / 日本語界面、深色模式。
 
 ### 浏览器支持与限制

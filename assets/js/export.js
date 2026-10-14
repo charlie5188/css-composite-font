@@ -39,9 +39,12 @@ function buildCss() {
   let stack = `"${fam}"`, count = 0, usedFvs = false;
   const notes = [];
   if (linkBase) {     // 汉字基础字体直接引用 Google 的 CSS，不复制它的分片规则
-    const bf = plan[0].font, axis = cont ? vfAxisNow(bf) : null;
-    const ws = Array.isArray(axis) ? [`${axis[0]}..${axis[1]}`]      // 连续模式下的可变字体：按轴的范围引用，浏览器可以任意粗细
-      : [...new Set((cont ? WEIGHTS.map(W => buildPlan(W)[0].font) : groups.map(g => g.plan[0].font)).map(fW => sources.get(fontKey(fW))?.actualWeight || fW.weight))].sort((a, b) => a - b);
+    const bf = plan[0].font, axis = cont ? vfAxisNow(bf) : null, [a, b] = state.wrange;
+    let ws;
+    if (Array.isArray(axis)) {      // 连续模式下的可变字体：按轴和导出范围的交集引用，范围以外的粗细停在端点
+      const lo = Math.max(axis[0], a), hi = Math.min(axis[1], b);
+      ws = [lo < hi ? `${lo}..${hi}` : String(b < axis[0] ? axis[0] : a > axis[1] ? axis[1] : lo)];
+    } else ws = [...new Set((cont ? WEIGHTS.filter(stepSpan).map(W => buildPlan(W)[0].font) : groups.map(g => g.plan[0].font)).map(fW => sources.get(fontKey(fW))?.actualWeight || fW.weight))].sort((x, y) => x - y);
     out.push(`@import url("https://fonts.googleapis.com/css2?family=${encodeURIComponent(bf.family).replace(/%20/g, '+')}:wght@${ws.join(';')}&display=swap");`);
     stack += `, "${bf.family}"`;
   }
@@ -71,7 +74,7 @@ function buildCss() {
     }
   }
   if (usedFvs) out.splice(1, 0, T('cssFvs'));
-  if (cont) out.splice(1, 0, T('cssCont'));
+  if (cont) out.splice(1, 0, T('cssCont', { a: state.wrange[0], b: state.wrange[1] }));
   const extra = [];
   for (const t of TYPO) {
     const val = state.typo[t.key];
@@ -178,6 +181,20 @@ async function gzipSize(text) {
   if (typeof CompressionStream === 'undefined') return null;
   try { return (await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'))).blob()).size; } catch (e) { return null; }
 }
+/* 连续模式的导出范围：两个数字，加上按用到的可变字体算出的「全部 / 最大 / 共同」 */
+function renderWRange() {
+  const [a, b] = state.wrange;
+  for (const [id, x] of [['exWLo', a], ['exWHi', b]]) if (document.activeElement !== $('#' + id)) $('#' + id).value = x;
+  const ax = vfAxes(), list = ax.map(([n, r]) => `${n} ${r[0]}–${r[1]}`).join(T('joiner'));
+  const any = ax.length ? [Math.min(...ax.map(x => x[1][0])), Math.max(...ax.map(x => x[1][1]))] : null;
+  const common = ax.length ? [Math.max(...ax.map(x => x[1][0])), Math.min(...ax.map(x => x[1][1]))] : null;
+  const same = (r, s) => r && s && r[0] === s[0] && r[1] === s[1];
+  const opts = [['wrAll', [100, 900]]];
+  if (any && !same(any, [100, 900]) && !same(any, common)) opts.push(['wrAny', any]);
+  if (common && common[0] < common[1] && !same(common, [100, 900])) opts.push(['wrCommon', common]);
+  $('#exWNote').hidden = b >= 600;      // 范围里没有粗体时，Chrome 会给 700 等描边模拟加粗
+  $('#exWPresets').innerHTML = opts.map(([k, r]) => `<button type="button" data-r="${r}" aria-pressed="${same(r, state.wrange)}" title="${esc(T(k + 'Tip', { list }))}">${esc(T(k))} ${r[0]}–${r[1]}</button>`).join('');
+}
 let gzTok = 0;
 function renderExport() {
   ensureExportSources();
@@ -186,6 +203,7 @@ function renderExport() {
   const kb = s => (new Blob([s]).size / 1024).toFixed(1);
   let stat = null;   // [代码, 前半, 后半]：gzip 大小算好后插在中间
   $('#exBaseField').hidden = !exportGroups().every(g => canLinkBase(g.plan));
+  if (state.wmode === 'cont') renderWRange();
   if (exTab === 'css') {
     lastExport = css;
     $('#codeOut').innerHTML = highlight(css, 'css');

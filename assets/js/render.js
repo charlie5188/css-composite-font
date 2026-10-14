@@ -246,6 +246,7 @@ function syncToolbar() {
   const cont = state.wmode === 'cont';
   $('#vWeightLab').hidden = cont || state.weights.length < 2;
   $('#vWcontLab').hidden = !cont;
+  $('#vWcont').min = state.wrange[0]; $('#vWcont').max = state.wrange[1];       // 滑块只走导出的范围
   $('#vWcont').value = v.wcont; $('#vWcontOut').textContent = v.wcont;
   document.querySelectorAll('#vWMode [data-m]').forEach(b => b.setAttribute('aria-checked', b.dataset.m === state.wmode));
   $('#exContField').hidden = !cont;
