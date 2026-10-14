@@ -155,10 +155,6 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .status.none{visibility:hidden}
 @keyframes pulse{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.status.loading{animation:none}}
-.wsel{flex:none;width:64px;font-family:var(--mono);font-size:11.5px;padding:4px}
-.wname{flex:1;min-width:0;width:100%;font-family:var(--mono);font-size:11.5px;padding:4px 6px}
-/* 非 400 字重下，本机字体 / 字体文件只显示这个字重用的名称；换字体回到 400 再换 */
-.ct-font:has(.wname) .fsel{display:none}
 .ct-err{grid-column:2/-1;font-size:11.5px;color:var(--warn);margin-top:-2px}
 .ct-row .x{border:0;background:none;color:var(--faint);font-size:15px;line-height:1;padding:0}
 .gear{border:0;background:none;padding:2px;margin-left:1px;color:var(--faint);line-height:0;border-radius:3px}

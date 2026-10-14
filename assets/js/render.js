@@ -3,6 +3,12 @@
 const GLYPH = { han: '永', latin: 'Ag', digit: '01', kana: 'あ', punct: '」、', symbol: '※', shared: '“…' };
 const shortName = f => !f ? '' : f.kind === 'google' ? f.family : f.kind === 'local' ? f.name : f.kind === 'path' ? f.path : f.fileName;
 const keyName = key => key[0] === '#' ? T('customName', { c: state.custom[+key.slice(1)]?.chars || '…' }) : tr(CLS[key].name);
+/* 这个类别在某个字重下有没有单独设定的粗细 / 字体名 / 文件 */
+function hasWeightOverride(key, W) {
+  if (W === BASE_W) return false;
+  const o = objByKey(key);
+  return !!state.wOver[W]?.[key]?.weight || (!!o?.font && (fontKey(o.font) + '|' + W) in state.weightNames);
+}
 function fontCell(key, o, isHan, allowLatin) {
   const W = state.view.weight, ov = W !== BASE_W ? state.wOver[W]?.[key] : null;
   const opts = [];
@@ -10,25 +16,15 @@ function fontCell(key, o, isHan, allowLatin) {
     opts.push(['han', T('optFollow', { c: tr(CLS.han.name), f: fontLabel(resolveCls('han', W, true).font) })]);
     if (allowLatin) opts.push(['latin', T('optFollow', { c: tr(CLS.latin.name), f: fontLabel(resolveCls('latin', W, true).font) })]);
   }
-  const own = o.font ? ownFontAt(o, ov, W, true) : null;
-  if (own) opts.push(['own', fontLabel(own)]);
+  /* 每个字重都是同一个下拉菜单：这一项显示该字重实际用的字体，单独设定通过「选择字体…」 */
+  const own = o.font ? ownFontAt(o, ov, W, true) : null, shown = o.font ? ownFontAt(o, ov, W, false) : null;
+  if (own) opts.push(['own', fontLabel(shown) + (hasWeightOverride(key, W) ? ' · ' + T('ownSet') : '')]);
   opts.push(['pick', T('optPick')]);
   const cur = o.follow || 'own';
   const s = !o.follow && own ? sources.get(fontKey(own)) : null;
-  let html = `<span class="status ${o.follow ? 'none' : (s ? s.status : 'loading')}"${o.follow ? '' : ` data-key="${esc(fontKey(own))}"`}></span>` +
+  const html = `<span class="status ${o.follow ? 'none' : (s ? s.status : 'loading')}"${o.follow ? '' : ` data-key="${esc(fontKey(own))}"`}></span>` +
     `<select class="fsel${o.follow ? ' follow' : ''}" data-act="fsel" aria-label="${esc(T('fontAria', { c: keyName(key) }))}">` +
     opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select>';
-  if (W !== BASE_W && !o.follow && o.font?.kind === 'google') {
-    const autoF = fontAtWeight(o.font, W), auto = sources.get(fontKey(autoF))?.actualWeight || autoF.weight;   // 显示实际取到的字重
-    html += `<select class="wsel" data-act="wsel" aria-label="${esc(T('wselAria', { w: W }))}">` +
-      [0, ...WEIGHTS].map(w => `<option value="${w || ''}"${(ov?.weight || 0) === w ? ' selected' : ''}>${w || esc(T('wAuto', { w: auto }))}</option>`).join('') + '</select>';
-  }
-  /* 本机字体和字体文件：这个字重用的字体名 / 文件路径（自动推测，可改） */
-  if (W !== BASE_W && !o.follow && (o.font?.kind === 'local' || o.font?.kind === 'file')) {
-    const k = fontKey(o.font) + '|' + W, auto = o.font.kind === 'local' ? autoLocal(o.font, W).name : guessPath(o.font.fileName, W);
-    html += `<input class="wname" type="text" data-act="wname" data-k="${esc(k)}" value="${esc(state.weightNames[k] || auto)}" placeholder="${esc(auto)}"
-      spellcheck="false" title="${esc(T('mapHint'))}" aria-label="${esc(T('wnameAria', { w: W }))}">`;
-  }
   return html;
 }
 function numCell(field, key) {
