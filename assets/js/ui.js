@@ -265,13 +265,6 @@ function initToolbar() {
   $('#exBase').addEventListener('change', e => { state.baseMode = e.target.value; renderExport(); saveState(); });
   /* 斜体：导出时另写一组 font-style: italic 的规则；校样的「斜体」开关用来看效果 */
   $('#exItalic').addEventListener('change', e => { state.italic = e.target.value === '1'; renderEditor(); rebuild(); renderExport(); saveState(); });
-  /* 字宽跟随页面：所有规则写同一个 font-stretch 范围，类别里固定的 wdth 不再生效 */
-  $('#exStretch').addEventListener('change', e => { state.stretch = e.target.value === '1'; renderEditor(); rebuild(); renderExport(); saveState(); });
-  $('#vStretch').addEventListener('input', e => {
-    v().wstretch = +e.target.value; $('#vStretchOut').textContent = v().wstretch + '%';
-    root.style.setProperty('--fsw', v().wstretch + '%');
-    saveState();
-  });
   $('#exGeneric').addEventListener('change', e => { state.generic = e.target.value; renderPreview(); renderExport(); saveState(); });
   /* 选了语言时校样也按这个语言排（字形地区差异、禁则），不限语言时校样沿用示例文字的语言 */
   $('#exLang').addEventListener('change', e => {
@@ -468,7 +461,6 @@ function renderAxes() {
       const v = pickVary[t], st = axStep(lo, hi), lab = esc(axisLabel(t));
       const name = `<span class="ax-name">${lab}<small>${esc(t)} · ${lo}–${hi}</small></span>`;
       const ctl = val => `<input type="range" data-ax="${t}" min="${lo}" max="${hi}" step="${st}" value="${val}" aria-label="${lab}"><input type="number" data-ax="${t}" min="${lo}" max="${hi}" step="${st}" value="${val}" aria-label="${lab}">`;
-      if (t === 'wdth' && state.stretch) return `<div class="ax-row">${name}<span class="ax-lock">${esc(T('axStretchLock'))}</span></div>`;
       if (t === 'opsz') {      // 光学尺寸：Google 默认固定在默认值；可以改成跟随字号（文件里保留这个轴），或固定一个值
         const mode = typeof v === 'number' ? 'fix' : v === 'auto' || !g ? 'auto' : 'def';
         const opts = [...(g ? [['def', T('axOpszOff', { d: def })]] : []), ['auto', T('axOpszAuto')], ['fix', T('axFix')]];
@@ -487,7 +479,6 @@ function applySampleAxes() {
   const f = pickCand, parts = [];
   for (const [t, , , def] of f ? extraAxes(f) : []) {
     const v = pickVary[t];
-    if (t === 'wdth' && state.stretch) continue;
     if (typeof v === 'number') parts.push(`"${t}" ${v}`);
     else if (t === 'opsz' && f.kind === 'google' && v !== 'auto') parts.push(`"opsz" ${def}`);
   }

@@ -38,7 +38,6 @@ function buildCss() {
   const linkBase = state.baseMode === 'link' && groups.every(g => canLinkBase(g.plan));
   const out = [T(linkBase ? 'cssHLink' : 'cssH', { fam })];
   let stack = `"${fam}"`, count = 0, usedFvs = false, usedAxes = false;
-  const wr = stretchOn() ? wdthRange() : null;
   const notes = [];
   if (linkBase) {     // 汉字基础字体直接引用 Google 的 CSS，不复制它的分片规则
     const bf = plan[0].font, axis = cont ? vfAxisNow(bf) : null, [a, b] = state.wrange;
@@ -60,7 +59,7 @@ function buildCss() {
         lastP = x.p;
         const owners = x.p.owners.map(ownerName).join(T('joiner'));
         const n = rows.filter(r => r.p === x.p && !r.missing).length;
-        const ax = (x.p.font.xa || []).filter(t => !(t in (x.p.fvs || {}))).map(t => T(t === 'wdth' ? 'cssAxPage' : 'cssAxAuto', { t }));     // 文件里保留、但不固定的轴
+        const ax = (x.p.font.xa || []).filter(t => !(t in (x.p.fvs || {}))).map(t => T('cssAxAuto', { t }));     // 文件里保留、但不固定的轴（opsz 跟随字号）
         const extraNote = (ax.length ? ' · ' + ax.join(T('joiner')) : '') + (style === 'italic' && x.p.up ? T('cssUpright') : '');
         out.push('', `/* ${owners} — ${fontLabel(x.p.font)}（${kindLabel(x.p.font)}${n > 1 ? T('cssSlices', { n }) : ''}）${x.p.size !== 100 ? ` · ${x.p.size}%` : ''}${x.p.range ? '' : T('cssBase')}${extraNote} */`);
         const s = sources.get(fontKey(x.p.font));
@@ -71,7 +70,6 @@ function buildCss() {
       if (x.missing) { out.push(x.status === 'loading' ? T('cssGLoading') : T('cssGMissing', { font: fontLabel(x.p.font) })); continue; }
       count++;
       out.push('@font-face {', `  font-family: "${fam}";`, `  src: ${srcFor(x)};`, `  font-weight: ${g.desc};`, `  font-style: ${style};`);
-      if (wr) out.push(`  font-stretch: ${wr[0]}% ${wr[1]}%;`);
       out.push(`  font-display: swap;`);
       const fvs = fvsOf(x.p, W, g.cont);
       if (fvs) { out.push(`  font-variation-settings: ${fvs};`); if (fvs.includes('"wght"')) usedFvs = true; else usedAxes = true; }
@@ -86,7 +84,6 @@ function buildCss() {
     if (g.iplan) { out.push('', T('cssItalicHead')); emit(g, g.iplan, 'italic'); }
   }
   if (usedFvs || usedAxes) out.splice(1, 0, T(usedFvs ? 'cssFvs' : 'cssFvsAx'));
-  if (wr) out.splice(1, 0, T('cssStretch', { a: wr[0], b: wr[1] }));
   if (state.italic) out.splice(1, 0, T('cssItalic'));
   if (cont) out.splice(1, 0, T('cssCont', { a: state.wrange[0], b: state.wrange[1] }));
   const extra = [];
@@ -219,7 +216,6 @@ function renderExport() {
   let stat = null;   // [代码, 前半, 后半]：gzip 大小算好后插在中间
   $('#exBaseField').hidden = !exportGroups().every(g => canLinkBase(g.plan));
   if (state.wmode === 'cont') renderWRange();
-  renderAxisFields();
   if (exTab === 'css') {
     lastExport = css;
     $('#codeOut').innerHTML = highlight(css, 'css');

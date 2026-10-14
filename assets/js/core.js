@@ -199,7 +199,7 @@ function italicLocal(f) {
   return undefined;
 }
 /* 字体 + 这个类别的轴设定 → 实际写进规则的字体、固定的轴值（font-variation-settings）。
-   vary：{ 标签: 数值 | 'auto' }，'auto' 只用于 opsz（跟随字号）。字宽跟随页面时不固定 wdth */
+   vary：{ 标签: 数值 | 'auto' }，'auto' 只用于 opsz（跟随字号） */
 function finalFont(f, vary, ital = false) {
   if (!f) return { font: f, fvs: null, up: false };
   let up = false;
@@ -207,11 +207,10 @@ function finalFont(f, vary, ital = false) {
   const xa = new Set(), fvs = {};
   for (const [t, v] of Object.entries(vary || {})) {
     const a = axisOf(f, t);
-    if (!a || (t === 'wght' && a[2] > 10) || t === 'ital' || (t === 'wdth' && state.stretch)) continue;
+    if (!a || (t === 'wght' && a[2] > 10) || t === 'ital') continue;
     xa.add(t);
     if (v !== 'auto') fvs[t] = Math.min(a[2], Math.max(a[1], +v));
   }
-  if (state.stretch && axisOf(f, 'wdth')) xa.add('wdth');
   if (f.slant === 'slnt') { xa.add('slnt'); fvs.slnt = axisOf(f, 'slnt')[1]; }
   if (f.slant === 'ital') fvs.ital = 1;
   if (f.kind === 'google' && xa.size) f = { ...f, xa: [...xa].sort() };
@@ -227,13 +226,6 @@ function fvsOf(p, W, cont) {
   for (const [t, v] of Object.entries(p.fvs || {}).sort()) parts.push(`"${t}" ${v}`);
   return parts.join(', ');
 }
-/* 字宽跟随页面时，所有规则共用的 font-stretch 范围：用到的字体的 wdth 轴合起来（包含 100%） */
-function wdthRange() {
-  let lo = 100, hi = 100;
-  for (const W of WEIGHTS) for (const p of buildPlan(W)) { const a = axisOf(p.font, 'wdth'); if (a) { lo = Math.min(lo, a[1]); hi = Math.max(hi, a[2]); } }
-  return lo < hi ? [lo, hi] : null;
-}
-const stretchOn = () => !!(state.stretch && wdthRange());
 function wghtFor(f, W) {
   if (!f) return null;
   const w = f.kind === 'google' ? sources.get(fontKey(f))?.wght : f.axis ? (f.weight || 400) : null;
@@ -448,7 +440,7 @@ function stateFromPreset(p, prev) {
     scope: prev?.scope ?? '',
     wmode: prev?.wmode || 'steps',
     wrange: prev?.wrange || [100, 900],
-    italic: !!prev?.italic, stretch: !!prev?.stretch,
+    italic: !!prev?.italic,
     classes: freshClasses(p),
     custom: [],
     view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, compare: false, cmp: 'plain', weight: 400 },
@@ -487,8 +479,7 @@ function normalizeState() {
   state.scope = state.scope || '';
   state.wmode = state.wmode === 'cont' ? 'cont' : 'steps';        // 字重：分档 / 连续（可变字体）
   state.italic = !!state.italic;                                   // 导出斜体
-  state.stretch = !!state.stretch;                                 // 字宽跟随页面的 font-stretch
-  if (!Number.isFinite(state.view.wstretch)) state.view.wstretch = 100;
+  delete state.stretch; delete state.view.wstretch;                // 「字宽跟随页面」已删除
   const wr = Array.isArray(state.wrange) ? state.wrange.map(Math.round) : [];
   state.wrange = wr[0] >= 100 && wr[1] <= 900 && wr[0] < wr[1] ? wr : [100, 900];      // 连续模式导出的粗细范围
   if (!Number.isFinite(state.view.wcont)) state.view.wcont = state.view.weight || 400;
@@ -708,7 +699,7 @@ async function rebuildNow() {
   setBusy(T('loading'));
   await Promise.all(segs.flatMap(sg => [...sg.plan, ...(sg.iplan || [])].map(p => source(p.font).promise)));
   if (my !== gen) return;
-  const fam = `__cf_live_${my}`, wr = stretchOn() ? wdthRange() : null;
+  const fam = `__cf_live_${my}`;
   const faces = [];
   for (const sg of segs) for (const [pl, style] of [[sg.plan, 'normal'], [sg.iplan, 'italic']]) {
     if (!pl) continue;
@@ -718,7 +709,6 @@ async function rebuildNow() {
       const d = { display: 'swap', weight: sg.lo === sg.hi ? String(W) : `${sg.lo} ${sg.hi}`, style };
       const fvs = fvsOf(x.p, W, cont);
       if (fvs) d.variationSettings = fvs;
-      if (wr) d.stretch = `${wr[0]}% ${wr[1]}%`;
       if (x.range) d.unicodeRange = fmtRanges(x.range);
       if (x.p.size !== 100) d.sizeAdjust = `${x.p.size}%`;
       try { faces.push(new FontFace(fam, x.face.buffer || x.face.src, d)); } catch (e) { /* 忽略无效的规则 */ }

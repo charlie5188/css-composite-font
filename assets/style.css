@@ -221,7 +221,7 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 /* 校样的显示方式：贴在白纸右上角，像纸面上的选项 */
 .sheet-bar{justify-content:flex-end;align-items:center;line-height:1.4;font-family:var(--ui);margin:calc(14px - var(--pad)) calc(14px - var(--pad)) -12px 0}
 .sheet>div{min-width:0}
-.proof-text{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:var(--fst,normal);font-stretch:var(--fsw,100%);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0;
+.proof-text{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:var(--fst,normal);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0;
   background-image:linear-gradient(to bottom,transparent calc(100% - 1px),var(--rule) calc(100% - 1px));background-size:100% calc(1em * var(--lh,1.8))}
 .proof-text.naive{font-family:var(--cf-naive),var(--generic);font-synthesis-weight:none}
 .sheet.vertical .proof-text{writing-mode:vertical-rl;width:100%;height:min(62vh,560px);overflow-x:auto;overflow-y:hidden;
@@ -394,7 +394,6 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .ax-row .ax-name small{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
 .ax-row input[type=number]{width:70px;font-family:var(--mono);font-size:12px;padding:4px 6px}
 .ax-row .ax-mode{grid-column:2/-1}
-.ax-row .ax-lock{grid-column:2/-1;color:var(--muted);font-size:12px}
 .ax-row.mode{grid-template-columns:minmax(96px,auto) minmax(0,1fr)}
 .ax-row.mode.fix{grid-template-columns:minmax(96px,auto) auto minmax(0,1fr) 70px}
 .ax-row.mode.fix .ax-mode{grid-column:auto}

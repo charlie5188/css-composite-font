@@ -62,7 +62,7 @@ function numCell(field, key) {
 function axRow(key, o) {
   if (o.follow || !o.vary) return '';
   const W = state.view.weight, f = ownFontAt(o, W !== BASE_W ? state.wOver[W]?.[key] : null, W, true);
-  const list = Object.entries(o.vary).filter(([t]) => axisOf(f, t) && !(t === 'wdth' && state.stretch));
+  const list = Object.entries(o.vary).filter(([t]) => axisOf(f, t));
   return list.length ? `<span class="ct-ax">${list.map(([t, v]) => `<span>${esc(axisLabel(t))} <b>${esc(v === 'auto' ? T('axOpszAuto') : String(v))}</b></span>`).join('')}</span>` : '';
 }
 function errRow(key, o) {
@@ -221,19 +221,6 @@ function contIgnored() {
   for (const c of CLASSES) check(c.id, state.classes[c.id], tr(c.name));
   state.custom.forEach((cu, i) => check('#' + i, cu, keyName('#' + i)));
   return out;
-}
-/* 字宽：有宽度轴的字体时才显示导出选项；跟随页面时校样多一个字宽滑块（范围是各字体 wdth 轴合起来） */
-function renderAxisFields() {
-  const wr = wdthRange(), on = !!(wr && state.stretch), v = state.view;
-  $('#exStretchField').hidden = !wr;
-  if (wr) { $('#exStretchOn').textContent = T('exStretchOn', { a: wr[0], b: wr[1] }); $('#exStretch').value = state.stretch ? '1' : '0'; }
-  $('#vStretchLab').hidden = !on;
-  if (on) {
-    v.wstretch = Math.min(wr[1], Math.max(wr[0], v.wstretch));
-    Object.assign($('#vStretch'), { min: wr[0], max: wr[1] });
-    $('#vStretch').value = v.wstretch; $('#vStretchOut').textContent = v.wstretch + '%';
-  }
-  root.style.setProperty('--fsw', on ? v.wstretch + '%' : '100%');
 }
 function renderSampleTabs() {
   const cur = state.view.sample;
