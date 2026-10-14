@@ -390,7 +390,7 @@ function setPickTab(tab) {
 function candFromFields() {
   const base = pickW ? objOf(pickTarget).font : null;
   if (pickTab === 'google') {
-    const fam = $('#gfFamily').value.trim(), w = +$('#gfWeight').value;
+    const fam = $('#gfFamily').value.trim(), w = gfWeightVal();
     return fam ? G(fam, w || (base?.kind === 'google' && base.family === fam ? fontAtWeight(base, pickW).weight : 400)) : null;
   }
   if (pickTab === 'local') {
@@ -408,7 +408,7 @@ function updateCand() {
   pickCand = f;
   updateScope();
   const ok = $('#pkOk'), st = $('#pkStatus'), sample = $('#pkSample');
-  st.classList.remove('caution'); sample.hidden = false;
+  st.classList.remove('caution'); sample.hidden = false; showVfTag(null);
   if (!f) { ok.disabled = true; st.textContent = ''; sample.style.fontFamily = 'var(--ui)'; return; }
   const s = source(f, { retry: true });
   ok.disabled = true; st.textContent = T('pkChecking'); sample.style.fontFamily = 'var(--ui)';
@@ -418,8 +418,8 @@ function updateCand() {
       sample.style.fontFamily = `"${s.family}", var(--ui)`;
       st.textContent = f.kind === 'google' ? T('pkGoogleOk', { n: s.faces.length }) : f.kind === 'local' ? T('pkLocalOk') : T('pkFileOk');
       const ax = f.kind === 'google' ? null : f.axis;
-      if (ax) st.textContent += T('pkVf', { a: ax[0], b: ax[1] });
-      if (f.kind === 'google') vfAxis(f.family).then(a => { if (a && pickCand === f) st.textContent = T('pkGoogleOk', { n: s.faces.length }) + T('pkVf', { a: a[0], b: a[1] }); });
+      showVfTag(ax);
+      if (f.kind === 'google') vfAxis(f.family).then(a => { if (pickCand === f) showVfTag(a); });
       ok.disabled = false;
     } else {
       st.textContent = srcError(s) + (f.kind === 'local' ? T('pkLocalStill') : '');
@@ -436,6 +436,28 @@ const sameFontAs = (c, base) => !!c && !!base && c.kind === base.kind && (c.kind
 function updateScope() {
   const show = !!pickW && !!pickCand && !sameFontAs(pickCand, objOf(pickTarget).font);
   $('#pkScope').hidden = !show;
+}
+/* Google Fonts 的字重：可变字体换成能填任意值的数字框（范围是它的 wght 轴），其他字体用 100–900 的菜单 */
+/* 可变字体的标签：「VF 400–800」，悬停看说明 */
+function showVfTag(axis) {
+  const tag = $('#pkVfTag');
+  tag.hidden = !axis;
+  if (axis) { tag.textContent = `VF ${axis[0]}–${axis[1]}`; tag.title = T('pkVf', { a: axis[0], b: axis[1] }); }
+}
+function syncGfWeight() {
+  const fam = $('#gfFamily').value.trim(), sel = $('#gfWeight'), num = $('#gfWeightNum');
+  const axis = fam && fam in vfCache ? vfCache[fam] || null : null;
+  if (fam && !(fam in vfCache)) vfAxis(fam).then(() => { if ($('#gfFamily').value.trim() === fam) syncGfWeight(); });
+  if (axis && num.hidden) num.value = +sel.value ? sel.value : num.value;                       // 切到数字框时带上当前值
+  if (!axis && sel.hidden) { const v = +num.value; sel.value = v ? Math.min(900, Math.max(100, Math.round(v / 100) * 100)) : (sel.querySelector('option[value="0"]') ? 0 : 400); }
+  num.hidden = !axis; sel.hidden = !!axis;
+  if (axis) { num.min = axis[0]; num.max = axis[1]; num.title = T('vfTitle', { a: axis[0], b: axis[1] }); }
+}
+function gfWeightVal() {
+  const num = $('#gfWeightNum');
+  if (num.hidden) return +$('#gfWeight').value;
+  if (num.value.trim() === '') return 0;          // 空着 = 自动（按字重设定时）或 400
+  return Math.min(+num.max || 900, Math.max(+num.min || 100, Math.round(+num.value)));
 }
 function openPicker(t) {
   pickTarget = t;
@@ -458,7 +480,11 @@ function openPicker(t) {
   }
   $('#gfWeight').innerHTML = wOpts;
   $('#gfFamily').value = ovf?.kind === 'google' ? ovf.family : pickW ? (o.font.kind === 'google' ? o.font.family : '') : cur?.kind === 'google' ? cur.family : '';
-  $('#gfWeight').value = ovf?.kind === 'google' ? ovf.weight : pickW ? (state.wOver[W]?.[key]?.weight || 0) : cur?.kind === 'google' ? cur.weight : 400;
+  const wWant = ovf?.kind === 'google' ? ovf.weight : pickW ? (state.wOver[W]?.[key]?.weight || 0) : cur?.kind === 'google' ? cur.weight : 400;
+  $('#gfWeight').value = wWant;
+  $('#gfWeightNum').value = wWant || '';
+  $('#gfWeightNum').placeholder = pickW && o.font.kind === 'google' ? fontAtWeight(o.font, W).weight : '';
+  syncGfWeight();
   const autoName = pickW && o.font.kind === 'local' ? autoLocal(o.font, W).name : '';
   $('#lfName').placeholder = pickW ? autoName : T('lfPh');
   $('#lfVar').checked = !!(ovf || cur)?.axis && (ovf || cur)?.kind === 'local';
@@ -477,6 +503,9 @@ function initPicker() {
   $('#gfFamily').addEventListener('input', updateCandSoon);
   $('#gfFamily').addEventListener('change', updateCand);
   $('#gfWeight').addEventListener('change', updateCand);
+  $('#gfWeightNum').addEventListener('input', updateCandSoon);
+  $('#gfWeightNum').addEventListener('change', updateCand);
+  $('#gfFamily').addEventListener('change', syncGfWeight);
   $('#lfName').addEventListener('input', updateCandSoon);
   $('#lfName').addEventListener('change', updateCand);
   $('#lfVar').addEventListener('change', updateCand);
@@ -516,7 +545,7 @@ function initPicker() {
     const onlyW = pickW && !sameFont && picker.querySelector('[name="pkScope"]:checked')?.value === 'w';
     if (onlyW) {          // 只为这个字重换成另一个字体；Google Fonts 选「自动」时用这个字重本身
       const ov = ((state.wOver[pickW] ||= {})[key] ||= {});
-      ov.font = c.kind === 'google' ? G(c.family, +$('#gfWeight').value || pickW) : c;
+      ov.font = c.kind === 'google' ? G(c.family, gfWeightVal() || pickW) : c;
       delete ov.weight;
       picker.close();
       changed({ fonts: true }); renderExport(); saveState();
@@ -526,7 +555,7 @@ function initPicker() {
     if (sameFont) {       // 只记下这个字重用的粗细 / 字体名 / 文件，和自动推算相同时清掉
       const k = fontKey(o.font) + '|' + pickW;
       if (o.font.kind === 'google') {
-        const v = +$('#gfWeight').value, ov = ((state.wOver[pickW] ||= {})[key] ||= {});
+        const v = gfWeightVal(), ov = ((state.wOver[pickW] ||= {})[key] ||= {});
         if (v) ov.weight = v; else delete ov.weight;
       } else {
         const el = o.font.kind === 'local' ? $('#lfName') : $('#ffPath'), v = el.value.trim();
@@ -537,7 +566,7 @@ function initPicker() {
       return;
     }
     o.follow = null;     // 选了字体就改为独立字体，大小和基线保留各自的设定
-    o.font = pickW && c.kind === 'google' && !+$('#gfWeight').value ? G(c.family, 400) : c;
+    o.font = pickW && c.kind === 'google' && !gfWeightVal() ? G(c.family, 400) : c;
     picker.close();
     changed({ fonts: true });
   });

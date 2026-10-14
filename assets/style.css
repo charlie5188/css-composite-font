@@ -358,6 +358,11 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-actions{display:flex;justify-content:flex-end;gap:16px;align-items:center}
 .pk .hint{margin:0}
 /* 本机找不到字体：黄色提示，不显示回退字体的预览 */
+.vf-tag{display:inline-flex;align-items:center;flex:none;font:600 9.5px/1 var(--mono);letter-spacing:.06em;padding:3px 5px 2px;border-radius:3px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);white-space:nowrap}
+.wnum-wrap{position:relative;flex:none;display:flex}
+.wnum-wrap .vf-tag{position:absolute;left:4px;top:50%;transform:translateY(-50%);pointer-events:none}
+.wnum-wrap .wnum{width:84px;padding-left:28px}
+.pk-st{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .pk-check{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:10px}
 .pk-scope{display:flex;gap:18px;flex-wrap:wrap;font-size:13px}
 .pk-scope label{display:inline-flex;gap:6px;align-items:center}
