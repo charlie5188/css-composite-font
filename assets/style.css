@@ -217,6 +217,14 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .sheet.vertical .proof-text{writing-mode:vertical-rl;width:100%;height:min(62vh,560px);overflow-x:auto;overflow-y:hidden;
   background-image:linear-gradient(to left,transparent calc(100% - 1px),var(--rule) calc(100% - 1px));background-size:calc(1em * var(--lh,1.8)) 100%;background-position:right top}
 .r{position:relative;inset-block-start:calc(var(--sh,0) * -1em)}
+/* 类别着色（Highlight API）：底色 + 下划线；竖排时下划线自动在字的右侧 */
+::highlight(cf-latin){background-color:color-mix(in srgb,var(--c-latin) 18%,transparent);text-decoration:underline 2px color-mix(in srgb,var(--c-latin) 70%,transparent)}
+::highlight(cf-digit){background-color:color-mix(in srgb,var(--c-digit) 18%,transparent);text-decoration:underline 2px color-mix(in srgb,var(--c-digit) 70%,transparent)}
+::highlight(cf-kana){background-color:color-mix(in srgb,var(--c-kana) 18%,transparent);text-decoration:underline 2px color-mix(in srgb,var(--c-kana) 70%,transparent)}
+::highlight(cf-punct){background-color:color-mix(in srgb,var(--c-punct) 18%,transparent);text-decoration:underline 2px color-mix(in srgb,var(--c-punct) 70%,transparent)}
+::highlight(cf-symbol){background-color:color-mix(in srgb,var(--c-symbol) 18%,transparent);text-decoration:underline 2px color-mix(in srgb,var(--c-symbol) 70%,transparent)}
+::highlight(cf-shared){background-color:color-mix(in srgb,var(--c-shared) 18%,transparent);text-decoration:underline 2px color-mix(in srgb,var(--c-shared) 70%,transparent)}
+::highlight(cf-custom){background-color:color-mix(in srgb,var(--c-custom) 18%,transparent);text-decoration:underline 2px color-mix(in srgb,var(--c-custom) 70%,transparent)}
 .colorize .r[data-k]{background:color-mix(in srgb,var(--k) 18%,transparent);box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--k) 70%,transparent)}
 .r[data-k="han"]{--k:var(--c-han)} .r[data-k="kana"]{--k:var(--c-kana)} .r[data-k="punct"]{--k:var(--c-punct)}
 .r[data-k="symbol"]{--k:var(--c-symbol)} .r[data-k="shared"]{--k:var(--c-shared)} .r[data-k="latin"]{--k:var(--c-latin)}

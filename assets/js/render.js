@@ -109,15 +109,18 @@ function renderPreview() {
       else el.style.setProperty(t.prop, state.typo[t.key]);
     }
   }
-  pt.classList.toggle('colorize', v.colorize);
-  if (!(v.colorize || anyShift())) pt.textContent = v.text;
+  /* 类别着色优先用 CSS Highlight API：不拆 DOM，排版和不着色时完全一样（拆成 span 会让竖排里的西文和后面的字重叠）。
+     只有基线偏移必须包 span；浏览器不支持 Highlight API 时才退回用 span 着色 */
+  const hl = HL_OK && v.colorize, spanColor = v.colorize && !HL_OK;
+  pt.classList.toggle('colorize', spanColor);
+  if (!(spanColor || anyShift())) pt.textContent = v.text;
   else {
     const frag = document.createDocumentFragment();
     let cur = null, buf = '';
     const flush = () => {
       if (!buf) return;
       const sh = settingOf(cur).shift;
-      if (!v.colorize && !sh) frag.append(buf);
+      if (!spanColor && !sh) frag.append(buf);
       else {
         const s = document.createElement('span');
         s.className = 'r';
@@ -132,6 +135,7 @@ function renderPreview() {
     flush();
     pt.replaceChildren(frag);
   }
+  paintClasses(pt, hl);
   $('#naiveText').textContent = v.text;
   $('#naiveWrap').hidden = !v.compare;
   $('#liveLabel').hidden = !v.compare;
@@ -141,6 +145,30 @@ function renderPreview() {
   if (v.colorize) legend.innerHTML = CLASSES.filter(c => c.id !== 'han').map(c => `<span style="--c:var(--c-${c.id})"><i></i>${esc(tr(c.name))}</span>`).join('') +
     (state.custom.length ? `<span style="--c:var(--c-custom)"><i></i>${esc(T('legendCustom'))}</span>` : '') + `<span>${esc(T('legendBase'))}</span>`;
   root.style.setProperty('--generic', state.generic !== 'auto' ? state.generic : guessGeneric());
+}
+const HL_OK = typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight === 'function';
+const HL_KEYS = ['latin', 'digit', 'kana', 'punct', 'symbol', 'shared', 'custom'];
+function paintClasses(el, on) {
+  if (!HL_OK) return;
+  HL_KEYS.forEach(k => CSS.highlights.delete('cf-' + k));
+  if (!on) return;
+  const sets = Object.fromEntries(HL_KEYS.map(k => [k, new Highlight()]));
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+  while (walker.nextNode()) {
+    const node = walker.currentNode, s = node.data;
+    let i = 0, start = 0, cur = null;
+    const flush = end => {
+      const k = cur && (cur[0] === '#' ? 'custom' : cur);
+      if (k && sets[k] && end > start) { const r = new Range(); r.setStart(node, start); r.setEnd(node, end); sets[k].add(r); }
+    };
+    for (const ch of s) {
+      const o = ownerOf(ch.codePointAt(0));
+      if (o !== cur) { flush(i); cur = o; start = i; }
+      i += ch.length;
+    }
+    flush(i);
+  }
+  for (const k of HL_KEYS) CSS.highlights.set('cf-' + k, sets[k]);
 }
 function guessGeneric() {
   const l = fontLabel(resolveCls('han').font);
