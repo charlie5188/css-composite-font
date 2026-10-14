@@ -374,16 +374,18 @@ function candFromFields() {
   const base = pickW ? objOf(pickTarget).font : null;
   if (pickTab === 'google') {
     const fam = $('#gfFamily').value.trim(), w = +$('#gfWeight').value;
-    return fam ? G(fam, w || (base ? fontAtWeight(base, pickW).weight : 400)) : null;
+    return fam ? G(fam, w || (base?.kind === 'google' && base.family === fam ? fontAtWeight(base, pickW).weight : 400)) : null;
   }
   if (pickTab === 'local') { const n = $('#lfName').value.trim() || (base ? $('#lfName').placeholder : ''); if (!n) return null; const ps = localAlt.get(n); return L(n, ps && ps !== n ? [ps] : []); }
-  if (pickW) return base;      // 字体文件：校样仍用上传的文件，这里只定导出时的文件名
-  return pickCand && pickCand.kind === 'file' ? pickCand : null;
+  if (pickCand?.kind === 'file' && pickCand !== base) return pickCand;
+  if (pickW && base.kind === 'file') return base;      // 字体文件：没上传新文件时，校样仍用原来的文件，这里只定导出时的文件名
+  return null;
 }
 function updateCand() {
   const f = candFromFields();
   pickCand = f;
   const ok = $('#pkOk'), st = $('#pkStatus'), sample = $('#pkSample');
+  st.classList.remove('caution'); sample.hidden = false;
   if (!f) { ok.disabled = true; st.textContent = ''; sample.style.fontFamily = 'var(--ui)'; return; }
   const s = source(f, { retry: true });
   ok.disabled = true; st.textContent = T('pkChecking'); sample.style.fontFamily = 'var(--ui)';
@@ -395,11 +397,14 @@ function updateCand() {
       ok.disabled = false;
     } else {
       st.textContent = srcError(s) + (f.kind === 'local' ? T('pkLocalStill') : '');
+      if (f.kind === 'local') { st.classList.add('caution'); sample.hidden = true; }   // 预览只会是回退字体，不如不显示
       ok.disabled = f.kind !== 'local';
     }
   });
 }
 const updateCandSoon = debounce(updateCand, 700);
+/* 本机字体名去掉粗细部分（W3、Bold 等），用来判断是不是同一个字体 */
+const localStem = n => n.replace(/\bW\d$/, '').replace(WORD_RE, '').trim().toLowerCase();
 function openPicker(t) {
   pickTarget = t;
   const o = objOf(t), W = state.view.weight, key = keyOf(t);
@@ -408,7 +413,7 @@ function openPicker(t) {
   $('#pkFor').textContent = '· ' + name + (pickW ? ' · ' + T('pkForW', { w: W }) : '');
   $('#pkWNote').hidden = !pickW;
   if (pickW) $('#pkWNote').textContent = T('pkWNote', { w: W });
-  picker.querySelectorAll('[data-src]').forEach(b => { b.hidden = !!pickW && b.dataset.src !== o.font.kind; });
+  picker.querySelectorAll('[data-src]').forEach(b => { b.hidden = false; });
   const cur = resolvedOf(t).font, k = pickW ? fontKey(o.font) + '|' + W : '';
   /* Google Fonts：平时选具体粗细；按字重指定时第一项是「自动」，字体名固定 */
   let wOpts = WEIGHTS.map(w => `<option value="${w}">${w}</option>`).join('');
@@ -417,14 +422,12 @@ function openPicker(t) {
     wOpts = `<option value="0">${esc(T('wAuto', { w: auto }))}</option>` + wOpts;
   }
   $('#gfWeight').innerHTML = wOpts;
-  $('#gfFamily').readOnly = !!pickW;
   $('#gfFamily').value = pickW ? (o.font.kind === 'google' ? o.font.family : '') : cur?.kind === 'google' ? cur.family : '';
   $('#gfWeight').value = pickW ? (state.wOver[W]?.[key]?.weight || 0) : cur?.kind === 'google' ? cur.weight : 400;
   const autoName = pickW && o.font.kind === 'local' ? autoLocal(o.font, W).name : '';
   $('#lfName').placeholder = pickW ? autoName : T('lfPh');
   $('#lfName').value = pickW ? (state.weightNames[k] || autoName) : cur?.kind === 'local' ? cur.name : '';
-  $('#ffFileField').hidden = !!pickW;
-  $('#ffPathField').hidden = !pickW;
+  $('#ffPathField').hidden = !(pickW && o.font.kind === 'file');
   if (pickW && o.font.kind === 'file') { const g = guessPath(o.font.fileName, W); $('#ffPath').placeholder = g; $('#ffPath').value = state.weightNames[k] || g; }
   $('#ffFile').value = '';
   $('#lfMsg').textContent = T('lfMsg');
@@ -466,7 +469,10 @@ function initPicker() {
   $('#pkOk').addEventListener('click', () => {
     if (!pickCand || !pickTarget) return;
     const o = objOf(pickTarget);
-    if (pickW) {          // 只记下这个字重用的粗细 / 字体名 / 文件，和自动推算相同时清掉
+    /* 400 以外的字重：选的是同一个字体的其他粗细 / 名称 / 文件，就只记在这个字重；换成别的字体，则替换所有字重 */
+    const base = o.font, c = pickCand;
+    const sameFont = pickW && base && c.kind === base.kind && (c.kind === 'google' ? c.family === base.family : c.kind === 'local' ? localStem(c.name) === localStem(base.name) : c === base);
+    if (sameFont) {       // 只记下这个字重用的粗细 / 字体名 / 文件，和自动推算相同时清掉
       const key = keyOf(pickTarget), k = fontKey(o.font) + '|' + pickW;
       if (o.font.kind === 'google') {
         const v = +$('#gfWeight').value, ov = ((state.wOver[pickW] ||= {})[key] ||= {});
@@ -480,7 +486,7 @@ function initPicker() {
       return;
     }
     o.follow = null;     // 选了字体就改为独立字体，大小和基线保留各自的设定
-    o.font = pickCand;
+    o.font = pickW && c.kind === 'google' && !+$('#gfWeight').value ? G(c.family, 400) : c;
     picker.close();
     changed({ fonts: true });
   });
