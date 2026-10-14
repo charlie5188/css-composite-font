@@ -149,11 +149,11 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .num::placeholder{color:var(--faint);opacity:1}
 .num.wov{color:var(--accent)}
 .status{flex:none;width:6px;height:6px;border-radius:50%;background:var(--faint)}
-/* 字体加载状态：加载中闪烁、失败为红色；加载好就不显示，免得每行都有一个绿点 */
-.status.ok{background:var(--ok);visibility:hidden}
+/* 字体加载状态：只在加载中（闪烁）和失败（红）时出现；加载好、或跟随别的类别时不占位置，把宽度留给字体名 */
+.status.ok{display:none}
 .status.error{background:var(--warn)}
 .status.loading{animation:pulse 1s ease-in-out infinite}
-.status.none{visibility:hidden}
+.status.none{display:none}
 @keyframes pulse{50%{opacity:.25}}
 @media (prefers-reduced-motion:reduce){.status.loading{animation:none}}
 .ct-err{grid-column:2/-1;font-size:11.5px;color:var(--warn);margin-top:-2px}
