@@ -56,6 +56,11 @@ $('#editor').addEventListener('change', e => {
     if (el.value === 'pick') { el.value = o.follow || 'own'; openPicker(t); return; }
     o.follow = el.value === 'own' ? null : el.value;
     changed({ fonts: true });
+  } else if (el.dataset.act === 'wsel') {
+    const v = +el.value;
+    if (W === BASE_W) o.font = G(o.font.family, v);
+    else { const ov = ((state.wOver[W] ||= {})[keyOf(t)] ||= {}); if (v) ov.weight = v; else delete ov.weight; }
+    changed({ fonts: true }); saveState();
   }
 });
 $('#editor').addEventListener('input', e => {

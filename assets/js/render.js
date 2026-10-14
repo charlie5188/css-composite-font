@@ -18,13 +18,22 @@ function fontCell(key, o, isHan, allowLatin) {
   }
   /* 每个字重都是同一个下拉菜单：这一项显示该字重实际用的字体，单独设定通过「选择字体…」 */
   const own = o.font ? ownFontAt(o, ov, W, true) : null, shown = o.font ? ownFontAt(o, ov, W, false) : null;
-  if (own) opts.push(['own', fontLabel(shown) + (hasWeightOverride(key, W) ? ' · ' + T('ownSet') : '')]);
+  const gw = !o.follow && o.font?.kind === 'google';      // Google Fonts：粗细放在旁边的小菜单里，菜单项只写字体名
+  if (own) opts.push(['own', (gw ? o.font.family : fontLabel(shown)) + (hasWeightOverride(key, W) ? ' · ' + T('ownSet') : '')]);
   opts.push(['pick', T('optPick')]);
   const cur = o.follow || 'own';
   const s = !o.follow && own ? sources.get(fontKey(own)) : null;
-  const html = `<span class="status ${o.follow ? 'none' : (s ? s.status : 'loading')}"${o.follow ? '' : ` data-key="${esc(fontKey(own))}"`}></span>` +
+  let html = `<span class="status ${o.follow ? 'none' : (s ? s.status : 'loading')}"${o.follow ? '' : ` data-key="${esc(fontKey(own))}"`}></span>` +
     `<select class="fsel${o.follow ? ' follow' : ''}" data-act="fsel" aria-label="${esc(T('fontAria', { c: keyName(key) }))}">` +
     opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select>';
+  /* 每个字重都有同一个粗细菜单：400 时改的是字体本身，其他字重时第一项是「自动」 */
+  if (gw) {
+    const autoF = fontAtWeight(o.font, W), auto = sources.get(fontKey(autoF))?.actualWeight || autoF.weight;
+    const val = W === BASE_W ? o.font.weight : (ov?.weight || 0);
+    html += `<select class="wsel" data-act="wsel" aria-label="${esc(T('wselAria', { w: W }))}">` +
+      (W === BASE_W ? '' : `<option value="0">${esc(T('wAuto', { w: auto }))}</option>`) +
+      WEIGHTS.map(w => `<option value="${w}"${val === w ? ' selected' : ''}>${w}</option>`).join('') + '</select>';
+  }
   return html;
 }
 function numCell(field, key) {

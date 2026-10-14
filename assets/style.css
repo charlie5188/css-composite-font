@@ -139,6 +139,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .dot{display:none;width:8px;height:8px;border-radius:2px;background:var(--c);flex:none}
 .show-colors .dot{display:inline-block}
 .ct-font{display:flex;align-items:center;gap:6px;min-width:0}
+.wsel{flex:none;width:auto;max-width:76px;font-family:var(--mono);font-size:11.5px;padding:4px 2px}
 .fsel{flex:1;min-width:0;width:100%;font-size:12.5px;padding:5px 4px;border-color:transparent;background:transparent;text-overflow:ellipsis}
 .fsel.follow{color:var(--muted)}
 .ct-row .num{width:100%;text-align:right;font-family:var(--mono);font-size:12.5px;padding:5px 4px 4px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent}
