@@ -255,7 +255,7 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .match input{width:64px}
 .match select{font-size:12px}
 
-.typo{border-top:1px solid var(--line);margin-top:28px;min-width:0}
+.typo{border-top:1px solid var(--ink);margin-top:28px;min-width:0}
 .typo>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 0}
 .typo>summary::-webkit-details-marker{display:none}
 .typo>summary::before{content:"";flex:none;width:7px;height:7px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);transition:transform .15s}
@@ -265,7 +265,9 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .typo-sum b{font-size:14px;font-weight:600}
 .typo-changed{font-size:12px;color:var(--accent);white-space:nowrap}
 .typo-body{display:grid;gap:4px;padding:0 0 12px}
-.typo-row{display:grid;grid-template-columns:minmax(0,190px) minmax(0,250px) minmax(0,1fr);gap:4px 16px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
+/* 左列较窄：名称和选项并排，浏览器支持另起一行 */
+.typo-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:4px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
+.typo-row .typo-sup{grid-column:1/-1}
 .typo-name{display:grid;line-height:1.35}
 .typo-name b{font-weight:600}
 .typo-name code{font-family:var(--mono);font-size:11px;color:var(--muted)}
