@@ -241,6 +241,14 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .sheet .divider{border-top:1px dashed var(--line)}
 /* 竖排、类别着色、对照：和字号、行高一样是看校样的方式，放在同一排 */
 .togs{display:flex;flex-wrap:wrap;gap:8px}
+/* 不常用的显示选项收进「显示」菜单；按钮上显示开了几项 */
+.view-btn::after{content:"";display:inline-block;width:5px;height:5px;margin-left:8px;border-right:1.25px solid currentColor;border-bottom:1.25px solid currentColor;transform:translateY(-2px) rotate(45deg)}
+.view-pop{position:fixed;inset:auto;margin:0;padding:6px;border:1px solid var(--ink);border-radius:4px;background:var(--sheet);color:var(--ink);box-shadow:0 18px 40px -18px rgba(0,0,0,.35);min-width:180px}
+.view-pop:popover-open{display:grid;gap:2px}
+.view-pop .tog{border:0;border-radius:3px;text-align:left;padding:8px 10px;font-size:12.5px;color:var(--ink)}
+.view-pop .tog:hover{background:var(--bg)}
+.view-pop .tog::before{content:"";display:inline-block;width:12px;margin-right:8px}
+.view-pop .tog[aria-pressed="true"]::before{content:"✓";width:12px;height:auto;border-radius:0;background:none;color:var(--accent);vertical-align:0}
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);padding-top:10px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:8px;height:8px;border-radius:2px;background:var(--c)}

@@ -8,13 +8,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=643ede78">
-<script src="assets/js/i18n.js?v=807a55c5" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=f126eb17">
+<script src="assets/js/i18n.js?v=51443a4e" defer></script>
 <script src="assets/js/unicode.js?v=cab968d0" defer></script>
 <script src="assets/js/core.js?v=8c4d12e0" defer></script>
-<script src="assets/js/render.js?v=d9a0c818" defer></script>
+<script src="assets/js/render.js?v=5ab46e3f" defer></script>
 <script src="assets/js/export.js?v=0b469ca8" defer></script>
-<script src="assets/js/ui.js?v=e9c2d2c4" defer></script>
+<script src="assets/js/ui.js?v=51cf904a" defer></script>
 </head>
 <body>
 <div class="app">
@@ -85,10 +85,13 @@
       </div>
 
       <div class="sheet" id="sheet">
-        <div class="sheet-bar togs" role="group" data-ta="aria-label:proof">
-          <button class="tog" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
-          <button class="tog" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
-          <button class="tog" type="button" id="vCompare" aria-pressed="false" data-t="compare"></button>
+        <div class="sheet-bar togs">
+          <button class="tog view-btn" type="button" id="viewBtn" popovertarget="viewPop" aria-haspopup="true"><span data-t="viewMenu"></span><span id="viewCount"></span></button>
+          <div class="view-pop" id="viewPop" popover role="group" data-ta="aria-label:viewMenu">
+            <button class="tog" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
+            <button class="tog" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
+            <button class="tog" type="button" id="vCompare" aria-pressed="false" data-t="compare"></button>
+          </div>
         </div>
         <div>
           <div class="compare-label" id="liveLabel" hidden><b data-t="liveLabel"></b><span>unicode-range + size-adjust</span></div>

@@ -155,6 +155,12 @@ function initToolbar() {
   });
   $('#vSize').addEventListener('input', e => { v().size = +e.target.value; syncToolbar(); renderPreview(); saveState(); });
   $('#vLh').addEventListener('input', e => { v().lh = +e.target.value; syncToolbar(); renderPreview(); saveState(); });
+  $('#viewPop').addEventListener('toggle', e => {      // 菜单贴在按钮下方、右对齐
+    if (e.newState !== 'open') return;
+    const r = $('#viewBtn').getBoundingClientRect(), pop = e.currentTarget;
+    pop.style.left = Math.max(8, r.right - pop.offsetWidth) + 'px';
+    pop.style.top = (r.bottom + 6 + pop.offsetHeight > innerHeight ? Math.max(8, r.top - pop.offsetHeight - 6) : r.bottom + 6) + 'px';
+  });
   for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vCompare', 'compare']])
     $('#' + id).addEventListener('click', () => { v()[key] = !v()[key]; syncToolbar(); renderPreview(); renderExport(); saveState(); });
   $('#cmpMode').addEventListener('change', e => { v().cmp = e.target.value; updateNaive(); saveState(); });

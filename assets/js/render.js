@@ -199,6 +199,8 @@ function syncToolbar() {
   $('#vVertical').setAttribute('aria-pressed', v.vertical);
   $('#vColor').setAttribute('aria-pressed', v.colorize);
   $('#vCompare').setAttribute('aria-pressed', v.compare);
+  const nOn = [v.vertical, v.colorize, v.compare].filter(Boolean).length;
+  $('#viewCount').textContent = nOn ? ` · ${nOn}` : '';
   $('#cmpMode').value = v.cmp;
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }
   renderTypoStatus();
