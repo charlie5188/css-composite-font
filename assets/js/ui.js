@@ -38,6 +38,13 @@ $('#editor').addEventListener('click', e => {
     return;
   }
   if (b.dataset.act === 'wback') { setPreviewWeight(BASE_W); return; }
+  if (b.dataset.act === 'wclear') {      // 清除当前字重的单独调整（大小、粗细、本机字体名）
+    const W = state.view.weight;
+    delete state.wOver[W];
+    for (const k of Object.keys(state.weightNames)) if (k.endsWith('|' + W)) delete state.weightNames[k];
+    changed({ fonts: true }); saveState();
+    return;
+  }
   const row = b.closest('.ct-row'); if (!row) return;
   if (b.dataset.act === 'remove') { state.custom.splice(targetOf(row).i, 1); changed({ fonts: true }); }
 });
@@ -115,6 +122,12 @@ $('#grpPop').addEventListener('toggle', e => {
   pop.style.top = (r.bottom + 8 + pop.offsetHeight > innerHeight ? Math.max(8, r.top - pop.offsetHeight - 8) : r.bottom + 8) + 'px';
 });
 $('#grpPop').addEventListener('click', e => {
+  if (e.target.closest('[data-act="gpreset"]')) {
+    const id = $('#grpPop').dataset.cls;
+    for (const k of Object.keys(state.moved)) if (k.startsWith(id + '.')) delete state.moved[k];
+    rebuildClassRanges(); changed({ fonts: true }); renderGroups(); saveState();
+    return;
+  }
   const sw = e.target.closest('.sw'); if (!sw) return;
   const k = sw.dataset.g, toLatin = sw.getAttribute('aria-checked') === 'true';
   if (toLatin) state.moved[k] = true; else delete state.moved[k];
@@ -263,6 +276,7 @@ function renderTypoRows() {
 function renderTypoStatus() {
   const n = TYPO.filter(t => !t.attr && state.typo[t.key] !== t.def).length;
   $('#typoChanged').textContent = n ? T('typoChanged', { n }) : '';
+  $('#typoReset').hidden = !n;
   for (const t of TYPO) {
     const cur = document.querySelector(`.typo-sup[data-key="${t.key}"] .cur`);
     if (!cur) continue;
@@ -458,9 +472,34 @@ $('#uiSeg').addEventListener('click', e => {
 let toastT;
 function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
 
+/* 重置：点一次变成确认，3 秒内再点才执行。「我的预设」不受影响 */
+function resetAll() {
+  state = stateFromPreset(PRESETS.find(p => p.id === (UI === 'ja' ? 'mincho-jp' : 'serif-sc')));
+  normalizeState();
+  refreshCustomRanges(); syncToolbar(); renderTypoRows(); renderEditor(); renderPreview(); renderPresetCards(); rebuild(); saveState();
+  toast(T('tReset'));
+}
+function initReset() {
+  $('#typoReset').addEventListener('click', e => {
+    e.preventDefault();      // 按钮在 summary 里，别让它顺便折叠面板
+    for (const t of TYPO) if (!t.attr) state.typo[t.key] = t.def;
+    renderTypoRows(); renderPreview(); renderExport(); saveState();
+  });
+  let armedT = null;
+  $('#resetAll').addEventListener('click', e => {
+    const b = e.currentTarget;
+    if (!b.classList.contains('armed')) {
+      b.classList.add('armed'); b.textContent = T('resetConfirm');
+      armedT = setTimeout(() => { b.classList.remove('armed'); b.textContent = T('resetAll'); }, 3000);
+      return;
+    }
+    clearTimeout(armedT); b.classList.remove('armed'); b.textContent = T('resetAll');
+    resetAll();
+  });
+}
 function init() {
   refreshCustomRanges();
-  initToolbar(); initPresets(); initPicker();
+  initToolbar(); initPresets(); initPicker(); initReset();
   applyUI();
   rebuildNow();
   new ResizeObserver(debounce(drawSpecimen, 100)).observe($('#spec'));

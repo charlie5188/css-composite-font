@@ -48,7 +48,8 @@ function errRow(key, o) {
 function renderEditor() {
   const W = state.view.weight, banner = $('#wBanner');
   banner.hidden = W === BASE_W;
-  if (W !== BASE_W) banner.innerHTML = `<span>${esc(T('wBanner', { w: W }))}</span>${state.weights.includes(BASE_W) ? `<button type="button" class="tbtn" data-act="wback">${esc(T('wBack'))}</button>` : ''}`;
+  const wAdj = W !== BASE_W && (Object.keys(state.wOver[W] || {}).some(k => Object.keys(state.wOver[W][k]).length) || Object.keys(state.weightNames).some(k => k.endsWith('|' + W)));
+  if (W !== BASE_W) banner.innerHTML = `<span>${esc(T('wBanner', { w: W }))}</span><span class="wb-act">${wAdj ? `<button type="button" class="tbtn" data-act="wclear">${esc(T('wClear'))}</button>` : ''}${state.weights.includes(BASE_W) ? `<button type="button" class="tbtn" data-act="wback">${esc(T('wBack'))}</button>` : ''}</span>`;
   const head = `<div class="ct-row ct-head" aria-hidden="true"><span class="ct-glyph"></span><span>${esc(T('colClass'))}</span><span>${esc(T('colFont'))}</span><span class="r">${esc(T('colSize'))}</span><span class="r">${esc(T('colShift'))}</span><span></span></div>`;
   $('#classRows').innerHTML = head + CLASSES.map(c => {
     const o = state.classes[c.id];
@@ -80,7 +81,8 @@ function renderGroups() {
   pop.innerHTML = `<div class="gp-head"><b>${esc(T('gpHead', { c: name }))}</b><span class="hint">${esc(T(id === 'shared' ? 'gpHintShared' : 'gpHintSymbol', { c: name }))}</span></div>` +
     GROUPS[id].map(g => `<div class="gp-row"><span class="gp-sample" aria-hidden="true">${esc(g.sample)}</span>
       <span class="gp-name">${esc(tr(g.name))}<small>${esc(fmtRanges(g.r))}</small></span>
-      <button type="button" class="sw" role="switch" data-g="${id}.${g.id}" aria-checked="${!isMoved(id, g)}" aria-label="${esc(tr(g.name))}"></button></div>`).join('');
+      <button type="button" class="sw" role="switch" data-g="${id}.${g.id}" aria-checked="${!isMoved(id, g)}" aria-label="${esc(tr(g.name))}"></button></div>`).join('') +
+    (GROUPS[id].some(g => isMoved(id, g)) ? `<div class="gp-foot"><button type="button" class="tbtn" data-act="gpreset">${esc(T('gpReset'))}</button></div>` : '');
 }
 /* 改了某一格后，只更新其他格的继承值，不重绘表格（保持输入焦点） */
 function refreshInherited() {

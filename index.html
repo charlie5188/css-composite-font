@@ -8,13 +8,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=2cca095e">
-<script src="assets/js/i18n.js?v=91598358" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=fde51389">
+<script src="assets/js/i18n.js?v=ad1103f2" defer></script>
 <script src="assets/js/unicode.js?v=cab968d0" defer></script>
 <script src="assets/js/core.js?v=e4c9b8be" defer></script>
-<script src="assets/js/render.js?v=8162a9bc" defer></script>
+<script src="assets/js/render.js?v=b19b3237" defer></script>
 <script src="assets/js/export.js?v=63985592" defer></script>
-<script src="assets/js/ui.js?v=0a2a29e5" defer></script>
+<script src="assets/js/ui.js?v=ad80c8f0" defer></script>
 </head>
 <body>
 <div class="app">
@@ -60,7 +60,7 @@
       <div class="sec-row sub"><h3 class="label lab-i"><span data-t="custom"></span><button type="button" class="info" data-info="customInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h3><button class="tbtn" id="addCustom" type="button" data-t="add"></button></div>
       <div id="customRows"></div>
       <details class="typo" id="typoBox">
-        <summary><span class="typo-sum"><b data-t="typoTitle"></b></span><span class="typo-changed" id="typoChanged"></span></summary>
+        <summary><span class="typo-sum"><b data-t="typoTitle"></b></span><span class="typo-changed" id="typoChanged"></span><button type="button" class="tbtn typo-reset" id="typoReset" data-t="typoReset" hidden></button></summary>
         <div class="typo-body">
           <div class="hint lab-i"><span id="browserName"></span><button type="button" class="info" data-info="typoInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></div>
           <div id="typoRows"></div>
@@ -226,6 +226,7 @@
   <footer class="foot">
     <span data-t="footSupport"></span>
     <span class="mono">@font-face · unicode-range · size-adjust</span>
+    <button type="button" class="tbtn" id="resetAll" data-t="resetAll"></button>
   </footer>
 </div>
 

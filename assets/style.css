@@ -126,6 +126,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 @media (max-width:1000px){.compose{position:static;max-height:none;overflow:visible}}
 .compose .sec-row{border-top:1px solid var(--ink);padding-top:14px;margin-bottom:0}
 .compose .sec-row.sub{border-top:0;margin-top:22px;padding-top:0;margin-bottom:6px}
+.wb-act{display:flex;gap:14px;flex-wrap:wrap}
 .wbanner{margin:10px 0 4px;padding:10px 12px;border-radius:3px;background:var(--sheet);border:1px solid var(--accent);font-size:12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 
 .ct-row{display:grid;grid-template-columns:28px minmax(0,1.2fr) minmax(0,1fr) 50px 50px 14px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule);--c:var(--c-custom)}
@@ -264,6 +265,7 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .typo-sum{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;flex:1;min-width:0}
 .typo-sum b{font-size:14px;font-weight:600}
 .typo-changed{font-size:12px;color:var(--accent);white-space:nowrap}
+.typo-reset{font-size:12px;padding:0;white-space:nowrap}
 .typo-body{display:grid;gap:4px;padding:0 0 12px}
 /* 左列较窄：名称和选项并排，浏览器支持另起一行 */
 .typo-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:4px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
@@ -317,6 +319,11 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 
 .foot{margin-top:56px;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;font-size:12px;color:var(--muted)}
 .foot .mono{font-size:11px}
+.foot .tbtn{font-size:12px;color:var(--muted);padding:0}
+.foot .tbtn:hover{color:var(--ink)}
+.foot .tbtn.armed{color:var(--warn)}
+.gp-foot{display:flex;justify-content:flex-end;padding:6px 0 4px;border-top:1px solid var(--rule);margin-top:4px}
+.gp-foot .tbtn{font-size:12px}
 
 /* ---------- dialog ---------- */
 dialog{border:1px solid var(--ink);border-radius:4px;background:var(--sheet);color:var(--ink);padding:0;width:min(600px,calc(100vw - 32px));max-height:calc(100vh - 48px)}
