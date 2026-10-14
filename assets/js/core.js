@@ -137,6 +137,7 @@ A composite font fixes this one character class at a time. Quotes, dashes and th
 「…わかった。１分だけ待つ」` },
   chars: { label: { zh: '字符表', ja: '文字表' }, lang: 'zh-Hans', text:
 `永国字體 あいうえお アイウエオ
+字骨曜返东国三力今直
 ，。、；：？！「」『』《》（）
 ①②③ ※ → ℃ ○ ■ ０１２
 “双引号” ‘单引号’ ——破折号 ……省略号 · 间隔号
