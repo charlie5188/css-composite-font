@@ -312,16 +312,19 @@ function parseFontFaceCss(css) {
 
 /* ================= 示例、属性、预设 ================= */
 const SAMPLES = {
+  /* 正文示例按真实的中日文写：西文只在自然会出现的地方（Wi-Fi、App、km），数字混在汉字里（价格、时间、小数、千分位） */
   zh: { label: { zh: '中文正文', ja: '中国語の本文' }, lang: 'zh-Hans', text:
-`西文和汉字放在一起时，西文常常显得偏小、偏轻。InDesign和Illustrator用「复合字体」解决这个问题：汉字、假名、标点、符号、西文和数字，各自指定字体、大小和基线。
+`清晨6点半，第一班地铁驶出西直门站。车厢里人还不多，有人戴着耳机听播客，有人低头用手机回复消息。这条线路全长27.6公里，共有19座车站，工作日的客流量超过80万人次。
 
-网页也能做到。@font-face的unicode-range决定一个字体负责哪些字符，size-adjust调整它的大小。几条规则共用一个font-family名称，浏览器就会逐字挑选字体。Chrome 92、Firefox 92和Safari 17以后都支持。中西文之间的空隙交给text-autospace，不必手动敲空格。
+车站旁新开了一家咖啡馆，菜单上只有三样：美式18元，拿铁22元，换燕麦奶加3元，也可以在App上提前下单。店主说，开业第一个月卖出了4000多杯，比预想的多了一半。营业时间写在门口的小黑板上——工作日7:30开门，周末晚半小时；Wi-Fi密码贴在收银台旁边。
 
-最微妙的是引号和破折号。同一个码位U+201C，在中文里应该是全角的“引号”——在“English quotes”里又应该是比例宽度。` },
+“慢一点也没关系，”她一边擦杯子一边说，“来的大多是熟客……”` },
   ja: { label: { zh: '日文正文', ja: '日本語の本文' }, lang: 'ja', text:
-`和文と欧文を混ぜて組むと、欧文はたいてい小さく、細く見えます。InDesignの「合成フォント」は、漢字・かな・約物・記号・欧文・数字ごとにフォントとサイズとベースラインを指定して、この問題を解決します。
+`朝6時半、始発の電車が駅を出る。車内はまだ空いていて、イヤホンでポッドキャストを聴く人や、スマートフォンでメッセージを返す人がいる。この路線は全長27.6km、駅は19か所。平日には1日80万人以上が利用する。
 
-Webでも同じことができます。@font-faceのunicode-rangeで担当する文字を決め、size-adjustで大きさを合わせる。同じfont-family名で複数のルールを書けば、ブラウザが一文字ずつフォントを選びます（Chrome 92、Firefox 92、Safari 17以降）。和欧間のアキはtext-autospaceに任せられます。` },
+駅前に新しくできたカフェのメニューは3つだけだ。ドリップコーヒーが450円、カフェラテが520円、オーツミルクへの変更は＋50円。店主によると、開店から1か月で4,000杯以上が売れ、予想の1.5倍だったという。営業時間は平日7:30〜19:00で、Wi-Fiのパスワードはレジの横に貼ってある。
+
+「ゆっくりでいいんです」。彼女はカップを拭きながら言った。「来てくれるのは、ほとんど常連さんですから……」` },
   en: { label: { zh: '西文为主', ja: '欧文中心' }, lang: 'zh-Hans', text:
 `Latin type set beside Chinese characters usually looks a size too small. A CJK glyph fills most of its em square, while a Latin x-height often covers less than half of it. 汉字几乎占满字身框，而西文的x高通常不到字身的一半。
 
@@ -346,7 +349,8 @@ A composite font fixes this one character class at a time. Quotes, dashes and th
 ①②③ ※ → ℃ ○ ■ ０１２
 “双引号” ‘单引号’ ——破折号 ……省略号 · 间隔号
 Aa Bb Gg Qq Rr & @ # % ( ) [ ]
-0123456789 ½ € $ ¥` },
+0123456789 ½ € $ ¥
+3.14　12:30　1,000　50%　¥1,980` },
 };
 
 /* CSS 原生排版属性。sup：各浏览器开始支持的版本（MDN browser-compat-data，2026-10） */
@@ -490,6 +494,7 @@ function normalizeState() {
     const k = state.typo.lang?.startsWith('ja') ? 'ja' : 'zh';
     Object.assign(state.view, { sample: k, text: SAMPLES[k].text, size: 24, lh: 1.85 });
   }
+  if (state.view.sample in SAMPLES) state.view.text = SAMPLES[state.view.sample].text;     // 选的是示例时跟着示例更新（改过的文字已经是 custom）
   if (!state.weights.includes(state.view.weight)) state.view.weight = state.weights.includes(400) ? 400 : state.weights[0];
   rebuildClassRanges();
 }
