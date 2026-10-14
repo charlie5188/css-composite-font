@@ -356,6 +356,20 @@ function renderPresetCards() {
   for (const [n, snap] of Object.entries(userPresets)) if (snap?.classes?.han)
     cards.push(presetCard({ id: 'user:' + n, name: n, tag: T('presetMine'), cls: snap.classes, ja: /^ja/.test(snap.typo?.lang || ''), user: true, active: state.preset === 'user:' + n }));
   $('#presetCards').innerHTML = cards.join('');
+  fitPresets();
+}
+/* 收起时只留第一排：网格放得下几列就显示几张，其余在「全部预设」里。
+   正在用的预设排在后面时，占第一排的最后一格，收起时也看得到当前选的是哪个 */
+function fitPresets() {
+  const grid = $('#presetCards'), cards = [...grid.children], open = !!state.view.presetsOpen;
+  const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length || 1;
+  const act = cards.findIndex(c => c.querySelector('.pcard[aria-pressed="true"]'));
+  const show = i => i < cols - (act >= cols ? 1 : 0) || i === act;
+  cards.forEach((c, i) => { c.hidden = !open && !show(i); });
+  const btn = $('#presetMore');
+  btn.hidden = cards.length <= cols;
+  btn.setAttribute('aria-expanded', open);
+  btn.firstElementChild.textContent = open ? T('presetLess') : T('presetAll', { n: cards.length });
 }
 const renderPresetCardsSoon = debounce(renderPresetCards, 120);
 const hasFileFont = () => [...CLASSES.map(c => state.classes[c.id].font), ...state.custom.map(c => c.font)].some(f => f && f.kind === 'file');
@@ -403,6 +417,9 @@ function initPresets() {
     toast(T('tSaved', { n }) + (hasFileFont() ? T('tSavedFile') : ''));
   };
   $('#savePresetBtn').addEventListener('click', openSave);
+  $('#presetMore').addEventListener('click', () => { state.view.presetsOpen = !state.view.presetsOpen; fitPresets(); saveState(); });
+  let lastW = 0;      // 宽度变了才重新算列数（隐藏卡片只改变高度）
+  new ResizeObserver(([e]) => { const w = Math.round(e.contentRect.width); if (w !== lastW) { lastW = w; fitPresets(); } }).observe($('#presetCards'));
   $('#presetCancel').addEventListener('click', closeSave);
   $('#presetSave').addEventListener('click', doSave);
   $('#presetName').addEventListener('keydown', e => { if (e.key === 'Enter') doSave(); if (e.key === 'Escape') closeSave(); });

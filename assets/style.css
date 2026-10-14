@@ -1,5 +1,5 @@
-/* Layout: a type-foundry specimen page. Hero title set in the live composite font, a rail of preset
-   cards that render in their own fonts, then the bench (composition list | type tester), then export. */
+/* Layout: a type-foundry specimen page. Hero title set in the live composite font, a gallery of preset
+   cards that render in their own fonts (one row, expandable), then the bench (composition list | type tester), then export. */
 :root{
   --bg:#F4F4F2;
   --sheet:#FFFFFF;
@@ -101,9 +101,14 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 /* ---------- presets ---------- */
 .presets{border-top:1px solid var(--line);padding-top:14px}
 .sec-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
-.rail{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(200px,218px);gap:10px;overflow-x:auto;padding-bottom:10px;scroll-snap-type:x proximity;scrollbar-width:thin}
-#presetCards{display:contents}
-.pcard-wrap{position:relative;scroll-snap-align:start;display:grid}
+/* 预设陈列：收起时只显示一排（放得下几张就显示几张），「全部预设」展开成多排，和 Google Docs 的模板陈列一样 */
+.pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.pcard-wrap{position:relative;display:grid}
+.pcard-wrap[hidden]{display:none}
+.preset-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px}
+.more-btn{display:inline-flex;align-items:center;gap:7px}
+.more-btn .chev{width:6px;height:6px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:translateY(-2px) rotate(45deg);transition:transform .15s}
+.more-btn[aria-expanded="true"] .chev{transform:translateY(1px) rotate(225deg)}
 .pcard{display:grid;gap:6px;align-content:start;text-align:left;padding:14px 14px 13px;border:1px solid var(--line);background:var(--sheet);border-radius:4px;color:inherit}
 .pcard:hover{border-color:var(--faint)}
 .pcard[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
@@ -114,11 +119,10 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .pdel{position:absolute;top:8px;right:8px;border:0;background:none;color:var(--faint);font-size:16px;line-height:1;padding:4px 6px;border-radius:3px}
 .pdel:hover,.pdel.armed{color:var(--warn)}
 .pdel.armed{font-size:11px}
-.pcard.add{border-style:dashed;background:transparent;place-content:center;justify-items:center;gap:10px;color:var(--muted)}
-.pcard.add:hover{color:var(--ink);border-color:var(--ink)}
-.save-form{display:grid;gap:8px;align-content:center;padding:14px;border:1px solid var(--ink);border-radius:4px;background:var(--sheet)}
-.save-form input{width:100%}
-.save-form div{display:flex;gap:12px;align-items:center}
+.save-form{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
+.save-form[hidden]{display:none}
+.save-form input{width:180px}
+@media (max-width:480px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}.pspec{font-size:36px}}
 
 /* ---------- bench ---------- */
 .bench{display:grid;grid-template-columns:minmax(380px,500px) minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:start;margin-top:40px}

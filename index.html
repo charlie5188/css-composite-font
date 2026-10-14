@@ -8,14 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=3307292f">
-<script src="assets/js/i18n.js?v=4afbe258" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=19ab3c38">
+<script src="assets/js/i18n.js?v=48f146c7" defer></script>
 <script src="assets/js/unicode.js?v=cab968d0" defer></script>
 <script src="assets/js/gfmeta.js?v=9d744a7e" defer></script>
 <script src="assets/js/core.js?v=72109518" defer></script>
 <script src="assets/js/render.js?v=a74e6680" defer></script>
 <script src="assets/js/export.js?v=bbc90080" defer></script>
-<script src="assets/js/ui.js?v=9d852949" defer></script>
+<script src="assets/js/ui.js?v=ff0a4509" defer></script>
 </head>
 <body>
 <div class="app">
@@ -39,18 +39,17 @@
   <div class="warn" id="sizeAdjustWarn" data-th="warnSizeAdjust" hidden></div>
 
   <section class="presets" aria-labelledby="presetsLabel">
-    <div class="sec-row"><h2 class="label lab-i" id="presetsLabel"><span data-t="preset"></span><button type="button" class="info" data-info="presetInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2></div>
-    <div class="rail">
-      <div id="presetCards"></div>
-      <div class="pcard-wrap" id="saveCard">
-        <button type="button" class="pcard add" id="savePresetBtn"><span style="font-size:26px;line-height:1">+</span><span data-t="presetSaveAs"></span></button>
+    <div class="sec-row"><h2 class="label lab-i" id="presetsLabel"><span data-t="preset"></span><button type="button" class="info" data-info="presetInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2>
+      <div class="preset-acts">
+        <button type="button" class="tbtn" id="savePresetBtn"><span aria-hidden="true">+ </span><span data-t="presetSaveAs"></span></button>
         <div class="save-form" id="saveRow" hidden>
-          <label class="hint" for="presetName" data-t="presetName"></label>
-          <input id="presetName" type="text" spellcheck="false">
-          <div><button class="btn primary" id="presetSave" type="button" data-t="save"></button><button class="tbtn" id="presetCancel" type="button" data-t="cancel"></button></div>
+          <input id="presetName" type="text" spellcheck="false" data-ta="placeholder:presetName;aria-label:presetName">
+          <button class="btn primary" id="presetSave" type="button" data-t="save"></button><button class="tbtn" id="presetCancel" type="button" data-t="cancel"></button>
         </div>
+        <button type="button" class="tbtn more-btn" id="presetMore" aria-expanded="false" aria-controls="presetCards" hidden><span></span><i class="chev" aria-hidden="true"></i></button>
       </div>
     </div>
+    <div class="pgrid" id="presetCards"></div>
   </section>
 
   <div class="bench">
