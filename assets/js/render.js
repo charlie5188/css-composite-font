@@ -29,6 +29,10 @@ function fontCell(key, o, isHan, allowLatin) {
     opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select>';
   /* 可变字体：粗细是可以填任意值的数字框（范围限制在 wght 轴内）；空着表示自动 */
   const axis = !o.follow ? vfAxisNow(eff) : null;
+  if (axis && state.wmode === 'cont') {      // 连续模式：可变字体的粗细直接跟随页面的 font-weight，没有可调的值
+    html += `<span class="vf-tag" title="${esc(T('vfContTitle', { a: axis[0], b: axis[1] }))}">VF ${axis[0]}–${axis[1]}</span>`;
+    return html;
+  }
   if (axis) {
     const cur = W === BASE_W ? (eff.weight || 400) : ov?.font ? (ov.font.weight || 400) : ov?.weight;
     const auto = W === BASE_W ? '' : (eff.kind === 'google' ? fontAtWeight(o.font, W).weight : fontAtWeight(o.font, W).weight);
@@ -225,7 +229,12 @@ function syncToolbar() {
   $('#exWeights').innerHTML = WEIGHTS.map(w => `<button type="button" data-w="${w}" aria-pressed="${state.weights.includes(w)}">${w}</button>`).join('');
   $('#exBase').value = state.baseMode;
   $('#vWeight').innerHTML = state.weights.map(w => `<button type="button" role="radio" data-w="${w}" aria-checked="${w === state.view.weight}">${w}</button>`).join('');
-  $('#vWeightLab').hidden = state.weights.length < 2;
+  const cont = state.wmode === 'cont';
+  $('#vWeightLab').hidden = cont || state.weights.length < 2;
+  $('#vWcontLab').hidden = !cont;
+  $('#vWcont').value = v.wcont; $('#vWcontOut').textContent = v.wcont;
+  $('#exWMode').value = state.wmode;
+  $('#exWeightsField').hidden = cont;
   $('#exGeneric').value = state.generic;
   $('#exLang').value = state.scope;
 }

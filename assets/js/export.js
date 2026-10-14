@@ -22,23 +22,32 @@ function srcFor(x) {
 }
 function cssFamilyName() { return (state.name || '').trim().replace(/["\\]/g, '') || 'My Composite'; }
 const canLinkBase = plan => plan[0].font?.kind === 'google' && plan[0].size === 100 && !(plan[0].font.weight % 100);   // 细调过粗细的可变字体要自己写规则
+/* 导出的分组：分档模式每个字重一组（font-weight: 700）；连续模式每个分段一组（font-weight: 551 650） */
+function exportGroups() {
+  if (state.wmode === 'cont') {
+    let segs = buildSegments();
+    if (state.baseMode === 'link' && segs.every(sg => canLinkBase(sg.plan))) segs = buildSegments(false, true);
+    return segs.map(sg => ({ W: sg.W, desc: sg.lo === sg.hi ? String(sg.lo) : `${sg.lo} ${sg.hi}`, plan: sg.plan, cont: true }));
+  }
+  return [...state.weights].sort((a, b) => a - b).map(W => ({ W, desc: String(W), plan: buildPlan(W), cont: false }));
+}
 function buildCss() {
-  const plan = buildPlan(), weights = [...state.weights].sort((a, b) => a - b);
+  const plan = buildPlan(), groups = exportGroups(), cont = state.wmode === 'cont';
   const fam = cssFamilyName(), generic = state.generic !== 'auto' ? state.generic : guessGeneric();
-  const linkBase = state.baseMode === 'link' && weights.every(W => canLinkBase(buildPlan(W)));
+  const linkBase = state.baseMode === 'link' && groups.every(g => canLinkBase(g.plan));
   const out = [T(linkBase ? 'cssHLink' : 'cssH', { fam })];
   let stack = `"${fam}"`, count = 0, usedFvs = false;
   const notes = [];
   if (linkBase) {     // 汉字基础字体直接引用 Google 的 CSS，不复制它的分片规则
-    const bf = plan[0].font;
-    const ws = [...new Set(weights.map(W => { const fW = buildPlan(W)[0].font; return sources.get(fontKey(fW))?.actualWeight || fW.weight; }))].sort((a, b) => a - b);
+    const bf = plan[0].font, axis = cont ? vfAxisNow(bf) : null;
+    const ws = Array.isArray(axis) ? [`${axis[0]}..${axis[1]}`]      // 连续模式下的可变字体：按轴的范围引用，浏览器可以任意粗细
+      : [...new Set((cont ? WEIGHTS.map(W => buildPlan(W)[0].font) : groups.map(g => g.plan[0].font)).map(fW => sources.get(fontKey(fW))?.actualWeight || fW.weight))].sort((a, b) => a - b);
     out.push(`@import url("https://fonts.googleapis.com/css2?family=${encodeURIComponent(bf.family).replace(/%20/g, '+')}:wght@${ws.join(';')}&display=swap");`);
     stack += `, "${bf.family}"`;
   }
-  for (const W of weights) {
-    const planW = buildPlan(W);
-    const rows = expandPlan(linkBase ? planW.slice(1) : planW, false);
-    if (weights.length > 1) out.push('', `/* ===== font-weight: ${W} ===== */`);
+  for (const g of groups) {
+    const W = g.W, rows = expandPlan(linkBase ? g.plan.slice(1) : g.plan, false);
+    if (groups.length > 1) out.push('', `/* ===== font-weight: ${g.desc.replace(' ', '–')} ===== */`);
     let lastP = null;
     for (const x of rows) {
       if (x.p !== lastP) {
@@ -53,8 +62,8 @@ function buildCss() {
       }
       if (x.missing) { out.push(x.status === 'loading' ? T('cssGLoading') : T('cssGMissing', { font: fontLabel(x.p.font) })); continue; }
       count++;
-      out.push('@font-face {', `  font-family: "${fam}";`, `  src: ${srcFor(x)};`, `  font-weight: ${W};`, `  font-style: normal;`, `  font-display: swap;`);
-      const wv = wghtFor(x.p.font, W);
+      out.push('@font-face {', `  font-family: "${fam}";`, `  src: ${srcFor(x)};`, `  font-weight: ${g.desc};`, `  font-style: normal;`, `  font-display: swap;`);
+      const wv = g.cont ? null : wghtFor(x.p.font, W);
       if (wv) { out.push(`  font-variation-settings: "wght" ${wv};`); usedFvs = true; }
       if (x.p.size !== 100) out.push(`  size-adjust: ${x.p.size}%;`);
       if (x.range) out.push(`  unicode-range: ${wrapRanges(x.range, '    ')};`);
@@ -62,6 +71,7 @@ function buildCss() {
     }
   }
   if (usedFvs) out.splice(1, 0, T('cssFvs'));
+  if (cont) out.splice(1, 0, T('cssCont'));
   const extra = [];
   for (const t of TYPO) {
     const val = state.typo[t.key];
@@ -159,7 +169,7 @@ function highlight(code, lang) {
 }
 let exTab = 'css', lastExport = '';
 function ensureExportSources() {
-  for (const W of state.weights) for (const p of buildPlan(W)) {
+  for (const g of exportGroups()) for (const p of g.plan) {
     const f = p.font;
     if (f && (f.kind === 'google' || f.kind === 'local')) source(f);
   }
@@ -175,7 +185,7 @@ function renderExport() {
   const js = buildJs();
   const kb = s => (new Blob([s]).size / 1024).toFixed(1);
   let stat = null;   // [代码, 前半, 后半]：gzip 大小算好后插在中间
-  $('#exBaseField').hidden = !state.weights.every(W => canLinkBase(buildPlan(W)));
+  $('#exBaseField').hidden = !exportGroups().every(g => canLinkBase(g.plan));
   if (exTab === 'css') {
     lastExport = css;
     $('#codeOut').innerHTML = highlight(css, 'css');

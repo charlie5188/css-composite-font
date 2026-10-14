@@ -176,6 +176,14 @@ function initToolbar() {
     $('#' + id).addEventListener('click', () => { v()[key] = !v()[key]; syncToolbar(); renderPreview(); renderExport(); saveState(); });
   $('#cmpMode').addEventListener('change', e => { v().cmp = e.target.value; updateNaive(); saveState(); });
   $('#vWeight').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) setPreviewWeight(+b.dataset.w); });
+  /* 连续模式：滑块直接改校样的粗细（所有分段的规则都已建好）；表格编辑最接近的那一档 */
+  $('#vWcont').addEventListener('input', e => {
+    const w = +e.target.value, step = Math.min(900, Math.max(100, Math.round(w / 100) * 100));
+    v().wcont = w; $('#vWcontOut').textContent = w;
+    root.style.setProperty('--fw', w);
+    if (step !== v().weight) { v().weight = step; renderEditor(); updateNaive(); drawSpecimen(); }
+    saveState();
+  });
   $('#editTextBtn').addEventListener('click', () => {
     const box = $('#sampleBox'), open = box.hidden;
     box.hidden = !open;
@@ -233,6 +241,11 @@ function initToolbar() {
     if (!state.weights.includes(prevW)) state.view.weight = state.weights.includes(BASE_W) ? BASE_W : state.weights[0];
     syncToolbar(); renderExport(); saveState();
     if (state.view.weight !== prevW) { renderEditor(); rebuild(); }
+  });
+  $('#exWMode').addEventListener('change', e => {
+    state.wmode = e.target.value;
+    if (state.wmode === 'cont') { state.weights = [...WEIGHTS]; v().wcont = v().weight; }      // 连续模式导出 100–900 全部
+    syncToolbar(); renderEditor(); rebuild(); renderExport(); saveState();
   });
   $('#exBase').addEventListener('change', e => { state.baseMode = e.target.value; renderExport(); saveState(); });
   $('#exGeneric').addEventListener('change', e => { state.generic = e.target.value; renderPreview(); renderExport(); saveState(); });

@@ -9,12 +9,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css?v=22e2bf1a">
-<script src="assets/js/i18n.js?v=b4fb6ea7" defer></script>
+<script src="assets/js/i18n.js?v=bea21252" defer></script>
 <script src="assets/js/unicode.js?v=cab968d0" defer></script>
-<script src="assets/js/core.js?v=a8b0d6f3" defer></script>
-<script src="assets/js/render.js?v=b5b8a072" defer></script>
-<script src="assets/js/export.js?v=70ac7ddb" defer></script>
-<script src="assets/js/ui.js?v=747403d5" defer></script>
+<script src="assets/js/core.js?v=9f2cca93" defer></script>
+<script src="assets/js/render.js?v=78ee92cf" defer></script>
+<script src="assets/js/export.js?v=774d96f1" defer></script>
+<script src="assets/js/ui.js?v=30eb53c2" defer></script>
 </head>
 <body>
 <div class="app">
@@ -76,6 +76,7 @@
       <div class="tester-ctrl">
         <label class="ctl" for="vSize"><span data-t="fontSize"></span><input type="range" id="vSize" min="12" max="160" step="1"><output id="vSizeOut" for="vSize"></output></label>
         <label class="ctl" for="vLh"><span data-t="lineHeight"></span><input type="range" id="vLh" min="1" max="2.6" step="0.05"><output id="vLhOut" for="vLh"></output></label>
+        <label class="ctl" id="vWcontLab" for="vWcont" hidden><span data-t="previewWeight"></span><input type="range" id="vWcont" min="100" max="900" step="1"><output id="vWcontOut" for="vWcont"></output></label>
         <span class="ctl" id="vWeightLab" hidden><span data-t="previewWeight"></span><span class="seg mono" id="vWeight" role="radiogroup" data-ta="aria-label:previewWeight"></span></span>
         <span class="busy" id="busy" aria-live="polite"></span>
       </div>
@@ -136,7 +137,8 @@
     </div>
     <div class="ex-fields">
       <div class="field"><label for="exName" data-t="exName"></label><input id="exName" type="text" spellcheck="false"></div>
-      <div class="field"><span class="flabel" data-t="exWeights"></span><div class="chips" id="exWeights" role="group" data-ta="aria-label:exWeights"></div></div>
+      <div class="field"><label for="exWMode" data-t="exWMode"></label><select id="exWMode"><option value="steps" data-t="wmSteps"></option><option value="cont" data-t="wmCont"></option></select></div>
+      <div class="field" id="exWeightsField"><span class="flabel" data-t="exWeights"></span><div class="chips" id="exWeights" role="group" data-ta="aria-label:exWeights"></div></div>
       <div class="field" id="exBaseField"><label for="exBase" data-t="exBase"></label><select id="exBase"><option value="link" data-t="exBaseLink"></option><option value="expand" data-t="exBaseExpand"></option></select></div>
       <div class="field"><label for="exGeneric" data-t="exGeneric"></label><select id="exGeneric"><option value="auto" data-t="auto"></option><option value="serif">serif</option><option value="sans-serif">sans-serif</option></select></div>
       <div class="field"><label for="exLang" data-t="exLang"></label><select id="exLang"></select></div>

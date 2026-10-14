@@ -4,10 +4,10 @@ const G = (family, weight = 400) => ({ kind: 'google', family, weight });
 const L = (name, alt = []) => ({ kind: 'local', name, alt });
 function fontKey(f) {
   if (!f) return 'none';
-  return f.kind === 'google' ? `g:${f.family}@${f.weight}` : f.kind === 'local' ? `l:${f.name}` : f.kind === 'path' ? `p:${f.path}` : `f:${f.fileId}`;
+  return f.kind === 'google' ? `g:${f.family}@${f.vf ? 'vf' : f.weight}` : f.kind === 'local' ? `l:${f.name}` : f.kind === 'path' ? `p:${f.path}` : `f:${f.fileId}`;
 }
 const sameFont = (a, b) => fontKey(a) === fontKey(b);
-const fontLabel = f => !f ? T('unset') : f.kind === 'google' ? `${f.family} ${sources.get(fontKey(f))?.actualWeight || f.weight}` : (f.kind === 'local' ? f.name : f.kind === 'path' ? f.path : f.fileName) + (f.axis ? ` ${f.weight || 400}` : '');
+const fontLabel = f => !f ? T('unset') : f.kind === 'google' ? `${f.family} ${f.vf ? 'VF' : sources.get(fontKey(f))?.actualWeight || f.weight}` : (f.kind === 'local' ? f.name : f.kind === 'path' ? f.path : f.fileName) + (f.axis ? ` ${f.weight || 400}` : '');
 const kindLabel = f => !f ? '' : f.kind === 'google' ? T('kindGoogle') : f.kind === 'local' ? T('kindLocal') : T('kindFile');
 const localSrc = f => [...new Set([f.name, ...(f.alt || [])])].map(n => `local("${n.replace(/["\\]/g, '\\$&')}")`).join(', ');
 
@@ -54,7 +54,10 @@ async function loadSource(s) {
     if (!f) throw new SrcError('errUnset');
     if (f.kind === 'google') {
       let css = null;
-      if (f.weight % 100) {     // 非整百的粗细只有可变字体能做到：按轴的范围请求，拿到完整的可变字体文件
+      if (f.vf) {               // 连续字重模式：整个可变字体文件，粗细交给元素的 font-weight
+        const axis = await vfAxis(f.family);
+        if (axis) { try { css = await fetchGoogleCss(f.family, `${axis[0]}..${axis[1]}`); s.axis = axis; } catch (e) { /* 退回静态 */ } }
+      } else if (f.weight % 100) {     // 非整百的粗细只有可变字体能做到：按轴的范围请求，拿到完整的可变字体文件
         const axis = await vfAxis(f.family);
         if (axis) {
           try { css = await fetchGoogleCss(f.family, `${axis[0]}..${axis[1]}`); s.wght = clampW(f.weight, axis); s.actualWeight = s.wght; s.axis = axis; } catch (e) { /* 退回静态字重 */ }
@@ -73,7 +76,7 @@ async function loadSource(s) {
       if (!file) throw new SrcError('errFileGone');
       s.faces = [{ buffer: file.buffer, range: null }];
     }
-    const vs = s.wght ? { variationSettings: `"wght" ${s.wght}` } : f.axis ? { variationSettings: `"wght" ${f.weight || 400}` } : {};
+    const vs = s.wght ? { variationSettings: `"wght" ${s.wght}` } : f.axis && !f.cont ? { variationSettings: `"wght" ${f.weight || 400}` } : {};
     const ffs = s.faces.map(fc => new FontFace(s.family, fc.buffer || fc.src, fc.range ? { unicodeRange: fmtRanges(fc.range), display: 'swap', ...vs } : { display: 'swap', ...vs }));
     ffs.forEach(x => document.fonts.add(x));
     if (f.kind !== 'google') {
@@ -323,6 +326,7 @@ function stateFromPreset(p, prev) {
     wOver: {},
     generic: prev?.generic || 'auto',
     scope: prev?.scope ?? '',
+    wmode: prev?.wmode || 'steps',
     classes: freshClasses(p),
     custom: [],
     view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, compare: false, cmp: 'plain', weight: 400 },
@@ -358,7 +362,9 @@ function normalizeState() {
   delete state.weight;
   state.baseMode = state.baseMode || 'link';
   state.weightNames = state.weightNames || {};
-  state.scope = state.scope || '';     // 导出的 CSS 只在这个语言里生效；空 = 不限语言
+  state.scope = state.scope || '';
+  state.wmode = state.wmode === 'cont' ? 'cont' : 'steps';        // 字重：分档 / 连续（可变字体）
+  if (!Number.isFinite(state.view.wcont)) state.view.wcont = state.view.weight || 400;     // 导出的 CSS 只在这个语言里生效；空 = 不限语言
   state.wOver = state.wOver || {};
   state.moved = state.moved || {};
   if (state.view.sample === 'title') {   // 「标题」示例已删除，回到正文
@@ -499,6 +505,29 @@ function buildPlan(W = BASE_W, live = false) {
   });
   return plan;
 }
+/* ================= 连续字重：按档位分段 =================
+   所有类别共用同一套分段，每段的 font-weight 都是同一个范围（描述不一致时 Chrome 的复合字体会失效）。
+   可变字体每段都用同一个可变字体文件，段内可以任意粗细；静态字体每段用最接近的那一档。
+   相邻两段所有类别都一样时合并：全是可变字体、大小也不随字重变化时，最后只剩 100–900 一段 */
+function contFont(f) {
+  if (!f) return f;
+  if (f.kind === 'google') {
+    if (Array.isArray(vfAxisNow(f))) return { kind: 'google', family: f.family, weight: 400, vf: true };
+    const aw = sources.get(fontKey(f))?.actualWeight;      // 没有这一档时实际取到的字重：相同的就能合并成一段
+    return aw && aw !== f.weight ? G(f.family, aw) : f;
+  }
+  return f.axis ? { ...f, weight: undefined, cont: true } : f;
+}
+function buildSegments(live = false, skipBase = false) {      // skipBase：汉字基础字体用 @import 引用时，不参与分段
+  const segs = [];
+  for (const W of WEIGHTS) {
+    const plan = buildPlan(W, live).map(p => ({ ...p, font: contFont(p.font) }));
+    const key = plan.slice(skipBase ? 1 : 0).map(p => `${fontKey(p.font)}|${p.size}|${p.owners.join(',')}`).join(';');
+    const lo = W === 100 ? 100 : W - 49, hi = W === 900 ? 900 : W + 50, last = segs[segs.length - 1];
+    if (last && last.key === key) last.hi = hi; else segs.push({ lo, hi, W, plan, key });
+  }
+  return segs;
+}
 function expandPlan(plan, live) {
   const out = [];
   for (const p of plan) {
@@ -524,18 +553,19 @@ function loadText() {
   return (state.view.text.slice(0, 2500) + '国Hxg' + CLASSES.map(c => c.sample).join('') + state.custom.map(c => c.chars).join(''));
 }
 async function rebuildNow() {
-  const my = ++gen, W = state.view.weight;
-  const plan = buildPlan(W, true);
+  const my = ++gen, W = state.view.weight, cont = state.wmode === 'cont';
+  /* 分档：只建当前这一档的规则；连续：建所有分段的规则，校样的粗细由滑块决定 */
+  const segs = cont ? buildSegments(true) : [{ lo: W, hi: W, plan: buildPlan(W, true) }];
   setBusy(T('loading'));
-  await Promise.all(plan.map(p => source(p.font).promise));
+  await Promise.all(segs.flatMap(sg => sg.plan.map(p => source(p.font).promise)));
   if (my !== gen) return;
   const fam = `__cf_live_${my}`;
   const faces = [];
-  for (const x of expandPlan(plan, true)) {
+  for (const sg of segs) for (const x of expandPlan(sg.plan, true)) {
     if (x.missing) continue;
     /* 规则带上当前字重，校样也用这个字重：这样落到系统字体的字（比如日文字体里没有的简体字）也会跟着变粗细 */
-    const d = { display: 'swap', weight: String(W) };
-    const wv = wghtFor(x.p.font, W);
+    const d = { display: 'swap', weight: sg.lo === sg.hi ? String(W) : `${sg.lo} ${sg.hi}` };
+    const wv = cont ? null : wghtFor(x.p.font, W);
     if (wv) d.variationSettings = `"wght" ${wv}`;
     if (x.range) d.unicodeRange = fmtRanges(x.range);
     if (x.p.size !== 100) d.sizeAdjust = `${x.p.size}%`;
@@ -550,7 +580,7 @@ async function rebuildNow() {
   const old = liveFaces;
   liveFaces = faces; liveFamily = fam;
   root.style.setProperty('--cf', `"${fam}"`);
-  root.style.setProperty('--fw', W);
+  root.style.setProperty('--fw', cont ? state.view.wcont : W);
   old.forEach(f => document.fonts.delete(f));
   setBusy('');
   updateNaive();
