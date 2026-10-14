@@ -23,6 +23,12 @@ function fontCell(key, o, isHan, allowLatin) {
     html += `<select class="wsel" data-act="wsel" aria-label="${esc(T('wselAria', { w: W }))}">` +
       [0, ...WEIGHTS].map(w => `<option value="${w || ''}"${(ov?.weight || 0) === w ? ' selected' : ''}>${w || esc(T('wAuto', { w: auto }))}</option>`).join('') + '</select>';
   }
+  /* 本机字体和字体文件：这个字重用的字体名 / 文件路径（自动推测，可改） */
+  if (W !== BASE_W && !o.follow && (o.font?.kind === 'local' || o.font?.kind === 'file')) {
+    const k = fontKey(o.font) + '|' + W, auto = o.font.kind === 'local' ? autoLocal(o.font, W).name : guessPath(o.font.fileName, W);
+    html += `<input class="wname" type="text" data-act="wname" data-k="${esc(k)}" value="${esc(state.weightNames[k] || auto)}" placeholder="${esc(auto)}"
+      spellcheck="false" title="${esc(T('mapHint'))}" aria-label="${esc(T('wnameAria', { w: W }))}">`;
+  }
   return html;
 }
 function numCell(field, key) {

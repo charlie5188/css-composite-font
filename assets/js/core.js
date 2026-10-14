@@ -331,7 +331,8 @@ function fontAtWeight(f, W, live = false) {
   if (f.kind === 'file') return live ? f : { kind: 'path', path: manual || guessPath(f.fileName, W) };
   return f;
 }
-const weightNamesChanged = debounce(() => { renderWeightMap(); renderExport(); if (state.view.weight !== BASE_W) rebuild(); }, 60);
+/* 正在改字体名时不重绘表格，免得输入框失去焦点 */
+const weightNamesChanged = debounce(() => { if (!document.activeElement?.classList.contains('wname')) renderEditor(); renderExport(); if (state.view.weight !== BASE_W) rebuild(); }, 60);
 
 /* ================= 解析：类别 → 实际字体/大小/基线 ================= */
 function rootOf(id, depth = 0) { const c = state.classes[id]; return c.follow && depth < 4 ? rootOf(c.follow, depth + 1) : id; }

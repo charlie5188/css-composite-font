@@ -7,7 +7,6 @@ const resolvedOf = t => t.type === 'class' ? resolveCls(t.id) : resolveCustom(st
 function changed({ fonts = false, editor = true } = {}) {
   refreshCustomRanges();
   if (editor) renderEditor(); else refreshInherited();
-  if (fonts) renderWeightMap();
   renderPreview();
   if (fonts) rebuild(); else { drawSpecimen(); renderExport(); }
   markCustomPreset();
@@ -50,6 +49,10 @@ $('#editor').addEventListener('change', e => {
     if (el.value === 'pick') { el.value = o.follow || 'own'; openPicker(t); return; }
     o.follow = el.value === 'own' ? null : el.value;
     changed({ fonts: true });
+  } else if (el.dataset.act === 'wname') {
+    const val = el.value.trim();
+    if (val && val !== el.placeholder) state.weightNames[el.dataset.k] = val; else delete state.weightNames[el.dataset.k];
+    weightNamesChanged(); saveState();
   } else if (el.dataset.act === 'wsel') {
     const v = +el.value, ov = ((state.wOver[W] ||= {})[keyOf(t)] ||= {});
     if (v) ov.weight = v; else delete ov.weight;
@@ -77,7 +80,6 @@ const INFO = {
   cmpInfo: () => esc(state.view.cmp === 'fsa' ? T('hintFsa', { r: lastFsaR ?? '…' }) : T('hintPlain')),
   metricsInfo: () => `<p>${esc(T('metricsHint'))}</p><p>${esc(T('mixInfo'))}</p><p>${T('refNote')}</p>`,
   typoInfo: () => T('typoFoot'),
-  mapInfo: () => esc(T('mapHint')),
 };
 function infoHtml(key) {
   if (key.startsWith('typo:')) { const t = TYPO.find(x => x.key === key.slice(5)); return t?.note ? esc(tr(t.note)) : ''; }
@@ -203,17 +205,10 @@ function initToolbar() {
     state.weights = [...set].sort((a, c) => a - c);
     const prevW = state.view.weight;
     if (!state.weights.includes(prevW)) state.view.weight = state.weights.includes(BASE_W) ? BASE_W : state.weights[0];
-    syncToolbar(); renderWeightMap(); renderExport(); saveState();
+    syncToolbar(); renderExport(); saveState();
     if (state.view.weight !== prevW) { renderEditor(); rebuild(); }
   });
   $('#exBase').addEventListener('change', e => { state.baseMode = e.target.value; renderExport(); saveState(); });
-  $('#wmap').addEventListener('input', e => {
-    const k = e.target.dataset.k; if (!k) return;
-    const val = e.target.value.trim();
-    if (val) state.weightNames[k] = val; else delete state.weightNames[k];
-    renderWeightMap(); renderExportSoon(); saveState();
-    if (+k.split('|').pop() === state.view.weight) rebuild();
-  });
   $('#exGeneric').addEventListener('change', e => { state.generic = e.target.value; renderPreview(); renderExport(); saveState(); });
   const tabs = { tabCss: 'css', tabJs: 'js', tabNotes: 'notes' };
   for (const [id, key] of Object.entries(tabs)) $('#' + id).addEventListener('click', () => {
@@ -313,7 +308,7 @@ function applyPreset(id) {
     if (!keepText) { state.view.sample = p.sample; state.view.text = SAMPLES[p.sample].text; state.typo.lang = SAMPLES[p.sample].lang; state.view.vertical = !!p.vertical; }
   }
   normalizeState();
-  refreshCustomRanges(); syncToolbar(); renderEditor(); renderWeightMap(); renderPreview(); renderPresetCards(); rebuild(); saveState();
+  refreshCustomRanges(); syncToolbar(); renderEditor(); renderPreview(); renderPresetCards(); rebuild(); saveState();
 }
 function initPresets() {
   let armed = null;
@@ -446,7 +441,7 @@ function applyUI() {
   document.querySelectorAll('[data-ta]').forEach(el => el.dataset.ta.split(';').forEach(p => { const [a, k] = p.split(':'); el.setAttribute(a, T(k)); }));
   document.querySelectorAll('[data-ui]').forEach(el => { el.hidden = el.dataset.ui !== UI; });
   document.querySelectorAll('#uiSeg [data-ui-lang]').forEach(b => b.setAttribute('aria-checked', b.dataset.uiLang === UI));
-  renderLangOptions(); renderPresetCards(); renderTypoRows(); renderEditor(); renderWeightMap();
+  renderLangOptions(); renderPresetCards(); renderTypoRows(); renderEditor();
   syncToolbar(); renderPreview(); drawSpecimen(); renderExport();
 }
 $('#uiSeg').addEventListener('click', e => {
