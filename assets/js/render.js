@@ -154,12 +154,11 @@ function renderSampleTabs() {
     (cur in SAMPLES ? '' : `<button type="button" role="tab" aria-selected="true" disabled>${esc(T('customSample'))}</button>`);
 }
 function renderLangOptions() {
-  $('#vLang').innerHTML = TYPO.find(t => t.key === 'lang').values.map(([v, d]) => `<option value="${v}">${esc(tr(d))}</option>`).join('');
+  $('#exLang').innerHTML = `<option value="">${esc(T('anyLang'))}</option>` + TYPO.find(t => t.key === 'lang').values.map(([v, d]) => `<option value="${v}">${esc(tr(d))}</option>`).join('');
 }
 function syncToolbar() {
   const v = state.view;
   renderSampleTabs();
-  $('#vLang').value = state.typo.lang;
   $('#vSize').value = v.size; $('#vSizeOut').textContent = `${v.size}px · ${round(v.size * 0.75, 0.5)}pt · ${Math.round(v.size * 1.0583)}Q`;
   $('#vLh').value = v.lh; $('#vLhOut').textContent = (+v.lh).toFixed(2);
   $('#vVertical').setAttribute('aria-pressed', v.vertical);
@@ -178,6 +177,7 @@ function syncToolbar() {
   $('#vWeight').innerHTML = state.weights.map(w => `<button type="button" role="radio" data-w="${w}" aria-checked="${w === state.view.weight}">${w}</button>`).join('');
   $('#vWeightLab').hidden = state.weights.length < 2;
   $('#exGeneric').value = state.generic;
+  $('#exLang').value = state.scope;
 }
 
 /* ================= 度量 ================= */

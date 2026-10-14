@@ -148,7 +148,6 @@ function initToolbar() {
   for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vCompare', 'compare']])
     $('#' + id).addEventListener('click', () => { v()[key] = !v()[key]; syncToolbar(); renderPreview(); renderExport(); saveState(); });
   $('#cmpMode').addEventListener('change', e => { v().cmp = e.target.value; updateNaive(); saveState(); });
-  $('#vLang').addEventListener('change', e => { state.typo.lang = e.target.value; renderPreview(); renderExport(); saveState(); });
   $('#vWeight').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) setPreviewWeight(+b.dataset.w); });
   $('#editTextBtn').addEventListener('click', () => {
     const box = $('#sampleBox'), open = box.hidden;
@@ -210,6 +209,12 @@ function initToolbar() {
   });
   $('#exBase').addEventListener('change', e => { state.baseMode = e.target.value; renderExport(); saveState(); });
   $('#exGeneric').addEventListener('change', e => { state.generic = e.target.value; renderPreview(); renderExport(); saveState(); });
+  /* 选了语言时校样也按这个语言排（字形地区差异、禁则），不限语言时校样沿用示例文字的语言 */
+  $('#exLang').addEventListener('change', e => {
+    state.scope = e.target.value;
+    if (state.scope) state.typo.lang = state.scope;
+    renderPreview(); renderExport(); saveState();
+  });
   const tabs = { tabCss: 'css', tabJs: 'js', tabNotes: 'notes' };
   for (const [id, key] of Object.entries(tabs)) $('#' + id).addEventListener('click', () => {
     exTab = key;

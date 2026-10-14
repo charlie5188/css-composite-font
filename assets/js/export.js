@@ -67,12 +67,14 @@ function buildCss() {
     extra.push([`  ${t.prop}: ${val};`, `/* ${tr(t.label)}${sup ? ' · ' + sup : ''} */`]);
   }
   const w = Math.max(0, ...extra.map(e => e[0].length)) + 2;
-  const lang = state.typo.lang;
-  const head = [T('cssUse', { lang })];
+  const lang = state.scope;
+  const head = [lang ? T('cssUseLang', { lang }) : T('cssUseAny')];
   if (state.typo.wordBreak === 'auto-phrase' && !/^(ja|ko)/.test(lang)) head.push(T('cssAutoPhrase'));
-  out.push('', ...head, '.composite {', `  font-family: ${stack}, ${generic};`, ...extra.map(([a, b]) => a.padEnd(w) + b), '}');
+  out.push('', ...head, scopeSel() + ' {', `  font-family: ${stack}, ${generic};`, ...extra.map(([a, b]) => a.padEnd(w) + b), '}');
   return { css: out.join('\n'), count, files: [...new Set(notes)] };
 }
+/* 选了适用语言时用 :lang() 限定，字体只在这个语言的内容里生效 */
+const scopeSel = () => state.scope ? `.composite:lang(${state.scope})` : '.composite';
 function shiftTable() {
   let segs = [];
   for (const c of CLASSES) { const s = resolveCls(c.id).shift; if (s) segs.push(...EFF[c.id].map(([a, b]) => [a, b, s / 100])); }
@@ -103,7 +105,7 @@ function buildJs() {
   const table = []; for (let i = 0; i < rows.length; i += 3) table.push('    ' + rows.slice(i, i + 3).join(', '));
   return T('jsHead', { fam: cssFamilyName() }) + `
 (() => {
-  const SELECTOR = '.composite';
+  const SELECTOR = '${scopeSel()}';
   const SHIFT = [ ${T('jsTable')}
 ${table.join(',\n')}
   ];

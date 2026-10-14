@@ -236,6 +236,7 @@ function stateFromPreset(p, prev) {
     moved: prev?.moved ? { ...prev.moved } : {},
     wOver: {},
     generic: prev?.generic || 'auto',
+    scope: prev?.scope ?? '',
     classes: freshClasses(p),
     custom: [],
     view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, compare: false, cmp: 'plain', weight: 400 },
@@ -266,6 +267,7 @@ function normalizeState() {
   delete state.weight;
   state.baseMode = state.baseMode || 'link';
   state.weightNames = state.weightNames || {};
+  state.scope = state.scope || '';     // 导出的 CSS 只在这个语言里生效；空 = 不限语言
   state.wOver = state.wOver || {};
   state.moved = state.moved || {};
   if (state.view.sample === 'title') {   // 「标题」示例已删除，回到正文
