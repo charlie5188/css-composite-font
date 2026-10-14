@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css?v=9bf8d1bb">
-<script src="assets/js/i18n.js?v=4c45c882" defer></script>
+<script src="assets/js/i18n.js?v=7c6f1783" defer></script>
 <script src="assets/js/unicode.js?v=cab968d0" defer></script>
 <script src="assets/js/core.js?v=a3db045d" defer></script>
 <script src="assets/js/render.js?v=ff81e6b5" defer></script>
@@ -160,7 +160,7 @@
         <h3>Google Fonts</h3>
         <p>中日韩字体在 Google Fonts 上被切成上百个分片，每片有自己的 <code>unicode-range</code>。导出时工具会把分片范围和类别范围求交集，只保留需要的分片，所以西文类别通常只剩一两条。url 指向 fonts.gstatic.com，正式项目建议下载后自托管。</p>
         <h3>导出多个字重</h3>
-        <p>在「字重」里多选，会为每个字重各生成一组规则。工具里设定的字体对应 400；其他字重里，Google Fonts 的字体按同样的差值换算（例如 500 的字体在 700 时取 800），没有这个字重就取最接近的；本机字体会按名称推测粗体（例如 W3 → W6、Regular → Bold），并在这台电脑上检测，结果可以在导出区修改。各字体的粗细分布并不一致，在工具栏切换到某个字重后，可以单独调整这个字重下各类别用的粗细和大小。</p>
+        <p>在「字重」里多选，会为每个字重各生成一组规则。工具里设定的字体对应 400；其他字重里，Google Fonts 的字体按同样的差值换算（例如 500 的字体在 700 时取 800），没有这个字重就取最接近的；本机字体会按名称推测粗体（例如 W3 → W6、Regular → Bold），并在这台电脑上检测。各字体的粗细分布并不一致：在校样上方切换到某个字重后，可以单独调整这个字重下各类别的大小，并在「选择字体…」里指定用的粗细、本机字体名或文件。</p>
         <p>各字重的规则没法合并。CSS 变量（<code>var()</code>）在 <code>@font-face</code> 里无效，浏览器会直接丢掉这条描述。同一个 font-family 里，如果有的规则写 <code>font-weight: 700</code>、有的写 <code>400 700</code>，实测 Chrome 会把它们分成两组，只用其中一组，合成就失效了。</p>
         <p>真正占体积的是汉字字体在 Google Fonts 上的上百个分片。「基础字体：引用 Google Fonts」会用 <code>@import</code> 直接引用 Google 的 CSS，把这个字体排在 font-family 的第二位，自己只写需要覆盖它的类别，导出的 CSS 通常只有几 KB。服务器一般会用 gzip 压缩 CSS，导出区显示的 gzip 体积更接近实际传输量。字体文件只按页面用到的字符下载，与 CSS 长度无关。</p>
         <h3>为什么不用 font-size-adjust</h3>
@@ -196,7 +196,7 @@
         <h3>Google Fonts</h3>
         <p>CJK フォントは Google Fonts で 100 以上のサブセットに分割され、それぞれに <code>unicode-range</code> があります。書き出し時にサブセットの範囲とクラスの範囲の共通部分を取り、必要なサブセットだけを残すので、欧文クラスは通常 1〜2 件になります。url は fonts.gstatic.com を指しています。本番ではダウンロードしてセルフホストすることをおすすめします。</p>
         <h3>複数のウェイトを書き出す</h3>
-        <p>「ウェイト」で複数を選ぶと、ウェイトごとに規則を 1 組ずつ生成します。ツールで設定したフォントは 400 に対応します。ほかのウェイトでは、Google Fonts のフォントは同じ差分で換算し（500 のフォントなら 700 のとき 800）、そのウェイトがなければ最も近いものを使います。ローカルフォントは名前から太字の名前を推測し（W3 → W6、Regular → Bold など）、このマシンで確認します。結果は書き出し欄で修正できます。フォントごとにウェイトの分布は異なるので、ツールバーでウェイトを切り替えると、そのウェイトでの各クラスの太さとサイズを個別に調整できます。</p>
+        <p>「ウェイト」で複数を選ぶと、ウェイトごとに規則を 1 組ずつ生成します。ツールで設定したフォントは 400 に対応します。ほかのウェイトでは、Google Fonts のフォントは同じ差分で換算し（500 のフォントなら 700 のとき 800）、そのウェイトがなければ最も近いものを使います。ローカルフォントは名前から太字の名前を推測し（W3 → W6、Regular → Bold など）、このデバイスで確認します。フォントごとにウェイトの分布は異なるので、校正刷りの上でウェイトを切り替えると、そのウェイトでの各クラスのサイズを個別に調整でき、「フォントを選択…」で使う太さ・ローカルフォント名・ファイルを指定できます。</p>
         <p>ウェイトごとの規則はまとめられません。CSS 変数（<code>var()</code>）は <code>@font-face</code> の中では無効で、ブラウザはその記述を捨てます。同じ font-family の中に <code>font-weight: 700</code> の規則と <code>400 700</code> の規則が混ざると、Chrome は実測で別のグループとして扱い、片方しか使わないため、合成が効かなくなります。</p>
         <p>容量の大半は、Google Fonts で 100 以上に分割された漢字フォントの規則です。「ベースフォント：Google Fonts を参照」では Google の CSS を <code>@import</code> で直接参照し、そのフォントを font-family の 2 番目に置いて、上書きするクラスだけを書き出します。書き出す CSS は通常数 KB です。サーバーは CSS を gzip で圧縮するのが一般的なので、書き出し欄の gzip 後のサイズが実際の転送量に近い値です。フォントファイルはページで使う文字の分だけダウンロードされ、CSS の長さとは関係ありません。</p>
         <h3>font-size-adjust を使わない理由</h3>
