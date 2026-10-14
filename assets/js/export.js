@@ -62,7 +62,7 @@ function buildCss() {
   const extra = [];
   for (const t of TYPO) {
     const val = state.typo[t.key];
-    if (t.attr || !val || (!t.always && val === t.def)) continue;
+    if (t.attr || !val || (!t.always && val === (t.init ?? t.def))) continue;
     const sup = t.sup ? `Chrome ${t.sup.chrome} · Firefox ${t.sup.firefox} · Safari ${t.sup.safari}` : '';
     extra.push([`  ${t.prop}: ${val};`, `/* ${tr(t.label)}${sup ? ' · ' + sup : ''} */`]);
   }

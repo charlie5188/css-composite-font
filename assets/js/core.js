@@ -169,10 +169,10 @@ const TYPO = [
     sup: { chrome: '119', firefox: '—', safari: '—' },
     values: [['normal', { zh: '逐字', ja: '1 文字ずつ' }], ['auto-phrase', { zh: '按词组', ja: '文節単位' }]],
     note: { zh: 'auto-phrase 只对 lang="ja" 和 lang="ko" 生效，适合标题和短文。', ja: 'auto-phrase は lang="ja" と lang="ko" でのみ有効で、見出しや短い文に向いています。' } },
-  { key: 'lineBreak', label: { zh: '禁则', ja: '禁則' }, prop: 'line-break', def: 'auto',
+  { key: 'lineBreak', label: { zh: '禁则', ja: '禁則' }, prop: 'line-break', def: 'auto', defJa: 'strict', init: 'auto',
     sup: { chrome: '58', firefox: '69', safari: '11' },
     values: [['auto', null], ['loose', { zh: '宽松', ja: 'ゆるい' }], ['normal', null], ['strict', { zh: '严格', ja: '厳しい' }], ['anywhere', { zh: '任意处断行', ja: 'どこでも改行' }]] },
-  { key: 'wrap', label: { zh: '段落换行', ja: '段落の折り返し' }, prop: 'text-wrap', def: 'wrap',
+  { key: 'wrap', label: { zh: '段落换行', ja: '段落の折り返し' }, prop: 'text-wrap', def: 'pretty', init: 'wrap',
     sup: { chrome: 'balance 114 · pretty 117', firefox: 'balance 121', safari: 'balance 17.5 · pretty 26' },
     values: [['wrap', null], ['pretty', { zh: '避免末行孤字', ja: '最終行の孤立を避ける' }], ['balance', { zh: '各行等长（标题）', ja: '行長をそろえる（見出し）' }]],
     note: { zh: 'Chrome 的 pretty 只调整段落最后四行。', ja: 'Chrome の pretty は段落の最後の 4 行だけを調整します。' } },
@@ -189,7 +189,11 @@ const TYPO = [
     sup: { chrome: '48', firefox: '34', safari: '9.1' },
     values: [['normal', null], ['"palt"', { zh: '假名标点比例宽', ja: 'かなと約物をプロポーショナルに' }], ['"halt"', { zh: '标点半角', ja: '約物を半角に' }]] },
 ];
-const TYPO_DEFAULTS = Object.fromEntries(TYPO.map(t => [t.key, t.def]));
+/* 工具的默认值以正文为前提：段落换行用 pretty；日文正文的禁则用 strict。
+   def 是工具的默认值，init 是 CSS 的初始值：导出时只省略等于 init 的值 */
+const typoDef = (t, lang = state?.typo?.lang) => t.defJa && /^ja/.test(lang || '') ? t.defJa : t.def;
+const typoDefaults = lang => Object.fromEntries(TYPO.map(t => [t.key, typoDef(t, lang)]));
+const TYPO_DEFAULTS = typoDefaults('zh-Hans');
 const ENGINE = (() => {
   const ua = navigator.userAgent; let m;
   if ((m = ua.match(/Firefox\/(\d+)/))) return { id: 'firefox', name: 'Firefox', v: m[1] };
@@ -227,7 +231,7 @@ function freshClasses(p) {
 }
 function stateFromPreset(p, prev) {
   return {
-    v: 3,
+    v: 4,
     preset: p.id,
     name: prev?.name || 'My Composite',
     weights: prev?.weights || [100, 200, 300, 400, 500, 600, 700, 800, 900],
@@ -240,7 +244,7 @@ function stateFromPreset(p, prev) {
     classes: freshClasses(p),
     custom: [],
     view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, compare: false, cmp: 'plain', weight: 400 },
-    typo: prev?.typo ? { ...prev.typo } : { ...TYPO_DEFAULTS, lang: SAMPLES[p.sample].lang },
+    typo: prev?.typo ? { ...prev.typo } : { ...typoDefaults(SAMPLES[p.sample].lang), lang: SAMPLES[p.sample].lang },
     metric: prev?.metric || { basis: 'mix', target: 83 },
   };
 }
@@ -260,7 +264,12 @@ function normalizeState() {
     if (Array.isArray(state.weights) && state.weights.length === 1 && state.weights[0] === 400) state.weights = [100, 200, 300, 400, 500, 600, 700, 800, 900];
     state.v = 3;
   }
-  state.typo = { ...TYPO_DEFAULTS, ...(state.typo || {}) };
+  state.typo = { ...typoDefaults(state.typo?.lang), ...(state.typo || {}) };
+  if (state.v === 3) {      // v4 起正文默认：text-wrap: pretty；日文 line-break: strict。仍是旧默认值的改成新默认值
+    if (state.typo.wrap === 'wrap') state.typo.wrap = 'pretty';
+    if (/^ja/.test(state.typo.lang) && state.typo.lineBreak === 'auto') state.typo.lineBreak = 'strict';
+    state.v = 4;
+  }
   state.view.cmp = state.view.cmp || 'plain';
   state.metric = { basis: 'mix', target: 83, ...(state.metric || {}) };
   state.weights = Array.isArray(state.weights) && state.weights.length ? [...new Set(state.weights)].sort((a, b) => a - b) : [state.weight || 400];

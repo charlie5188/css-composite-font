@@ -271,7 +271,7 @@ function renderTypoRows() {
   renderTypoStatus();
 }
 function renderTypoStatus() {
-  const n = TYPO.filter(t => !t.attr && state.typo[t.key] !== t.def).length;
+  const n = TYPO.filter(t => !t.attr && state.typo[t.key] !== typoDef(t)).length;
   $('#typoChanged').textContent = n ? T('typoChanged', { n }) : '';
   $('#typoReset').hidden = !n;
   for (const t of TYPO) {
@@ -516,7 +516,7 @@ function resetAll() {
 function initReset() {
   $('#typoReset').addEventListener('click', e => {
     e.preventDefault();      // 按钮在 summary 里，别让它顺便折叠面板
-    for (const t of TYPO) if (!t.attr) state.typo[t.key] = t.def;
+    for (const t of TYPO) if (!t.attr) state.typo[t.key] = typoDef(t);
     renderTypoRows(); renderPreview(); renderExport(); saveState();
   });
   let armedT = null;
