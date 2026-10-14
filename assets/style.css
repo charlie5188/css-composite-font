@@ -364,6 +364,16 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .wnum-wrap .vf-tag{position:absolute;left:4px;top:50%;transform:translateY(-50%);pointer-events:none}
 .wnum-wrap .wnum{width:84px;padding-left:28px}
 .pk-st{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.pk-cov{display:flex;flex-wrap:wrap;gap:5px}
+.pk-cov:empty{display:none}
+.cov{font-size:11.5px;line-height:1;padding:4px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.cov.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.cov.part{color:var(--caution);background:var(--caution-bg);border-color:transparent}
+.cov.none{color:var(--faint);text-decoration:line-through}
+.cov-note{flex-basis:100%;font-size:11.5px;color:var(--muted);margin-top:2px}
+.cov-note i,#pkSample .miss{outline:1px dashed color-mix(in srgb,var(--warn) 70%,transparent);outline-offset:-1px;background:color-mix(in srgb,var(--warn) 9%,transparent);border-radius:2px}
+.cov-note i{display:inline-block;width:10px;height:10px;vertical-align:-1px;margin-right:4px}
+#pkSample .miss{color:var(--warn)}
 .pk-check{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:10px}
 .pk-scope{display:flex;gap:18px;flex-wrap:wrap;font-size:13px}
 .pk-scope label{display:inline-flex;gap:6px;align-items:center}

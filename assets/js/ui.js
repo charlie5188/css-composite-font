@@ -403,12 +403,65 @@ function candFromFields() {
   if (pickW && base.kind === 'file') return base;      // 字体文件：没上传新文件时，校样仍用原来的文件，这里只定导出时的文件名
   return null;
 }
+/* ================= 字符覆盖：这个字体有哪些字 ================= */
+/* 每个字符集抽查一组有代表性的字（简体、繁体、日本汉字各取彼此不同的字形） */
+const COV_SETS = [
+  ['covLatin', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'],
+  ['covDigit', '0123456789'],
+  ['covKana', 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンー'],
+  ['covSC', '这们说时对过学发会经实现进动应头书长马门问间东车见风让认识语读谁调谈网样个钱'],
+  ['covTC', '這們說時對過學發會經實現進動應頭書長馬門問間東車見風讓認識語讀誰調談網樣個錢'],
+  ['covJP', '円気駅図県様広応戦鉄売読楽薬弁両帰稲鉱塩'],
+  ['covKR', '가나다라마바사아자차카타파하한글'],
+  ['covSym', '①②③※→℃○■△◎★〒'],
+];
+/* 缺哪些字。Google Fonts 直接看各分片的 unicode-range。本机字体和字体文件：后面接一个「空白字体」
+   （616 字节，所有字符都映射到宽度为 0 的空字形），这个字体没有的字会落到空白字体上，宽度量出来就是 0 */
+const BLANK_FONT = 'data:font/ttf;base64,AAEAAAAKAIAAAwAgT1MvMlQEUR0AAACsAAAAYGNtYXAAIrhhAAABDAAAADRnbHlmAAAAAAAAAUAAAAAMaGVhZF8eQOUAAAFMAAAANmhoZWEDIf87AAABhAAAACRobXR4AAAAAAAAAagAAAAIbG9jYQAGAAYAAAGwAAAABm1heHAAAwACAAABuAAAACBuYW1lBcMVaQAAAdgAAABucG9zdP+fADIAAAJIAAAAIAAEAAABkAAFAAAAAAAAAAAAAAAAAAAAAAAAADIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABOT05FAEAAIP//AyD/OAAAAyAAyAAAAAEAAAAAAAAAAAAAACAAAAAAAAEAAwAKAAAADAANAAAAAAAoAAAAAAAAAAIAAAAgAADX/wAAAAEAAOAAABD//wAAAAEAAAAAAAAAAAAAAAAAAQAAAAEAAC3z3ftfDzz1AAsD6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAgAAAAAAAAABAAADIP84AAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAABgAGAAAAAQAAAAIAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAQANgADAAEECQABAA4AAAADAAEECQACAA4ADgADAAEECQAEAA4AHAADAAEECQAGAA4AKgBDAEYAQgBsAGEAbgBrAFIAZQBnAHUAbABhAHIAQwBGAEIAbABhAG4AawBDAEYAQgBsAGEAbgBrAAAAAwAAAAAAAP+cADIAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
+let blankReady = null;
+function loadBlank() {
+  blankReady ||= new FontFace('__cf_blank', `url(${BLANK_FONT})`).load().then(f => { document.fonts.add(f); return true; }, () => false);
+  return blankReady;
+}
+async function missingIn(s, chars) {
+  if (s.font.kind === 'google') {
+    const all = s.faces.flatMap(fc => fc.range || [[0, 0x10FFFF]]).sort((a, b) => a[0] - b[0]), merged = [];
+    for (const r of all) { const l = merged[merged.length - 1]; if (l && r[0] <= l[1] + 1) l[1] = Math.max(l[1], r[1]); else merged.push([...r]); }
+    return new Set(chars.filter(c => !inRanges(merged, c.codePointAt(0))));
+  }
+  if (!(await loadBlank())) return new Set();
+  try { await document.fonts.load(`32px "${s.family}"`, chars.join('')); } catch (e) { /* 照常检测 */ }
+  const ctx = document.createElement('canvas').getContext('2d');
+  ctx.font = `32px "${s.family}", "__cf_blank"`;
+  return new Set(chars.filter(c => ctx.measureText(c).width === 0));
+}
+let covTok = 0;
+async function renderCoverage(s, f) {
+  const tok = ++covTok, box = $('#pkCov'), sample = $('#pkSample');
+  const text = sample.dataset.text || sample.textContent;
+  const sampleChars = [...new Set([...text].filter(c => c.trim() && c !== '·'))];
+  const miss = await missingIn(s, [...new Set([...COV_SETS.flatMap(([, cs]) => [...cs]), ...sampleChars])]);
+  if (tok !== covTok || pickCand !== f) return;
+  box.innerHTML = COV_SETS.map(([k, cs]) => {
+    const list = [...cs], have = list.filter(c => !miss.has(c)).length;
+    const cls = have === list.length ? 'ok' : have ? 'part' : 'none';
+    const mark = cls === 'ok' ? ' ✓' : cls === 'part' ? ` ${have}/${list.length}` : '';
+    return `<span class="cov ${cls}" title="${esc(T('covTitle', { n: list.length, k: have }))}">${esc(T(k))}${mark}</span>`;
+  }).join('') + (sampleChars.some(c => miss.has(c)) ? `<span class="cov-note"><i></i>${esc(T('covMiss'))}</span>` : '');
+  sample.innerHTML = [...text].map(c => miss.has(c) ? `<span class="miss">${esc(c)}</span>` : esc(c)).join('');
+}
+function resetCoverage() {
+  covTok++;
+  $('#pkCov').innerHTML = '';
+  const sample = $('#pkSample');
+  if (sample.dataset.text) sample.textContent = sample.dataset.text;
+}
 function updateCand() {
   const f = candFromFields();
   pickCand = f;
   updateScope();
   const ok = $('#pkOk'), st = $('#pkStatus'), sample = $('#pkSample');
-  st.classList.remove('caution'); sample.hidden = false; showVfTag(null);
+  st.classList.remove('caution'); sample.hidden = false; showVfTag(null); resetCoverage();
   if (!f) { ok.disabled = true; st.textContent = ''; sample.style.fontFamily = 'var(--ui)'; return; }
   const s = source(f, { retry: true });
   ok.disabled = true; st.textContent = T('pkChecking'); sample.style.fontFamily = 'var(--ui)';
@@ -420,6 +473,7 @@ function updateCand() {
       const ax = f.kind === 'google' ? null : f.axis;
       showVfTag(ax);
       if (f.kind === 'google') vfAxis(f.family).then(a => { if (pickCand === f) showVfTag(a); });
+      renderCoverage(s, f);
       ok.disabled = false;
     } else {
       st.textContent = srcError(s) + (f.kind === 'local' ? T('pkLocalStill') : '');
@@ -494,7 +548,7 @@ function openPicker(t) {
   $('#ffFile').value = '';
   $('#lfMsg').textContent = T('lfMsg'); $('#lfMsg').classList.remove('caution');
   pickCand = ovf?.kind === 'file' ? ovf : cur?.kind === 'file' ? cur : null;
-  $('#pkSample').textContent = `${t.type === 'class' ? CLS[t.id].sample : (state.custom[t.i].chars || '')} · 永国字體 あア Hamburg 0123`;
+  $('#pkSample').textContent = $('#pkSample').dataset.text = `${t.type === 'class' ? CLS[t.id].sample : (state.custom[t.i].chars || '')} · 永国字體 あア Hamburg 0123`;
   picker.showModal();
   setPickTab(pickW ? (ovf || o.font).kind : cur?.kind || 'google');
 }
