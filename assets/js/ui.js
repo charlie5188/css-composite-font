@@ -461,14 +461,16 @@ function updateCand() {
   pickCand = f;
   updateScope();
   const ok = $('#pkOk'), st = $('#pkStatus'), sample = $('#pkSample');
-  st.classList.remove('caution'); sample.hidden = false; showVfTag(null); resetCoverage();
-  if (!f) { ok.disabled = true; st.textContent = ''; sample.style.fontFamily = 'var(--ui)'; return; }
+  /* 预览只在字体真正可用时显示：没选字体、检测中、加载失败时，界面字体画出来的完整文字会让人误以为这个字体都有 */
+  st.classList.remove('caution'); sample.hidden = true; showVfTag(null); resetCoverage();
+  if (!f) { ok.disabled = true; st.textContent = T('pkEmpty'); sample.style.fontFamily = 'var(--ui)'; return; }
   const s = source(f, { retry: true });
   ok.disabled = true; st.textContent = T('pkChecking'); sample.style.fontFamily = 'var(--ui)';
   s.promise.then(() => {
     if (pickCand !== f) return;
     if (s.status === 'ok') {
       sample.style.fontFamily = `"${s.family}", var(--ui)`;
+      sample.hidden = false;
       st.textContent = f.kind === 'google' ? T('pkGoogleOk', { n: s.faces.length }) : f.kind === 'local' ? T('pkLocalOk') : T('pkFileOk');
       const ax = f.kind === 'google' ? null : f.axis;
       showVfTag(ax);
@@ -477,7 +479,7 @@ function updateCand() {
       ok.disabled = false;
     } else {
       st.textContent = srcError(s) + (f.kind === 'local' ? T('pkLocalStill') : '');
-      if (f.kind === 'local') { st.classList.add('caution'); sample.hidden = true; }   // 预览只会是回退字体，不如不显示
+      st.classList.add('caution');
       ok.disabled = f.kind !== 'local';
     }
   });
