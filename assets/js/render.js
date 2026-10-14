@@ -239,6 +239,7 @@ function syncToolbar() {
   $('#vColor').setAttribute('aria-pressed', v.colorize);
   $('#vCompare').setAttribute('aria-pressed', v.compare);
   $('#vItalic').setAttribute('aria-pressed', !!v.italic);
+  document.querySelectorAll('#specViewPop [data-sg]').forEach(b => b.setAttribute('aria-pressed', (v.specShow || {})[b.dataset.sg] ?? true));
   const nOn = [v.vertical, v.colorize, v.compare, v.italic].filter(Boolean).length;
   $('#viewCount').textContent = nOn ? ` · ${nOn}` : '';
   $('#cmpMode').value = v.cmp;
@@ -284,50 +285,68 @@ function measureRef() {
   if (face < 1) return null;
   return { font, cap: c.measureText('H').actualBoundingBoxAscent / face, x: c.measureText('x').actualBoundingBoxAscent / face };
 }
+/* 度量参考图：汉字字面为基准，叠上西文（大写高、x 高）、数字（数字高）、假名（假名字面）的参考线。
+   西文、数字、假名可以在「显示」里分别隐藏；下面的读数只在对应项显示时出现 */
 function drawSpecimen() {
-  const cv = $('#spec');
+  const cv = $('#spec'), sh = { latin: true, digit: true, kana: true, ...(state.view.specShow || {}) };
   const W = cv.clientWidth || 600;
-  const H = Math.round(Math.min(250, Math.max(180, W * 0.3)));
+  const ctx = cv.getContext('2d');
+  const labelW = Math.min(150, W * 0.3), plotR = W - labelW;
+  const fam = `${liveFamily ? `"${liveFamily}", ` : ''}serif`;
+  const shiftOf = ch => settingOf(ownerOf(ch.codePointAt(0))).shift / 100;
+  /* 画出来的字：汉字总在；西文 H x g、数字 0、假名 あ 按显示设定 */
+  const show = [['国', 'han'], ...(sh.kana ? [['あ', 'kana']] : []), ...(sh.latin ? [['H', 'latin'], ['x', 'latin'], ['g', 'latin']] : []), ...(sh.digit ? [['0', 'digit']] : [])];
+  /* 字号先按宽度定（最大 140px），画布高度再跟着字号走：窄屏上不会留出大片空白 */
+  let fs = 140;
+  ctx.font = `${fs}px ${fam}`;
+  const span = show.reduce((s, [ch]) => s + ctx.measureText(ch).width, 0) + fs * 0.18 * (show.length - 1);
+  if (span > plotR - 24) fs = Math.floor(fs * (plotR - 24) / span);
+  const nLines = 3 + (sh.latin ? 3 : 0) + (sh.digit ? 2 : 0) + (sh.kana ? 2 : 0);
+  const H = Math.round(Math.min(270, Math.max(140, fs * 1.75, nLines * 13 + 16)));
   const dpr = window.devicePixelRatio || 1;
   cv.style.height = H + 'px';
   cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
-  const ctx = cv.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
-  const fs = Math.round(Math.min(H * 0.58, W / 5.2));
-  const glyphFont = `${fs}px ${liveFamily ? `"${liveFamily}", ` : ''}serif`;
+  const glyphFont = `${fs}px ${fam}`;
   ctx.font = glyphFont;
   ctx.textBaseline = 'alphabetic';
-  const glyphs = ['国', 'H', 'x', 'g'].map(ch => {
-    const t = ctx.measureText(ch);
-    return { ch, asc: t.actualBoundingBoxAscent, desc: t.actualBoundingBoxDescent, w: t.width, shift: settingOf(ownerOf(ch.codePointAt(0))).shift / 100 * fs };
-  });
-  const [han, cap, xg] = glyphs;
-  const baseY = Math.round(H * 0.7);
+  const m = ch => { const t = ctx.measureText(ch); return { ch, asc: t.actualBoundingBoxAscent, desc: t.actualBoundingBoxDescent, w: t.width, shift: shiftOf(ch) * fs }; };
+  const han = m('国'), cap = m('H'), xg = m('x'), fig = m('0'), kana = m('あ');
+  const baseY = Math.round(H / 2 + (han.asc - han.desc) / 2);      // 汉字字面放在画布正中
   const hanTop = baseY - han.asc - han.shift, hanBot = baseY + han.desc - han.shift;
   const latBase = baseY - cap.shift, capTop = latBase - cap.asc, xTop = baseY - xg.shift - xg.asc;
-  const C = { ink: cssVar('--ink'), muted: cssVar('--muted'), han: cssVar('--muted'), lat: cssVar('--accent'), band: cssVar('--faint') };
+  const figBase = baseY - fig.shift, figTop = figBase - fig.asc;
+  const kanaTop = baseY - kana.shift - kana.asc, kanaBot = baseY - kana.shift + kana.desc;
+  const C = { ink: cssVar('--ink'), muted: cssVar('--muted'), han: cssVar('--muted'), lat: cssVar('--c-latin'), dig: cssVar('--c-digit'), kana: cssVar('--c-kana'), band: cssVar('--faint') };
 
-  const labelW = Math.min(150, W * 0.3), plotR = W - labelW;
   ctx.save(); ctx.globalAlpha = 0.16; ctx.fillStyle = C.band; ctx.fillRect(0, hanTop, plotR, hanBot - hanTop); ctx.restore();
-  const lines = [
-    { y: hanTop, c: C.han, t: T('gFaceTop') }, { y: hanBot, c: C.han, t: T('gFaceBot') },
-    { y: capTop, c: C.lat, t: T('gCap') }, { y: xTop, c: C.lat, t: T('gX'), dash: [4, 4] },
-    { y: baseY, c: C.muted, t: T('gBase') },
-  ];
-  if (cap.shift) lines.push({ y: latBase, c: C.lat, t: T('gLatBase'), dash: [2, 3] });
+  const lines = [{ y: hanTop, c: C.han, t: T('gFaceTop') }, { y: hanBot, c: C.han, t: T('gFaceBot') }, { y: baseY, c: C.muted, t: T('gBase') }];
+  if (sh.latin) {
+    lines.push({ y: capTop, c: C.lat, t: T('gCap') }, { y: xTop, c: C.lat, t: T('gX'), dash: [4, 4] });
+    if (cap.shift) lines.push({ y: latBase, c: C.lat, t: T('gLatBase'), dash: [2, 3] });
+  }
+  if (sh.digit) {
+    lines.push({ y: figTop, c: C.dig, t: T('gFig') });
+    if (fig.shift) lines.push({ y: figBase, c: C.dig, t: T('gDigBase'), dash: [2, 3] });
+  }
+  if (sh.kana) lines.push({ y: kanaTop, c: C.kana, t: T('gKanaTop'), dash: [6, 3] }, { y: kanaBot, c: C.kana, t: T('gKanaBot'), dash: [6, 3] });
   ctx.font = `11px ${cssVar('--ui') || 'sans-serif'}`;
   ctx.textBaseline = 'middle';
-  const used = [];
-  for (const l of lines.sort((a, b) => a.y - b.y)) {
+  /* 标签按线的位置排，间距至少 12px；超出画布底部时整体上移 */
+  lines.sort((a, b) => a.y - b.y);
+  const ly = [];
+  lines.forEach((l, i) => { ly[i] = Math.max(l.y, i ? ly[i - 1] + 12 : 7); });
+  const over = ly.length ? ly[ly.length - 1] - (H - 7) : 0;
+  if (over > 0) for (let i = ly.length - 1; i >= 0; i--) ly[i] = Math.max(7 + i * 12, Math.min(ly[i] - over, i < ly.length - 1 ? ly[i + 1] - 12 : H - 7));
+  lines.forEach((l, i) => {
     ctx.strokeStyle = l.c; ctx.lineWidth = 1; ctx.setLineDash(l.dash || []);
     ctx.beginPath(); ctx.moveTo(0, Math.round(l.y) + 0.5); ctx.lineTo(plotR, Math.round(l.y) + 0.5); ctx.stroke();
-    let ly = l.y; while (used.some(u => Math.abs(u - ly) < 12)) ly += 12;
-    used.push(ly);
-    ctx.fillStyle = l.c; ctx.fillText(l.t, plotR + 8, ly);
-  }
+    ctx.fillStyle = l.c; ctx.fillText(l.t, plotR + 8, ly[i]);
+  });
   ctx.setLineDash([]);
   ctx.font = glyphFont; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = C.ink;
+  const glyphs = show.map(([ch]) => m(ch));
   const total = glyphs.reduce((s, g) => s + g.w, 0) + fs * 0.18 * (glyphs.length - 1);
   let x = Math.max(12, (plotR - total) / 2);
   for (const g of glyphs) { ctx.fillText(g.ch, x, baseY - g.shift); x += g.w + fs * 0.18; }
@@ -337,13 +356,16 @@ function drawSpecimen() {
   refEl.textContent = !lastRef ? '' : lastRef.none ? T('refNone', { font: lastRef.font })
     : T('refLine', { font: lastRef.font, cap: (lastRef.cap * 100).toFixed(1), x: (lastRef.x * 100).toFixed(1) });
 
-  const face = han.asc + han.desc;
+  const face = han.asc + han.desc, pct = v => `${(v * 100).toFixed(1)}<small>%</small>`;
+  $('#mFigBox').hidden = !sh.digit; $('#mKanaBox').hidden = !sh.kana;
+  $('#mFig').innerHTML = face >= 1 && fig.asc >= 1 ? pct(fig.asc / face) : '–';
+  $('#mKana').innerHTML = face >= 1 && kana.asc >= 1 ? pct((kana.asc + kana.desc) / face) : '–';
   if (face < 1 || cap.asc < 1) { lastMeasure = null; $('#mCap').textContent = $('#mX').textContent = $('#mMid').textContent = '–'; return; }
   const capRatio = cap.asc / face, xRatio = xg.asc / face;
   const midPx = ((capTop + latBase) / 2) - ((hanTop + hanBot) / 2);   // 正值 = 大写中线偏低
   lastMeasure = { capRatio, xRatio, midEm: midPx / fs };
-  $('#mCap').innerHTML = `${(capRatio * 100).toFixed(1)}<small>%</small>`;
-  $('#mX').innerHTML = `${(xRatio * 100).toFixed(1)}<small>%</small>`;
+  $('#mCap').innerHTML = pct(capRatio);
+  $('#mX').innerHTML = pct(xRatio);
   const mid = midPx / fs * 100;
   $('#mMid').innerHTML = Math.abs(mid) < 0.25 ? `0.0<small>% em · ${esc(T('centered'))}</small>`
     : `${esc(mid > 0 ? T('low') : T('high'))} ${Math.abs(mid).toFixed(1)}<small>% em</small>`;

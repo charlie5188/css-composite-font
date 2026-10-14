@@ -275,8 +275,9 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .panel{border-top:1px solid var(--ink);margin-top:44px;padding-top:14px;display:grid;gap:14px;min-width:0}
 .panel-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
 .spec-wrap{background:var(--sheet);border:1px solid var(--line);min-width:0}
-#spec{display:block;width:100%;height:220px}
-.readout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin:0;border-bottom:1px solid var(--line)}
+#spec{display:block;width:100%;height:240px}
+.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));margin:0;border-bottom:1px solid var(--line)}
+.readout div[hidden]{display:none}
 .readout div{padding:4px 14px 12px;min-width:0;border-left:1px solid var(--line)}
 .readout div:first-child{border-left:0;padding-left:0}
 .readout dt{font-size:11.5px;color:var(--muted)}

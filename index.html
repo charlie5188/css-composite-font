@@ -8,14 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=19ab3c38">
-<script src="assets/js/i18n.js?v=48f146c7" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=eeb0ac38">
+<script src="assets/js/i18n.js?v=751bc579" defer></script>
 <script src="assets/js/unicode.js?v=cab968d0" defer></script>
 <script src="assets/js/gfmeta.js?v=9d744a7e" defer></script>
-<script src="assets/js/core.js?v=d2ca1d1d" defer></script>
-<script src="assets/js/render.js?v=a74e6680" defer></script>
+<script src="assets/js/core.js?v=e4c85c0e" defer></script>
+<script src="assets/js/render.js?v=e20b5766" defer></script>
 <script src="assets/js/export.js?v=bbc90080" defer></script>
-<script src="assets/js/ui.js?v=ff0a4509" defer></script>
+<script src="assets/js/ui.js?v=b40a3409" defer></script>
 </head>
 <body>
 <div class="app">
@@ -112,12 +112,21 @@
       <div class="legend" id="legend" hidden></div>
 
       <section class="panel" aria-labelledby="metricsLabel">
-        <div class="panel-head"><h2 class="label lab-i" id="metricsLabel"><span data-t="metrics"></span><button type="button" class="info" data-info="metricsInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2></div>
+        <div class="panel-head"><h2 class="label lab-i" id="metricsLabel"><span data-t="metrics"></span><button type="button" class="info" data-info="metricsInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2>
+          <button class="tog view-btn" type="button" id="specViewBtn" popovertarget="specViewPop" aria-haspopup="true"><span data-t="viewMenu"></span></button>
+          <div class="view-pop" id="specViewPop" popover role="group" data-ta="aria-label:viewMenu">
+            <button class="tog" type="button" data-sg="latin" aria-pressed="true" data-t="sgLatin"></button>
+            <button class="tog" type="button" data-sg="digit" aria-pressed="true" data-t="sgDigit"></button>
+            <button class="tog" type="button" data-sg="kana" aria-pressed="true" data-t="sgKana"></button>
+          </div>
+        </div>
         <div class="spec-wrap"><canvas id="spec" data-ta="aria-label:specAria"></canvas></div>
         <dl class="readout">
           <div><dt data-t="mCap"></dt><dd id="mCap">–</dd></div>
           <div><dt data-t="mX"></dt><dd id="mX">–</dd></div>
           <div><dt data-t="mMid"></dt><dd id="mMid">–</dd></div>
+          <div id="mFigBox"><dt data-t="mFig"></dt><dd id="mFig">–</dd></div>
+          <div id="mKanaBox"><dt data-t="mKana"></dt><dd id="mKana">–</dd></div>
         </dl>
         <div class="ref-line" id="mRef"></div>
         <div class="match">
