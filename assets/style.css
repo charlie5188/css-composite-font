@@ -358,26 +358,36 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 /* ---------- dialog ---------- */
 dialog{border:1px solid var(--ink);border-radius:4px;background:var(--sheet);color:var(--ink);padding:0;width:min(600px,calc(100vw - 32px));max-height:calc(100vh - 48px)}
 dialog::backdrop{background:rgba(8,8,10,.45)}
-.pk{display:grid;gap:16px;padding:22px 24px 24px}
+.pk{display:grid;gap:16px;padding:22px 24px 20px}
 .pk h3{margin:0;font-size:18px;font-weight:600}
 .pk h3 span{color:var(--muted);font-weight:400}
 .pk .tabs{margin-top:-6px;box-shadow:inset 0 -1px 0 var(--line);overflow-y:hidden}
 .pk-grid{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:10px}
 .pk-grid .field input,.pk-grid .field select{width:100%}
 .pk .field input{width:100%}
-.pk-preview{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:18px 0;display:grid;gap:8px}
-#pkSample{font-size:34px;line-height:1.3;overflow-wrap:anywhere}
-.pk-actions{display:flex;justify-content:flex-end;gap:16px;align-items:center}
+/* 选字体对话框：字体 → 预览卡片 → 可变轴（收起）→ 应用范围和按钮 */
+.pk-preview{border:1px solid var(--line);border-radius:4px;padding:16px 18px 14px;display:grid;gap:10px}
+#pkSample{font-size:32px;line-height:1.3;overflow-wrap:anywhere}
+.pk-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:12px;color:var(--muted)}
+#pkSample:not([hidden])+.pk-meta{border-top:1px solid var(--rule);padding-top:10px}
+.pk-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:12px 16px;border-top:1px solid var(--line);padding-top:16px}
+.pk-local{grid-template-columns:minmax(0,1fr) auto;align-items:end}
+.pk-local .tbtn{margin-bottom:9px}
+#lfMsg{margin-top:8px}
+.pk-file{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
+.pk-file+.pk-file,.pk-file+.field{margin-top:12px}
+.file-btn{position:relative;cursor:pointer}
+.file-btn:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+.vh{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .pk .hint{margin:0}
 /* 本机找不到字体：黄色提示，不显示回退字体的预览 */
 .vf-tag{display:inline-flex;align-items:center;flex:none;font:600 9.5px/1 var(--mono);letter-spacing:.06em;padding:3px 5px 2px;border-radius:3px;background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);white-space:nowrap}
 .wnum-wrap{position:relative;flex:none;display:flex}
 .wnum-wrap .vf-tag{position:absolute;left:4px;top:50%;transform:translateY(-50%);pointer-events:none}
 .wnum-wrap .wnum{width:84px;padding-left:28px}
-.pk-st{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .pk-cov{display:flex;flex-wrap:wrap;gap:5px}
 .pk-cov:empty{display:none}
-.cov{font-size:11.5px;line-height:1;padding:4px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.cov{font-size:11px;line-height:1;padding:3px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);white-space:nowrap}
 .cov.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
 .cov.part{color:var(--caution);background:var(--caution-bg);border-color:transparent}
 .cov.none{color:var(--faint);text-decoration:line-through}
@@ -387,8 +397,9 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 #pkSample .miss{color:var(--warn)}
 .pk-check{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:10px}
 /* 可变轴：每行「名称 · 滑块 · 数值 · 默认」 */
-.pk-axes{display:grid;gap:8px}
-.pk-axes-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;font-size:13px}
+.pk-axes>summary{font-size:13px}
+.pk-axes>summary b{font-weight:600;flex:none}
+.ax-sum{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .ax-row{display:grid;grid-template-columns:minmax(96px,auto) minmax(0,1fr) 70px auto;gap:10px;align-items:center;font-size:12.5px}
 .ax-row .ax-name{display:flex;flex-direction:column;line-height:1.25}
 .ax-row .ax-name small{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
@@ -400,11 +411,15 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .ct-ax{grid-column:3/4;display:flex;flex-wrap:wrap;gap:2px 12px;font-size:11px;color:var(--muted);margin:-4px 0 4px}      /* 可变轴的设定写在字体列下面 */
 .ct-ax b{font-family:var(--mono);font-weight:500;color:var(--accent)}
 .ax-row .tbtn:disabled{visibility:hidden}
-.pk-axes details{display:grid;gap:8px}
-.pk-axes summary{cursor:pointer;font-size:12.5px;color:var(--muted);margin-bottom:8px}
-.pk-axes details[open]>summary{margin-bottom:8px}
-.pk-ital{flex-basis:100%;font-size:12px;color:var(--muted)}
-.pk-scope{display:flex;gap:18px;flex-wrap:wrap;font-size:13px}
+/* details 本身不一定能用 grid，内容包在 .ax-body 里排 */
+.ax-body{display:grid;gap:12px;padding-top:10px}
+.pk-axes>summary,.ax-more>summary{display:flex;gap:10px;align-items:baseline;cursor:pointer;list-style:none;min-width:0}
+.pk-axes>summary::-webkit-details-marker,.ax-more>summary::-webkit-details-marker{display:none}
+.pk-axes>summary::before,.ax-more>summary::before{content:'';flex:none;width:6px;height:6px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:translateY(-2px) rotate(-45deg);transition:transform .15s}
+.pk-axes[open]>summary::before,.ax-more[open]>summary::before{transform:translateY(-4px) rotate(45deg)}
+.ax-more>summary{font-size:12.5px;color:var(--muted)}
+.pk-scope{display:flex;gap:6px 16px;flex-wrap:wrap;align-items:center;font-size:13px;margin-right:auto}
+.pk-scope>span{color:var(--muted);font-size:12px}
 .pk-scope label{display:inline-flex;gap:6px;align-items:center}
 #pkStatus.caution,#lfMsg.caution{background:var(--caution-bg);color:var(--caution);padding:9px 12px;border-radius:3px;font-size:12.5px}
 

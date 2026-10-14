@@ -450,8 +450,9 @@ const axStep = (lo, hi) => hi - lo <= 2 ? 0.01 : hi - lo <= 30 ? 0.1 : 1;
 function renderAxes() {
   const box = $('#pkAxes'), f = pickCand, ax = f ? extraAxes(f) : [];
   box.hidden = !ax.length && !f?.axesUnknown;
-  if (!box.hidden && !ax.length) box.innerHTML = `<p class="hint">${esc(T('axUnknown'))}</p>`;
-  else if (!box.hidden) {
+  if (box.hidden) return applySampleAxes();
+  let body = `<p class="hint">${esc(T('axUnknown'))}</p>`;
+  if (ax.length) {
     const g = f.kind === 'google';
     /* 常用的轴在前（宽度、光学尺寸、笔画粗细、倾斜），其他（多是参数轴）收进「更多」，有设定时展开 */
     const MAIN = ['wdth', 'opsz', 'GRAD', 'slnt'], rank = t => MAIN.includes(t) ? MAIN.indexOf(t) : 9;
@@ -468,11 +469,19 @@ function renderAxes() {
       }
       return `<div class="ax-row">${name}${ctl(typeof v === 'number' ? v : def)}<button type="button" class="tbtn" data-axreset="${t}"${typeof v === 'number' ? '' : ' disabled'}>${esc(T('axReset'))}</button></div>`;
     };
-    const rows = (main.length ? main : more).map(row).join(''), rest = main.length ? more : [];
-    box.innerHTML = `<div class="pk-axes-head"><b>${esc(T('axHead'))}</b><span class="hint">${esc(T(g ? 'axNoteG' : 'axNote'))}</span></div>` + rows +
-      (rest.length ? `<details${rest.some(a => a[0] in pickVary) ? ' open' : ''}><summary>${esc(T('axMore', { n: rest.length }))}</summary>${rest.map(row).join('')}</details>` : '');
+    const rest = main.length ? more : [];
+    body = `<p class="hint">${esc(T(g ? 'axNoteG' : 'axNote'))}</p>` + (main.length ? main : more).map(row).join('') +
+      (rest.length ? `<details class="ax-more"${rest.some(a => a[0] in pickVary) ? ' open' : ''}><summary>${esc(T('axMore', { n: rest.length }))}</summary><div class="ax-body">${rest.map(row).join('')}</div></details>` : '');
   }
+  box.innerHTML = `<summary><b>${esc(T('axHead'))}</b><span class="ax-sum"></span></summary><div class="ax-body">${body}</div>`;
+  updateAxSum();
   applySampleAxes();
+}
+/* 收起时也看得到调了什么：「光学尺寸 跟随字号 · 宽度 80」，没调时写「4 个轴，都是默认值」 */
+function updateAxSum() {
+  const el = $('#pkAxes .ax-sum'), f = pickCand; if (!el || !f) return;
+  const n = extraAxes(f).length, list = Object.entries(pickVary).filter(([t]) => axisOf(f, t)).map(([t, v]) => `${axisLabel(t)} ${v === 'auto' ? T('axOpszAuto') : v}`);
+  el.textContent = list.length ? list.join(' · ') : n ? T('axNone', { n }) : '';
 }
 /* 对话框里的预览：Google Fonts 加载的是保留了所有轴的文件，这里用 font-variation-settings 直接显示调过的值 */
 function applySampleAxes() {
@@ -555,6 +564,7 @@ function updateCand() {
   updateScope();
   renderAxes(); renderItal();
   $('#ffItalField').hidden = f?.kind !== 'file';
+  $('#ffName').textContent = f?.kind === 'file' ? f.fileName : T('ffHint');
   $('#ffItalName').textContent = f?.italic?.fileName || '';
   const ok = $('#pkOk'), st = $('#pkStatus'), sample = $('#pkSample');
   /* 预览只在字体真正可用时显示：没选字体、检测中、加载失败时，界面字体画出来的完整文字会让人误以为这个字体都有 */
@@ -615,11 +625,10 @@ function openPicker(t) {
   pickTarget = t;
   const o = objOf(t), W = state.view.weight, key = keyOf(t);
   pickVary = { ...(o.vary || {}) };
+  $('#pkAxes').open = Object.keys(pickVary).length > 0;      // 调过轴时展开，否则收起
   pickW = W !== BASE_W && !o.follow && o.font ? W : null;
   const name = t.type === 'class' ? tr(CLS[t.id].name) : T('customName', { c: state.custom[t.i].chars || '…' });
   $('#pkFor').textContent = '· ' + name + (pickW ? ' · ' + T('pkForW', { w: W }) : '');
-  $('#pkWNote').hidden = !pickW;
-  if (pickW) $('#pkWNote').textContent = T('pkWNote', { w: W });
   picker.querySelectorAll('[data-src]').forEach(b => { b.hidden = false; });
   const cur = resolvedOf(t).font, k = pickW ? fontKey(o.font) + '|' + W : '';
   const ovf = pickW ? state.wOver[W]?.[key]?.font : null;      // 这个字重已经单独换过的字体
@@ -645,7 +654,7 @@ function openPicker(t) {
   $('#ffPathField').hidden = !(pickW && o.font.kind === 'file');
   if (pickW && o.font.kind === 'file') { const g = guessPath(o.font.fileName, W); $('#ffPath').placeholder = g; $('#ffPath').value = state.weightNames[k] || g; }
   $('#ffFile').value = ''; $('#ffItal').value = '';
-  $('#lfMsg').textContent = T('lfMsg'); $('#lfMsg').classList.remove('caution');
+  $('#lfMsg').hidden = true; $('#lfMsg').classList.remove('caution');
   pickCand = ovf?.kind === 'file' ? ovf : cur?.kind === 'file' ? cur : null;
   $('#pkSample').textContent = $('#pkSample').dataset.text = `${t.type === 'class' ? CLS[t.id].sample : (state.custom[t.i].chars || '')} · 永国字體 あア Hamburg 0123`;
   picker.showModal();
@@ -685,7 +694,7 @@ function initPicker() {
     if (v === a[3] && t !== 'opsz') delete pickVary[t]; else pickVary[t] = v;
     axBox.querySelectorAll(`[data-ax="${t}"]`).forEach(el => { if (el !== e.target) el.value = v; });
     const rb = axBox.querySelector(`[data-axreset="${t}"]`); if (rb) rb.disabled = !(t in pickVary);
-    applySampleAxes();
+    updateAxSum(); applySampleAxes();
   });
   axBox.addEventListener('change', e => {
     const t = e.target.dataset.axmode; if (!t) return;
@@ -696,7 +705,7 @@ function initPicker() {
   axBox.addEventListener('click', e => { const t = e.target.closest('[data-axreset]')?.dataset.axreset; if (t) { delete pickVary[t]; renderAxes(); } });
   $('#lfQuery').addEventListener('click', async () => {
     const msg = $('#lfMsg');
-    msg.classList.remove('caution');
+    msg.classList.remove('caution'); msg.hidden = false;
     if (!('queryLocalFonts' in window)) { msg.textContent = T('lfNoApi'); msg.classList.add('caution'); return; }
     try {
       msg.textContent = T('lfWait');

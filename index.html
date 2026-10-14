@@ -8,14 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=a7b388fb">
-<script src="assets/js/i18n.js?v=9a5a9aff" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=3307292f">
+<script src="assets/js/i18n.js?v=4afbe258" defer></script>
 <script src="assets/js/unicode.js?v=cab968d0" defer></script>
 <script src="assets/js/gfmeta.js?v=9d744a7e" defer></script>
 <script src="assets/js/core.js?v=72109518" defer></script>
 <script src="assets/js/render.js?v=a74e6680" defer></script>
 <script src="assets/js/export.js?v=bbc90080" defer></script>
-<script src="assets/js/ui.js?v=a5b96d4b" defer></script>
+<script src="assets/js/ui.js?v=9d852949" defer></script>
 </head>
 <body>
 <div class="app">
@@ -256,6 +256,7 @@
       <button role="tab" type="button" data-src="local" aria-selected="false" data-t="srcLocal"></button>
       <button role="tab" type="button" data-src="file" aria-selected="false" data-t="srcFile"></button>
     </div>
+    <!-- 1. 字体：来源各自的输入 -->
     <div data-pane="google">
       <div class="pk-grid">
         <div class="field"><label for="gfFamily" data-t="gfFamily"></label><input id="gfFamily" list="gfList" autocomplete="off" spellcheck="false"></div>
@@ -263,26 +264,29 @@
       </div>
     </div>
     <div data-pane="local" hidden>
-      <div class="field"><label for="lfName" data-t="lfName"></label><input id="lfName" list="lfList" autocomplete="off" spellcheck="false" data-ta="placeholder:lfPh"></div>
+      <div class="pk-grid pk-local">
+        <div class="field"><label for="lfName" data-t="lfName"></label><input id="lfName" list="lfList" autocomplete="off" spellcheck="false" data-ta="placeholder:lfPh"></div>
+        <button class="tbtn" type="button" id="lfQuery" data-t="lfQuery" data-ta="title:lfMsg"></button>
+      </div>
       <label class="pk-check"><input type="checkbox" id="lfVar"><span data-t="lfVar"></span></label>
-      <p class="hint" style="margin-top:8px" data-th="lfHint"></p>
-      <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:8px"><button class="tbtn" type="button" id="lfQuery" data-t="lfQuery"></button><span class="hint" id="lfMsg"></span></div>
+      <p class="hint" id="lfMsg" hidden></p>
     </div>
     <div data-pane="file" hidden>
-      <div class="field" id="ffFileField"><label for="ffFile">woff2 / woff / otf / ttf</label><input id="ffFile" type="file" accept=".woff2,.woff,.otf,.ttf"></div>
-      <div class="field" id="ffItalField" hidden><label for="ffItal" data-t="ffItal"></label><input id="ffItal" type="file" accept=".woff2,.woff,.otf,.ttf"><span class="hint" id="ffItalName"></span></div>
+      <div class="pk-file"><label class="btn file-btn"><input id="ffFile" class="vh" type="file" accept=".woff2,.woff,.otf,.ttf"><span data-t="ffChoose"></span></label><span class="hint" id="ffName"></span></div>
+      <div class="pk-file" id="ffItalField" hidden><label class="tbtn file-btn"><input id="ffItal" class="vh" type="file" accept=".woff2,.woff,.otf,.ttf"><span data-t="ffItal"></span></label><span class="hint" id="ffItalName"></span></div>
       <div class="field" id="ffPathField" hidden><label for="ffPath" data-t="ffPath"></label><input id="ffPath" type="text" autocomplete="off" spellcheck="false"></div>
-      <p class="hint" style="margin-top:8px" data-th="ffHint"></p>
     </div>
-    <div class="pk-axes" id="pkAxes" hidden></div>
-    <p class="hint pk-wnote" id="pkWNote" hidden></p>
-    <div class="pk-scope" id="pkScope" role="radiogroup" hidden><label><input type="radio" name="pkScope" value="w"><span id="pkScopeW"></span></label><label><input type="radio" name="pkScope" value="all"><span data-t="pkScopeAll"></span></label></div>
+    <!-- 2. 预览：样张、状态（可变字体 · 加载结果 · 斜体）、字符集 -->
     <div class="pk-preview">
-      <div class="pk-cov" id="pkCov"></div>
       <div id="pkSample"></div>
-      <div class="pk-st"><span class="vf-tag" id="pkVfTag" hidden></span><div class="hint" id="pkStatus" aria-live="polite"></div><span class="pk-ital" id="pkItal" hidden></span></div>
+      <div class="pk-meta"><span class="vf-tag" id="pkVfTag" hidden></span><span id="pkStatus" aria-live="polite"></span><span class="pk-ital" id="pkItal" hidden></span></div>
+      <div class="pk-cov" id="pkCov"></div>
     </div>
+    <!-- 3. 可变轴：默认收起 -->
+    <details class="pk-axes" id="pkAxes" hidden></details>
+    <!-- 4. 应用范围 + 按钮 -->
     <div class="pk-actions">
+      <div class="pk-scope" id="pkScope" role="radiogroup" hidden><span data-t="pkScopeLab"></span><label><input type="radio" name="pkScope" value="w"><span id="pkScopeW"></span></label><label><input type="radio" name="pkScope" value="all"><span data-t="pkScopeAll"></span></label></div>
       <button class="tbtn" type="button" id="pkCancel" data-t="cancel"></button>
       <button class="btn primary" type="button" id="pkOk" data-t="pkUse" disabled></button>
     </div>
