@@ -56,6 +56,13 @@ $('#editor').addEventListener('change', e => {
     if (el.value === 'pick') { el.value = o.follow || 'own'; openPicker(t); return; }
     o.follow = el.value === 'own' ? null : el.value;
     changed({ fonts: true });
+  } else if (el.dataset.act === 'wnum') {      // 可变字体的任意粗细
+    const raw = el.value.trim(), ov = W === BASE_W ? null : ((state.wOver[W] ||= {})[keyOf(t)] ||= {});
+    const lo = +el.min, hi = +el.max, v = raw === '' ? null : Math.min(hi, Math.max(lo, Math.round(+raw)));
+    if (W === BASE_W) { if (v != null) o.font = o.font.kind === 'google' ? G(o.font.family, v) : { ...o.font, weight: v }; }
+    else if (ov.font) { if (v != null) ov.font = ov.font.kind === 'google' ? G(ov.font.family, v) : { ...ov.font, weight: v }; }
+    else if (v == null) delete ov.weight; else ov.weight = v;
+    changed({ fonts: true }); saveState();
   } else if (el.dataset.act === 'wsel') {
     const v = +el.value;
     if (W === BASE_W) o.font = G(o.font.family, v);
@@ -386,7 +393,12 @@ function candFromFields() {
     const fam = $('#gfFamily').value.trim(), w = +$('#gfWeight').value;
     return fam ? G(fam, w || (base?.kind === 'google' && base.family === fam ? fontAtWeight(base, pickW).weight : 400)) : null;
   }
-  if (pickTab === 'local') { const n = $('#lfName').value.trim() || (base ? $('#lfName').placeholder : ''); if (!n) return null; const ps = localAlt.get(n); return L(n, ps && ps !== n ? [ps] : []); }
+  if (pickTab === 'local') {
+    const n = $('#lfName').value.trim() || (base ? $('#lfName').placeholder : ''); if (!n) return null;
+    const ps = localAlt.get(n), f = L(n, ps && ps !== n ? [ps] : []);
+    if ($('#lfVar').checked) { f.axis = [100, 900]; f.weight = pickW || 400; }      // 自己声明的可变字体，范围交给字体本身去夹
+    return f;
+  }
   if (pickCand?.kind === 'file' && pickCand !== base) return pickCand;
   if (pickW && base.kind === 'file') return base;      // 字体文件：没上传新文件时，校样仍用原来的文件，这里只定导出时的文件名
   return null;
@@ -405,6 +417,9 @@ function updateCand() {
     if (s.status === 'ok') {
       sample.style.fontFamily = `"${s.family}", var(--ui)`;
       st.textContent = f.kind === 'google' ? T('pkGoogleOk', { n: s.faces.length }) : f.kind === 'local' ? T('pkLocalOk') : T('pkFileOk');
+      const ax = f.kind === 'google' ? null : f.axis;
+      if (ax) st.textContent += T('pkVf', { a: ax[0], b: ax[1] });
+      if (f.kind === 'google') vfAxis(f.family).then(a => { if (a && pickCand === f) st.textContent = T('pkGoogleOk', { n: s.faces.length }) + T('pkVf', { a: a[0], b: a[1] }); });
       ok.disabled = false;
     } else {
       st.textContent = srcError(s) + (f.kind === 'local' ? T('pkLocalStill') : '');
@@ -446,6 +461,7 @@ function openPicker(t) {
   $('#gfWeight').value = ovf?.kind === 'google' ? ovf.weight : pickW ? (state.wOver[W]?.[key]?.weight || 0) : cur?.kind === 'google' ? cur.weight : 400;
   const autoName = pickW && o.font.kind === 'local' ? autoLocal(o.font, W).name : '';
   $('#lfName').placeholder = pickW ? autoName : T('lfPh');
+  $('#lfVar').checked = !!(ovf || cur)?.axis && (ovf || cur)?.kind === 'local';
   $('#lfName').value = ovf?.kind === 'local' ? ovf.name : pickW ? (state.weightNames[k] || autoName) : cur?.kind === 'local' ? cur.name : '';
   $('#ffPathField').hidden = !(pickW && o.font.kind === 'file');
   if (pickW && o.font.kind === 'file') { const g = guessPath(o.font.fileName, W); $('#ffPath').placeholder = g; $('#ffPath').value = state.weightNames[k] || g; }
@@ -463,11 +479,14 @@ function initPicker() {
   $('#gfWeight').addEventListener('change', updateCand);
   $('#lfName').addEventListener('input', updateCandSoon);
   $('#lfName').addEventListener('change', updateCand);
+  $('#lfVar').addEventListener('change', updateCand);
   $('#ffFile').addEventListener('change', async e => {
     const file = e.target.files[0]; if (!file) return;
     const id = 'f' + Date.now().toString(36);
     files.set(id, { name: file.name, buffer: await file.arrayBuffer() });
     pickCand = { kind: 'file', fileId: id, fileName: file.name };
+    const ax = fileAxis(files.get(id).buffer);
+    if (ax) { pickCand.axis = ax; pickCand.weight = clampW(pickW || 400, ax); }
     updateCand();
   });
   $('#lfQuery').addEventListener('click', async () => {

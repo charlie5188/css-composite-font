@@ -21,13 +21,13 @@ function srcFor(x) {
   return x.face.src.replace(/'/g, '"');
 }
 function cssFamilyName() { return (state.name || '').trim().replace(/["\\]/g, '') || 'My Composite'; }
-const canLinkBase = plan => plan[0].font?.kind === 'google' && plan[0].size === 100;
+const canLinkBase = plan => plan[0].font?.kind === 'google' && plan[0].size === 100 && !(plan[0].font.weight % 100);   // 细调过粗细的可变字体要自己写规则
 function buildCss() {
   const plan = buildPlan(), weights = [...state.weights].sort((a, b) => a - b);
   const fam = cssFamilyName(), generic = state.generic !== 'auto' ? state.generic : guessGeneric();
   const linkBase = state.baseMode === 'link' && weights.every(W => canLinkBase(buildPlan(W)));
   const out = [T(linkBase ? 'cssHLink' : 'cssH', { fam })];
-  let stack = `"${fam}"`, count = 0;
+  let stack = `"${fam}"`, count = 0, usedFvs = false;
   const notes = [];
   if (linkBase) {     // 汉字基础字体直接引用 Google 的 CSS，不复制它的分片规则
     const bf = plan[0].font;
@@ -54,11 +54,14 @@ function buildCss() {
       if (x.missing) { out.push(x.status === 'loading' ? T('cssGLoading') : T('cssGMissing', { font: fontLabel(x.p.font) })); continue; }
       count++;
       out.push('@font-face {', `  font-family: "${fam}";`, `  src: ${srcFor(x)};`, `  font-weight: ${W};`, `  font-style: normal;`, `  font-display: swap;`);
+      const wv = wghtFor(x.p.font, W);
+      if (wv) { out.push(`  font-variation-settings: "wght" ${wv};`); usedFvs = true; }
       if (x.p.size !== 100) out.push(`  size-adjust: ${x.p.size}%;`);
       if (x.range) out.push(`  unicode-range: ${wrapRanges(x.range, '    ')};`);
       out.push('}');
     }
   }
+  if (usedFvs) out.splice(1, 0, T('cssFvs'));
   const extra = [];
   for (const t of TYPO) {
     const val = state.typo[t.key];

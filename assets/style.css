@@ -140,6 +140,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .dot{display:none;width:8px;height:8px;border-radius:2px;background:var(--c);flex:none}
 .show-colors .dot{display:inline-block}
 .ct-font{display:flex;align-items:center;gap:6px;min-width:0}
+.wnum{flex:none;width:64px;font-family:var(--mono);font-size:11.5px;padding:4px 4px 4px 6px}
 .wsel{flex:none;width:auto;max-width:76px;font-family:var(--mono);font-size:11.5px;padding:4px 2px}
 .fsel{flex:1;min-width:0;width:100%;font-size:12.5px;padding:5px 4px;border-color:transparent;background:transparent;text-overflow:ellipsis}
 .fsel.follow{color:var(--muted)}
@@ -357,6 +358,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-actions{display:flex;justify-content:flex-end;gap:16px;align-items:center}
 .pk .hint{margin:0}
 /* 本机找不到字体：黄色提示，不显示回退字体的预览 */
+.pk-check{display:flex;gap:8px;align-items:center;font-size:13px;margin-top:10px}
 .pk-scope{display:flex;gap:18px;flex-wrap:wrap;font-size:13px}
 .pk-scope label{display:inline-flex;gap:6px;align-items:center}
 #pkStatus.caution,#lfMsg.caution{background:var(--caution-bg);color:var(--caution);padding:9px 12px;border-radius:3px;font-size:12.5px}

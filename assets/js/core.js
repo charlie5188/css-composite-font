@@ -7,7 +7,7 @@ function fontKey(f) {
   return f.kind === 'google' ? `g:${f.family}@${f.weight}` : f.kind === 'local' ? `l:${f.name}` : f.kind === 'path' ? `p:${f.path}` : `f:${f.fileId}`;
 }
 const sameFont = (a, b) => fontKey(a) === fontKey(b);
-const fontLabel = f => !f ? T('unset') : f.kind === 'google' ? `${f.family} ${sources.get(fontKey(f))?.actualWeight || f.weight}` : f.kind === 'local' ? f.name : f.kind === 'path' ? f.path : f.fileName;
+const fontLabel = f => !f ? T('unset') : f.kind === 'google' ? `${f.family} ${sources.get(fontKey(f))?.actualWeight || f.weight}` : (f.kind === 'local' ? f.name : f.kind === 'path' ? f.path : f.fileName) + (f.axis ? ` ${f.weight || 400}` : '');
 const kindLabel = f => !f ? '' : f.kind === 'google' ? T('kindGoogle') : f.kind === 'local' ? T('kindLocal') : T('kindFile');
 const localSrc = f => [...new Set([f.name, ...(f.alt || [])])].map(n => `local("${n.replace(/["\\]/g, '\\$&')}")`).join(', ');
 
@@ -54,7 +54,13 @@ async function loadSource(s) {
     if (!f) throw new SrcError('errUnset');
     if (f.kind === 'google') {
       let css = null;
-      for (const w of weightChain(f.weight)) {    // 没有这个字重时，向 400 方向找最接近的
+      if (f.weight % 100) {     // 非整百的粗细只有可变字体能做到：按轴的范围请求，拿到完整的可变字体文件
+        const axis = await vfAxis(f.family);
+        if (axis) {
+          try { css = await fetchGoogleCss(f.family, `${axis[0]}..${axis[1]}`); s.wght = clampW(f.weight, axis); s.actualWeight = s.wght; s.axis = axis; } catch (e) { /* 退回静态字重 */ }
+        }
+      }
+      if (!css) for (const w of weightChain(Math.round(f.weight / 100) * 100)) {    // 没有这个字重时，向 400 方向找最接近的
         try { css = await fetchGoogleCss(f.family, w); s.actualWeight = w; break; } catch (e) { /* 试下一个字重 */ }
       }
       if (!css) throw new SrcError('errGoogle', { family: f.family, weight: f.weight });
@@ -67,7 +73,8 @@ async function loadSource(s) {
       if (!file) throw new SrcError('errFileGone');
       s.faces = [{ buffer: file.buffer, range: null }];
     }
-    const ffs = s.faces.map(fc => new FontFace(s.family, fc.buffer || fc.src, fc.range ? { unicodeRange: fmtRanges(fc.range), display: 'swap' } : { display: 'swap' }));
+    const vs = s.wght ? { variationSettings: `"wght" ${s.wght}` } : f.axis ? { variationSettings: `"wght" ${f.weight || 400}` } : {};
+    const ffs = s.faces.map(fc => new FontFace(s.family, fc.buffer || fc.src, fc.range ? { unicodeRange: fmtRanges(fc.range), display: 'swap', ...vs } : { display: 'swap', ...vs }));
     ffs.forEach(x => document.fonts.add(x));
     if (f.kind !== 'google') {
       try { await ffs[0].load(); }
@@ -92,6 +99,81 @@ async function fetchGoogleCss(family, weight) {
     try { return await cssViaLink(url); } catch (e) { /* 下一个 url */ }
   }
   throw new SrcError('errGoogle', { family, weight });
+}
+/* ================= 可变字体 ================= */
+const clampW = (w, axis) => Math.min(axis[1], Math.max(axis[0], Math.round(w)));
+/* Google Fonts 只在请求的范围落在字体的 wght 轴内时才返回 200：先试 100..900，不行再逐点试出上下界。结果存在浏览器里 */
+const LS_VF = 'composite-font:vf';
+const vfCache = lsGet(LS_VF) || {}, vfPending = new Map();
+const gfOk = (family, spec) => fetchGoogleCss(family, spec).then(() => true, () => false);
+function vfAxis(family) {
+  if (family in vfCache) return Promise.resolve(vfCache[family] || null);
+  if (!vfPending.has(family)) vfPending.set(family, (async () => {
+    let axis = null;
+    if (await gfOk(family, '100..900')) axis = [100, 900];
+    else {
+      const pts = [100, 200, 300, 400, 500, 600, 700, 800];
+      const lo = await Promise.all(pts.map(w => gfOk(family, `${w}..${w + 1}`)));
+      const min = pts.find((w, i) => lo[i]);
+      if (min) {
+        const ups = [200, 300, 400, 500, 600, 700, 800, 900].filter(w => w > min);
+        const hi = await Promise.all(ups.map(w => gfOk(family, `${w - 1}..${w}`)));
+        axis = [min, ups.filter((w, i) => hi[i]).pop() || min + 1];
+      }
+    }
+    vfCache[family] = axis || 0; lsSet(LS_VF, vfCache);
+    onSourcesChanged();
+    return axis;
+  })());
+  return vfPending.get(family);
+}
+/* 同步查询：已知时返回 [min, max] 或 null；未知时返回 undefined 并在后台检测 */
+function vfAxisNow(f) {
+  if (!f) return null;
+  if (f.kind !== 'google') return f.axis || null;
+  if (f.family in vfCache) return vfCache[f.family] || null;
+  vfAxis(f.family);
+  return undefined;
+}
+/* 规则里的 font-weight 永远是这一档（保持一致，复合字体才不会出错）；实际粗细不同时，用 font-variation-settings 细调 */
+function wghtFor(f, W) {
+  if (!f) return null;
+  const w = f.kind === 'google' ? sources.get(fontKey(f))?.wght : f.axis ? (f.weight || 400) : null;
+  return w && w !== W ? w : null;
+}
+/* 上传的字体文件里有没有 fvar 表（可变字体）。ttf / otf 读出 wght 轴的范围；woff / woff2 的表是压缩的，只能看到有 fvar，范围按 100–900 处理 */
+function fileAxis(buf) {
+  try {
+    const v = new DataView(buf), sig = v.getUint32(0);
+    if (sig === 0x774F4632 || sig === 0x774F4646) {           // wOF2 / wOFF
+      const n = v.getUint16(12);
+      if (sig === 0x774F4646) { for (let i = 0; i < n; i++) if (v.getUint32(44 + i * 20) === 0x66766172) return [100, 900]; return null; }
+      let p = 48;
+      for (let i = 0; i < n; i++) {
+        const flags = v.getUint8(p++), idx = flags & 63;
+        let tag = null;
+        if (idx === 63) { tag = v.getUint32(p); p += 4; }
+        if (idx === 47 || tag === 0x66766172) return [100, 900];
+        const readBase128 = () => { let x = 0; for (let k = 0; k < 5; k++) { const c = v.getUint8(p++); x = (x << 7) | (c & 127); if (!(c & 128)) break; } return x; };
+        readBase128();
+        const t = (flags >> 6) & 3;
+        if (((idx === 10 || idx === 11) && t === 0) || (!(idx === 10 || idx === 11) && t !== 0)) readBase128();
+      }
+      return null;
+    }
+    const n = v.getUint16(4);
+    for (let i = 0; i < n; i++) {
+      const r = 12 + i * 16;
+      if (v.getUint32(r) !== 0x66766172) continue;          // 'fvar'
+      const off = v.getUint32(r + 8), axesOff = v.getUint16(off + 4), count = v.getUint16(off + 8), size = v.getUint16(off + 10);
+      for (let a = 0; a < count; a++) {
+        const q = off + axesOff + a * size;
+        if (v.getUint32(q) === 0x77676874) return [Math.round(v.getInt32(q + 4) / 65536), Math.round(v.getInt32(q + 12) / 65536)];   // 'wght'
+      }
+      return null;
+    }
+  } catch (e) { /* 读不懂就当作普通字体 */ }
+  return null;
 }
 function weightChain(w) { const out = [w]; for (let x = w; x !== 400;) { x += x > 400 ? -100 : 100; out.push(x); } return out; }
 function cssViaLink(url) {
@@ -337,6 +419,7 @@ function guessPath(file, W) {
 function fontAtWeight(f, W, live = false) {
   if (!f || W === BASE_W) return f;
   if (f.kind === 'google') return G(f.family, Math.min(900, Math.max(100, f.weight + (W - BASE_W))));
+  if (f.axis) return { ...f, weight: clampW((f.weight || 400) + (W - BASE_W), f.axis) };     // 可变的本机字体 / 文件：同一个字体，换粗细
   const manual = state.weightNames[fontKey(f) + '|' + W];
   if (f.kind === 'local') return L(manual || autoLocal(f, W).name);
   if (f.kind === 'file') return live ? f : { kind: 'path', path: manual || guessPath(f.fileName, W) };
@@ -351,7 +434,7 @@ function rootOf(id, depth = 0) { const c = state.classes[id]; return c.follow &&
 function ownFontAt(o, ov, W, live) {
   let font = o.font;
   if (font && W !== BASE_W && ov?.font) return ov.font;      // 这个字重单独换成了另一个字体
-  if (font && W !== BASE_W) font = font.kind === 'google' && ov?.weight ? G(font.family, ov.weight) : fontAtWeight(font, W, live);
+  if (font && W !== BASE_W) font = ov?.weight && (font.kind === 'google' || font.axis) ? (font.kind === 'google' ? G(font.family, ov.weight) : { ...font, weight: ov.weight }) : fontAtWeight(font, W, live);
   return font;
 }
 function resolveObj(key, o, W = BASE_W, live = false, depth = 0) {
@@ -452,6 +535,8 @@ async function rebuildNow() {
     if (x.missing) continue;
     /* 规则带上当前字重，校样也用这个字重：这样落到系统字体的字（比如日文字体里没有的简体字）也会跟着变粗细 */
     const d = { display: 'swap', weight: String(W) };
+    const wv = wghtFor(x.p.font, W);
+    if (wv) d.variationSettings = `"wght" ${wv}`;
     if (x.range) d.unicodeRange = fmtRanges(x.range);
     if (x.p.size !== 100) d.sizeAdjust = `${x.p.size}%`;
     try { faces.push(new FontFace(fam, x.face.buffer || x.face.src, d)); } catch (e) { /* 忽略无效的规则 */ }

@@ -31,6 +31,7 @@ For each character the browser checks the rules from the last one backwards. The
 - Groups inside fullwidth symbols and shared CJK/Latin punctuation can be switched one by one, for example quotes set in the Latin font while dashes stay fullwidth.
 - Font sources: Google Fonts, installed fonts (`local()`) and font files.
 - Multi-weight export. The CJK base font can be pulled in with `@import` from Google Fonts, so the exported CSS is usually a few KB.
+- Variable fonts. When a class uses a variable font (Google Fonts, a font file with an `fvar` table, or a local font marked as variable), its weight can be any value, such as 430 to match the stroke weight of the CJK font. Every rule keeps the same `font-weight` step and the fine weight goes into `font-variation-settings` (Chrome 140+, Firefox 62+; Safari shows the step weight).
 - Metric matching: measures the cap height and x-height of the Latin font against the ideographic face and adjusts the Latin size in one click.
 - Native CSS properties for CJK text (`text-autospace`, `text-spacing-trim`, `word-break: auto-phrase` and more), with the browser versions that support them.
 - Chinese and Japanese interface, light and dark themes.
@@ -79,6 +80,7 @@ InDesign / Illustrator の「合成フォント」のように、漢字・かな
 - 全角記号と和欧共通の約物は、グループごとに半角欧文へ回せます。
 - フォントの入手先：Google Fonts、ローカルフォント（`local()`）、フォントファイル。
 - 複数ウェイトの書き出し。漢字フォントは Google Fonts を `@import` で参照できるので、書き出す CSS は通常数 KB です。
+- 可変フォント。クラスのフォントが可変フォント（Google Fonts、`fvar` を含むフォントファイル、可変と指定したローカルフォント）なら、430 のような任意の太さを指定できます。規則の `font-weight` は段階のまま揃え、細かい太さは `font-variation-settings` に書き出します（Chrome 140+、Firefox 62+。Safari では段階の太さで表示）。
 - メトリクス合わせ、CSS ネイティブの組版プロパティ、中国語・日本語の UI。
 
 ### 対応ブラウザと制限
@@ -104,6 +106,7 @@ InDesign / Illustrator の「合成フォント」のように、漢字・かな
 - 全角符号、中西共用标点可以按组切换：例如引号改由西文字体显示，破折号保持全角。
 - 字体来源：Google Fonts、本机字体（`local()`）、字体文件。
 - 多字重导出。汉字字体可以直接 `@import` Google Fonts，导出的 CSS 通常只有几 KB。
+- 可变字体。某一类用的是可变字体（Google Fonts、含 `fvar` 表的字体文件、标记为可变的本机字体）时，粗细可以填任意值，例如用 430 去配汉字的笔画粗细。各条规则的 `font-weight` 保持同一档，细调的粗细写进 `font-variation-settings`（Chrome 140+、Firefox 62+；Safari 按那一档显示）。
 - 度量对齐、CSS 原生 CJK 排版属性、中文 / 日本語界面、深色模式。
 
 ### 浏览器支持与限制

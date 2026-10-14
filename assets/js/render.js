@@ -27,6 +27,15 @@ function fontCell(key, o, isHan, allowLatin) {
   let html = `<span class="status ${o.follow ? 'none' : (s ? s.status : 'loading')}"${o.follow ? '' : ` data-key="${esc(fontKey(own))}"`}></span>` +
     `<select class="fsel${o.follow ? ' follow' : ''}" data-act="fsel" aria-label="${esc(T('fontAria', { c: keyName(key) }))}">` +
     opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select>';
+  /* 可变字体：粗细是可以填任意值的数字框（范围限制在 wght 轴内）；空着表示自动 */
+  const axis = !o.follow ? vfAxisNow(eff) : null;
+  if (axis) {
+    const cur = W === BASE_W ? (eff.weight || 400) : ov?.font ? (ov.font.weight || 400) : ov?.weight;
+    const auto = W === BASE_W ? '' : (eff.kind === 'google' ? fontAtWeight(o.font, W).weight : fontAtWeight(o.font, W).weight);
+    html += `<input class="wnum" type="number" data-act="wnum" min="${axis[0]}" max="${axis[1]}" step="10" value="${cur ?? ''}" placeholder="${auto}"
+      title="${esc(T('vfTitle', { a: axis[0], b: axis[1] }))}" aria-label="${esc(T('wselAria', { w: W }))}">`;
+    return html;
+  }
   /* 每个字重都有同一个粗细菜单：400 时改的是字体本身，其他字重时第一项是「自动」 */
   if (gw) {
     const autoF = fontAtWeight(o.font, W), auto = sources.get(fontKey(autoF))?.actualWeight || autoF.weight;
