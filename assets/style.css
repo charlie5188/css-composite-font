@@ -266,10 +266,10 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .busy{position:absolute;right:0;top:-1px;transform:translateY(-100%);padding-bottom:12px;font-size:11px;color:var(--muted);pointer-events:none;font-family:var(--mono)}
 .sample-box{display:grid;gap:6px}
 textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);border:1px solid var(--ink);border-radius:3px;padding:12px 14px;font-family:var(--ui);font-size:14px;line-height:1.7}
-.sheet{--pad:clamp(22px,4.6vw,68px);--pad-y:clamp(16px,2.2vw,28px);background:var(--sheet);border:1px solid var(--line);padding:var(--pad-y) var(--pad) calc(var(--pad-y) + 6px);min-width:0;display:grid;gap:14px}
+.sheet{--pad:clamp(22px,4.6vw,68px);--pad-y:clamp(16px,2.2vw,28px);background:var(--sheet);border:1px solid var(--line);padding:var(--pad-y) var(--pad) var(--pad);min-width:0;display:grid;gap:14px}
 /* 校样的工具条：贴着白纸顶边通栏，一行。左边示例页签（放不下时横向滚动），右边字号、行高、「显示」；长文往下滚时停在窗口顶上 */
 .sheet{border-top-color:var(--ink)}      /* 和左栏字重那条黑线对齐 */
-.sheet-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;line-height:1.4;font-family:var(--ui);margin:calc(0px - var(--pad-y)) calc(0px - var(--pad)) 4px;padding:0 10px 0 16px;background:var(--sheet);border-bottom:1px solid var(--line)}
+.sheet-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;line-height:1.4;font-family:var(--ui);margin:calc(0px - var(--pad-y)) calc(0px - var(--pad)) calc(var(--pad) - 14px);padding:0 10px 0 16px;background:var(--sheet);border-bottom:1px solid var(--line)}
 .sheet-bar .sample-tabs{flex:1 1 auto;align-self:stretch;gap:12px;margin-bottom:-1px}
 .sheet-bar .sample-tabs button{padding-top:13px;padding-bottom:10px}
 .sheet-bar .sample-tabs .tab-add{padding-top:10px;padding-bottom:8px}
@@ -303,6 +303,9 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* 窄屏：页签单独一行在上，数字框和「显示」在下 */
 @media (max-width:620px){.sheet-bar{flex-wrap:wrap;padding:0 8px 4px 12px;gap:0 8px}.sheet-bar .sample-tabs{flex-basis:100%;border-bottom:1px solid var(--line);margin:0 -8px 4px -12px;padding:0 8px 0 12px}.bar-ctrl{flex:1}.bar-sep{margin-left:auto}}
 .sheet>div{min-width:0}
+/* 文字四周的留白一样宽：横排时去掉第一行上面、最后一行下面的半行距（行高多出来的部分），让上下留白量到字面，和左右一致 */
+.sheet:not(.vertical) .proof-text{margin-bottom:calc((1 - var(--lh,1.8)) * var(--fs,40px) / 2)}
+.sheet:not(.vertical) #liveLabel[hidden]+.proof-text{margin-top:calc((1 - var(--lh,1.8)) * var(--fs,40px) / 2)}
 .proof-text{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:var(--fst,normal);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0}
 /* 行线：每一行的行框（高 = 字号 × 行高）。某一行被撑高时，下面的字就会和线错开 */
 .sheet.rules .proof-text{background-image:linear-gradient(to bottom,var(--ruled) 1px,transparent 1px);background-size:100% calc(1em * var(--lh,1.8));box-shadow:inset 0 -1px var(--ruled)}
