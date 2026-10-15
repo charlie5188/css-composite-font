@@ -224,22 +224,15 @@ function initToolbar() {
     renderTypoStatus(); renderPreview(); renderExport(); saveState();
   });
 
-  $('#mBasis').addEventListener('change', e => {
-    const b = e.target.value; state.metric.basis = b;
-    if (b !== 'mix') state.metric.target = lastRef && !lastRef.none ? round((b === 'cap' ? lastRef.cap : lastRef.x) * 100) : (b === 'cap' ? 83 : 58);
-    syncToolbar(); saveState();
-  });
-  $('#mTarget').addEventListener('input', e => { const n = parseFloat(e.target.value); if (Number.isFinite(n)) { state.metric.target = n; saveState(); } });
   $('#mApply').addEventListener('click', () => {
     if (!lastMeasure) return toast(T('tNotReady'));
+    /* 以汉字字体自带的西文为基准，取「按大写高对齐」和「按 x 高对齐」的几何平均，大写高不超过自带西文的 103%；
+       汉字字体没有自带西文时，让大写高占字面的 83% */
     let k;
-    if (state.metric.basis === 'mix') {
-      if (!lastRef || lastRef.none) return toast(T('tNoRef'));
+    if (lastRef && !lastRef.none) {
       const sCap = lastRef.cap / lastMeasure.capRatio, sX = lastRef.x / lastMeasure.xRatio;
       k = Math.min(Math.sqrt(sCap * sX), 1.03 * sCap);
-    } else {
-      k = (state.metric.target / 100) / (state.metric.basis === 'cap' ? lastMeasure.capRatio : lastMeasure.xRatio);
-    }
+    } else k = 0.83 / lastMeasure.capRatio;
     const W = state.view.weight, next = Math.min(200, Math.max(50, round(resolveCls('latin', W, true).size * k)));
     setSizeAt('latin', W, next);
     changed({ fonts: true });
@@ -428,7 +421,26 @@ function applyPreset(id) {
     if (!keepText) { state.view.sample = p.sample; state.view.text = SAMPLES[p.sample].text; state.typo.lang = SAMPLES[p.sample].lang; state.view.vertical = !!p.vertical; }
   }
   normalizeState();
+  state.presetBase = presetSnap();
   refreshCustomRanges(); syncToolbar(); renderEditor(); renderPreview(); renderPresetCards(); rebuild(); saveState();
+}
+/* 把现在的设定存成自己的预设 */
+function savePresetAs(n) {
+  const snap = JSON.parse(JSON.stringify(state)); delete snap.view; delete snap.presetBase;
+  userPresets[n] = snap; lsSet(LS_PRESETS, userPresets);
+  state.preset = 'user:' + n; state.presetBase = presetSnap();
+  renderPresetCards(); saveState();
+  toast(T('tSaved', { n }) + (hasFileFont() ? T('tSavedFile') : ''));
+}
+/* 改过设定后换预设：先问要不要存下来 */
+let leaveTo = null;
+function askLeave(id) {
+  leaveTo = id;
+  const name = id.startsWith('user:') ? id.slice(5) : tr(PRESETS.find(p => p.id === id)?.name || { zh: id, ja: id, tw: id });
+  $('#leaveMsg').textContent = T('leaveMsg', { name });
+  $('#leaveName').value = state.name === 'My Composite' ? '' : state.name;
+  $('#leaveDlg').showModal();
+  $('#leaveName').focus();
 }
 function initPresets() {
   let armed = null;
@@ -448,17 +460,22 @@ function initPresets() {
       return;
     }
     const c = e.target.closest('[data-preset]');
-    if (c) applyPreset(c.dataset.preset);
+    if (c) { if (presetDirty()) askLeave(c.dataset.preset); else applyPreset(c.dataset.preset); }
   });
   const openSave = () => { $('#saveRow').hidden = false; $('#savePresetBtn').hidden = true; $('#presetName').value = state.name === 'My Composite' ? '' : state.name; $('#presetName').focus(); };
   const closeSave = () => { $('#saveRow').hidden = true; $('#savePresetBtn').hidden = false; };
   const doSave = () => {
     const n = $('#presetName').value.trim(); if (!n) return $('#presetName').focus();
-    const snap = JSON.parse(JSON.stringify(state)); delete snap.view;
-    userPresets[n] = snap; lsSet(LS_PRESETS, userPresets);
-    state.preset = 'user:' + n; renderPresetCards(); closeSave(); saveState();
-    toast(T('tSaved', { n }) + (hasFileFont() ? T('tSavedFile') : ''));
+    savePresetAs(n); closeSave();
   };
+  $('#leaveCancel').addEventListener('click', () => $('#leaveDlg').close());
+  $('#leaveDiscard').addEventListener('click', () => { $('#leaveDlg').close(); if (leaveTo) applyPreset(leaveTo); });
+  const leaveSave = () => {
+    const n = $('#leaveName').value.trim(); if (!n) return $('#leaveName').focus();
+    savePresetAs(n); $('#leaveDlg').close(); if (leaveTo) applyPreset(leaveTo);
+  };
+  $('#leaveSave').addEventListener('click', leaveSave);
+  $('#leaveName').addEventListener('keydown', e => { if (e.key === 'Enter') leaveSave(); });
   $('#savePresetBtn').addEventListener('click', openSave);
   $('#presetMore').addEventListener('click', () => { state.view.presetsOpen = !state.view.presetsOpen; fitPresets(); saveState(); });
   let lastW = 0;      // 宽度变了才重新算列数（隐藏卡片只改变高度）

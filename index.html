@@ -8,14 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=28d4c6c6">
-<script src="assets/js/i18n.js?v=f10a9f60" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=2a1111d9">
+<script src="assets/js/i18n.js?v=7ddb7f73" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
-<script src="assets/js/core.js?v=c9af57a0" defer></script>
-<script src="assets/js/render.js?v=070ad426" defer></script>
+<script src="assets/js/core.js?v=aad56f60" defer></script>
+<script src="assets/js/render.js?v=65fb1daf" defer></script>
 <script src="assets/js/export.js?v=1b1135a4" defer></script>
-<script src="assets/js/ui.js?v=5ea25484" defer></script>
+<script src="assets/js/ui.js?v=fcc1a2ad" defer></script>
 </head>
 <body>
 <div class="app">
@@ -126,35 +126,11 @@
           </div>
         </div>
         <div class="spec-wrap"><canvas id="spec" data-ta="aria-label:specAria"></canvas></div>
-        <div class="m-groups">
-          <div class="m-group">
-            <h3 class="m-gh"><span data-t="mgSize"></span><small data-t="mgSizeSub"></small></h3>
-            <dl class="readout">
-              <div><dt data-t="mCap"></dt><dd id="mCap">–</dd><dd class="ref" id="mCapRef"></dd></div>
-              <div><dt data-t="mX"></dt><dd id="mX">–</dd><dd class="ref" id="mXRef"></dd></div>
-            </dl>
-            <div class="match">
-              <label for="mBasis" data-t="basis"></label>
-              <select id="mBasis"><option value="mix" data-t="basisMix"></option><option value="cap" data-t="basisCap"></option><option value="x" data-t="basisX"></option></select>
-              <span id="mTargetWrap" class="m-target"><label for="mTarget" data-t="targetTo"></label><input id="mTarget" type="number" min="30" max="120" step="0.5"><span>%</span></span>
-              <button class="btn" id="mApply" type="button" data-t="applySize"></button>
-            </div>
-            <p class="ref-line" id="mRef"></p>
-          </div>
-          <div class="m-group">
-            <h3 class="m-gh"><span data-t="mgPos"></span><small data-t="mgPosSub"></small></h3>
-            <dl class="readout">
-              <div><dt data-t="mMid"></dt><dd id="mMid">–</dd><dd class="ref" data-t="mMidRef"></dd></div>
-            </dl>
-            <div class="match"><button class="btn" id="mCenter" type="button" data-t="center" data-ta="title:centerTip"></button></div>
-          </div>
+        <div class="m-actions">
+          <button class="btn" id="mApply" type="button" data-t="applySize" data-ta="title:applySizeTip"></button>
+          <button class="btn" id="mCenter" type="button" data-t="center" data-ta="title:centerTip"></button>
+          <span class="m-lm"><span class="lab-i"><label for="exLm" data-t="exLm"></label><button type="button" class="info" data-info="lmInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exLm"><option value="han" data-t="exLmHan"></option><option value="off" data-t="exLmOff"></option></select></span>
         </div>
-        <dl class="readout m-more" id="mMore">
-          <div id="mFigBox"><dt data-t="mFig"></dt><dd id="mFig">–</dd></div>
-          <div id="mKanaBox"><dt data-t="mKana"></dt><dd id="mKana">–</dd></div>
-          <div id="mBopoBox"><dt data-t="mBopo"></dt><dd id="mBopo">–</dd></div>
-        </dl>
-        <div class="match lm-row"><span class="lab-i"><label for="exLm" data-t="exLm"></label><button type="button" class="info" data-info="lmInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exLm"><option value="han" data-t="exLmHan"></option><option value="off" data-t="exLmOff"></option></select></div>
       </section>
 
     </section>
@@ -337,6 +313,18 @@
   </footer>
 </div>
 
+<dialog id="leaveDlg" aria-labelledby="leaveTitle">
+  <div class="leave">
+    <h2 id="leaveTitle" data-t="leaveTitle"></h2>
+    <p id="leaveMsg"></p>
+    <label class="field"><span data-t="leaveName"></span><input id="leaveName" type="text" spellcheck="false"></label>
+    <div class="leave-act">
+      <button type="button" class="tbtn" id="leaveCancel" data-t="cancel"></button>
+      <button type="button" class="btn" id="leaveDiscard" data-t="leaveDiscard"></button>
+      <button type="button" class="btn primary" id="leaveSave" data-t="leaveSave"></button>
+    </div>
+  </div>
+</dialog>
 <dialog id="picker" aria-labelledby="pkTitle">
   <div class="pk">
     <h3 id="pkTitle"><span data-t="pickTitle" style="color:inherit;font-weight:600"></span> <span id="pkFor"></span></h3>

@@ -483,9 +483,6 @@ function syncToolbar() {
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }
   renderTypoStatus();
   $('#sample').value = v.text;
-  $('#mBasis').value = state.metric.basis;
-  $('#mTarget').value = state.metric.target;
-  $('#mTargetWrap').hidden = state.metric.basis === 'mix';
   $('#exName').value = state.name;
   $('#exWeights').innerHTML = WEIGHTS.map(w => `<button type="button" data-w="${w}" aria-pressed="${state.weights.includes(w)}" title="${esc(wTip(w))}"${wTag(w) ? ' class="wl"' : ''}>${w}${wTag(w)}</button>`).join('');
   renderWHint();
@@ -545,7 +542,7 @@ function measureRef() {
   return { font, cap: c.measureText('H').actualBoundingBoxAscent / face, x: c.measureText('x').actualBoundingBoxAscent / face };
 }
 /* 度量参考图：汉字字面为基准，叠上西文（大写高、x 高）、数字（数字高）、假名（假名字面）的参考线。
-   西文、数字、假名可以在「显示」里分别隐藏；下面的读数只在对应项显示时出现 */
+   西文、数字、假名可以在「显示」里分别隐藏 */
 /* 度量参考图的显示项：菜单里的项目固定。参考线太多会看不清，所以假名默认只在日文、注音默认只在繁體中文（台灣）时勾选；手动勾过的以手动为准 */
 const specShown = () => ({ latin: true, digit: true, kana: /^ja/.test(state.typo.lang || ''), bopo: state.typo.lang === 'zh-Hant-TW', ...(state.view.specShow || {}) });
 function drawSpecimen() {
@@ -616,27 +613,9 @@ function drawSpecimen() {
   for (const g of glyphs) { ctx.fillText(g.ch, x, baseY - g.shift); x += g.w + fs * GAP; }
 
   lastRef = measureRef();
-  const refEl = $('#mRef');
-  refEl.textContent = !lastRef ? '' : T(lastRef.none ? 'refNone' : 'refFrom', { font: lastRef.font });
-  /* 参考值直接写在读数下面：汉字字体自带西文的比例，和上面的读数对照 */
-  const refOf = v => lastRef && !lastRef.none ? T('refShort', { v: (v * 100).toFixed(1) }) : '';
-  $('#mCapRef').textContent = refOf(lastRef?.cap); $('#mXRef').textContent = refOf(lastRef?.x);
-
-  const face = han.asc + han.desc, pct = v => `${(v * 100).toFixed(1)}<small>%</small>`;
-  $('#mFigBox').hidden = !sh.digit; $('#mKanaBox').hidden = !sh.kana; $('#mBopoBox').hidden = !sh.bopo;
-  $('#mMore').hidden = !sh.digit && !sh.kana && !sh.bopo;
-  $('#mBopo').innerHTML = face >= 1 && bopo.asc >= 1 ? pct((bopo.asc + bopo.desc) / face) : '–';
-  $('#mFig').innerHTML = face >= 1 && fig.asc >= 1 ? pct(fig.asc / face) : '–';
-  $('#mKana').innerHTML = face >= 1 && kana.asc >= 1 ? pct((kana.asc + kana.desc) / face) : '–';
-  if (face < 1 || cap.asc < 1) { lastMeasure = null; $('#mCap').textContent = $('#mX').textContent = $('#mMid').textContent = '–'; return; }
-  const capRatio = cap.asc / face, xRatio = xg.asc / face;
+  /* 两个按钮要用的测量值：大写高、x 高占汉字字面的比例，大写中线和字面中线的差 */
+  const face = han.asc + han.desc;
+  if (face < 1 || cap.asc < 1) { lastMeasure = null; return; }
   const midPx = ((capTop + latBase) / 2) - ((hanTop + hanBot) / 2);   // 正值 = 大写中线偏低
-  lastMeasure = { capRatio, xRatio, midEm: midPx / fs };
-  $('#mCap').innerHTML = pct(capRatio);
-  $('#mX').innerHTML = pct(xRatio);
-  const mid = midPx / fs * 100;
-  /* 读数格较窄：偏高、偏低用箭头，完整说法放在悬停提示里 */
-  const centered = Math.abs(mid) < 0.25;
-  $('#mMid').innerHTML = centered ? '±0.0<small>% em</small>' : `${mid > 0 ? '↓' : '↑'}${Math.abs(mid).toFixed(1)}<small>% em</small>`;
-  $('#mMid').title = centered ? T('centered') : `${mid > 0 ? T('low') : T('high')} ${Math.abs(mid).toFixed(1)}% em`;
+  lastMeasure = { capRatio: cap.asc / face, xRatio: xg.asc / face, midEm: midPx / fs };
 }

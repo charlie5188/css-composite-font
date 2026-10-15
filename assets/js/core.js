@@ -511,7 +511,6 @@ function stateFromPreset(p, prev) {
     custom: [],
     view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, miss: true, compare: false, cmp: 'plain', weight: 400 },
     typo: prev?.typo ? { ...prev.typo } : { ...typoDefaults(SAMPLES[p.sample].lang), lang: SAMPLES[p.sample].lang },
-    metric: prev?.metric || { basis: 'mix', target: 83 },
   };
 }
 
@@ -524,6 +523,10 @@ function validState(s) {
 /* 第一次打开时按界面语言选预设：日文 → 明朝 × Cormorant，繁中 → 明體 × Garamond，简中 → 宋体 × Garamond */
 const defaultPresetId = () => UI === 'ja' ? 'mincho-jp' : UI === 'tw' ? 'ming-tw' : 'serif-sc';
 let state = validState(lsGet(LS_STATE)) ? lsGet(LS_STATE) : stateFromPreset(PRESETS.find(p => p.id === defaultPresetId()));
+/* 预设有没有被改过：和套用（或保存）预设那一刻的设定比较。校样的文字、字号等（view）不算 */
+const PRESET_SKIP = new Set(['view', 'preset', 'presetBase', 'v']);
+function presetSnap() { return JSON.stringify(state, function (k, v) { return this === state && PRESET_SKIP.has(k) ? undefined : v; }); }
+const presetDirty = () => state.presetBase ? presetSnap() !== state.presetBase : state.preset === '';
 function normalizeState() {
   if (!(state.v >= 2)) {    // 旧版本里「跟随」连大小、基线一起跟随，迁移为继承
     for (const o of [...Object.values(state.classes), ...state.custom]) if (o.follow) { o.size = null; o.shift = null; }
@@ -550,7 +553,7 @@ function normalizeState() {
   }
   state.view.cmp = state.view.cmp || 'plain';
   if (state.view.miss === undefined) state.view.miss = true;         // 「标出缺字」默认打开
-  state.metric = { basis: 'mix', target: 83, ...(state.metric || {}) };
+  delete state.metric;                                              // 度量对齐的「按 … 对齐到 …%」已删除
   state.weights = Array.isArray(state.weights) && state.weights.length ? [...new Set(state.weights)].sort((a, b) => a - b) : [state.weight || 400];
   delete state.weight;
   state.baseMode = state.baseMode || 'link';
@@ -578,6 +581,7 @@ function normalizeState() {
   }
   if (state.view.sample in SAMPLES) state.view.text = SAMPLES[state.view.sample].text;     // 选的是示例时跟着示例更新（改过的文字已经是 custom）
   if (!state.weights.includes(state.view.weight)) state.view.weight = state.weights.includes(400) ? 400 : state.weights[0];
+  if (state.presetBase === undefined && state.preset) state.presetBase = presetSnap();      // 旧的保存数据：以现在为准
   rebuildClassRanges();
 }
 normalizeState();

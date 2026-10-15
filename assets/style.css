@@ -236,7 +236,6 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .ctl output{display:inline-block;font-family:var(--mono);font-size:11.5px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;width:4ch}
 .ctl #vSizeOut{width:5ch}
 .ctl #vLhOut{width:12ch}
-.lm-row{border-top:1px solid var(--rule);padding-top:14px}
 .busy{position:absolute;right:0;top:-1px;transform:translateY(-100%);padding-bottom:12px;font-size:11px;color:var(--muted);pointer-events:none;font-family:var(--mono)}
 .sample-box{display:grid;gap:6px;margin-bottom:14px}
 textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);border:1px solid var(--ink);border-radius:3px;padding:12px 14px;font-family:var(--ui);font-size:14px;line-height:1.7}
@@ -308,28 +307,19 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .panel-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
 .spec-wrap{background:var(--sheet);border:1px solid var(--line);min-width:0}
 #spec{display:block;width:100%;height:240px}
-/* 度量对齐：按「改什么」分组——西文大小（大写高、x 高 + 自动调整）、西文上下位置（中线 + 垂直居中），其余读数放在下面一排 */
-.m-groups{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,1fr);gap:16px 32px}
-@media (max-width:700px){.m-groups{grid-template-columns:minmax(0,1fr)}}
-.m-group{display:grid;gap:10px;align-content:start;min-width:0}
-.m-gh{margin:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;font-size:12.5px;font-weight:600;color:var(--ink)}
-.m-gh small{font-size:11.5px;font-weight:400;color:var(--muted)}
-.m-target{display:inline-flex;gap:6px;align-items:center}
-.m-target[hidden]{display:none}
-.readout{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));margin:0;border-bottom:1px solid var(--line)}
-.readout dd.ref{margin:2px 0 0;font-family:var(--ui);font-size:11.5px;color:var(--muted);letter-spacing:0}
-.readout dd.ref:empty{display:none}
-.m-more{border-bottom:0}
-.m-more dd{font-size:18px}
-.m-more[hidden]{display:none}
-.readout div[hidden]{display:none}
-.readout div{padding:4px 10px 12px;min-width:0;border-left:1px solid var(--line)}
-.readout div:first-child{border-left:0;padding-left:0}
-.readout dt{font-size:11.5px;color:var(--muted)}
-.readout dd{margin:4px 0 0;font-family:var(--mono);font-size:24px;white-space:nowrap;font-weight:400;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
-.readout dd small{font-size:11px;color:var(--muted);margin-left:4px;font-family:var(--ui);letter-spacing:0}
-@media (max-width:560px){.readout{grid-template-columns:repeat(2,minmax(0,1fr))}.readout div{border-left:0;padding-left:0}}
-.ref-line{margin:0;font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+/* 度量对齐：参考图下面只有两个按钮和行高度量 */
+.m-actions{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px}
+.m-lm{display:inline-flex;align-items:center;gap:10px;margin-left:auto;font-size:12px;color:var(--muted)}
+.m-lm select{font-size:12px}
+.m-lm .lab-i{white-space:nowrap}
+@media (max-width:560px){.m-lm{margin-left:0;flex-basis:100%}.m-lm select{flex:1 1 auto;min-width:0}}
+/* 改过设定后换预设的确认框 */
+#leaveDlg{width:min(460px,calc(100vw - 32px))}
+.leave{display:grid;gap:14px;padding:22px 24px 20px}
+.leave h2{margin:0;font-size:17px;font-weight:600}
+.leave p{margin:0;font-size:13px;line-height:1.6;color:var(--ink-2)}
+.leave .field input{width:100%}
+.leave-act{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:10px}
 .match{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;font-size:12px;color:var(--muted)}
 .match input{width:64px}
 .match select{font-size:12px}
