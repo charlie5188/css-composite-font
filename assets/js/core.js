@@ -398,7 +398,7 @@ const TYPO = [
     sup: { chrome: '140', firefox: '145', safari: '18.4' },
     values: [['normal', { zh: '加 1/8 em', ja: '1/8 em 空ける', tw: '加 1/8 em' }], ['no-autospace', { zh: '不加', ja: '空けない', tw: '不加' }]],
     note: { zh: '只在没有空格的地方加，已经手动敲了空格的不会再加。Chrome 实测初始值是 no-autospace，所以导出时总会写出这一行。', ja: 'スペースのない箇所にだけ入り、手で入れたスペースには追加されません。Chrome の実際の初期値は no-autospace なので、書き出しでは常にこの行を出力します。', tw: '只在沒有空格的地方加，已經手動敲了空格的不會再加。Chrome 實測初始值是 no-autospace，所以匯出時總會寫出這一行。' } },
-  { key: 'trim', label: { zh: '标点挤压', ja: '約物の詰め', tw: '標點擠壓' }, prop: 'text-spacing-trim', def: 'space-first', init: 'normal', tiles: true, tileHtml: tBox('text-spacing-trim', '「甲乙」「丙丁」'), tileW: 112, tileCode: true,
+  { key: 'trim', label: { zh: '标点挤压', ja: '約物の詰め', tw: '標點擠壓' }, prop: 'text-spacing-trim', def: 'trim-start', init: 'normal', tiles: true, tileHtml: tBox('text-spacing-trim', '「甲乙」「丙丁」'), tileW: 112, tileCode: true,
     sup: { chrome: '123', firefox: '—', safari: '—' },
     values: [['normal', { zh: '相邻标点挤压，行首不挤', ja: '隣接する約物を詰める。行頭は詰めない', tw: '相鄰標點擠壓，行首不擠' }], ['space-all', { zh: '全部保持全角', ja: 'すべて全角のまま', tw: '全部保持全形' }], ['space-first', { zh: '行首也挤压，段首行除外', ja: '行頭も詰める（段落の 1 行目を除く）', tw: '行首也擠壓，段首行除外' }], ['trim-start', { zh: '行首也挤压，包括段首行', ja: '行頭も詰める（1 行目を含む）', tw: '行首也擠壓，包括段首行' }]],
     note: { zh: '例如「。」」连在一起时，其中一个收成半角。目前只有 Chromium 实现。', ja: 'たとえば「。」」が続くと片方が半角になります。現在は Chromium だけが実装しています。', tw: '例如「。」」連在一起時，其中一個收成半形。目前只有 Chromium 實作。' } },
@@ -514,7 +514,7 @@ function freshClasses(p) {
 }
 function stateFromPreset(p, prev) {
   return {
-    v: 8,
+    v: 9,
     preset: p.id,
     name: prev?.name || 'My Composite',
     weights: prev?.weights || [100, 200, 300, 400, 500, 600, 700, 800, 900],
@@ -584,6 +584,10 @@ function normalizeState() {
   if (state.v === 7) {      // v8 起标点悬挂默认 allow-end（目前只有 Safari 生效）。仍是旧默认值 none 的改成 allow-end
     if (state.typo.hang === 'none') state.typo.hang = 'allow-end';
     state.v = 8;
+  }
+  if (state.v === 8) {      // v9 起标点挤压默认 trim-start：段首行的开括号也收成半角。仍是上一个默认值 space-first 的改成 trim-start
+    if (state.typo.trim === 'space-first') state.typo.trim = 'trim-start';
+    state.v = 9;
   }
   state.view.cmp = state.view.cmp || 'plain';
   if (state.view.miss === undefined) state.view.miss = true;         // 「标出缺字」默认打开
