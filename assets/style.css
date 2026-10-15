@@ -269,8 +269,8 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .sheet{--pad:clamp(22px,4.6vw,68px);--pad-y:clamp(16px,2.2vw,28px);background:var(--sheet);border:1px solid var(--line);padding:var(--pad-y) var(--pad) calc(var(--pad-y) + 6px);min-width:0;display:grid;gap:14px}
 /* 校样的工具条：贴着白纸顶边通栏，一行。左边示例页签（放不下时横向滚动），右边字号、行高、「显示」；长文往下滚时停在窗口顶上 */
 .sheet{border-top-color:var(--ink)}      /* 和左栏字重那条黑线对齐 */
-.sheet-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;line-height:1.4;font-family:var(--ui);margin:calc(0px - var(--pad-y)) calc(0px - var(--pad)) 4px;padding:0 10px 0 16px;background:var(--sheet);border-bottom:1px solid var(--line)}
-.sheet-bar .sample-tabs{flex:1 1 auto;align-self:stretch;gap:14px;margin-bottom:-1px}
+.sheet-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;line-height:1.4;font-family:var(--ui);margin:calc(0px - var(--pad-y)) calc(0px - var(--pad)) 4px;padding:0 10px 0 16px;background:var(--sheet);border-bottom:1px solid var(--line)}
+.sheet-bar .sample-tabs{flex:1 1 auto;align-self:stretch;gap:12px;margin-bottom:-1px}
 .sheet-bar .sample-tabs button{padding-top:13px;padding-bottom:10px}
 .sheet-bar .sample-tabs .tab-add{padding-top:10px;padding-bottom:8px}
 .bar-ctrl{display:flex;align-items:center;gap:4px;flex:none}
@@ -279,9 +279,15 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .sheet-bar .sample-tabs .tab-add{position:sticky;right:0;flex:none;background:linear-gradient(var(--sheet),var(--sheet)) top/100% calc(100% - 1px) no-repeat}      /* 底下 1px 留空：不盖住工具条的底线 */
 .sheet-bar .sample-tabs .tab-add::before{content:"";position:absolute;top:0;bottom:1px;right:100%;width:28px;background:linear-gradient(to right,transparent,var(--sheet));pointer-events:none;opacity:0}
 .sheet-bar .sample-tabs.fade-r .tab-add::before{opacity:1}
-.bar-ctrl .view-btn{margin-left:6px}
+/* 工具条里的「显示」：和数字框同一套样子（无边框，悬停出细框，图标 + 文字 + 小箭头），前面一条竖线隔开 */
+.bar-sep{width:1px;height:18px;background:var(--line);margin:0 2px}
+.bar-ctrl .view-btn{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 9px 0 7px;border:1px solid transparent;border-radius:4px;font-size:12px;color:var(--muted)}
+.bar-ctrl .view-btn:hover{border-color:var(--line);color:var(--ink)}
+.bar-ctrl .view-btn:has(+ .view-pop:popover-open){border-color:var(--ink);color:var(--ink)}
+.bar-ctrl .view-btn::after{margin-left:2px}
+.vb-ic{width:15px;height:15px;flex:none}
 /* 紧凑的数字框：图标 + 数字 + 单位；图标可以左右拖动 */
-.num{display:inline-flex;align-items:center;height:30px;padding:0 8px 0 2px;border:1px solid transparent;border-radius:4px;font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.num{display:inline-flex;align-items:center;height:30px;padding:0 6px 0 0;border:1px solid transparent;border-radius:4px;font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
 .num:hover{border-color:var(--line)}
 .num:focus-within{border-color:var(--ink)}
 .num-ic{display:grid;place-items:center;width:26px;height:28px;cursor:ew-resize;color:var(--muted);touch-action:none}
@@ -295,7 +301,7 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .num output.unit::before{content:"· ";white-space:pre}
 body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* 窄屏：页签单独一行在上，数字框和「显示」在下 */
-@media (max-width:620px){.sheet-bar{flex-wrap:wrap;padding:0 8px 4px 12px;gap:0 8px}.sheet-bar .sample-tabs{flex-basis:100%;border-bottom:1px solid var(--line);margin:0 -8px 4px -12px;padding:0 8px 0 12px}.bar-ctrl{flex:1}.bar-ctrl .view-btn{margin-left:auto}}
+@media (max-width:620px){.sheet-bar{flex-wrap:wrap;padding:0 8px 4px 12px;gap:0 8px}.sheet-bar .sample-tabs{flex-basis:100%;border-bottom:1px solid var(--line);margin:0 -8px 4px -12px;padding:0 8px 0 12px}.bar-ctrl{flex:1}.bar-sep{margin-left:auto}}
 .sheet>div{min-width:0}
 .proof-text{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:var(--fst,normal);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0}
 /* 行线：每一行的行框（高 = 字号 × 行高）。某一行被撑高时，下面的字就会和线错开 */
