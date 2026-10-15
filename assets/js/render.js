@@ -367,8 +367,8 @@ function measureRef() {
 }
 /* 度量参考图：汉字字面为基准，叠上西文（大写高、x 高）、数字（数字高）、假名（假名字面）的参考线。
    西文、数字、假名可以在「显示」里分别隐藏；下面的读数只在对应项显示时出现 */
-/* 度量参考图的显示项：菜单里的项目固定；注音默认只在校样语言是繁體中文（台灣）时勾选，手动勾过的以手动为准 */
-const specShown = () => ({ latin: true, digit: true, kana: true, bopo: state.typo.lang === 'zh-Hant-TW', ...(state.view.specShow || {}) });
+/* 度量参考图的显示项：菜单里的项目固定。参考线太多会看不清，所以假名默认只在日文、注音默认只在繁體中文（台灣）时勾选；手动勾过的以手动为准 */
+const specShown = () => ({ latin: true, digit: true, kana: /^ja/.test(state.typo.lang || ''), bopo: state.typo.lang === 'zh-Hant-TW', ...(state.view.specShow || {}) });
 function drawSpecimen() {
   const cv = $('#spec'), sh = specShown();
   const W = cv.clientWidth || 600;

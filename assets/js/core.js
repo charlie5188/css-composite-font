@@ -366,7 +366,8 @@ A composite font fixes this one character class at a time. Quotes, dashes and th
 Aa Bb Gg Qq Rr & @ # % ( ) [ ]
 0123456789 ½ € $ ¥
 3.14　12:30　1,000　50%　¥1,980
-ㄅㄆㄇㄈ　ㄓㄨˋ ㄧㄣ　ㄈㄨˊ ㄏㄠˋ　嘅咗嚟啲 𠝹𨋢` },
+ㄅㄆㄇㄈ　ㄓㄨˋ ㄧㄣ　ㄈㄨˊ ㄏㄠˋ　嘅咗嚟啲 𠝹𨋢
+Hànyǔ Pīnyīn · nǚ lǜ lüè · Běijīng` },
 };
 
 /* CSS 原生排版属性。sup：各浏览器开始支持的版本（MDN browser-compat-data，2026-10） */
@@ -437,14 +438,16 @@ const PRESETS = [
   { id: 'gothic-jp', region: 'jp', name: { zh: 'ゴシック × Jost', ja: 'ゴシック × Jost', tw: 'ゴシック × Jost' }, tag: { zh: '日文', ja: '日本語', tw: '日文' }, han: G('Noto Sans JP'), latin: G('Jost'), latinSize: 107, sample: 'ja' },
   /* アンチゴチ：漢字はゴシック体、かなはアンチック体。欧文と約物はゴシックに従う。Zen Antique のかなは太いので、漢字は 500 で釣り合う */
   { id: 'antigochi', region: 'jp', name: { zh: 'アンチゴチ', ja: 'アンチゴチ', tw: 'アンチゴチ' }, tag: { zh: '漫画对白', ja: 'マンガの台詞', tw: '漫畫對白' }, han: G('Zen Kaku Gothic New', 500), latin: null, classes: { kana: { font: G('Zen Antique') } }, sample: 'manga', vertical: true },
-  { id: 'mac', region: 'sc', name: { zh: '苹方 × Helvetica', ja: 'PingFang × Helvetica', tw: '蘋方-簡 × Helvetica' }, tag: { zh: 'macOS 系统字体 · 简体中文', ja: 'macOS 標準・簡体字', tw: 'macOS 系統字型 · 簡體中文' }, han: L('PingFang SC Regular', ['PingFangSC-Regular']), latin: L('Helvetica Neue', ['HelveticaNeue']), latinSize: 100,
+  /* macOS：SF Pro 不能用 local() 引用（系统界面字体对网页隐藏），西文用每台 Mac 都自带的 Avenir Next。
+     大小按度量对齐的折中算出（苹方 104%、冬青黑体 111.5%）后往下调，让大写中线和字面中线的偏差留在 ±2% em 以内，基线保持 0 */
+  { id: 'mac', region: 'sc', name: { zh: '苹方 × Avenir Next', ja: 'PingFang × Avenir Next', tw: '蘋方-簡 × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 简体中文', ja: 'macOS 標準・簡体字', tw: 'macOS 系統字型 · 簡體中文' }, han: L('PingFang SC Regular', ['PingFangSC-Regular']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 100,
     classes: { kana: { font: L('Hiragino Sans W3', ['HiraginoSans-W3']) } }, sample: 'zh' },   /* 苹方也有假名，但日文里用冬青黑体为日文设计的假名 */
-  { id: 'mac-jp', region: 'jp', name: { zh: 'ヒラギノ角ゴ × Helvetica', ja: 'ヒラギノ角ゴ × Helvetica', tw: 'ヒラギノ角ゴ × Helvetica' }, tag: { zh: 'macOS 系统字体 · 日文', ja: 'macOS 標準・日本語', tw: 'macOS 系統字型 · 日文' }, han: L('Hiragino Sans W3', ['HiraginoSans-W3']), latin: L('Helvetica Neue', ['HelveticaNeue']), latinSize: 106.5, sample: 'ja' },
+  { id: 'mac-jp', region: 'jp', name: { zh: 'ヒラギノ角ゴ × Avenir Next', ja: 'ヒラギノ角ゴ × Avenir Next', tw: 'ヒラギノ角ゴ × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 日文', ja: 'macOS 標準・日本語', tw: 'macOS 系統字型 · 日文' }, han: L('Hiragino Sans W3', ['HiraginoSans-W3']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 106, sample: 'ja' },
   /* 台湾、香港：思源（Noto CJK）的繁中版和简中版共用同一套西文，西文大小沿用对应的简中预设 */
   { id: 'ming-tw', region: 'tc', name: { zh: '明體 × Garamond', ja: '明体 × Garamond', tw: '明體 × Garamond' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）' }, han: G('Noto Serif TC'), latin: G('EB Garamond'), latinSize: 115, sample: 'tw' },
   { id: 'hei-tw', region: 'tc', name: { zh: '黑體 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）' }, han: G('Noto Sans TC'), latin: G('Inter'), latinSize: 100, sample: 'tw' },
   { id: 'hei-hk', region: 'hk', name: { zh: '香港黑體 × Inter', ja: '香港の黒体 × Inter', tw: '香港黑體 × Inter' }, tag: { zh: '繁体中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）' }, han: G('Noto Sans HK'), latin: G('Inter'), latinSize: 100, sample: 'hk' },
-  { id: 'mac-tw', region: 'tc', name: { zh: '蘋方-繁 × Helvetica', ja: 'PingFang TC × Helvetica', tw: '蘋方-繁 × Helvetica' }, tag: { zh: 'macOS 系统字体 · 繁体中文', ja: 'macOS 標準・繁体字', tw: 'macOS 系統字型 · 繁體中文' }, han: L('PingFang TC Regular', ['PingFangTC-Regular']), latin: L('Helvetica Neue', ['HelveticaNeue']), latinSize: 100, sample: 'tw' },
+  { id: 'mac-tw', region: 'tc', name: { zh: '蘋方-繁 × Avenir Next', ja: 'PingFang TC × Avenir Next', tw: '蘋方-繁 × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 繁体中文', ja: 'macOS 標準・繁体字', tw: 'macOS 系統字型 · 繁體中文' }, han: L('PingFang TC Regular', ['PingFangTC-Regular']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 100, sample: 'tw' },
 ];
 
 /* ================= 状态 ================= */

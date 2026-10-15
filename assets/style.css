@@ -52,7 +52,15 @@ button{cursor:pointer}
 .hint{color:var(--muted);font-size:12px}
 .label{margin:0;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 
-.app{max-width:1320px;margin:0 auto;padding-inline:clamp(16px,3.2vw,40px);padding-block:0 64px}
+.app{margin:0 auto;padding-inline:clamp(16px,3.2vw,40px);padding-block:0 64px}      /* 不限最大宽度：这个工具很需要宽度 */
+/* 滚动条：细、圆角、跟着主题变色（Chrome 121+ / Firefox 用标准属性，Safari 用 ::-webkit-scrollbar） */
+*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--ink) 22%,transparent) transparent}
+.code pre{scrollbar-color:color-mix(in srgb,var(--code-ink) 28%,transparent) transparent}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--ink) 22%,transparent);border-radius:10px;border:3px solid transparent;background-clip:padding-box}
+::-webkit-scrollbar-thumb:hover{background-color:color-mix(in srgb,var(--ink) 38%,transparent)}
+::-webkit-scrollbar-corner{background:transparent}
 
 /* ---------- controls ---------- */
 select,input[type=text],input[type=number],input:not([type]){background:var(--sheet);border:1px solid var(--line);border-radius:3px;padding:6px 8px;min-width:0}
