@@ -387,7 +387,7 @@ const TYPO = [
     sup: { chrome: '119', firefox: '—', safari: '—' },
     values: [['normal', { zh: '逐字', ja: '1 文字ずつ', tw: '逐字' }], ['auto-phrase', { zh: '按词组', ja: '文節単位', tw: '按詞組' }]],
     note: { zh: 'auto-phrase 只对 lang="ja" 和 lang="ko" 生效，适合标题和短文。', ja: 'auto-phrase は lang="ja" と lang="ko" でのみ有効で、見出しや短い文に向いています。', tw: 'auto-phrase 只對 lang="ja" 和 lang="ko" 生效，適合標題和短文。' } },
-  { key: 'lineBreak', label: { zh: '禁则', ja: '禁則', tw: '禁則' }, prop: 'line-break', def: 'auto', defJa: 'strict', init: 'auto',
+  { key: 'lineBreak', label: { zh: '禁则', ja: '禁則', tw: '禁則' }, prop: 'line-break', def: 'strict', init: 'auto',
     sup: { chrome: '58', firefox: '69', safari: '11' },
     values: [['auto', null], ['loose', { zh: '宽松', ja: 'ゆるい', tw: '寬鬆' }], ['normal', null], ['strict', { zh: '严格', ja: '厳しい', tw: '嚴格' }], ['anywhere', { zh: '任意处断行', ja: 'どこでも改行', tw: '任意處斷行' }]],
     note: { zh: '哪些字不能放在行首或行尾，例如句号、逗号不放在行首。auto 由浏览器按语言决定；strict 更严格，小写假名（っ、ゃ）和长音「ー」也不放行首，日文正文常用；loose 更宽松，适合窄栏；anywhere 在任何地方都可以断行。', ja: '行頭・行末に置けない文字の規則です（句読点を行頭に置かないなど）。auto はブラウザが言語に応じて決めます。strict はより厳しく、小書きのかな（っ・ゃ）や長音記号「ー」も行頭に置きません（日本語の本文でよく使います）。loose はゆるく、狭い段組み向けです。anywhere はどこでも改行します。', tw: '哪些字不能放在行首或行尾，例如句號、逗號不放在行首。auto 由瀏覽器按語言決定；strict 更嚴格，小寫假名（っ、ゃ）和長音「ー」也不放行首，日文內文常用；loose 更寬鬆，適合窄欄；anywhere 在任何地方都可以斷行。' } },
@@ -493,7 +493,7 @@ function freshClasses(p) {
 }
 function stateFromPreset(p, prev) {
   return {
-    v: 5,
+    v: 6,
     preset: p.id,
     name: prev?.name || 'My Composite',
     weights: prev?.weights || [100, 200, 300, 400, 500, 600, 700, 800, 900],
@@ -550,6 +550,10 @@ function normalizeState() {
   if (state.v === 4) {      // v5 起默认导出斜体（以前默认不导出，em、i 里的西文也被模拟倾斜）
     state.italic = true;
     state.v = 5;
+  }
+  if (state.v === 5) {      // v6 起所有语言的禁则默认 strict（以前只有日文）。仍是旧默认值 auto 的改成 strict
+    if (state.typo.lineBreak === 'auto') state.typo.lineBreak = 'strict';
+    state.v = 6;
   }
   state.view.cmp = state.view.cmp || 'plain';
   if (state.view.miss === undefined) state.view.miss = true;         // 「标出缺字」默认打开
