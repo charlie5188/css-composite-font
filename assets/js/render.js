@@ -579,7 +579,8 @@ function drawSpecimen() {
   const span = show.reduce((s, ch) => s + ctx.measureText(ch).width, 0) + fs * GAP * (show.length - 1);
   if (span > plotR - 24) fs = Math.floor(fs * (plotR - 24) / span);
   const nLines = 3 + (sh.latin ? 3 : 0) + (sh.digit ? 2 : 0) + (sh.kana ? 2 : 0) + (sh.bopo ? 2 : 0);
-  const H = Math.round(Math.min(270, Math.max(140, fs * 1.75, nLines * 13 + 16)));
+  const LT = 38;      // 右上角浮着「显示」按钮：参考线的标签从这以下开始排
+  const H = Math.round(Math.min(300, Math.max(140, fs * 1.75, nLines * 13 + 16 + LT - 7)));
   const dpr = window.devicePixelRatio || 1;
   cv.style.height = H + 'px';
   cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
@@ -615,9 +616,9 @@ function drawSpecimen() {
   /* 标签按线的位置排，间距至少 12px；超出画布底部时整体上移 */
   lines.sort((a, b) => a.y - b.y);
   const ly = [];
-  lines.forEach((l, i) => { ly[i] = Math.max(l.y, i ? ly[i - 1] + 12 : 7); });
+  lines.forEach((l, i) => { ly[i] = Math.max(l.y, i ? ly[i - 1] + 12 : LT); });
   const over = ly.length ? ly[ly.length - 1] - (H - 7) : 0;
-  if (over > 0) for (let i = ly.length - 1; i >= 0; i--) ly[i] = Math.max(7 + i * 12, Math.min(ly[i] - over, i < ly.length - 1 ? ly[i + 1] - 12 : H - 7));
+  if (over > 0) for (let i = ly.length - 1; i >= 0; i--) ly[i] = Math.max(LT + i * 12, Math.min(ly[i] - over, i < ly.length - 1 ? ly[i + 1] - 12 : H - 7));
   lines.forEach((l, i) => {
     ctx.strokeStyle = l.c; ctx.lineWidth = 1; ctx.setLineDash(l.dash || []);
     ctx.beginPath(); ctx.moveTo(0, Math.round(l.y) + 0.5); ctx.lineTo(plotR, Math.round(l.y) + 0.5); ctx.stroke();
