@@ -617,11 +617,14 @@ function drawSpecimen() {
 
   lastRef = measureRef();
   const refEl = $('#mRef');
-  refEl.textContent = !lastRef ? '' : lastRef.none ? T('refNone', { font: lastRef.font })
-    : T('refLine', { font: lastRef.font, cap: (lastRef.cap * 100).toFixed(1), x: (lastRef.x * 100).toFixed(1) });
+  refEl.textContent = !lastRef ? '' : T(lastRef.none ? 'refNone' : 'refFrom', { font: lastRef.font });
+  /* 参考值直接写在读数下面：汉字字体自带西文的比例，和上面的读数对照 */
+  const refOf = v => lastRef && !lastRef.none ? T('refShort', { v: (v * 100).toFixed(1) }) : '';
+  $('#mCapRef').textContent = refOf(lastRef?.cap); $('#mXRef').textContent = refOf(lastRef?.x);
 
   const face = han.asc + han.desc, pct = v => `${(v * 100).toFixed(1)}<small>%</small>`;
   $('#mFigBox').hidden = !sh.digit; $('#mKanaBox').hidden = !sh.kana; $('#mBopoBox').hidden = !sh.bopo;
+  $('#mMore').hidden = !sh.digit && !sh.kana && !sh.bopo;
   $('#mBopo').innerHTML = face >= 1 && bopo.asc >= 1 ? pct((bopo.asc + bopo.desc) / face) : '–';
   $('#mFig').innerHTML = face >= 1 && fig.asc >= 1 ? pct(fig.asc / face) : '–';
   $('#mKana').innerHTML = face >= 1 && kana.asc >= 1 ? pct((kana.asc + kana.desc) / face) : '–';
