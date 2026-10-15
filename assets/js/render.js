@@ -492,8 +492,15 @@ function tabFade() {
 function renderLangOptions() {
   $('#exLang').innerHTML = `<option value="">${esc(T('anyLang'))}</option>` + TYPO.find(t => t.key === 'lang').values.map(([v, d]) => `<option value="${v}">${esc(tr(d))}</option>`).join('');
 }
+/* 左窗格的「字体 / 排版」页签 */
+function syncLeftTab() {
+  const k = state.view.ltab === 'typo' ? 'typo' : 'fonts';
+  document.querySelectorAll('.pane-bar [data-ltab]').forEach(b => b.setAttribute('aria-selected', b.dataset.ltab === k));
+  $('#paneFonts').hidden = k !== 'fonts'; $('#paneTypo').hidden = k !== 'typo';
+}
 function syncToolbar() {
   const v = state.view;
+  syncLeftTab();
   renderSampleTabs();
   if (document.activeElement !== $('#vSize')) $('#vSize').value = v.size;      // 正在输入时不改写框里的字
   if (document.activeElement !== $('#vLh')) $('#vLh').value = (+v.lh).toFixed(2);

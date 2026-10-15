@@ -246,17 +246,19 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 
 /* ---------- tester ---------- */
 .tester{min-width:0}
-.weight-bar{display:flex;align-items:stretch;gap:12px;min-height:var(--bar-h);margin:0 calc(0px - var(--px));padding:0 var(--px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;background:var(--sheet)}
-.weight-bar .w-row{align-items:stretch;flex:1 1 auto;flex-basis:auto}
-.weight-bar #vWeightLab{align-items:stretch}
-.weight-bar #vWeightLab>span:first-child,.weight-bar #vWcontLab{align-self:center}
-/* 「字重」是标签不是选项：粗体黑字，后面一条竖线和选项隔开 */
-.weight-bar #vWeightLab>span:first-child,.weight-bar #vWcontLab>span:first-child{font-size:13px;font-weight:600;color:var(--ink);padding-right:14px;border-right:1px solid var(--line);line-height:22px}
-.weight-bar #vWeight{border:0;padding:0;background:none;border-radius:0;gap:6px;margin-bottom:-1px}
-.weight-bar #vWeight button{display:inline-flex;align-items:center;gap:3px;border-radius:0;padding:2px 3px 0;font-size:13px;border-bottom:2px solid transparent;background:none;color:var(--muted)}
-.weight-bar #vWeight button:hover{color:var(--ink)}
-.weight-bar #vWeight button[aria-checked="true"]{background:none;color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
-.weight-bar .busy{position:static;transform:none;padding:0;align-self:center;margin-left:auto;flex:none}
+/* 左窗格的工具条：「字体 / 排版」两个页签，和右边的示例页签同一个样子 */
+.pane-bar{display:flex;align-items:stretch;gap:22px;min-height:var(--bar-h);margin:0 calc(0px - var(--px));padding:0 var(--px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;background:var(--sheet)}
+.pane-bar [role="tab"]{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:2px 0 0;font-size:14px;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.pane-bar [role="tab"]:hover{color:var(--ink)}
+.pane-bar [role="tab"][aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
+.ltab-n{display:inline-grid;place-items:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--accent);color:var(--sheet);font-size:10.5px;font-weight:500;font-family:var(--mono)}      /* 排版改了几项 */
+.ltab-n:empty{display:none}
+.pane-bar .busy{align-self:center;margin-left:auto;flex:none}
+/* 字重：字体页签的第一行。表格编辑的、校样显示的都是这一档 */
+.weight-bar{display:flex;align-items:center;gap:12px;padding:16px 0 6px}
+.weight-bar .w-row{flex:1 1 auto;flex-basis:auto}
+.weight-bar #vWeightLab>span:first-child,.weight-bar #vWcontLab>span:first-child{font-size:13px;font-weight:600;color:var(--ink)}
+.weight-bar #vWeight button{padding:4px 7px;font-size:12.5px}
 #vWNote{margin-top:10px}
 /* 页签的下划线要压在分隔线上：整排往下挪 1px，而不是让按钮超出容器（那样会出现 1px 的垂直滚动） */
 .sample-tabs{display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;min-width:0;margin-bottom:-1px}
@@ -407,20 +409,13 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .match input{width:64px}
 .match select{font-size:12px}
 
-.typo{border-top:1px solid var(--line);margin:22px calc(0px - var(--px)) 0;padding:0 var(--px);min-width:0}
-/* 排版一节的标题栏：和字重栏一样高、一样吸顶。滚到这一节时字重栏已经跟着上一节滚走了，看得出这些设定不分字重 */
-.typo>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;min-height:var(--bar-h);margin:0 calc(0px - var(--px));padding:0 var(--px);position:sticky;top:0;z-index:5;background:var(--sheet);border-bottom:1px solid var(--line)}
-.typo:not([open])>summary{border-bottom:0}
-.typo-scope{font-size:12px;font-weight:400;color:var(--muted);padding-left:12px;border-left:1px solid var(--line);line-height:18px}
-.typo>summary::-webkit-details-marker{display:none}
-.typo>summary::before{content:"";flex:none;width:7px;height:7px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);transition:transform .15s}
-.typo[open]>summary::before{transform:rotate(45deg)}
-@media (prefers-reduced-motion:reduce){.typo>summary::before{transition:none}}
-.typo-sum{display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;flex:1;min-width:0}
-.typo-sum b{font-size:13px;font-weight:600}
+/* 排版页签：开头一句说明这些设定不分字重 */
+.typo{min-width:0}
+.typo-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:14px 0 2px}
+.typo-scope{flex:1 1 220px;font-size:12px;line-height:1.55;color:var(--muted)}
 .typo-changed{font-size:12px;color:var(--accent);white-space:nowrap}
 .typo-reset{font-size:12px;padding:0;white-space:nowrap}
-.typo-body{display:grid;gap:4px;padding:10px 0 12px}
+.typo-body{display:grid;gap:4px;padding:6px 0 12px}
 /* 左列较窄：名称和选项并排，浏览器支持另起一行 */
 .typo-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:4px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
 .typo-row .typo-sup{grid-column:1/-1}

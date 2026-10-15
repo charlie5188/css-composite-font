@@ -8,14 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=971dc641">
-<script src="assets/js/i18n.js?v=e04d0e6f" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=276c61e4">
+<script src="assets/js/i18n.js?v=545b3df5" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
 <script src="assets/js/core.js?v=71f2a6f9" defer></script>
-<script src="assets/js/render.js?v=fa544de4" defer></script>
+<script src="assets/js/render.js?v=d7e3526d" defer></script>
 <script src="assets/js/export.js?v=1b1135a4" defer></script>
-<script src="assets/js/ui.js?v=d6ba415b" defer></script>
+<script src="assets/js/ui.js?v=4f967b98" defer></script>
 </head>
 <body>
 <div class="app">
@@ -54,15 +54,18 @@
 
   <div class="bench">
     <section class="compose" id="editor" data-ta="aria-label:classes">
-      <!-- 左窗格分两节，各有一条吸顶的标题栏：
-           字体一节的标题栏是字重（表格编辑的是这一档）；往下滚到排版一节时，字重栏跟着这一节滚走，换成「排版 · 所有字重通用」 -->
-      <div class="pane-sec">
+      <!-- 左窗格顶上是「字体 / 排版」两个页签：字体页签里的设定分字重（第一行选字重），排版页签里的不分字重 -->
+      <div class="pane-bar" role="tablist">
+        <button type="button" role="tab" id="ltabFonts" data-ltab="fonts" aria-controls="paneFonts" aria-selected="true" data-t="tabFonts"></button>
+        <button type="button" role="tab" id="ltabTypo" data-ltab="typo" aria-controls="paneTypo" aria-selected="false"><span data-t="typoTitle"></span><span class="ltab-n" id="typoCount"></span></button>
+        <span class="busy" id="busy" aria-live="polite"></span>
+      </div>
+      <div class="pane-sec" id="paneFonts" role="tabpanel" aria-labelledby="ltabFonts">
       <div class="weight-bar">
         <div class="w-row">
         <label class="ctl" id="vWcontLab" for="vWcont" hidden><span data-t="previewWeight"></span><input type="range" id="vWcont" min="100" max="900" step="1"><output id="vWcontOut" for="vWcont"></output></label>
         <span class="ctl" id="vWeightLab" hidden><span data-t="previewWeight"></span><span class="seg mono" id="vWeight" role="radiogroup" data-ta="aria-label:previewWeight"></span></span>
         </div>
-        <span class="busy" id="busy" aria-live="polite"></span>
       </div>
       <div class="wmode-note" id="vWNote" hidden></div>
       <div class="sec-row wand-row"><span class="lab-i"><span class="seg" id="vWMode" role="radiogroup" data-ta="aria-label:exWMode"><button type="button" role="radio" data-m="steps" data-t="wmStepsShort" data-ta="title:wmStepsTip"></button><button type="button" role="radio" data-m="cont" data-t="wmContShort" data-ta="title:wmContTip"></button></span><button type="button" class="info" data-info="wmodeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><button type="button" class="tbtn wand" id="autoAdj" data-ta="title:autoAdjTip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.2 13.8 9.6 6.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8.7 5.5l1.8 1.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12.2 1.4v2.4M11 2.6h2.4M14.4 6v1.8M13.5 6.9h1.8M6.6 1.6v1.6M5.8 2.4h1.6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg><span class="spin" aria-hidden="true"></span><span class="ok-mark" aria-hidden="true">✓</span><span class="wand-lab" data-t="autoAdj"></span></button></div>
@@ -71,13 +74,13 @@
       <div class="sec-row sub"><h3 class="label lab-i"><span data-t="custom"></span><button type="button" class="info" data-info="customInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h3><button class="tbtn" id="addCustom" type="button" data-t="add"></button></div>
       <div id="customRows"></div>
       </div>
-      <details class="typo" id="typoBox">
-        <summary><span class="typo-sum"><b data-t="typoTitle"></b><span class="typo-scope" data-t="typoScope"></span></span><span class="typo-changed" id="typoChanged"></span><button type="button" class="tbtn typo-reset" id="typoReset" data-t="typoReset" hidden></button></summary>
+      <div class="pane-sec typo" id="paneTypo" role="tabpanel" aria-labelledby="ltabTypo" hidden>
+        <div class="typo-head"><span class="typo-scope" data-t="typoScope"></span><span class="typo-changed" id="typoChanged"></span><button type="button" class="tbtn typo-reset" id="typoReset" data-t="typoReset" hidden></button></div>
         <div class="typo-body">
           <div class="hint lab-i"><span id="browserName"></span><button type="button" class="info" data-info="typoInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></div>
           <div id="typoRows"></div>
         </div>
-      </details>
+      </div>
     </section>
 
     <section class="tester" data-ta="aria-label:proof">

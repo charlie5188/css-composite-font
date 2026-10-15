@@ -188,6 +188,10 @@ function initToolbar() {
     showSample(b.dataset.sample);
     if (customAt(b.dataset.sample)) $('#sample').focus();
   });
+  $('.pane-bar').addEventListener('click', e => {
+    const b = e.target.closest('[data-ltab]'); if (!b) return;
+    v().ltab = b.dataset.ltab; syncLeftTab(); $('#editor').scrollTop = 0; saveState();
+  });
   $('#sampleTabs').addEventListener('scroll', tabFade, { passive: true });
   $('#sampleTabs').addEventListener('wheel', e => {      // 没有触控板时：竖向滚轮也能横向滚页签
     const t = e.currentTarget;
@@ -379,6 +383,7 @@ function renderTypoStatus() {
   renderNumHint(); renderEaMarks();
   const n = TYPO.filter(t => !t.attr && state.typo[t.key] !== typoDef(t)).length + (state.lineMetrics === 'off' ? 1 : 0);
   $('#typoChanged').textContent = n ? T('typoChanged', { n }) : '';
+  $('#typoCount').textContent = n || '';      // 页签上的小红点：改了几项
   $('#typoReset').hidden = !n;
   for (const t of TYPO) {
     const cur = document.querySelector(`.typo-sup[data-key="${t.key}"] .cur`);
@@ -977,7 +982,6 @@ function resetAll() {
 }
 function initReset() {
   $('#typoReset').addEventListener('click', e => {
-    e.preventDefault();      // 按钮在 summary 里，别让它顺便折叠面板
     for (const t of TYPO) if (!t.attr) state.typo[t.key] = typoDef(t);
     const lmWas = state.lineMetrics; state.lineMetrics = 'han';
     if (lmWas !== 'han') rebuild();
