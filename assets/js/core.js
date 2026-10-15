@@ -375,7 +375,7 @@ const TYPO = [
     sup: { chrome: '140', firefox: '145', safari: '18.4' },
     values: [['normal', { zh: '加 1/8 em', ja: '1/8 em 空ける', tw: '加 1/8 em' }], ['no-autospace', { zh: '不加', ja: '空けない', tw: '不加' }], ['ideograph-alpha', { zh: '只在字母旁', ja: '英字の前後のみ', tw: '只在字母旁' }], ['ideograph-numeric', { zh: '只在数字旁', ja: '数字の前後のみ', tw: '只在數字旁' }], ['auto', { zh: '由浏览器决定', ja: 'ブラウザに任せる', tw: '由瀏覽器決定' }]],
     note: { zh: '只在没有空格的地方加，已经手动敲了空格的不会再加。Chrome 实测初始值是 no-autospace，所以导出时总会写出这一行。', ja: 'スペースのない箇所にだけ入り、手で入れたスペースには追加されません。Chrome の実際の初期値は no-autospace なので、書き出しでは常にこの行を出力します。', tw: '只在沒有空格的地方加，已經手動敲了空格的不會再加。Chrome 實測初始值是 no-autospace，所以匯出時總會寫出這一行。' } },
-  { key: 'trim', label: { zh: '标点挤压', ja: '約物の詰め', tw: '標點擠壓' }, prop: 'text-spacing-trim', def: 'normal',
+  { key: 'trim', label: { zh: '标点挤压', ja: '約物の詰め', tw: '標點擠壓' }, prop: 'text-spacing-trim', def: 'space-first', init: 'normal',
     sup: { chrome: '123', firefox: '—', safari: '—' },
     values: [['normal', { zh: '相邻标点挤压，行首不挤', ja: '隣接する約物を詰める。行頭は詰めない', tw: '相鄰標點擠壓，行首不擠' }], ['space-all', { zh: '全部保持全角', ja: 'すべて全角のまま', tw: '全部保持全形' }], ['space-first', { zh: '行首也挤压，段首行除外', ja: '行頭も詰める（段落の 1 行目を除く）', tw: '行首也擠壓，段首行除外' }], ['trim-start', { zh: '行首也挤压，包括段首行', ja: '行頭も詰める（1 行目を含む）', tw: '行首也擠壓，包括段首行' }]],
     note: { zh: '例如「。」」连在一起时，其中一个收成半角。目前只有 Chromium 实现。', ja: 'たとえば「。」」が続くと片方が半角になります。現在は Chromium だけが実装しています。', tw: '例如「。」」連在一起時，其中一個收成半形。目前只有 Chromium 實作。' } },
@@ -489,7 +489,7 @@ function freshClasses(p) {
 }
 function stateFromPreset(p, prev) {
   return {
-    v: 6,
+    v: 7,
     preset: p.id,
     name: prev?.name || 'My Composite',
     weights: prev?.weights || [100, 200, 300, 400, 500, 600, 700, 800, 900],
@@ -550,6 +550,10 @@ function normalizeState() {
   if (state.v === 5) {      // v6 起所有语言的禁则默认 strict（以前只有日文）。仍是旧默认值 auto 的改成 strict
     if (state.typo.lineBreak === 'auto') state.typo.lineBreak = 'strict';
     state.v = 6;
+  }
+  if (state.v === 6) {      // v7 起标点挤压默认 space-first：折行后的行首括号也收成半角，左边缘对齐。仍是旧默认值 normal 的改成 space-first
+    if (state.typo.trim === 'normal') state.typo.trim = 'space-first';
+    state.v = 7;
   }
   state.view.cmp = state.view.cmp || 'plain';
   if (state.view.miss === undefined) state.view.miss = true;         // 「标出缺字」默认打开
