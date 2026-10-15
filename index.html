@@ -12,7 +12,7 @@
 <script src="assets/js/i18n.js?v=ef494a38" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
-<script src="assets/js/core.js?v=1bf32782" defer></script>
+<script src="assets/js/core.js?v=606dbf97" defer></script>
 <script src="assets/js/render.js?v=4bad9bb5" defer></script>
 <script src="assets/js/export.js?v=1b1135a4" defer></script>
 <script src="assets/js/ui.js?v=175438b4" defer></script>
@@ -198,10 +198,10 @@
             <tr><td class="v">text-spacing-trim</td><td>全角标点挤压：相邻标点合并、行首开括号半角化。目前只实现了 normal / space-all / space-first / trim-start。</td><td class="v">123</td><td class="v">—</td><td class="v">—</td></tr>
             <tr><td class="v">word-break: auto-phrase</td><td>按词组（文節）换行，避免把一个词拆在两行。只对 lang="ja" 和 lang="ko" 生效。</td><td class="v">119</td><td class="v">—</td><td class="v">预览版</td></tr>
             <tr><td class="v">line-break</td><td>禁则强度：strict 更严格地禁止行首出现小假名、长音符等。</td><td class="v">58</td><td class="v">69</td><td class="v">11</td></tr>
-            <tr><td class="v">text-wrap: pretty</td><td>避免段落末行只剩一两个字。Chrome 只调整段落最后四行。</td><td class="v">117</td><td class="v">—</td><td class="v">26</td></tr>
+            <tr><td class="v">text-wrap: pretty</td><td>避免段落末行只剩一两个字。Chrome 只调整段落最后四行；Safari 会重排整段、把每行排短，并让标点悬挂失效。</td><td class="v">117</td><td class="v">—</td><td class="v">26</td></tr>
             <tr><td class="v">text-wrap: balance</td><td>让各行长度接近，适合标题。</td><td class="v">114</td><td class="v">121</td><td class="v">17.5</td></tr>
             <tr><td class="v">text-justify</td><td>两端对齐的方式：inter-character 在字间分配空隙。</td><td class="v">145</td><td class="v">55</td><td class="v">—</td></tr>
-            <tr><td class="v">hanging-punctuation</td><td>标点悬挂到版心外。</td><td class="v">—</td><td class="v">—</td><td class="v">10</td></tr>
+            <tr><td class="v">hanging-punctuation</td><td>标点悬挂到版心外。Safari 里 text-wrap 为 pretty 时不悬挂。</td><td class="v">—</td><td class="v">—</td><td class="v">10</td></tr>
             <tr><td class="v">text-box</td><td>裁掉首行上方、末行下方的半行距。ideographic 边缘目前只有 Firefox 支持。</td><td class="v">133</td><td class="v">154</td><td class="v">18.2</td></tr>
             <tr><td class="v">text-combine-upright: all</td><td>竖排中的纵中横，需要把数字包进单独的元素。digits 值没有浏览器实现。</td><td class="v">48</td><td class="v">48</td><td class="v">15.4</td></tr>
           </tbody>
@@ -244,10 +244,10 @@
             <tr><td class="v">text-spacing-trim</td><td>全形標點擠壓：相鄰標點合併、行首開括號半形化。目前只實作了 normal / space-all / space-first / trim-start。</td><td class="v">123</td><td class="v">—</td><td class="v">—</td></tr>
             <tr><td class="v">word-break: auto-phrase</td><td>按詞組（文節）換行，避免把一個詞拆在兩行。只對 lang="ja" 和 lang="ko" 生效。</td><td class="v">119</td><td class="v">—</td><td class="v">預覽版</td></tr>
             <tr><td class="v">line-break</td><td>禁則強度：strict 更嚴格地禁止行首出現小假名、長音符等。</td><td class="v">58</td><td class="v">69</td><td class="v">11</td></tr>
-            <tr><td class="v">text-wrap: pretty</td><td>避免段落末行只剩一兩個字。Chrome 只調整段落最後四行。</td><td class="v">117</td><td class="v">—</td><td class="v">26</td></tr>
+            <tr><td class="v">text-wrap: pretty</td><td>避免段落末行只剩一兩個字。Chrome 只調整段落最後四行；Safari 會重排整段、把每行排短，並讓標點懸掛失效。</td><td class="v">117</td><td class="v">—</td><td class="v">26</td></tr>
             <tr><td class="v">text-wrap: balance</td><td>讓各行長度接近，適合標題。</td><td class="v">114</td><td class="v">121</td><td class="v">17.5</td></tr>
             <tr><td class="v">text-justify</td><td>兩端對齊的方式：inter-character 在字間分配空隙。</td><td class="v">145</td><td class="v">55</td><td class="v">—</td></tr>
-            <tr><td class="v">hanging-punctuation</td><td>標點懸掛到版心外。</td><td class="v">—</td><td class="v">—</td><td class="v">10</td></tr>
+            <tr><td class="v">hanging-punctuation</td><td>標點懸掛到版心外。Safari 裡 text-wrap 為 pretty 時不懸掛。</td><td class="v">—</td><td class="v">—</td><td class="v">10</td></tr>
             <tr><td class="v">text-box</td><td>裁掉首行上方、末行下方的半行距。ideographic 邊緣目前只有 Firefox 支援。</td><td class="v">133</td><td class="v">154</td><td class="v">18.2</td></tr>
             <tr><td class="v">text-combine-upright: all</td><td>縱中橫排，需要把數字包進單獨的元素。digits 值沒有瀏覽器實作。</td><td class="v">48</td><td class="v">48</td><td class="v">15.4</td></tr>
           </tbody>
@@ -290,10 +290,10 @@
             <tr><td class="v">text-spacing-trim</td><td>全角約物の詰め。隣接する約物の詰めや、行頭の始め括弧の半角化。実装済みは normal / space-all / space-first / trim-start のみ。</td><td class="v">123</td><td class="v">—</td><td class="v">—</td></tr>
             <tr><td class="v">word-break: auto-phrase</td><td>文節単位で改行し、語の途中で行が分かれるのを避ける。lang="ja" と lang="ko" でのみ有効。</td><td class="v">119</td><td class="v">—</td><td class="v">プレビュー版</td></tr>
             <tr><td class="v">line-break</td><td>禁則の強さ。strict では小書きのかなや長音記号の行頭をより厳しく禁止する。</td><td class="v">58</td><td class="v">69</td><td class="v">11</td></tr>
-            <tr><td class="v">text-wrap: pretty</td><td>段落の最終行に 1〜2 文字だけ残るのを避ける。Chrome は段落の最後の 4 行だけを調整する。</td><td class="v">117</td><td class="v">—</td><td class="v">26</td></tr>
+            <tr><td class="v">text-wrap: pretty</td><td>段落の最終行に 1〜2 文字だけ残るのを避ける。Chrome は段落の最後の 4 行だけを調整する。Safari は段落全体を組み直して行を短くし、ぶら下がりも効かなくなる。</td><td class="v">117</td><td class="v">—</td><td class="v">26</td></tr>
             <tr><td class="v">text-wrap: balance</td><td>各行の長さをそろえる。見出し向き。</td><td class="v">114</td><td class="v">121</td><td class="v">17.5</td></tr>
             <tr><td class="v">text-justify</td><td>両端揃えの方法。inter-character は字間でアキを配分する。</td><td class="v">145</td><td class="v">55</td><td class="v">—</td></tr>
-            <tr><td class="v">hanging-punctuation</td><td>約物を版面の外にぶら下げる。</td><td class="v">—</td><td class="v">—</td><td class="v">10</td></tr>
+            <tr><td class="v">hanging-punctuation</td><td>約物を版面の外にぶら下げる。Safari では text-wrap が pretty のときはぶら下がらない。</td><td class="v">—</td><td class="v">—</td><td class="v">10</td></tr>
             <tr><td class="v">text-box</td><td>最初の行の上と最後の行の下のハーフレディングを削る。ideographic エッジに対応しているのは今のところ Firefox のみ。</td><td class="v">133</td><td class="v">154</td><td class="v">18.2</td></tr>
             <tr><td class="v">text-combine-upright: all</td><td>縦組みの縦中横。数字を別の要素で包む必要がある。digits 値はどのブラウザも未実装。</td><td class="v">48</td><td class="v">48</td><td class="v">15.4</td></tr>
           </tbody>

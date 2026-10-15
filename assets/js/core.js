@@ -410,10 +410,10 @@ const TYPO = [
     sup: { chrome: '58', firefox: '69', safari: '11' },
     values: [['auto', { zh: '由浏览器决定', ja: 'ブラウザに任せる', tw: '由瀏覽器決定' }], ['loose', { zh: '宽松', ja: 'ゆるい', tw: '寬鬆' }], ['normal', { zh: '标准', ja: '標準', tw: '標準' }], ['strict', { zh: '严格', ja: '厳しい', tw: '嚴格' }], ['anywhere', { zh: '任意处断行', ja: 'どこでも改行', tw: '任意處斷行' }]],
     note: { zh: '哪些字不能放在行首或行尾，例如句号、逗号不放在行首。auto 由浏览器按语言决定；strict 更严格，小写假名（っ、ゃ）和长音「ー」也不放行首，日文正文常用；loose 更宽松，适合窄栏；anywhere 在任何地方都可以断行。', ja: '行頭・行末に置けない文字の規則です（句読点を行頭に置かないなど）。auto はブラウザが言語に応じて決めます。strict はより厳しく、小書きのかな（っ・ゃ）や長音記号「ー」も行頭に置きません（日本語の本文でよく使います）。loose はゆるく、狭い段組み向けです。anywhere はどこでも改行します。', tw: '哪些字不能放在行首或行尾，例如句號、逗號不放在行首。auto 由瀏覽器按語言決定；strict 更嚴格，小寫假名（っ、ゃ）和長音「ー」也不放行首，日文內文常用；loose 更寬鬆，適合窄欄；anywhere 在任何地方都可以斷行。' } },
-  { key: 'wrap', label: { zh: '段落换行', ja: '段落の折り返し', tw: '段落換行' }, prop: 'text-wrap', def: 'pretty', init: 'wrap', tiles: true, tileHtml: tSvgTile('wrap'), tileW: 96, tileCode: true,
+  { key: 'wrap', label: { zh: '段落换行', ja: '段落の折り返し', tw: '段落換行' }, prop: 'text-wrap', def: 'wrap', init: 'wrap', tiles: true, tileHtml: tSvgTile('wrap'), tileW: 96, tileCode: true,
     sup: { chrome: 'balance 114 · pretty 117', firefox: 'balance 121', safari: 'balance 17.5 · pretty 26' },
     values: [['wrap', null], ['pretty', { zh: '避免末行孤字', ja: '最終行の孤立を避ける', tw: '避免末行孤字' }], ['balance', { zh: '各行等长（标题）', ja: '行長をそろえる（見出し）', tw: '各行等長（標題）' }]],
-    note: { zh: 'Chrome 的 pretty 只调整段落最后四行。', ja: 'Chrome の pretty は段落の最後の 4 行だけを調整します。', tw: 'Chrome 的 pretty 只調整段落最後四行。' } },
+    note: { zh: 'Chrome 的 pretty 只调整段落最后四行。Safari 的 pretty 会重排整段：每行排得更短，两端对齐时字距被拉开，标点悬挂也会失效，所以正文默认不用。', ja: 'Chrome の pretty は段落の最後の 4 行だけを調整します。Safari の pretty は段落全体を組み直すため、行が短くなって両端揃えでは字間が空き、ぶら下がりも効かなくなります。そのため本文の初期値にはしていません。', tw: 'Chrome 的 pretty 只調整段落最後四行。Safari 的 pretty 會重排整段：每行排得更短，左右對齊時字距被拉開，標點懸掛也會失效，所以正文預設不用。' } },
   { key: 'align', label: { zh: '对齐', ja: '揃え', tw: '對齊' }, prop: 'text-align', def: 'justify', tiles: true, tileHtml: tSvgTile('align'), tileW: 96, tileCode: true,
     values: [['justify', { zh: '两端对齐', ja: '両端揃え', tw: '兩端對齊' }], ['start', { zh: '齐头', ja: '行頭揃え', tw: '靠行首對齊' }], ['center', { zh: '居中', ja: '中央揃え', tw: '置中' }]] },
   { key: 'justify', label: { zh: '对齐方式', ja: '両端揃えの方法', tw: '對齊方式' }, prop: 'text-justify', def: 'auto', tiles: true, tileHtml: tSvgTile('justify'), tileW: 96, tileCode: true,
@@ -423,7 +423,7 @@ const TYPO = [
   { key: 'hang', label: { zh: '标点悬挂', ja: 'ぶら下がり', tw: '標點懸掛' }, prop: 'hanging-punctuation', def: 'allow-end', init: 'none', tiles: true, tileHtml: tSvgTile('hang'), tileW: 112, tileCode: true,
     sup: { chrome: '—', firefox: '—', safari: '10' },
     values: [['none', null], ['allow-end', { zh: '行尾句读可悬挂', ja: '行末の句読点をぶら下げる', tw: '行尾句讀可懸掛' }], ['first allow-end last', { zh: '段首段尾的引号括号也悬挂', ja: '段落の最初と最後の括弧も', tw: '段首段尾的引號括號也懸掛' }]],
-    note: { zh: '让行尾的句号、逗号伸出版心，右边缘看起来更齐。目前只有 Safari 支持，其他浏览器照常排。first / last 让段落开头、结尾的引号和括号也悬挂。', ja: '行末の句読点を版面の外にはみ出させ、右端をそろえて見せます。現在対応しているのは Safari だけで、ほかのブラウザでは通常どおり組まれます。first / last は段落の最初・最後の括弧や引用符もぶら下げます。', tw: '讓行尾的句號、逗號伸出版心，右邊緣看起來更齊。目前只有 Safari 支援，其他瀏覽器照常排。first / last 讓段落開頭、結尾的引號和括號也懸掛。' } },
+    note: { zh: '让行尾的句号、逗号伸出版心，右边缘看起来更齐。目前只有 Safari 支持，其他浏览器照常排；段落换行设成 pretty 时，Safari 也不悬挂。first / last 让段落开头、结尾的引号和括号也悬挂。', ja: '行末の句読点を版面の外にはみ出させ、右端をそろえて見せます。現在対応しているのは Safari だけで、ほかのブラウザでは通常どおり組まれます。段落の折り返しを pretty にすると、Safari でもぶら下がりません。first / last は段落の最初・最後の括弧や引用符もぶら下げます。', tw: '讓行尾的句號、逗號伸出版心，右邊緣看起來更齊。目前只有 Safari 支援，其他瀏覽器照常排；段落換行設成 pretty 時，Safari 也不懸掛。first / last 讓段落開頭、結尾的引號和括號也懸掛。' } },
   { key: 'feat', grp: 'font', label: { zh: '字距特性', ja: '字詰めの機能', tw: '字距特性' }, prop: 'font-feature-settings', def: 'normal', tiles: '「アイ」、ウ。', tileW: 112, tileFs: 17, tileCode: true,
     sup: { chrome: '48', firefox: '34', safari: '9.1' },
     values: [['normal', null], ['"palt"', { zh: '假名标点比例宽', ja: 'かなと約物をプロポーショナルに', tw: '假名標點比例寬' }], ['"halt"', { zh: '标点半角', ja: '約物を半角に', tw: '標點半形' }]],
@@ -458,7 +458,7 @@ const typoValue = t => TYPO_MERGE[t.prop] ? TYPO_MERGE[t.prop].map(k => state.ty
 const typoMergedAway = t => TYPO_MERGE[t.prop] && TYPO_MERGE[t.prop][0] !== t.key;      // 合并到前一行，导出时不单独写
 /* 东亚字形的值和 OpenType 特性的对应：检查字体有没有这些字形时用 */
 const EA_FEAT = { jis78: 'jp78', jis83: 'jp83', jis90: 'jp90', jis04: 'jp04', simplified: 'smpl', traditional: 'trad', 'full-width': 'fwid', 'proportional-width': 'pwid' };
-/* 工具的默认值以正文为前提：段落换行用 pretty；日文正文的禁则用 strict。
+/* 工具的默认值以正文为前提：两端对齐、禁则 strict、标点悬挂。段落换行不用 pretty：Safari 的 pretty 会把每行排短，还会让标点悬挂失效。
    def 是工具的默认值，init 是 CSS 的初始值：导出时只省略等于 init 的值 */
 const typoDef = (t, lang = state?.typo?.lang) => t.defJa && /^ja/.test(lang || '') ? t.defJa : t.def;
 const typoDefaults = lang => Object.fromEntries(TYPO.map(t => [t.key, typoDef(t, lang)]));
@@ -514,7 +514,7 @@ function freshClasses(p) {
 }
 function stateFromPreset(p, prev) {
   return {
-    v: 9,
+    v: 10,
     preset: p.id,
     name: prev?.name || 'My Composite',
     weights: prev?.weights || [100, 200, 300, 400, 500, 600, 700, 800, 900],
@@ -588,6 +588,10 @@ function normalizeState() {
   if (state.v === 8) {      // v9 起标点挤压默认 trim-start：段首行的开括号也收成半角。仍是上一个默认值 space-first 的改成 trim-start
     if (state.typo.trim === 'space-first') state.typo.trim = 'trim-start';
     state.v = 9;
+  }
+  if (state.v === 9) {      // v10 起段落换行默认 wrap：Safari 的 pretty 会把每行排短，还会让标点悬挂失效。仍是旧默认值 pretty 的改回 wrap
+    if (state.typo.wrap === 'pretty') state.typo.wrap = 'wrap';
+    state.v = 10;
   }
   delete state.view.compare; delete state.view.cmp;      // 「对照其他做法」已删除
   if (state.view.miss === undefined) state.view.miss = true;         // 「标出缺字」默认打开
