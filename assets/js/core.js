@@ -413,7 +413,7 @@ const TYPO = [
     sup: { chrome: '145', firefox: '55', safari: '—' },
     values: [['auto', null], ['inter-character', { zh: '字间分配', ja: '字間で調整', tw: '字間分配' }], ['inter-word', { zh: '只在词间', ja: '語間のみ', tw: '只在詞間' }], ['none', null]],
     note: { zh: '配合 text-align: justify 使用。', ja: 'text-align: justify と組み合わせて使います。', tw: '配合 text-align: justify 使用。' } },
-  { key: 'hang', label: { zh: '标点悬挂', ja: 'ぶら下がり', tw: '標點懸掛' }, prop: 'hanging-punctuation', def: 'none', tiles: true, tileHtml: tSvgTile('hang'), tileW: 112, tileCode: true,
+  { key: 'hang', label: { zh: '标点悬挂', ja: 'ぶら下がり', tw: '標點懸掛' }, prop: 'hanging-punctuation', def: 'allow-end', init: 'none', tiles: true, tileHtml: tSvgTile('hang'), tileW: 112, tileCode: true,
     sup: { chrome: '—', firefox: '—', safari: '10' },
     values: [['none', null], ['allow-end', { zh: '行尾句读可悬挂', ja: '行末の句読点をぶら下げる', tw: '行尾句讀可懸掛' }], ['first allow-end last', { zh: '段首段尾的引号括号也悬挂', ja: '段落の最初と最後の括弧も', tw: '段首段尾的引號括號也懸掛' }]],
     note: { zh: '让行尾的句号、逗号伸出版心，右边缘看起来更齐。目前只有 Safari 支持，其他浏览器照常排。first / last 让段落开头、结尾的引号和括号也悬挂。', ja: '行末の句読点を版面の外にはみ出させ、右端をそろえて見せます。現在対応しているのは Safari だけで、ほかのブラウザでは通常どおり組まれます。first / last は段落の最初・最後の括弧や引用符もぶら下げます。', tw: '讓行尾的句號、逗號伸出版心，右邊緣看起來更齊。目前只有 Safari 支援，其他瀏覽器照常排。first / last 讓段落開頭、結尾的引號和括號也懸掛。' } },
@@ -505,7 +505,7 @@ function freshClasses(p) {
 }
 function stateFromPreset(p, prev) {
   return {
-    v: 7,
+    v: 8,
     preset: p.id,
     name: prev?.name || 'My Composite',
     weights: prev?.weights || [100, 200, 300, 400, 500, 600, 700, 800, 900],
@@ -570,6 +570,10 @@ function normalizeState() {
   if (state.v === 6) {      // v7 起标点挤压默认 space-first：折行后的行首括号也收成半角，左边缘对齐。仍是旧默认值 normal 的改成 space-first
     if (state.typo.trim === 'normal') state.typo.trim = 'space-first';
     state.v = 7;
+  }
+  if (state.v === 7) {      // v8 起标点悬挂默认 allow-end（目前只有 Safari 生效）。仍是旧默认值 none 的改成 allow-end
+    if (state.typo.hang === 'none') state.typo.hang = 'allow-end';
+    state.v = 8;
   }
   state.view.cmp = state.view.cmp || 'plain';
   if (state.view.miss === undefined) state.view.miss = true;         // 「标出缺字」默认打开
