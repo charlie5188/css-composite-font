@@ -11,8 +11,9 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 /* ================= 界面文字 ================= */
 const I18N = {
   zh: {
+    customAdd: '添加自定义文本',
     missTipBy: '{font} 没有「{c}」，改由 {by} 显示。', missTipSys: '{font} 没有「{c}」，合成字体里也没有别的字体能接手，由系统字体显示。',
-    customDel: '删除自定义页签',
+    customDel: '删除这组自定义文本',
     autoAdjProgress: '正在调整… {i}/{n}', autoAdjDone: '已调整',
     autoAdj: '自动调整大小和基线', autoAdjTip: '一键调整半角西文：每个导出的字重分别算出合适的大小（汉字越粗，字面看起来越大），再让大写字母的中线对齐汉字字面的中线。偏差在 2% em 以内时基线保持 0，导出仍是纯 CSS', tAuto: '已自动调整：西文大小 {size}{shift}', autoSizeRange: '{lo}–{hi}%（{n} 个字重分别设定）', autoShift: '，基线 {v}（导出时会附带 JS）', autoNoShift: '，基线不用动（偏差 {d}% em）',
     measuringW: '正在测量 {w}…',
@@ -101,8 +102,9 @@ const I18N = {
     pkChecking: '正在检测…', pkGoogleOk: '已找到 · {n} 个分片', pkLocalOk: '已在这台电脑上找到', pkFileOk: '字体文件可用', pkLocalStill: '。仍可使用，导出后在装有该字体的电脑上生效', regForms: '字形是{got}的写法，和校样的语言「{lang}」不一致。', reg_sc: '简体中文', reg_tw: '台湾', reg_hk: '香港', reg_jp: '日文', reg_kr: '韩文', regPunctCorner: '这个字体的标点靠左下（大陆、日本的写法），校样的语言「{lang}」的标点应该居中。', regPunctCenter: '这个字体的标点居中（台湾、香港的写法），校样的语言「{lang}」的标点应该靠左下。', pkPunctCenter: '标点居中（台湾、香港的写法）', pkPunctCorner: '标点靠左下（大陆、日本的写法）', covHK: '香港字', gBopoTop: '注音字面 上', gBopoBot: '注音字面 下', sgBopo: '注音', exRegWarn: '字体和适用语言「{lang}」不一致：{list}。', exRegForms: '汉字字体 {font} 是{got}的字形', exRegPunctCorner: '{font} 的标点靠左下（应该居中）', exRegPunctCenter: '{font} 的标点居中（应该靠左下）', gpHintBopo: '关闭 = 改由半角西文显示。单独写出的 ˊ ˇ ˋ ˙ 在西文里几乎只出现在语言学、国际音标里；法语、汉语拼音等的带调字母（é、ǎ、ü）是另外的码位，一直归半角西文，不受这个开关影响。', covPinyin: '汉语拼音', pkUse: '使用这个字体',
   },
   ja: {
+    customAdd: 'カスタムテキストを追加',
     missTipBy: '{font} には「{c}」がないため、{by} で表示されます。', missTipSys: '{font} には「{c}」がなく、合成フォントのほかのフォントでも代わりに表示できないため、システムフォントで表示されます。',
-    customDel: 'カスタムのタブを削除',
+    customDel: 'このカスタムテキストを削除',
     autoAdjProgress: '調整中… {i}/{n}', autoAdjDone: '調整しました',
     autoAdj: 'サイズとベースラインを自動調整', autoAdjTip: '半角欧文をワンクリックで調整します。書き出すウェイトごとに合うサイズを計算し（漢字は太いほど字面が大きく見えます）、大文字の中心線を漢字の字面の中心にそろえます。ずれが 2% em 以内ならベースラインは 0 のままで、書き出しは CSS だけで済みます', tAuto: '自動調整しました：欧文のサイズ {size}{shift}', autoSizeRange: '{lo}–{hi}%（{n} 個のウェイトでそれぞれ設定）', autoShift: '、ベースライン {v}（書き出しに JS が付きます）', autoNoShift: '、ベースラインはそのまま（ずれ {d}% em）',
     measuringW: '{w} を計測中…',
@@ -192,8 +194,9 @@ const I18N = {
   },
   /* 繁體中文（台灣）：先用 OpenCC（s2twp）從簡體轉換，再逐條改成台灣用語（字型、預設集、進階、直排、直立……） */
   tw: {
+    customAdd: '新增自訂文字',
     missTipBy: '{font} 沒有「{c}」，改由 {by} 顯示。', missTipSys: '{font} 沒有「{c}」，複合字型裡也沒有別的字型能接手，由系統字型顯示。',
-    customDel: '刪除自訂分頁',
+    customDel: '刪除這組自訂文字',
     autoAdjProgress: '正在調整… {i}/{n}', autoAdjDone: '已調整',
     autoAdj: '自動調整大小和基線', autoAdjTip: '一鍵調整半形西文：每個匯出的字重分別算出合適的大小（漢字越粗，字面看起來越大），再讓大寫字母的中線對齊漢字字面的中線。偏差在 2% em 以內時基線保持 0，匯出仍是純 CSS', tAuto: '已自動調整：西文大小 {size}{shift}', autoSizeRange: '{lo}–{hi}%（{n} 個字重分別設定）', autoShift: '，基線 {v}（匯出時會附帶 JS）', autoNoShift: '，基線不用動（偏差 {d}% em）',
     measuringW: '正在測量 {w}…',

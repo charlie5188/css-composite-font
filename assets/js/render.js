@@ -475,11 +475,12 @@ function contIgnored() {
 const SAMPLE_ORDER = { zh: ['zh', 'tw', 'hk', 'ja'], tw: ['tw', 'hk', 'zh', 'ja'], ja: ['ja', 'zh', 'tw', 'hk'] };
 const orderedSamples = () => { const first = SAMPLE_ORDER[UI] || SAMPLE_ORDER.zh; return [...first, ...Object.keys(SAMPLES).filter(k => !first.includes(k))]; };
 function renderSampleTabs() {
-  const v = state.view, cur = v.sample, has = v.customText != null;
+  const v = state.view, cur = v.sample, cs = v.customs || [];
+  const name = i => T('customSample') + (cs.length > 1 ? ' ' + (i + 1) : '');
   $('#sampleTabs').innerHTML = orderedSamples().map(k => [k, SAMPLES[k]]).map(([k, s]) => `<button type="button" role="tab" data-sample="${k}" aria-selected="${cur === k}">${esc(tr(s.label))}</button>`).join('') +
-    (has ? `<span class="ctab"><button type="button" role="tab" data-sample="custom" aria-selected="${cur === 'custom'}" aria-controls="sampleBox">${esc(T('customSample'))}</button><button type="button" class="ctab-x" data-act="delcustom" aria-label="${esc(T('customDel'))}" title="${esc(T('customDel'))}">×</button></span>`
-      : `<button type="button" class="tab-add" data-act="addcustom">+ ${esc(T('customSample'))}</button>`);
-  $('#sampleBox').hidden = cur !== 'custom';      // 只有自定义页签可以编辑
+    cs.map((c, i) => `<span class="ctab"><button type="button" role="tab" data-sample="c${i}" aria-selected="${cur === 'c' + i}" aria-controls="sampleBox">${esc(name(i))}</button><button type="button" class="ctab-x" data-act="delcustom" data-i="${i}" aria-label="${esc(T('customDel'))}" title="${esc(T('customDel'))}">×</button></span>`).join('') +
+    `<button type="button" class="tab-add" data-act="addcustom" aria-label="${esc(T('customAdd'))}" title="${esc(T('customAdd'))}">+</button>`;
+  $('#sampleBox').hidden = !/^c\d+$/.test(cur);      // 只有自定义页签可以编辑
 }
 function renderLangOptions() {
   $('#exLang').innerHTML = `<option value="">${esc(T('anyLang'))}</option>` + TYPO.find(t => t.key === 'lang').values.map(([v, d]) => `<option value="${v}">${esc(tr(d))}</option>`).join('');

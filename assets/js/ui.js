@@ -162,27 +162,31 @@ function initToolbar() {
   $('#sizeAdjustWarn').hidden = SUPPORT.sizeAdjust;
 
   const v = () => state.view;
-  /* 示例页签。自定义页签：「+ 自定义」从当前的文字开始建一个，换到别的页签也一直保留，点 × 才删掉 */
+  /* 示例页签。自定义页签可以有好几组：最右边的「+」从当前的文字开始建一组，换到别的页签也一直保留，点 × 才删掉 */
+  const customAt = k => { const m = /^c(\d+)$/.exec(k); return m ? v().customs[+m[1]] : null; };
   const showSample = k => {
-    if (k === 'custom') { v().sample = 'custom'; v().text = v().customText; if (v().customLang) state.typo.lang = v().customLang; }
+    const c = customAt(k);
+    if (c) { v().sample = k; v().text = c.text; if (c.lang) state.typo.lang = c.lang; }
     else { v().sample = k; v().text = SAMPLES[k].text; state.typo.lang = SAMPLES[k].lang; }
     syncToolbar(); renderEditor(); renderPreview(); renderExport(); rebuild(); saveState();      // 语言变了：注音那一行、地区检查跟着变
   };
   $('#sampleTabs').addEventListener('click', e => {
     if (e.target.closest('[data-act="addcustom"]')) {
-      v().customText = v().text; v().customLang = state.typo.lang;
-      showSample('custom'); $('#sample').focus();
+      v().customs.push({ text: v().text, lang: state.typo.lang });
+      showSample('c' + (v().customs.length - 1)); $('#sample').focus();
       return;
     }
-    if (e.target.closest('[data-act="delcustom"]')) {
-      const was = v().sample === 'custom';
-      delete v().customText; delete v().customLang;
-      if (was) showSample(orderedSamples()[0]); else { renderSampleTabs(); saveState(); }
+    const del = e.target.closest('[data-act="delcustom"]');
+    if (del) {
+      const i = +del.dataset.i, cur = /^c(\d+)$/.exec(v().sample), ci = cur ? +cur[1] : -1;
+      v().customs.splice(i, 1);
+      if (ci === i) showSample(v().customs.length ? 'c' + Math.min(i, v().customs.length - 1) : orderedSamples()[0]);      // 删的是正在看的：换到旁边一组，没有了就回到示例
+      else { if (ci > i) v().sample = 'c' + (ci - 1); renderSampleTabs(); saveState(); }
       return;
     }
     const b = e.target.closest('[data-sample]'); if (!b) return;
     showSample(b.dataset.sample);
-    if (b.dataset.sample === 'custom') $('#sample').focus();
+    if (customAt(b.dataset.sample)) $('#sample').focus();
   });
   $('#vSize').addEventListener('input', e => { v().size = +e.target.value; syncToolbar(); renderPreview(); saveState(); });
   $('#vLh').addEventListener('input', e => { v().lh = +e.target.value; syncToolbar(); renderPreview(); saveState(); });
@@ -222,7 +226,8 @@ function initToolbar() {
   $('#proofText').addEventListener('pointerleave', () => { $('#missTip').hidden = true; });
   addEventListener('scroll', () => { $('#missTip').hidden = true; }, { passive: true });
   $('#sample').addEventListener('input', e => {
-    v().text = v().customText = e.target.value;
+    v().text = e.target.value;
+    const m = /^c(\d+)$/.exec(v().sample); if (m && v().customs[+m[1]]) v().customs[+m[1]].text = e.target.value;
     renderPreview(); saveState(); reloadForText();
   });
   $('#typoRows').addEventListener('click', e => {

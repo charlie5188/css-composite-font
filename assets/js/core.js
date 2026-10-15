@@ -579,11 +579,16 @@ function normalizeState() {
     const k = state.typo.lang?.startsWith('ja') ? 'ja' : 'zh';
     Object.assign(state.view, { sample: k, text: SAMPLES[k].text, size: 24, lh: 1.85 });
   }
-  if (!(state.view.sample in SAMPLES) && state.view.customText == null) {      // 以前改过的文字：变成自定义页签
-    state.view.customText = state.view.text || ''; state.view.customLang = state.typo.lang; state.view.sample = 'custom';
-  }
-  if (state.view.sample === 'custom') state.view.text = state.view.customText;
-  else if (state.view.sample in SAMPLES) state.view.text = SAMPLES[state.view.sample].text;     // 选的是示例时跟着示例更新（改过的文字已经是 custom）
+  /* 自定义页签：可以有好几组，每组记着文字和语言（view.customs）；选中的是 'c0'、'c1'… */
+  const vw = state.view;
+  if (!Array.isArray(vw.customs)) vw.customs = [];
+  if (vw.customText != null) { vw.customs.push({ text: vw.customText, lang: vw.customLang || state.typo.lang }); if (vw.sample === 'custom') vw.sample = 'c' + (vw.customs.length - 1); }      // 只有一组时的旧数据
+  delete vw.customText; delete vw.customLang;
+  if (!(vw.sample in SAMPLES) && !/^c\d+$/.test(vw.sample)) { vw.customs.push({ text: vw.text || '', lang: state.typo.lang }); vw.sample = 'c' + (vw.customs.length - 1); }      // 更早的「改过的文字」
+  const ci = /^c(\d+)$/.exec(vw.sample);
+  if (ci && !vw.customs[+ci[1]]) vw.sample = 'zh';
+  if (ci && vw.customs[+ci[1]]) vw.text = vw.customs[+ci[1]].text;
+  else if (vw.sample in SAMPLES) vw.text = SAMPLES[vw.sample].text;     // 选的是示例时跟着示例更新
   if (!state.weights.includes(state.view.weight)) state.view.weight = state.weights.includes(400) ? 400 : state.weights[0];
   if (state.presetBase === undefined && state.preset) state.presetBase = presetSnap();      // 旧的保存数据：以现在为准
   rebuildClassRanges();
