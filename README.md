@@ -37,11 +37,14 @@ For each character the browser checks the rules from the last one backwards. The
 - Italics. Optionally exports a `font-style: italic` set: classes whose font has an italic use it (Google Fonts italics, an uploaded italic file, a local “… Italic” face, or a variable font's `slnt` / `ital` axis), and classes without one (Han, kana and so on) declare their upright file as italic so the browser does not slant them. When the Han base is linked with `@import`, the usage rule adds `font-synthesis-style: none` for the same reason.
 - Other variable axes. The font picker lists a font's axes besides weight (width, grade, optical size, slant and custom axes); values apply to that class at every weight and are written into the `font-variation-settings` descriptor (Safari ignores it). Optical size can follow the font size; Chrome uses the size after `size-adjust`. Google Fonts drops axes a request doesn't name, so each tuned axis is added to the request and roughly doubles the file. Axis data for Google Fonts is bundled from its metadata; TTF, OTF and WOFF files are read directly, while WOFF2 (Brotli) can't be read in the browser.
 - Metric matching: measures the cap height and x-height of the Latin font against the ideographic face and adjusts the Latin size in one click.
-- Language scope. The exported rule can be limited with `:lang()` (for example `.composite:lang(ja)`), so composites for several languages can share one stylesheet and each applies only to content in its language.
+- Language scope. The exported rule can be limited to one language, so composites for several languages can share one stylesheet and each applies only to content in its language. Common tags are covered with `:is(:lang(…))`, because `:lang(zh-Hant)` does not match `lang="zh-TW"` (browsers don't infer the script from the region): Simplified Chinese also matches `zh-CN` and `zh-SG`, Taiwan matches `zh-TW` and plain `zh-Hant`, and Hong Kong matches `zh-HK`, `zh-Hant-HK` and the Macau tags.
+- Traditional Chinese for Taiwan and Hong Kong: presets (Noto Serif TC / Noto Sans TC / Noto Sans HK, PingFang TC, Microsoft JhengHei) and sample texts in each region's usage. The class table warns when the fonts don't fit the language: it measures where the full-width comma sits (centred in Taiwan and Hong Kong, bottom-left in mainland China and Japan; fonts such as Noto CJK switch by `lang`, so the measurement uses the language too) and reads the region of the glyph forms from the family name (SC / TC / HK / JP). The font picker shows the punctuation position and checks Hong Kong characters (Cantonese and HKSCS).
+- Zhuyin (Bopomofo). With Taiwan as the language, the class table adds a Zhuyin row covering ㄅㄆㄇ and the tone marks ˊ ˇ ˋ ˙, which otherwise sit in the Latin range and would be drawn by the Latin font.
+- Tate-chū-yoko. In vertical text, runs of one or two (or up to three) half-width digits can be set upright in one cell. Browsers only support `text-combine-upright: all`, so the exported script wraps the digits; numbers with a decimal point or colon are left alone.
 - Native CSS properties for CJK text (`text-autospace`, `text-spacing-trim`, `word-break: auto-phrase`, `line-break`, `text-wrap` and more) are written into the exported rule, with the browser versions that support them. The defaults assume body text: `text-wrap: pretty`, plus `line-break: strict` for Japanese.
 - Live proof with sample texts (Chinese, Japanese, mostly Latin, manga dialogue, a character table) or your own text, at any weight, with vertical writing, colour-coded classes (CSS Custom Highlight API, so the layout is not changed), italics, and a side-by-side comparison with a plain `font-family` fallback or `font-size-adjust`.
 - Settings are kept in the browser; each section and the whole tool can be reset.
-- Chinese and Japanese interface, light and dark themes.
+- Interface in Simplified Chinese, Traditional Chinese (Taiwan usage) and Japanese, light and dark themes.
 
 ## Browser support and limits
 
@@ -95,11 +98,14 @@ InDesign / Illustrator の「合成フォント」のように、漢字・かな
 - イタリック。`font-style: italic` の組も書き出せます。イタリックのあるクラスはそれを使い（Google Fonts のイタリック、読み込んだイタリックのファイル、ローカルの「… Italic」、可変フォントの `slnt` / `ital` 軸）、ないクラス（漢字・かななど）は正体のファイルを italic として宣言して、ブラウザが擬似的に傾けないようにします。ベースの漢字フォントを `@import` で参照するときは、同じ理由で使用側の規則に `font-synthesis-style: none` を加えます。
 - そのほかの可変軸。フォント選択で、太さ以外の軸（幅・グレード・オプティカルサイズ・傾き・独自の軸）を調整できます。値はそのクラスの全ウェイトに適用され、`font-variation-settings` 記述子に書かれます（Safari は無視）。オプティカルサイズは文字サイズに追従させることもでき、Chrome は `size-adjust` で拡大した後のサイズを使います。Google Fonts はリクエストにない軸を取り除くので、調整した軸はリクエストに加わり、ファイルはおよそ 2 倍になります。Google Fonts の軸の情報はメタデータから同梱し、TTF・OTF・WOFF はファイルから直接読みます（WOFF2 は Brotli 圧縮のためブラウザでは読めません）。
 - メトリクス合わせ：欧文のキャップハイトと x ハイトを漢字の字面と比べて測り、欧文のサイズをワンクリックで調整します。
-- 対象の言語。書き出す規則を `:lang()` で限定できます（例：`.composite:lang(ja)`）。言語ごとの合成フォントを 1 つのスタイルシートにまとめても、それぞれがその言語の内容にだけ効きます。
+- 対象の言語。書き出す規則を 1 つの言語に限定できるので、言語ごとの合成フォントを 1 つのスタイルシートにまとめても、それぞれがその言語の内容にだけ効きます。`:lang(zh-Hant)` は `lang="zh-TW"` に一致しない（ブラウザは地域から文字体系を推測しない）ため、`:is(:lang(…))` でよく使われる書き方をまとめて指定します。簡体字は `zh-CN`・`zh-SG`、台湾は `zh-TW` と地域なしの `zh-Hant`、香港は `zh-HK`・`zh-Hant-HK` とマカオの書き方にも一致します。
+- 台湾・香港の繁体字中国語。プリセット（Noto Serif TC / Noto Sans TC / Noto Sans HK、PingFang TC、Microsoft JhengHei）と、それぞれの地域の言い回しで書いたサンプル文があります。フォントが言語に合わないときは文字クラスの表で知らせます。全角の読点の位置を測り（台湾・香港は中央、中国大陸・日本は左下寄り。Noto CJK のように `lang` で切り替わるフォントがあるので、測るときも言語を指定）、字形の地域はファミリー名（SC / TC / HK / JP）から判断します。フォント選択では句読点の位置を表示し、香港の字（広東語・HKSCS）の収録も確かめます。
+- 注音符号。言語が台湾のときは文字クラスの表に注音の行が加わり、ㄅㄆㄇ と声調記号 ˊ ˇ ˋ ˙ を受け持ちます（声調記号はもとは欧文の範囲にあり、移さないと欧文フォントで表示されます）。
+- 縦中横。縦組みで 1〜2 桁（または 3 桁まで）の半角数字を 1 文字分に横向きで収めます。ブラウザは `text-combine-upright: all` にしか対応していないので、書き出した JS が数字を囲みます。小数点やコロンを含む数字はそのままです。
 - CSS ネイティブの組版プロパティ（`text-autospace`、`text-spacing-trim`、`word-break: auto-phrase`、`line-break`、`text-wrap` など）を、対応ブラウザのバージョンとともに書き出す規則に含めます。初期値は本文を想定し、`text-wrap: pretty`、日本語では `line-break: strict` です。
 - 校正刷り：サンプル文（中国語・日本語・欧文中心・マンガの台詞・文字表）または自分の文で、任意のウェイトで確認できます。縦組み、クラスの色分け（CSS Custom Highlight API を使うので組版は変わりません）、イタリック、通常の `font-family` フォールバックや `font-size-adjust` との比較にも対応します。
 - 設定はブラウザに保存され、項目ごと・全体のリセットができます。
-- 中国語・日本語の UI、ライト・ダークテーマ。
+- 簡体字中国語・繁体字中国語（台湾の用語）・日本語の UI、ライト・ダークテーマ。
 
 ### 対応ブラウザと制限
 
@@ -132,11 +138,14 @@ InDesign / Illustrator の「合成フォント」のように、漢字・かな
 - 斜体。可以另外导出一组 `font-style: italic` 的规则：有斜体的类别用斜体（Google Fonts 的斜体、上传的斜体文件、本机的「… Italic」，或者可变字体的 `slnt` / `ital` 轴）；没有斜体的类别（汉字、假名等）把正体文件也声明成 italic，浏览器就不会把它们模拟倾斜。汉字基础字体用 `@import` 引用时，出于同样的原因，使用规则里会加上 `font-synthesis-style: none`。
 - 其他可变轴。选择字体时可以调粗细以外的轴（宽度、笔画粗细、光学尺寸、倾斜和自定义轴），对这个类别的所有字重生效，写在 `font-variation-settings` 描述符里（Safari 会忽略）。光学尺寸可以跟随字号，Chrome 用的是 `size-adjust` 放大之后的字号。Google Fonts 会去掉请求里没写的轴，所以调过的轴会加进请求，文件大约变成两倍。Google Fonts 的轴信息取自它的元数据、内置在工具里；TTF、OTF、WOFF 直接读文件，WOFF2 是 Brotli 压缩，浏览器里读不了。
 - 度量对齐：测量西文的大写高和 x 高，与汉字字面比较，一键调整西文大小。
-- 适用语言。导出的规则可以用 `:lang()` 限定（例如 `.composite:lang(ja)`）。不同语言的复合字体可以写在同一个样式表里，各自只对自己语言的内容生效。
+- 适用语言。导出的规则可以限定在一种语言里，不同语言的复合字体可以写在同一个样式表里，各自只对自己语言的内容生效。`:lang(zh-Hant)` 匹配不到 `lang="zh-TW"`（浏览器不会从地区推出文字），所以用 `:is(:lang(…))` 把常见写法都包进去：简体中文另匹配 `zh-CN`、`zh-SG`，台湾匹配 `zh-TW` 和不带地区的 `zh-Hant`，香港匹配 `zh-HK`、`zh-Hant-HK` 和澳门的写法。
+- 台湾、香港的繁体中文：预设（Noto Serif TC / Noto Sans TC / Noto Sans HK、苹方-繁、微软正黑体）和按各地用语写的示例文字。字体和语言不符时，类别表里会提示：量全角逗号的位置（台湾、香港居中，大陆、日本靠左下；Noto CJK 这类字体会按 `lang` 切换，所以测量时也带上语言），并按字族名（SC / TC / HK / JP）判断字形的地区。选择字体时会显示标点位置，并检查香港字（粤语用字、HKSCS）的覆盖。
+- 注音符号。语言是台湾时，类别表里多一行注音，负责 ㄅㄆㄇ 和声调符号 ˊ ˇ ˋ ˙（声调符号原本在西文的区段里，不归过来就会用西文字体显示）。
+- 纵中横。竖排时把一两位（或三位以内）的半角数字横排进一格。浏览器只支持 `text-combine-upright: all`，所以由导出的 JS 把数字包起来；带小数点、冒号的数字保持原样。
 - CSS 原生 CJK 排版属性（`text-autospace`、`text-spacing-trim`、`word-break: auto-phrase`、`line-break`、`text-wrap` 等）会写进导出的规则，并注明支持的浏览器版本。默认值以正文为前提：`text-wrap: pretty`，日文另加 `line-break: strict`。
 - 实时校样：示例文字（中文、日文、西文为主、漫画对白、字符表）或自己的文字，可以切换任意字重；支持竖排、类别着色（用 CSS Custom Highlight API，不改变排版）、斜体，以及和普通 `font-family` 回退、`font-size-adjust` 做法的对照。
 - 设定保存在浏览器里；每一块和整个工具都可以重置。
-- 中文 / 日本語界面，浅色和深色模式。
+- 简体中文、繁体中文（台湾用语）、日本語界面，浅色和深色模式。
 
 ### 浏览器支持与限制
 

@@ -162,7 +162,7 @@ function initToolbar() {
     const b = e.target.closest('[data-sample]'); if (!b) return;
     const k = b.dataset.sample;
     v().sample = k; v().text = SAMPLES[k].text; state.typo.lang = SAMPLES[k].lang;
-    syncToolbar(); renderPreview(); renderExport(); rebuild(); saveState();
+    syncToolbar(); renderEditor(); renderPreview(); renderExport(); rebuild(); saveState();      // 语言变了：注音那一行、地区检查跟着变
   });
   $('#vSize').addEventListener('input', e => { v().size = +e.target.value; syncToolbar(); renderPreview(); saveState(); });
   $('#vLh').addEventListener('input', e => { v().lh = +e.target.value; syncToolbar(); renderPreview(); saveState(); });
@@ -283,7 +283,7 @@ function initToolbar() {
   $('#exLang').addEventListener('change', e => {
     state.scope = e.target.value;
     if (state.scope) state.typo.lang = state.scope;
-    renderPreview(); renderExport(); saveState();
+    renderEditor(); renderPreview(); drawSpecimen(); renderExport(); saveState();
   });
   const tabs = { tabCss: 'css', tabJs: 'js', tabNotes: 'notes' };
   for (const [id, key] of Object.entries(tabs)) $('#' + id).addEventListener('click', () => {
@@ -322,7 +322,7 @@ function renderTypoRows() {
     const sup = t.sup ? ['chrome', 'firefox', 'safari'].map(b =>
       `<span class="${b === ENGINE.id ? 'cur' : ''}">${{ chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' }[b]} ${esc(t.sup[b])}</span>`).join('') : `<span>${esc(T('allBrowsers'))}</span>`;
     return `<div class="typo-row">
-      <span class="typo-name"><label for="ty-${t.key}"><b>${esc(tr(t.label))}</b></label><span class="lab-i"><code>${t.attr ? esc(T('langAttr')) : t.prop}</code>${t.note ? `<button type="button" class="info" data-info="typo:${t.key}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}">i</button>` : ''}</span></span>
+      <span class="typo-name"><label for="ty-${t.key}"><b>${esc(tr(t.label))}</b></label><span class="lab-i"><code>${t.attr ? esc(T('langAttr')) : t.prop}${t.js ? ' · JS' : ''}</code>${t.note ? `<button type="button" class="info" data-info="typo:${t.key}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}">i</button>` : ''}</span></span>
       <select id="ty-${t.key}">${opts}</select>
       <div class="typo-sup" data-key="${t.key}">${sup}</div>
     </div>`;
@@ -364,8 +364,15 @@ function presetCard({ id, name, tag, cls, ja, user, active }) {
       ${miss ? `<span class="pmiss">${esc(T('presetMissing'))}</span>` : ''}
     </button>${user ? `<button type="button" class="pdel" data-del="${esc(id.slice(5))}" aria-label="${esc(T('presetDelete'))} ${esc(name)}">×</button>` : ''}</div>`;
 }
+/* 预设按界面语言排：收起时第一排先放这个语言的预设，其他语言的排在后面 */
+const PRESET_ORDER = {
+  zh: ['serif-sc', 'sans-sc', 'mincho-jp', 'gothic-jp', 'ming-tw', 'hei-tw', 'antigochi', 'hei-hk', 'mac', 'win', 'mac-tw', 'win-tw', 'mac-jp'],
+  tw: ['ming-tw', 'hei-tw', 'hei-hk', 'mac-tw', 'win-tw', 'serif-sc', 'sans-sc', 'mincho-jp', 'gothic-jp', 'antigochi', 'mac', 'win', 'mac-jp'],
+  ja: ['mincho-jp', 'gothic-jp', 'antigochi', 'mac-jp', 'serif-sc', 'sans-sc', 'ming-tw', 'hei-tw', 'hei-hk', 'mac', 'win', 'mac-tw', 'win-tw'],
+};
+const orderedPresets = () => { const o = PRESET_ORDER[UI] || PRESET_ORDER.zh, at = id => (i => i < 0 ? 99 : i)(o.indexOf(id)); return [...PRESETS].sort((a, b) => at(a.id) - at(b.id)); };
 function renderPresetCards() {
-  const cards = PRESETS.map(p => presetCard({ id: p.id, name: tr(p.name), tag: tr(p.tag), cls: freshClasses(p), ja: p.sample !== 'zh', active: state.preset === p.id }));
+  const cards = orderedPresets().map(p => presetCard({ id: p.id, name: tr(p.name), tag: tr(p.tag), cls: freshClasses(p), ja: p.region === 'jp', active: state.preset === p.id }));
   for (const [n, snap] of Object.entries(userPresets)) if (snap?.classes?.han)
     cards.push(presetCard({ id: 'user:' + n, name: n, tag: T('presetMine'), cls: snap.classes, ja: /^ja/.test(snap.typo?.lang || ''), user: true, active: state.preset === 'user:' + n }));
   $('#presetCards').innerHTML = cards.join('');
@@ -544,6 +551,7 @@ const COV_SETS = [
   ['covSC', '这们说时对过学发会经实现进动应头书长马门问间东车见风让认识语读谁调谈网样个钱'],
   ['covTC', '這們說時對過學發會經實現進動應頭書長馬門問間東車見風讓認識語讀誰調談網樣個錢'],
   ['covJP', '円気駅図県様広応戦鉄売読楽薬弁両帰稲鉱塩'],
+  ['covHK', '嘅咗嚟啲冇佢喺嘢噉咁哋睇攞乜嗰𠝹𨋢'],      // 粤语用字，最后两个在扩展 B 区（HKSCS）
   ['covKR', '가나다라마바사아자차카타파하한글'],
   ['covSym', '①②③※→℃○■△◎★〒'],
 ];
@@ -582,7 +590,17 @@ async function renderCoverage(s, f) {
   }).join('') + (sampleChars.some(c => miss.has(c)) ? `<span class="cov-note"><i></i>${esc(T('covMiss'))}</span>` : '');
   sample.innerHTML = [...text].map(c => miss.has(c) ? `<span class="miss">${esc(c)}</span>` : esc(c)).join('');
 }
+/* 选字体时也告诉用户：这个字体的标点是居中（台湾、香港）还是靠左下（大陆、日本）；和当前语言不一致时标黄 */
+function renderPunct(s, f) {
+  const el = $('#pkPunct'), lang = state.typo.lang, want = REGION_OF_LANG[lang], pos = punctPos(s, lang);
+  if (pos === undefined) { el.hidden = true; setTimeout(() => { if (pickCand === f) renderPunct(s, f); }, 300); return; }
+  el.hidden = !pos;
+  if (!pos) return;
+  el.textContent = T(pos === 'center' ? 'pkPunctCenter' : 'pkPunctCorner');
+  el.classList.toggle('bad', want in PUNCT_CENTER && (pos === 'center') !== PUNCT_CENTER[want]);
+}
 function resetCoverage() {
+  $('#pkPunct').hidden = true;
   covTok++;
   $('#pkCov').innerHTML = '';
   const sample = $('#pkSample');
@@ -612,6 +630,7 @@ function updateCand() {
       showVfTag(ax);
       if (f.kind === 'google') vfAxis(f.family).then(a => { if (pickCand === f) showVfTag(a); });
       renderCoverage(s, f);
+      renderPunct(s, f);
       ok.disabled = false;
     } else {
       st.textContent = srcError(s) + (f.kind === 'local' ? T('pkLocalStill') : '');
@@ -792,7 +811,7 @@ function initPicker() {
 
 /* ================= 界面语言 ================= */
 function applyUI() {
-  root.lang = UI === 'ja' ? 'ja' : 'zh-Hans';
+  root.lang = UI === 'ja' ? 'ja' : UI === 'tw' ? 'zh-Hant-TW' : 'zh-Hans';
   document.querySelectorAll('[data-t]').forEach(el => { el.textContent = T(el.dataset.t); });
   document.querySelectorAll('[data-th]').forEach(el => { el.innerHTML = T(el.dataset.th); });
   document.querySelectorAll('[data-ta]').forEach(el => el.dataset.ta.split(';').forEach(p => { const [a, k] = p.split(':'); el.setAttribute(a, T(k)); }));
@@ -812,7 +831,7 @@ function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add
 
 /* 重置：点一次变成确认，3 秒内再点才执行。「我的预设」不受影响 */
 function resetAll() {
-  state = stateFromPreset(PRESETS.find(p => p.id === (UI === 'ja' ? 'mincho-jp' : 'serif-sc')));
+  state = stateFromPreset(PRESETS.find(p => p.id === defaultPresetId()));
   normalizeState();
   refreshCustomRanges(); syncToolbar(); renderTypoRows(); renderEditor(); renderPreview(); renderPresetCards(); rebuild(); saveState();
   toast(T('tReset'));
