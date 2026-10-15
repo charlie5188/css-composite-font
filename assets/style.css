@@ -143,13 +143,14 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
    两个窗格顶上各有一条一样高的工具条，底线连成一条；所有控件都用同一套扁平样子 */
 .bench{display:grid;grid-template-columns:minmax(400px,540px) minmax(0,1fr);align-items:start;margin-top:40px;background:var(--sheet);border:1px solid var(--line);border-top-color:var(--ink)}
 @media (max-width:1000px){.bench{grid-template-columns:minmax(0,1fr)}}
-.compose{position:sticky;top:0;max-height:100vh;overflow:auto;min-width:0;--px:16px;padding:0 var(--px) 20px;border-right:1px solid var(--line);margin-right:-1px}      /* 左右两个窗格都画分隔线、叠在一起：哪边长都连到底 */
-.tester{border-left:1px solid var(--line)}
-@media (max-width:1000px){.compose{position:static;max-height:none;overflow:visible;border-right:0;margin-right:0}.tester{border-left:0;border-top:1px solid var(--line)}}
+/* 整个工作区最高一屏：左右两个窗格各自在里面滚动，不用一边滚页面一边滚窗格 */
+.compose{max-height:calc(100vh - 2px);overflow:auto;min-width:0;--px:16px;padding:0 var(--px) 20px;border-right:1px solid var(--line);margin-right:-1px}      /* 左右两个窗格都画分隔线、叠在一起：哪边长都连到底 */
+.tester{border-left:1px solid var(--line);max-height:calc(100vh - 2px);overflow:auto}
+@media (max-width:1000px){.compose{max-height:none;overflow:visible;border-right:0;margin-right:0}.tester{border-left:0;border-top:1px solid var(--line);max-height:none;overflow:visible}}
 .bench .seg{border-radius:6px}
 .bench .seg button{border-radius:4px}
 /* 窗格顶上的工具条：一样高 */
-.bench{--bar-h:44px}
+.bench{--bar-h:54px}
 @media (max-width:560px){.compose{--px:8px}}      /* 手机上表格本来就挤：窗格左右留白减半 */
 .compose .sec-row{border-top:1px solid var(--ink);padding-top:14px;margin-bottom:0}
 /* 字符类别旁的魔法棒：一键调整大小和基线 */
@@ -249,10 +250,12 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .weight-bar .w-row{align-items:stretch;flex:1 1 auto;flex-basis:auto}
 .weight-bar #vWeightLab{align-items:stretch}
 .weight-bar #vWeightLab>span:first-child,.weight-bar #vWcontLab{align-self:center}
-.weight-bar #vWeight{border:0;padding:0;background:none;border-radius:0;gap:10px;margin-bottom:-1px}
-.weight-bar #vWeight button{border-radius:0;padding:13px 1px 10px;border-bottom:2px solid transparent;background:none;color:var(--muted)}
+/* 「字重」是标签不是选项：粗体黑字，后面一条竖线和选项隔开 */
+.weight-bar #vWeightLab>span:first-child,.weight-bar #vWcontLab>span:first-child{font-size:13px;font-weight:600;color:var(--ink);padding-right:14px;border-right:1px solid var(--line);line-height:22px}
+.weight-bar #vWeight{border:0;padding:0;background:none;border-radius:0;gap:6px;margin-bottom:-1px}
+.weight-bar #vWeight button{display:inline-flex;align-items:center;gap:3px;border-radius:0;padding:2px 3px 0;font-size:13px;border-bottom:2px solid transparent;background:none;color:var(--muted)}
 .weight-bar #vWeight button:hover{color:var(--ink)}
-.weight-bar #vWeight button[aria-checked="true"]{background:none;color:var(--ink);border-bottom-color:var(--ink)}
+.weight-bar #vWeight button[aria-checked="true"]{background:none;color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
 .weight-bar .busy{position:static;transform:none;padding:0;align-self:center;margin-left:auto;flex:none}
 #vWNote{margin-top:10px}
 /* 页签的下划线要压在分隔线上：整排往下挪 1px，而不是让按钮超出容器（那样会出现 1px 的垂直滚动） */
@@ -286,8 +289,8 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 /* 校样的工具条：贴着白纸顶边通栏，一行。左边示例页签（放不下时横向滚动），右边字号、行高、「显示」；长文往下滚时停在窗口顶上 */
 .sheet-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;line-height:1.4;font-family:var(--ui);min-height:var(--bar-h);margin:0 calc(0px - var(--pad)) calc(var(--pad) - 14px);padding:0 10px 0 16px;background:var(--sheet);border-bottom:1px solid var(--line)}
 .sheet-bar .sample-tabs{flex:1 1 auto;align-self:stretch;gap:12px;margin-bottom:-1px}
-.sheet-bar .sample-tabs button{padding-top:13px;padding-bottom:10px}
-.sheet-bar .sample-tabs .tab-add{padding-top:10px;padding-bottom:8px}
+.sheet-bar .sample-tabs button{display:inline-flex;align-items:center;justify-content:center;padding-top:2px;padding-bottom:0}
+.sheet-bar .sample-tabs .ctab{align-items:stretch}
 .bar-ctrl{display:flex;align-items:center;gap:4px;flex:none}
 .sample-tabs.fade-l{-webkit-mask-image:linear-gradient(to right,transparent,#000 36px);mask-image:linear-gradient(to right,transparent,#000 36px)}
 /* 「+」总是贴在页签区右端看得见；后面还有页签时，它左边淡出一段盖住被截断的页签 */
@@ -316,7 +319,7 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .nf output.unit::before{content:"· ";white-space:pre}
 body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* 窄屏：页签单独一行在上，数字框和「显示」在下 */
-@media (max-width:620px){.sheet-bar{flex-wrap:wrap;padding:0 8px 4px 12px;gap:0 8px}.sheet-bar .sample-tabs{flex-basis:100%;border-bottom:1px solid var(--line);margin:0 -8px 4px -12px;padding:0 0 0 12px}.bar-ctrl{flex:1}.bar-sep{margin-left:auto}}
+@media (max-width:620px){.sheet-bar{flex-wrap:wrap;padding:0 8px 4px 12px;gap:0 8px}.sheet-bar .sample-tabs{flex-basis:100%;min-height:44px;border-bottom:1px solid var(--line);margin:0 -8px 4px -12px;padding:0 0 0 12px}.bar-ctrl{flex:1}.bar-sep{margin-left:auto}}
 .sheet>div{min-width:0}
 /* 文字四周的留白一样宽：横排时去掉第一行上面、最后一行下面的半行距（行高多出来的部分），让上下留白量到字面，和左右一致 */
 .sheet:not(.vertical) .proof-text{margin-bottom:calc((1 - var(--lh,1.8)) * var(--fs,40px) / 2)}

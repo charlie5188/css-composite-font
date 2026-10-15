@@ -248,7 +248,7 @@ function initToolbar() {
   const reloadForText = debounce(() => rebuild(), 600);
   $('#proofText').addEventListener('pointermove', e => missTipAt(e.clientX, e.clientY));
   $('#proofText').addEventListener('pointerleave', () => { $('#missTip').hidden = true; });
-  addEventListener('scroll', () => { $('#missTip').hidden = true; }, { passive: true });
+  document.addEventListener('scroll', () => { $('#missTip').hidden = true; }, { passive: true, capture: true });      // 窗格里面滚动也要收起（scroll 不冒泡）
   $('#sample').addEventListener('input', e => {
     v().text = e.target.value;
     const m = /^c(\d+)$/.exec(v().sample); if (m && v().customs[+m[1]]) v().customs[+m[1]].text = e.target.value;
