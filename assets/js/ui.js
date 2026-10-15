@@ -366,9 +366,9 @@ function presetCard({ id, name, tag, cls, ja, user, active }) {
 }
 /* 预设按界面语言排：收起时第一排先放这个语言的预设，其他语言的排在后面 */
 const PRESET_ORDER = {
-  zh: ['serif-sc', 'sans-sc', 'mincho-jp', 'gothic-jp', 'ming-tw', 'hei-tw', 'antigochi', 'hei-hk', 'mac', 'win', 'mac-tw', 'win-tw', 'mac-jp'],
-  tw: ['ming-tw', 'hei-tw', 'hei-hk', 'mac-tw', 'win-tw', 'serif-sc', 'sans-sc', 'mincho-jp', 'gothic-jp', 'antigochi', 'mac', 'win', 'mac-jp'],
-  ja: ['mincho-jp', 'gothic-jp', 'antigochi', 'mac-jp', 'serif-sc', 'sans-sc', 'ming-tw', 'hei-tw', 'hei-hk', 'mac', 'win', 'mac-tw', 'win-tw'],
+  zh: ['serif-sc', 'sans-sc', 'mincho-jp', 'gothic-jp', 'ming-tw', 'hei-tw', 'antigochi', 'hei-hk', 'mac', 'mac-tw', 'mac-jp'],
+  tw: ['ming-tw', 'hei-tw', 'hei-hk', 'mac-tw', 'serif-sc', 'sans-sc', 'mincho-jp', 'gothic-jp', 'antigochi', 'mac', 'mac-jp'],
+  ja: ['mincho-jp', 'gothic-jp', 'antigochi', 'mac-jp', 'serif-sc', 'sans-sc', 'ming-tw', 'hei-tw', 'hei-hk', 'mac', 'mac-tw'],
 };
 const orderedPresets = () => { const o = PRESET_ORDER[UI] || PRESET_ORDER.zh, at = id => (i => i < 0 ? 99 : i)(o.indexOf(id)); return [...PRESETS].sort((a, b) => at(a.id) - at(b.id)); };
 function renderPresetCards() {

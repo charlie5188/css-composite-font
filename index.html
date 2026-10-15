@@ -9,13 +9,13 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <link rel="stylesheet" href="assets/style.css?v=ba5a074e">
-<script src="assets/js/i18n.js?v=815ab3f3" defer></script>
-<script src="assets/js/unicode.js?v=7cdfa400" defer></script>
+<script src="assets/js/i18n.js?v=bfbfedd4" defer></script>
+<script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
-<script src="assets/js/core.js?v=3f4dcb98" defer></script>
-<script src="assets/js/render.js?v=11982bcd" defer></script>
-<script src="assets/js/export.js?v=1a99d012" defer></script>
-<script src="assets/js/ui.js?v=a80c3a60" defer></script>
+<script src="assets/js/core.js?v=76f4ecb3" defer></script>
+<script src="assets/js/render.js?v=88684469" defer></script>
+<script src="assets/js/export.js?v=60c2769f" defer></script>
+<script src="assets/js/ui.js?v=3ed2d44e" defer></script>
 </head>
 <body>
 <div class="app">
@@ -154,7 +154,7 @@
       <div class="field" id="exWeightsField"><span class="flabel" data-t="exWeights"></span><div class="chips" id="exWeights" role="group" data-ta="aria-label:exWeights"></div></div>
       <div class="field" id="exBaseField"><label for="exBase" data-t="exBase"></label><select id="exBase"><option value="link" data-t="exBaseLink"></option><option value="expand" data-t="exBaseExpand"></option></select></div>
       <div class="field"><label for="exGeneric" data-t="exGeneric"></label><select id="exGeneric"><option value="auto" data-t="auto"></option><option value="serif">serif</option><option value="sans-serif">sans-serif</option></select></div>
-      <div class="field"><label for="exLang" data-t="exLang"></label><select id="exLang"></select></div>
+      <div class="field"><label for="exLang" data-t="exLang"></label><select id="exLang"></select><p class="wr-note" id="exLangWarn" hidden></p></div>
       <div class="field"><label for="exItalic" data-t="exItalic"></label><select id="exItalic"><option value="0" data-t="exItalicOff"></option><option value="1" data-t="exItalicOn"></option></select></div>
     </div>
     <div class="tabs ex-tabs" role="tablist" data-ta="aria-label:exportAria">
@@ -188,8 +188,8 @@
         <p>「选择字体…」里可以调可变字体的其他轴，例如宽度、笔画粗细（GRAD）、光学尺寸。Google Fonts 只保留请求里写了的轴，其余固定在默认值、从文件里去掉，所以调过的轴会加进请求，文件大约变成两倍。固定的值写在 <code>@font-face</code> 的 <code>font-variation-settings</code> 里，Safari 不认这一行，会按默认值显示。光学尺寸选「跟随字号」时，浏览器按实际字号设定 opsz；实测 Chrome 用的是 size-adjust 放大之后的字号，正好对应西文实际显示的大小。</p>
         <h3>繁体中文：台湾和香港</h3>
         <p>「适用语言」的繁体中文分成台湾和香港两种。导出时用 <code>:is(:lang(…))</code> 把常见写法都包进去：台湾版匹配 <code>zh-Hant</code>、<code>zh-TW</code>，香港版匹配 <code>zh-HK</code>、<code>zh-Hant-HK</code> 和澳门的写法。原因是 <code>:lang(zh-Hant)</code> 匹配不到 <code>lang="zh-TW"</code>：浏览器不会从地区推出文字。简体中文同样会加上 <code>zh-CN</code>、<code>zh-SG</code>。</p>
-        <p>两地的写法和大陆不同：标点在字身正中（大陆、日本靠左下），字形也按各自的标准。工具会量全角标点的位置，并按字族名判断字形的地区，和语言不一致时在类别表里提示。思源、Noto CJK 这类一个文件含多个地区字形的字体会按 lang 切换，所以测量时也带上语言。</p>
-        <p>语言是台湾时，类别表里多一行「注音符号」，包括声调符号 ˊ ˇ ˋ ˙（它们原本属于西文的码位，不归过来就会用西文字体显示）。竖排时可以打开「纵中横」，由导出的 JS 把一两位的半角数字横排进一格；浏览器只支持 <code>text-combine-upright: all</code>，所以需要 JS。</p>
+        <p>两地的写法和大陆不同：标点在字身正中（大陆、日本靠左下），字形也按各自的标准。工具会量全角标点的位置，并按字族名判断字形的地区：和校样的语言不一致时在类别表里提示，和适用语言不一致时在导出区提示。思源、Noto CJK 这类一个文件含多个地区字形的字体会按 lang 切换，所以测量时也带上语言。</p>
+        <p>类别表里有一行「注音符号」，也负责声调号 ˊ ˇ ˋ ˙：它们原本属于西文的码位，不归过来就会用西文字体显示。法语等的重音字母（é、à）是另外的码位，不受影响；需要的话可以在齿轮里把声调号改回半角西文。竖排时可以打开「纵中横」，由导出的 JS 把一两位的半角数字横排进一格；浏览器只支持 <code>text-combine-upright: all</code>，所以需要 JS。</p>
         <h3>为什么不用 font-size-adjust</h3>
         <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支持双值语法）也能统一字号，但它对元素里的每个字体都生效：把西文调到目标大写高的同时，汉字字体也会按它自带的西文度量被缩放。它也不能按字符类别分配字体，解决不了引号归属。更关键的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同时出现时，<code>size-adjust</code> 不再起作用。所以使用复合字体的元素上不要再写 <code>font-size-adjust</code>。校样的「对照其他做法」里可以切换到这个做法比较效果。</p>
         <h3>CSS 原生 CJK 排版属性</h3>
@@ -229,13 +229,13 @@
         <h3>斜體</h3>
         <p>沒有斜體規則時，<code>&lt;em&gt;</code> 和 <code>&lt;i&gt;</code> 裡的字全部由瀏覽器模擬傾斜，漢字也會歪掉。匯出斜體後，每組規則另有一份 <code>font-style: italic</code>：西文用真正的斜體（Google Fonts 的 Italic、上傳的斜體檔案、本機的「… Italic」，或者可變字型的 slnt / ital 軸）；沒有斜體的類別用一般（非斜體）的檔案、也宣告成 italic，瀏覽器就不會去模擬。基礎字型用 <code>@import</code> 引用時，Google 那邊只有一般字形，所以使用規則裡加了 <code>font-synthesis-style: none</code>，讓它同樣保持直立。</p>
         <h3>可變軸</h3>
-        <p>「選擇字型…」裡可以調可變字型的其他軸，例如寬度、筆畫粗細（GRAD）、光學尺寸。Google Fonts 只保留請求裡寫了的軸，其餘固定在預設值、從檔案裡去掉，所以調過的軸會加進請求，檔案大約變成兩倍。固定的值寫在 <code>@font-face</code> 的 <code>font-variation-settings</code> 裡，Safari 不認這一行，會按預設值顯示。光學尺寸選「跟隨字級」時，瀏覽器按實際字級設定 opsz；實測 Chrome 用的是 size-adjust 放大之後的字級，正好對應西文實際顯示的大小。</p>
+        <p>「選擇字型…」裡可以調可變字型的其他軸，例如寬度、筆畫粗細（GRAD）、光學尺寸。Google Fonts 只保留請求裡寫了的軸，其餘固定在預設值、從檔案裡去掉，所以調過的軸會加進請求，檔案大約變成兩倍。固定的值寫在 <code>@font-face</code> 的 <code>font-variation-settings</code> 裡，Safari 不認這一行，會按預設值顯示。光學尺寸選「跟隨字號」時，瀏覽器按實際字號設定 opsz；實測 Chrome 用的是 size-adjust 放大之後的字號，正好對應西文實際顯示的大小。</p>
         <h3>繁體中文：台灣和香港</h3>
         <p>「適用語言」的繁體中文分成台灣和香港兩種。匯出時用 <code>:is(:lang(…))</code> 把常見寫法都包進去：台灣版比對 <code>zh-Hant</code>、<code>zh-TW</code>，香港版比對 <code>zh-HK</code>、<code>zh-Hant-HK</code> 和澳門的寫法。原因是 <code>:lang(zh-Hant)</code> 比對不到 <code>lang="zh-TW"</code>：瀏覽器不會從地區推出文字。簡體中文同樣會加上 <code>zh-CN</code>、<code>zh-SG</code>。</p>
-        <p>兩地的寫法和中國大陸不同：標點在字身正中（大陸、日本靠左下），字形也依各自的標準。工具會量全形標點的位置，並依字族名判斷字形的地區，和語言不一致時在類別表裡提示。思源、Noto CJK 這類一個檔案含多個地區字形的字型會依 lang 切換，所以測量時也帶上語言。</p>
-        <p>語言是台灣時，類別表裡多一行「注音符號」，包括聲調符號 ˊ ˇ ˋ ˙（它們原本屬於西文的碼位，不歸過來就會用西文字型顯示）。直排時可以開啟「直排內橫排」，由匯出的 JS 把一兩位的半形數字橫排進一格；瀏覽器只支援 <code>text-combine-upright: all</code>，所以需要 JS。</p>
+        <p>兩地的寫法和中國大陸不同：標點居中（大陸、日本靠左下），字形也依各自的標準。工具會量全形標點的位置，並依字族名判斷字形的地區：和校樣的語言不一致時在類別表裡提示，和適用語言不一致時在匯出區提示。思源、Noto CJK 這類一個檔案含多個地區字形的字型會依 lang 切換，所以測量時也帶上語言。</p>
+        <p>類別表裡有一行「注音符號」，也負責聲調號 ˊ ˇ ˋ ˙：它們原本屬於西文的碼位，不歸過來就會用西文字型顯示。法語等的重音字母（é、à）是另外的碼位，不受影響；需要的話可以在齒輪裡把聲調號改回半形西文。直排時可以開啟「縱中橫排」，由匯出的 JS 把一兩位的半形數字橫排進一格；瀏覽器只支援 <code>text-combine-upright: all</code>，所以需要 JS。</p>
         <h3>為什麼不用 font-size-adjust</h3>
-        <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支援雙值語法）也能統一字級，但它對元素裡的每個字型都生效：把西文調到目標大寫高的同時，漢字字型也會按它自帶的西文度量被縮放。它也不能按字元類別分配字型，解決不了引號歸屬。更關鍵的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同時出現時，<code>size-adjust</code> 不再起作用。所以使用複合字型的元素上不要再寫 <code>font-size-adjust</code>。校樣的「對照其他做法」裡可以切換到這個做法比較效果。</p>
+        <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支援雙值語法）也能統一字號，但它對元素裡的每個字型都生效：把西文調到目標大寫高的同時，漢字字型也會按它自帶的西文度量被縮放。它也不能按字元類別分配字型，解決不了引號歸屬。更關鍵的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同時出現時，<code>size-adjust</code> 不再起作用。所以使用複合字型的元素上不要再寫 <code>font-size-adjust</code>。校樣的「對照其他做法」裡可以切換到這個做法比較效果。</p>
         <h3>CSS 原生 CJK 排版屬性</h3>
         <p>這些屬性和複合字型互不衝突，可以疊加使用。下表是 2026 年 10 月 MDN 相容性資料裡各瀏覽器開始支援的版本。</p>
         <div class="sup-table"><table>
@@ -244,13 +244,13 @@
             <tr><td class="v">text-autospace</td><td>漢字、假名與西文、數字之間自動加 1/8 em。Chrome 只支援 normal / no-autospace，實測初始值是 no-autospace（規範寫的是 normal），需要顯式寫出。</td><td class="v">140</td><td class="v">145</td><td class="v">18.4</td></tr>
             <tr><td class="v">text-spacing-trim</td><td>全形標點擠壓：相鄰標點合併、行首開括號半形化。目前只實作了 normal / space-all / space-first / trim-start。</td><td class="v">123</td><td class="v">—</td><td class="v">—</td></tr>
             <tr><td class="v">word-break: auto-phrase</td><td>按詞組（文節）換行，避免把一個詞拆在兩行。只對 lang="ja" 和 lang="ko" 生效。</td><td class="v">119</td><td class="v">—</td><td class="v">預覽版</td></tr>
-            <tr><td class="v">line-break</td><td>避頭尾強度：strict 更嚴格地禁止行首出現小假名、長音符等。</td><td class="v">58</td><td class="v">69</td><td class="v">11</td></tr>
+            <tr><td class="v">line-break</td><td>禁則強度：strict 更嚴格地禁止行首出現小假名、長音符等。</td><td class="v">58</td><td class="v">69</td><td class="v">11</td></tr>
             <tr><td class="v">text-wrap: pretty</td><td>避免段落末行只剩一兩個字。Chrome 只調整段落最後四行。</td><td class="v">117</td><td class="v">—</td><td class="v">26</td></tr>
             <tr><td class="v">text-wrap: balance</td><td>讓各行長度接近，適合標題。</td><td class="v">114</td><td class="v">121</td><td class="v">17.5</td></tr>
-            <tr><td class="v">text-justify</td><td>左右對齊的方式：inter-character 在字間分配空隙。</td><td class="v">145</td><td class="v">55</td><td class="v">—</td></tr>
+            <tr><td class="v">text-justify</td><td>兩端對齊的方式：inter-character 在字間分配空隙。</td><td class="v">145</td><td class="v">55</td><td class="v">—</td></tr>
             <tr><td class="v">hanging-punctuation</td><td>標點懸掛到版心外。</td><td class="v">—</td><td class="v">—</td><td class="v">10</td></tr>
             <tr><td class="v">text-box</td><td>裁掉首行上方、末行下方的半行距。ideographic 邊緣目前只有 Firefox 支援。</td><td class="v">133</td><td class="v">154</td><td class="v">18.2</td></tr>
-            <tr><td class="v">text-combine-upright: all</td><td>直排內橫排，需要把數字包進單獨的元素。digits 值沒有瀏覽器實作。</td><td class="v">48</td><td class="v">48</td><td class="v">15.4</td></tr>
+            <tr><td class="v">text-combine-upright: all</td><td>縱中橫排，需要把數字包進單獨的元素。digits 值沒有瀏覽器實作。</td><td class="v">48</td><td class="v">48</td><td class="v">15.4</td></tr>
           </tbody>
         </table></div>
         <p>來源：<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/text-autospace" target="_blank" rel="noopener">MDN text-autospace</a>、<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/text-spacing-trim" target="_blank" rel="noopener">text-spacing-trim</a>、<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/font-size-adjust" target="_blank" rel="noopener">font-size-adjust</a>、<a href="https://github.com/mdn/browser-compat-data" target="_blank" rel="noopener">MDN browser-compat-data</a>、<a href="https://developer.chrome.com/blog/css-i18n-features" target="_blank" rel="noopener">Chrome：CSS 國際化新特性</a>。</p>
@@ -276,8 +276,8 @@
         <p>「フォントを選択…」で、幅・グレード（GRAD）・オプティカルサイズなど、可変フォントのほかの軸を調整できます。Google Fonts はリクエストに書いた軸だけを残し、残りは既定値に固定してファイルから取り除くため、調整した軸はリクエストに加わり、ファイルはおよそ 2 倍になります。固定した値は <code>@font-face</code> の <code>font-variation-settings</code> に書かれ、Safari はこの行を無視して既定値で表示します。オプティカルサイズを「文字サイズに追従」にすると、ブラウザが実際の文字サイズから opsz を決めます。Chrome は実測で size-adjust で拡大した後のサイズを使うので、欧文が実際に表示される大きさと一致します。</p>
         <h3>繁体字中国語：台湾と香港</h3>
         <p>「対象の言語」の繁体字中国語は、台湾と香港の 2 つに分かれています。書き出しでは <code>:is(:lang(…))</code> でよく使われる書き方をまとめて指定します。台湾版は <code>zh-Hant</code>・<code>zh-TW</code>、香港版は <code>zh-HK</code>・<code>zh-Hant-HK</code> とマカオの書き方に一致します。<code>:lang(zh-Hant)</code> は <code>lang="zh-TW"</code> に一致しないためです（ブラウザは地域から文字体系を推測しません）。簡体字も同様に <code>zh-CN</code>・<code>zh-SG</code> を加えます。</p>
-        <p>台湾と香港では句読点を字面の中央に置き（中国大陸・日本は左下寄り）、字形もそれぞれの規範に従います。ツールは全角約物の位置を測り、ファミリー名から字形の地域を判断して、言語と一致しないときは文字クラスの表で知らせます。源ノ角ゴシックや Noto CJK のように 1 つのファイルに複数地域の字形を持つフォントは lang で切り替わるので、測るときも言語を指定しています。</p>
-        <p>言語が台湾のときは、文字クラスの表に「注音符号」の行が加わります。声調記号 ˊ ˇ ˋ ˙ もここに含めます（もとは欧文の範囲にあり、移さないと欧文フォントで表示されます）。縦組みでは「縦中横」をオンにでき、書き出した JS が 1〜2 桁の半角数字を 1 文字分に横向きで収めます。ブラウザが対応しているのは <code>text-combine-upright: all</code> だけなので、JS が必要です。</p>
+        <p>台湾と香港では句読点を字面の中央に置き（中国大陸・日本は左下寄り）、字形もそれぞれの規範に従います。ツールは全角約物の位置を測り、ファミリー名から字形の地域を判断します。校正刷りの言語と一致しないときは文字クラスの表で、対象の言語と一致しないときは書き出し欄で知らせます。源ノ角ゴシックや Noto CJK のように 1 つのファイルに複数地域の字形を持つフォントは lang で切り替わるので、測るときも言語を指定しています。</p>
+        <p>文字クラスの表には「注音符号」の行があり、声調記号 ˊ ˇ ˋ ˙ も受け持ちます。もとは欧文の範囲にあり、移さないと欧文フォントで表示されるためです。フランス語などのアクセント付き文字（é・à）は別の符号位置なので影響しません。必要なら歯車から声調記号を半角欧文に戻せます。縦組みでは「縦中横」をオンにでき、書き出した JS が 1〜2 桁の半角数字を 1 文字分に横向きで収めます。ブラウザが対応しているのは <code>text-combine-upright: all</code> だけなので、JS が必要です。</p>
         <h3>font-size-adjust を使わない理由</h3>
         <p><code>font-size-adjust</code>（2 値構文は Chrome 127、Firefox 92、Safari 17 が対応）でもサイズをそろえられますが、要素内のすべてのフォントに効きます。欧文を目標のキャップハイトに合わせると、漢字フォントも付属欧文のメトリクスに応じて拡大縮小されます。文字クラスごとにフォントを割り当てることもできないため、引用符の問題も解決しません。さらに MDN によれば、<code>@font-face</code> の <code>size-adjust</code> と併用すると <code>size-adjust</code> が効かなくなります。合成フォントを使う要素には <code>font-size-adjust</code> を指定しないでください。校正刷りの「他の方法と比較」で違いを確認できます。</p>
         <h3>CSS ネイティブの CJK 組版プロパティ</h3>

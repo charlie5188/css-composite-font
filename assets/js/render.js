@@ -1,9 +1,7 @@
 'use strict';
 /* ================= 渲染：字符类别表（对应 InDesign 的复合字体对话框） ================= */
 const GLYPH = { han: '永', latin: 'Ag', digit: '01', kana: 'あ', bopo: 'ㄅ', punct: '」、', symbol: '※', shared: '“…' };
-/* 注音那一行只在语言是繁體中文（台灣）、或它有自己的设定时出现 */
-const showBopo = () => state.typo.lang === 'zh-Hant-TW' || (o => !!o && (!o.follow || o.size != null || o.shift != null))(state.classes.bopo);
-const visibleClasses = () => CLASSES.filter(c => c.id !== 'bopo' || showBopo());
+const visibleClasses = () => CLASSES;
 const shortName = f => !f ? '' : f.kind === 'google' ? f.family : f.kind === 'local' ? f.name : f.kind === 'path' ? f.path : f.fileName;
 const keyName = key => key[0] === '#' ? T('customName', { c: state.custom[+key.slice(1)]?.chars || '…' }) : tr(CLS[key].name);
 /* 这个类别在某个字重下有没有单独设定的粗细 / 字体名 / 文件 */
@@ -92,7 +90,7 @@ function formsOf(f) {
 }
 /* 标点位置要量：「，」的墨迹重心在字身里的位置。一个文件含多个地区字形的字体（思源、Noto CJK）会按 lang 切换，所以带上语言量 */
 const punctMemo = new Map();      // 「字体|语言」→ 'center' | 'corner' | null；undefined = 测量中
-const regionChanged = debounce(() => renderEditor(), 80);
+const regionChanged = debounce(() => { renderEditor(); renderLangWarn(); }, 80);
 function punctPos(s, lang) {
   const k = s.family + '|' + lang;
   if (punctMemo.has(k)) return punctMemo.get(k);
@@ -111,22 +109,35 @@ function punctPos(s, lang) {
   }, () => punctMemo.set(k, null));
   return undefined;
 }
-/* 汉字那一行检查字形，全角标点那一行检查标点位置；和语言不一致时给黄色提示 */
-function regionRow(key) {
-  const lang = state.typo.lang, want = REGION_OF_LANG[lang];
-  if (!want || (key !== 'han' && key !== 'punct')) return '';
-  const r = resolveCls(key, state.view.weight, true);
-  if (!r.font) return '';
-  const langName = tr(TYPO.find(t => t.key === 'lang').values.find(([v]) => v === lang)?.[1]) || lang;
-  if (key === 'han') {
-    const got = formsOf(r.font);
-    return got && got !== want ? `<span class="ct-note">${esc(T('regForms', { got: T('reg_' + got), lang: langName }))}</span>` : '';
+/* 某个语言下，汉字字体的字形、全角标点字体的标点位置对不对 */
+const langName = lang => tr(TYPO.find(t => t.key === 'lang').values.find(([v]) => v === lang)?.[1]) || lang;
+function regionCheck(lang) {
+  const want = REGION_OF_LANG[lang], out = {};
+  if (!want) return out;
+  const W = state.view.weight, han = resolveCls('han', W, true), pu = resolveCls('punct', W, true);
+  const got = formsOf(han.font);
+  if (got && got !== want) out.forms = { got, font: han.font };
+  if (want in PUNCT_CENTER && pu.font) {
+    const s = sources.get(fontKey(usedFont(pu))), pos = s?.status === 'ok' ? punctPos(s, lang) : null;
+    if (pos && (pos === 'center') !== PUNCT_CENTER[want]) out.punct = { pos, font: pu.font };
   }
-  if (!(want in PUNCT_CENTER)) return '';
-  const s = sources.get(fontKey(usedFont(r)));
-  const pos = s?.status === 'ok' ? punctPos(s, lang) : null;
-  if (!pos || (pos === 'center') === PUNCT_CENTER[want]) return '';
-  return `<span class="ct-note">${esc(T(pos === 'center' ? 'regPunctCenter' : 'regPunctCorner', { lang: langName }))}</span>`;
+  return out;
+}
+/* 类别表：按校样的语言检查（汉字那一行看字形，全角标点那一行看标点位置） */
+function regionRow(key) {
+  if (key !== 'han' && key !== 'punct') return '';
+  const lang = state.typo.lang, c = regionCheck(lang);
+  if (key === 'han' && c.forms) return `<span class="ct-note">${esc(T('regForms', { got: T('reg_' + c.forms.got), lang: langName(lang) }))}</span>`;
+  if (key === 'punct' && c.punct) return `<span class="ct-note">${esc(T(c.punct.pos === 'center' ? 'regPunctCenter' : 'regPunctCorner', { lang: langName(lang) }))}</span>`;
+  return '';
+}
+/* 导出区：按适用语言检查，写在「适用语言」下面 */
+function renderLangWarn() {
+  const el = $('#exLangWarn'), lang = state.scope, c = lang ? regionCheck(lang) : {}, list = [];
+  if (c.forms) list.push(T('exRegForms', { font: shortName(c.forms.font), got: T('reg_' + c.forms.got) }));
+  if (c.punct) list.push(T(c.punct.pos === 'center' ? 'exRegPunctCenter' : 'exRegPunctCorner', { font: shortName(c.punct.font) }));
+  el.hidden = !list.length;
+  if (list.length) el.textContent = T('exRegWarn', { lang: langName(lang), list: list.join(T('joiner')) });
 }
 function renderEditor() {
   const W = state.view.weight, banner = $('#wBanner');
@@ -161,7 +172,7 @@ function renderEditor() {
 function renderGroups() {
   const pop = $('#grpPop'), id = pop.dataset.cls; if (!id || !GROUPS[id]) return;
   const name = tr(CLS[id].name);
-  pop.innerHTML = `<div class="gp-head"><b>${esc(T('gpHead', { c: name }))}</b><span class="hint">${esc(T(id === 'shared' ? 'gpHintShared' : 'gpHintSymbol', { c: name }))}</span></div>` +
+  pop.innerHTML = `<div class="gp-head"><b>${esc(T('gpHead', { c: name }))}</b><span class="hint">${esc(T(id === 'shared' ? 'gpHintShared' : id === 'bopo' ? 'gpHintBopo' : 'gpHintSymbol', { c: name }))}</span></div>` +
     GROUPS[id].map(g => `<div class="gp-row"><span class="gp-sample" aria-hidden="true">${esc(g.sample)}</span>
       <span class="gp-name">${esc(tr(g.name))}<small>${esc(fmtRanges(g.r))}</small></span>
       <button type="button" class="sw" role="switch" data-g="${id}.${g.id}" aria-checked="${!isMoved(id, g)}" aria-label="${esc(tr(g.name))}"></button></div>`).join('') +
@@ -206,13 +217,15 @@ function renderPreview() {
   if (tcyN) for (const m of v.text.matchAll(new RegExp(`(?<![0-9.,:])[0-9]{1,${tcyN}}(?![0-9.,:])`, 'g'))) for (let i = m.index; i < m.index + m[0].length; i++) up.add(i);
   if (!(spanColor || anyShift() || up.size)) pt.textContent = v.text;
   else {
+    /* 不需要 span 的文字合成一个文本节点：直排时，西文、数字和汉字分在相邻的文本节点里，Chrome 会把后面的字叠上去 */
     const frag = document.createDocumentFragment();
-    let cur = null, curUp = false, buf = '';
+    let cur = null, curUp = false, buf = '', plain = '';
     const flush = () => {
       if (!buf) return;
       const sh = settingOf(cur).shift;
-      if (!spanColor && !sh && !curUp) frag.append(buf);
+      if (!spanColor && !sh && !curUp) plain += buf;
       else {
+        if (plain) { frag.append(plain); plain = ''; }
         const s = document.createElement('span');
         s.className = 'r' + (curUp ? ' tcy' : '');
         s.dataset.k = cur[0] === '#' ? 'custom' : cur;
@@ -229,6 +242,7 @@ function renderPreview() {
       buf += ch; i += ch.length;
     }
     flush();
+    if (plain) frag.append(plain);
     pt.replaceChildren(frag);
   }
   paintClasses(pt, hl);

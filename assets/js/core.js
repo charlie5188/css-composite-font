@@ -373,7 +373,7 @@ Aa Bb Gg Qq Rr & @ # % ( ) [ ]
 const TYPO = [
   { key: 'lang', label: { zh: '语言', ja: '言語', tw: '語言' }, prop: 'lang', attr: true, def: 'zh-Hans',
     values: [['zh-Hans', { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文' }], ['zh-Hant-TW', { zh: '繁體中文（台灣）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）' }], ['zh-Hant-HK', { zh: '繁體中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）' }], ['ja', { zh: '日本語', ja: '日本語', tw: '日本語' }], ['ko', { zh: '한국어', ja: '韓国語', tw: '한국어' }], ['en', { zh: 'English', ja: '英語', tw: 'English' }]],
-    note: { zh: 'HTML 的 lang 属性，不是 CSS。它决定字形的地区变体、禁则规则，word-break: auto-phrase 也依赖它。', ja: 'HTML の lang 属性で、CSS ではありません。字形の地域差や禁則を決め、word-break: auto-phrase もこれに依存します。', tw: 'HTML 的 lang 屬性，不是 CSS。它決定字形的地區變體、避頭尾規則，word-break: auto-phrase 也依賴它。' } },
+    note: { zh: 'HTML 的 lang 属性，不是 CSS。它决定字形的地区变体、禁则规则，word-break: auto-phrase 也依赖它。', ja: 'HTML の lang 属性で、CSS ではありません。字形の地域差や禁則を決め、word-break: auto-phrase もこれに依存します。', tw: 'HTML 的 lang 屬性，不是 CSS。它決定字形的地區變體、禁則規則，word-break: auto-phrase 也依賴它。' } },
   { key: 'autospace', label: { zh: '中西间距', ja: '和欧間のアキ', tw: '中西文間距' }, prop: 'text-autospace', def: 'normal', always: true,
     sup: { chrome: '140', firefox: '145', safari: '18.4' },
     values: [['normal', { zh: '加 1/8 em', ja: '1/8 em 空ける', tw: '加 1/8 em' }], ['no-autospace', { zh: '不加', ja: '空けない', tw: '不加' }], ['ideograph-alpha', { zh: '只在字母旁', ja: '英字の前後のみ', tw: '只在字母旁' }], ['ideograph-numeric', { zh: '只在数字旁', ja: '数字の前後のみ', tw: '只在數字旁' }], ['auto', { zh: '由浏览器决定', ja: 'ブラウザに任せる', tw: '由瀏覽器決定' }]],
@@ -386,7 +386,7 @@ const TYPO = [
     sup: { chrome: '119', firefox: '—', safari: '—' },
     values: [['normal', { zh: '逐字', ja: '1 文字ずつ', tw: '逐字' }], ['auto-phrase', { zh: '按词组', ja: '文節単位', tw: '按詞組' }]],
     note: { zh: 'auto-phrase 只对 lang="ja" 和 lang="ko" 生效，适合标题和短文。', ja: 'auto-phrase は lang="ja" と lang="ko" でのみ有効で、見出しや短い文に向いています。', tw: 'auto-phrase 只對 lang="ja" 和 lang="ko" 生效，適合標題和短文。' } },
-  { key: 'lineBreak', label: { zh: '禁则', ja: '禁則', tw: '避頭尾' }, prop: 'line-break', def: 'auto', defJa: 'strict', init: 'auto',
+  { key: 'lineBreak', label: { zh: '禁则', ja: '禁則', tw: '禁則' }, prop: 'line-break', def: 'auto', defJa: 'strict', init: 'auto',
     sup: { chrome: '58', firefox: '69', safari: '11' },
     values: [['auto', null], ['loose', { zh: '宽松', ja: 'ゆるい', tw: '寬鬆' }], ['normal', null], ['strict', { zh: '严格', ja: '厳しい', tw: '嚴格' }], ['anywhere', { zh: '任意处断行', ja: 'どこでも改行', tw: '任意處斷行' }]] },
   { key: 'wrap', label: { zh: '段落换行', ja: '段落の折り返し', tw: '段落換行' }, prop: 'text-wrap', def: 'pretty', init: 'wrap',
@@ -394,7 +394,7 @@ const TYPO = [
     values: [['wrap', null], ['pretty', { zh: '避免末行孤字', ja: '最終行の孤立を避ける', tw: '避免末行孤字' }], ['balance', { zh: '各行等长（标题）', ja: '行長をそろえる（見出し）', tw: '各行等長（標題）' }]],
     note: { zh: 'Chrome 的 pretty 只调整段落最后四行。', ja: 'Chrome の pretty は段落の最後の 4 行だけを調整します。', tw: 'Chrome 的 pretty 只調整段落最後四行。' } },
   { key: 'align', label: { zh: '对齐', ja: '揃え', tw: '對齊' }, prop: 'text-align', def: 'justify',
-    values: [['justify', { zh: '两端对齐', ja: '両端揃え', tw: '左右對齊' }], ['start', { zh: '齐头', ja: '行頭揃え', tw: '靠行首對齊' }], ['center', { zh: '居中', ja: '中央揃え', tw: '置中' }]] },
+    values: [['justify', { zh: '两端对齐', ja: '両端揃え', tw: '兩端對齊' }], ['start', { zh: '齐头', ja: '行頭揃え', tw: '靠行首對齊' }], ['center', { zh: '居中', ja: '中央揃え', tw: '置中' }]] },
   { key: 'justify', label: { zh: '对齐方式', ja: '両端揃えの方法', tw: '對齊方式' }, prop: 'text-justify', def: 'auto',
     sup: { chrome: '145', firefox: '55', safari: '—' },
     values: [['auto', null], ['inter-character', { zh: '字间分配', ja: '字間で調整', tw: '字間分配' }], ['inter-word', { zh: '只在词间', ja: '語間のみ', tw: '只在詞間' }], ['none', null]],
@@ -403,7 +403,7 @@ const TYPO = [
     sup: { chrome: '—', firefox: '—', safari: '10' },
     values: [['none', null], ['allow-end', { zh: '行尾句读可悬挂', ja: '行末の句読点をぶら下げる', tw: '行尾句讀可懸掛' }], ['first allow-end last', null]] },
   /* 纵中横：浏览器只认 text-combine-upright: all（digits 写法 Chrome 不支持），所以由导出的 JS 把短数字包进 span，只在直排的元素里生效 */
-  { key: 'tcy', label: { zh: '纵中横', ja: '縦中横', tw: '直排內橫排' }, prop: 'text-combine-upright', js: true, def: 'none',
+  { key: 'tcy', label: { zh: '纵中横', ja: '縦中横', tw: '縱中橫排' }, prop: 'text-combine-upright', js: true, def: 'none',
     sup: { chrome: '48', firefox: '48', safari: '15.4' },
     values: [['none', { zh: '不处理', ja: 'しない', tw: '不處理' }], ['2', { zh: '两位以内的半角数字', ja: '2 桁までの半角数字', tw: '兩位以內的半形數字' }], ['3', { zh: '三位以内的半角数字', ja: '3 桁までの半角数字', tw: '三位以內的半形數字' }]],
     note: { zh: '直排时把短的半角数字横着排进一格，例如「19日」。只对直排的元素生效。浏览器只支持 text-combine-upright: all，所以由导出的 JS 把数字包进 span；带小数点、冒号的数字（12.5、7:30）保持原样。',
@@ -445,8 +445,6 @@ const PRESETS = [
   { id: 'hei-tw', region: 'tc', name: { zh: '黑體 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）' }, han: G('Noto Sans TC'), latin: G('Inter'), latinSize: 100, sample: 'tw' },
   { id: 'hei-hk', region: 'hk', name: { zh: '香港黑體 × Inter', ja: '香港の黒体 × Inter', tw: '香港黑體 × Inter' }, tag: { zh: '繁体中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）' }, han: G('Noto Sans HK'), latin: G('Inter'), latinSize: 100, sample: 'hk' },
   { id: 'mac-tw', region: 'tc', name: { zh: '蘋方-繁 × Helvetica', ja: 'PingFang TC × Helvetica', tw: '蘋方-繁 × Helvetica' }, tag: { zh: 'macOS 系统字体 · 繁体中文', ja: 'macOS 標準・繁体字', tw: 'macOS 系統字型 · 繁體中文' }, han: L('PingFang TC Regular', ['PingFangTC-Regular']), latin: L('Helvetica Neue', ['HelveticaNeue']), latinSize: 100, sample: 'tw' },
-  { id: 'win-tw', region: 'tc', name: { zh: '正黑體 × Segoe UI', ja: 'JhengHei × Segoe UI', tw: '正黑體 × Segoe UI' }, tag: { zh: 'Windows 系统字体 · 繁体中文', ja: 'Windows 標準・繁体字', tw: 'Windows 系統字型 · 繁體中文' }, han: L('Microsoft JhengHei', ['MicrosoftJhengHeiRegular']), latin: L('Segoe UI', ['SegoeUI']), latinSize: 100, sample: 'tw' },
-  { id: 'win', region: 'sc', name: { zh: '雅黑 × Segoe UI', ja: 'YaHei × Segoe UI', tw: '雅黑 × Segoe UI' }, tag: { zh: 'Windows 系统字体 · 简体中文', ja: 'Windows 標準・簡体字', tw: 'Windows 系統字型 · 簡體中文' }, han: L('Microsoft YaHei', ['MicrosoftYaHei']), latin: L('Segoe UI', ['SegoeUI']), latinSize: 100, sample: 'zh' },
 ];
 
 /* ================= 状态 ================= */

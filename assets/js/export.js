@@ -232,6 +232,7 @@ function renderExport() {
   let stat = null;   // [代码, 前半, 后半]：gzip 大小算好后插在中间
   $('#exBaseField').hidden = !exportGroups().every(g => canLinkBase(g.plan));
   if (state.wmode === 'cont') renderWRange();
+  renderLangWarn();
   if (exTab === 'css') {
     lastExport = css;
     $('#codeOut').innerHTML = highlight(css, 'css');
