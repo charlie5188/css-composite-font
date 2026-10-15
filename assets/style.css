@@ -234,7 +234,9 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 #vWeight{flex:0 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}      /* 窄屏上 9 个字重放不下时横向滚动 */
 .ctl input[type=range]{width:120px}
 .ctl output{display:inline-block;font-family:var(--mono);font-size:11.5px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;width:4ch}
-.ctl #vSizeOut{width:19ch}
+.ctl #vSizeOut{width:5ch}
+.ctl #vLhOut{width:12ch}
+.lm-row{border-top:1px solid var(--rule);padding-top:14px}
 .busy{position:absolute;right:0;top:-1px;transform:translateY(-100%);padding-bottom:12px;font-size:11px;color:var(--muted);pointer-events:none;font-family:var(--mono)}
 .sample-box{display:grid;gap:6px;margin-bottom:14px}
 textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);border:1px solid var(--ink);border-radius:3px;padding:12px 14px;font-family:var(--ui);font-size:14px;line-height:1.7}

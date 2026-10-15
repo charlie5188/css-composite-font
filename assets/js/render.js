@@ -467,8 +467,8 @@ function renderLangOptions() {
 function syncToolbar() {
   const v = state.view;
   renderSampleTabs();
-  $('#vSize').value = v.size; $('#vSizeOut').textContent = `${v.size}px · ${round(v.size * 0.75, 0.5)}pt · ${Math.round(v.size * 1.0583)}Q`;
-  $('#vLh').value = v.lh; $('#vLhOut').textContent = (+v.lh).toFixed(2);
+  $('#vSize').value = v.size; $('#vSizeOut').textContent = `${v.size}px`;
+  $('#vLh').value = v.lh; $('#vLhOut').textContent = `${(+v.lh).toFixed(2)} · ${+(v.size * v.lh).toFixed(1)}px`;      // 倍数和实际的行距
   $('#vVertical').setAttribute('aria-pressed', v.vertical);
   $('#vColor').setAttribute('aria-pressed', v.colorize);
   $('#vCompare').setAttribute('aria-pressed', v.compare);
