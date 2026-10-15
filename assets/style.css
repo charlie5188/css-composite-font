@@ -352,16 +352,12 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .chips button{border:1px solid var(--line);background:var(--sheet);border-radius:999px;padding:4px 0;width:44px;font-family:var(--mono);font-size:11.5px;color:var(--muted)}
 .chips button:hover{border-color:var(--faint);color:var(--ink)}
 .chips button[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
-/* 导出字重：400、700 下面标出「正文」「粗体」 */
-.flabel-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
-.flabel-row .tbtn{font-size:12px}
-.wchips{gap:6px 4px}
-.wc{display:grid;justify-items:center;gap:3px}
-.wc small{font-size:10.5px;line-height:13px;height:13px;color:var(--ink-2);white-space:nowrap}
-.w-hint{margin:2px 0 0;font-size:12px;line-height:1.6;color:var(--muted)}
+/* 字重按钮：400、700 直接写上「正文」「粗体」 */
+.chips button.wl{width:auto;padding:4px 10px}
+button.wl small{font-family:var(--ui);font-size:11px;margin-left:5px;opacity:.75}
+.w-hint{margin:2px 0 0;font-size:12px;line-height:1.6}
 .w-hint.warn{color:var(--caution);background:var(--caution-bg);padding:6px 10px;border-radius:3px}
-.w-hint .tbtn{font-size:12px;white-space:nowrap}
-.w-hint.warn .tbtn{color:inherit}
+.w-hint .tbtn{font-size:12px;white-space:nowrap;color:inherit}
 .tabs{display:flex;gap:22px;overflow-x:auto;overflow-y:hidden}
 .ex-tabs{margin-bottom:-1px}
 .tabs button{border:0;background:transparent;padding:14px 0 11px;font-size:13px;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}

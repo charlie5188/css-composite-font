@@ -264,11 +264,7 @@ function initToolbar() {
     if (set.has(w)) { if (set.size === 1) return; set.delete(w); } else set.add(w);
     setWeights([...set]);
   });
-  $('#exWAll').addEventListener('click', () => setWeights(WEIGHTS));
-  $('#exWHint').addEventListener('click', e => {
-    if (e.target.closest('[data-act="w47"]')) setWeights([400, 700]);
-    if (e.target.closest('[data-act="wadd"]')) setWeights([...state.weights, 400, 700]);
-  });
+  $('#exWHint').addEventListener('click', e => { if (e.target.closest('[data-act="wadd"]')) setWeights([...state.weights, 400, 700]); });
   /* 字重模式：分档 / 连续（可变字体）。切换不会删掉任何设定 */
   $('#vWMode').addEventListener('click', e => {
     const b = e.target.closest('[data-m]'); if (!b || b.dataset.m === state.wmode) return;
