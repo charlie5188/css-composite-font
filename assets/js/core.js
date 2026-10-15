@@ -340,10 +340,6 @@ const SAMPLES = {
 2026年，本港獨立咖啡店數目增加了12.5%（營業額按年升約20%），不少店舖開始用人工智能（AI）編更和訂貨。車站旁新開的這間只賣三款：Americano $38、Latte $42，轉燕麥奶加$5，亦可以用App預先落單。營業時間寫在門口的小黑板上——平日7:30開門，週末遲半小時；Wi-Fi密碼貼在收銀處旁邊。
 
 店主林曉以前在一間SaaS公司做UI設計。佢話：「開業頭一個月賣咗4,000幾杯（比預期多咗一半），嚟嘅大多係熟客……慢啲都冇所謂。」` },
-  en: { label: { zh: '西文为主', ja: '欧文', tw: '西文為主' }, lang: 'zh-Hans', text:
-`Latin type set beside Chinese characters usually looks a size too small. A CJK glyph fills most of its em square, while a Latin x-height often covers less than half of it. 汉字几乎占满字身框，而西文的x高通常不到字身的一半。
-
-A composite font fixes this one character class at a time. Quotes, dashes and the ellipsis (“ ” — …) are the hard cases, because Chinese and English share the same code points.` },
   /* 吹き出しのように括弧なし・句点なしで短く改行し、空行で吹き出しを分ける */
   manga: { label: { zh: '漫画对白', ja: 'マンガ', tw: '漫畫對白' }, lang: 'ja', text:
 `なんだって！？
@@ -585,6 +581,7 @@ function normalizeState() {
   }
   /* 自定义页签：可以有好几组，每组记着文字和语言（view.customs）；选中的是 'c0'、'c1'… */
   const vw = state.view;
+  if (vw.sample === 'en') { vw.sample = 'zh'; vw.text = SAMPLES.zh.text; }      // 「西文为主」示例已删除
   if (!Array.isArray(vw.customs)) vw.customs = [];
   if (vw.customText != null) { vw.customs.push({ text: vw.customText, lang: vw.customLang || state.typo.lang }); if (vw.sample === 'custom') vw.sample = 'c' + (vw.customs.length - 1); }      // 只有一组时的旧数据
   delete vw.customText; delete vw.customLang;
