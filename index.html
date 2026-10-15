@@ -8,14 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=c7635575">
-<script src="assets/js/i18n.js?v=9ea5a541" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=1de9c616">
+<script src="assets/js/i18n.js?v=ca5ce448" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
-<script src="assets/js/core.js?v=4d86efd0" defer></script>
-<script src="assets/js/render.js?v=557c3cb0" defer></script>
-<script src="assets/js/export.js?v=75166b14" defer></script>
-<script src="assets/js/ui.js?v=9675c0df" defer></script>
+<script src="assets/js/core.js?v=b1d04f97" defer></script>
+<script src="assets/js/render.js?v=a09f9440" defer></script>
+<script src="assets/js/export.js?v=766c4356" defer></script>
+<script src="assets/js/ui.js?v=37e82368" defer></script>
 </head>
 <body>
 <div class="app">
@@ -94,6 +94,7 @@
           <div class="view-pop" id="viewPop" popover role="group" data-ta="aria-label:viewMenu">
             <button class="tog" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
             <button class="tog" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
+            <button class="tog" type="button" id="vRules" aria-pressed="false" data-t="vRules"></button>
             <button class="tog" type="button" id="vCompare" aria-pressed="false" data-t="compare"></button>
             <button class="tog" type="button" id="vItalic" aria-pressed="false" data-t="vItalic"></button>
           </div>
@@ -189,6 +190,7 @@
         <p>没有斜体规则时，<code>&lt;em&gt;</code> 和 <code>&lt;i&gt;</code> 里的字全部由浏览器模拟倾斜，汉字也会歪掉。导出斜体后，每组规则另有一份 <code>font-style: italic</code>：西文用真正的斜体（Google Fonts 的 Italic、上传的斜体文件、本机的「… Italic」，或者可变字体的 slnt / ital 轴）；没有斜体的类别用正体文件、也声明成 italic，浏览器就不会去模拟。基础字体用 <code>@import</code> 引用时，Google 那边只有正体，所以使用规则里加了 <code>font-synthesis-style: none</code>，让它同样保持正体。</p>
         <h3>可变轴</h3>
         <p>「选择字体…」里可以调可变字体的其他轴，例如宽度、笔画粗细（GRAD）、光学尺寸。Google Fonts 只保留请求里写了的轴，其余固定在默认值、从文件里去掉，所以调过的轴会加进请求，文件大约变成两倍。固定的值写在 <code>@font-face</code> 的 <code>font-variation-settings</code> 里，Safari 不认这一行，会按默认值显示。光学尺寸选「跟随字号」时，浏览器按实际字号设定 opsz；实测 Chrome 用的是 size-adjust 放大之后的字号，正好对应西文实际显示的大小。</p>
+        <p>半角数字那一行的齿轮是数字样式：等高 / 旧式、比例 / 等宽、斜线零。它们是 OpenType 特性，写进负责数字的那条规则的 <code>font-feature-settings</code>（Chrome 140+、Firefox 34+、Safari 10+）。数字和西文用同一个字体时，这条规则也管西文，不过这几个特性基本只改数字。Google Fonts 的网页字体删掉了大部分特性，没有旧式数字和斜线零；工具会实际画出来比较，没有变化的选项显示成灰色。</p>
         <h3>繁体中文：台湾和香港</h3>
         <p>「适用语言」的繁体中文分成台湾和香港两种。导出时用 <code>:is(:lang(…))</code> 把常见写法都包进去：台湾版匹配 <code>zh-Hant</code>、<code>zh-TW</code>，香港版匹配 <code>zh-HK</code>、<code>zh-Hant-HK</code> 和澳门的写法。原因是 <code>:lang(zh-Hant)</code> 匹配不到 <code>lang="zh-TW"</code>：浏览器不会从地区推出文字。简体中文同样会加上 <code>zh-CN</code>、<code>zh-SG</code>。</p>
         <p>两地的写法和大陆不同：标点在字身正中（大陆、日本靠左下），字形也按各自的标准。工具会量全角标点的位置，并按字族名判断字形的地区：和校样的语言不一致时在类别表里提示，和适用语言不一致时在导出区提示。思源、Noto CJK 这类一个文件含多个地区字形的字体会按 lang 切换，所以测量时也带上语言。</p>
@@ -233,6 +235,7 @@
         <p>沒有斜體規則時，<code>&lt;em&gt;</code> 和 <code>&lt;i&gt;</code> 裡的字全部由瀏覽器模擬傾斜，漢字也會歪掉。匯出斜體後，每組規則另有一份 <code>font-style: italic</code>：西文用真正的斜體（Google Fonts 的 Italic、上傳的斜體檔案、本機的「… Italic」，或者可變字型的 slnt / ital 軸）；沒有斜體的類別用一般（非斜體）的檔案、也宣告成 italic，瀏覽器就不會去模擬。基礎字型用 <code>@import</code> 引用時，Google 那邊只有一般字形，所以使用規則裡加了 <code>font-synthesis-style: none</code>，讓它同樣保持直立。</p>
         <h3>可變軸</h3>
         <p>「選擇字型…」裡可以調可變字型的其他軸，例如寬度、筆畫粗細（GRAD）、光學尺寸。Google Fonts 只保留請求裡寫了的軸，其餘固定在預設值、從檔案裡去掉，所以調過的軸會加進請求，檔案大約變成兩倍。固定的值寫在 <code>@font-face</code> 的 <code>font-variation-settings</code> 裡，Safari 不認這一行，會按預設值顯示。光學尺寸選「跟隨字號」時，瀏覽器按實際字號設定 opsz；實測 Chrome 用的是 size-adjust 放大之後的字號，正好對應西文實際顯示的大小。</p>
+        <p>半形數字那一行的齒輪是數字樣式：等高 / 舊式、比例 / 等寬、斜線零。它們是 OpenType 特性，寫進負責數字的那條規則的 <code>font-feature-settings</code>（Chrome 140+、Firefox 34+、Safari 10+）。數字和西文用同一個字型時，這條規則也管西文，不過這幾個特性基本只改數字。Google Fonts 的網頁字型刪掉了大部分特性，沒有舊式數字和斜線零；工具會實際畫出來比較，沒有變化的選項顯示成灰色。</p>
         <h3>繁體中文：台灣和香港</h3>
         <p>「適用語言」的繁體中文分成台灣和香港兩種。匯出時用 <code>:is(:lang(…))</code> 把常見寫法都包進去：台灣版比對 <code>zh-Hant</code>、<code>zh-TW</code>，香港版比對 <code>zh-HK</code>、<code>zh-Hant-HK</code> 和澳門的寫法。原因是 <code>:lang(zh-Hant)</code> 比對不到 <code>lang="zh-TW"</code>：瀏覽器不會從地區推出文字。簡體中文同樣會加上 <code>zh-CN</code>、<code>zh-SG</code>。</p>
         <p>兩地的寫法和中國大陸不同：標點居中（大陸、日本靠左下），字形也依各自的標準。工具會量全形標點的位置，並依字族名判斷字形的地區：和校樣的語言不一致時在類別表裡提示，和適用語言不一致時在匯出區提示。思源、Noto CJK 這類一個檔案含多個地區字形的字型會依 lang 切換，所以測量時也帶上語言。</p>
@@ -277,6 +280,7 @@
         <p>イタリックの規則がないと、<code>&lt;em&gt;</code> や <code>&lt;i&gt;</code> の中の文字はすべてブラウザが擬似的に傾け、漢字まで斜めになります。イタリックを書き出すと、各組の規則に <code>font-style: italic</code> の版が加わります。欧文は本物のイタリック（Google Fonts の Italic、読み込んだイタリックのファイル、ローカルの「… Italic」、または可変フォントの slnt / ital 軸）を使い、イタリックのないクラスは正体のファイルを italic として宣言するので、ブラウザは擬似的に傾けません。ベースフォントを <code>@import</code> で参照する場合、Google 側には正体しかないため、使用側の規則に <code>font-synthesis-style: none</code> を加えて正体のままにしています。</p>
         <h3>可変軸</h3>
         <p>「フォントを選択…」で、幅・グレード（GRAD）・オプティカルサイズなど、可変フォントのほかの軸を調整できます。Google Fonts はリクエストに書いた軸だけを残し、残りは既定値に固定してファイルから取り除くため、調整した軸はリクエストに加わり、ファイルはおよそ 2 倍になります。固定した値は <code>@font-face</code> の <code>font-variation-settings</code> に書かれ、Safari はこの行を無視して既定値で表示します。オプティカルサイズを「文字サイズに追従」にすると、ブラウザが実際の文字サイズから opsz を決めます。Chrome は実測で size-adjust で拡大した後のサイズを使うので、欧文が実際に表示される大きさと一致します。</p>
+        <p>半角数字の行の歯車は数字のスタイルです：ライニング / オールドスタイル、プロポーショナル / 等幅、スラッシュ付きゼロ。OpenType の機能で、数字を受け持つ規則の <code>font-feature-settings</code> に書かれます（Chrome 140+、Firefox 34+、Safari 10+）。数字と欧文が同じフォントのときはこの規則が欧文も受け持ちますが、これらの機能が変えるのはほぼ数字だけです。Google Fonts の Web フォントでは多くの機能が削られていて、オールドスタイル数字やスラッシュ付きゼロはありません。ツールは実際に描いて比べ、変化しない選択肢をグレーで示します。</p>
         <h3>繁体字中国語：台湾と香港</h3>
         <p>「対象の言語」の繁体字中国語は、台湾と香港の 2 つに分かれています。書き出しでは <code>:is(:lang(…))</code> でよく使われる書き方をまとめて指定します。台湾版は <code>zh-Hant</code>・<code>zh-TW</code>、香港版は <code>zh-HK</code>・<code>zh-Hant-HK</code> とマカオの書き方に一致します。<code>:lang(zh-Hant)</code> は <code>lang="zh-TW"</code> に一致しないためです（ブラウザは地域から文字体系を推測しません）。簡体字も同様に <code>zh-CN</code>・<code>zh-SG</code> を加えます。</p>
         <p>台湾と香港では句読点を字面の中央に置き（中国大陸・日本は左下寄り）、字形もそれぞれの規範に従います。ツールは全角約物の位置を測り、ファミリー名から字形の地域を判断します。校正刷りの言語と一致しないときは文字クラスの表で、対象の言語と一致しないときは書き出し欄で知らせます。源ノ角ゴシックや Noto CJK のように 1 つのファイルに複数地域の字形を持つフォントは lang で切り替わるので、測るときも言語を指定しています。</p>

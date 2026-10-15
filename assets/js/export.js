@@ -21,8 +21,8 @@ function srcFor(x) {
   return x.face.src.replace(/'/g, '"');
 }
 function cssFamilyName() { return (state.name || '').trim().replace(/["\\]/g, '') || 'My Composite'; }
-/* 汉字基础字体能直接 @import Google 的 CSS：没有细调粗细、没有固定的轴值；导出斜体时它自己也没有斜体（汉字字体一般都没有） */
-const canLinkBase = plan => plan[0].font?.kind === 'google' && plan[0].size === 100 && !(plan[0].font.weight % 100) && !plan[0].fvs && !(state.italic && italOf(plan[0].font));
+/* 汉字基础字体能直接 @import Google 的 CSS：没有细调粗细、没有固定的轴值、数字不用它（数字样式要写进规则）；导出斜体时它自己也没有斜体（汉字字体一般都没有） */
+const canLinkBase = plan => plan[0].font?.kind === 'google' && plan[0].size === 100 && !(plan[0].font.weight % 100) && !plan[0].fvs && !plan[0].feat && !(state.italic && italOf(plan[0].font));
 /* 导出的分组：分档模式每个字重一组（font-weight: 700）；连续模式每个分段一组（font-weight: 551 650） */
 function exportGroups() {
   if (state.wmode === 'cont') {
@@ -37,7 +37,7 @@ function buildCss() {
   const fam = cssFamilyName(), generic = state.generic !== 'auto' ? state.generic : guessGeneric();
   const linkBase = state.baseMode === 'link' && groups.every(g => canLinkBase(g.plan));
   const out = [T(linkBase ? 'cssHLink' : 'cssH', { fam })];
-  let stack = `"${fam}"`, count = 0, usedFvs = false, usedAxes = false;
+  let stack = `"${fam}"`, count = 0, usedFvs = false, usedAxes = false, usedFeat = false;
   const notes = [];
   if (linkBase) {     // 汉字基础字体直接引用 Google 的 CSS，不复制它的分片规则
     const bf = plan[0].font, axis = cont ? vfAxisNow(bf) : null, [a, b] = state.wrange;
@@ -60,7 +60,7 @@ function buildCss() {
         const owners = x.p.owners.map(ownerName).join(T('joiner'));
         const n = rows.filter(r => r.p === x.p && !r.missing).length;
         const ax = (x.p.font.xa || []).filter(t => !(t in (x.p.fvs || {}))).map(t => T('cssAxAuto', { t }));     // 文件里保留、但不固定的轴（opsz 跟随字号）
-        const extraNote = (ax.length ? ' · ' + ax.join(T('joiner')) : '') + (style === 'italic' && x.p.up ? T('cssUpright') : '');
+        const extraNote = (ax.length ? ' · ' + ax.join(T('joiner')) : '') + (x.p.feat ? ' · ' + T('cssNumNote', { list: numTags().map(numLabel).join(T('joiner')) }) : '') + (style === 'italic' && x.p.up ? T('cssUpright') : '');
         out.push('', `/* ${owners} — ${fontLabel(x.p.font)}（${kindLabel(x.p.font)}${n > 1 ? T('cssSlices', { n }) : ''}）${x.p.size !== 100 ? ` · ${x.p.size}%` : ''}${x.p.range ? '' : T('cssBase')}${extraNote} */`);
         const s = sources.get(fontKey(x.p.font));
         if (s?.status === 'error' && x.p.font.kind === 'local') out.push(T('cssLocalMissing', { name: x.p.font.name }));
@@ -73,6 +73,7 @@ function buildCss() {
       out.push(`  font-display: swap;`);
       const fvs = fvsOf(x.p, W, g.cont);
       if (fvs) { out.push(`  font-variation-settings: ${fvs};`); if (fvs.includes('"wght"')) usedFvs = true; else usedAxes = true; }
+      if (x.p.feat) { out.push(`  font-feature-settings: ${x.p.feat};`); usedFeat = true; }
       if (x.p.size !== 100) out.push(`  size-adjust: ${x.p.size}%;`);
       if (x.range) out.push(`  unicode-range: ${wrapRanges(x.range, '    ')};`);
       out.push('}');
@@ -83,6 +84,7 @@ function buildCss() {
     emit(g, g.plan, 'normal');
     if (g.iplan) { out.push('', T('cssItalicHead')); emit(g, g.iplan, 'italic'); }
   }
+  if (usedFeat) out.splice(1, 0, T('cssNum'));
   if (usedFvs || usedAxes) out.splice(1, 0, T(usedFvs ? 'cssFvs' : 'cssFvsAx'));
   if (state.italic) out.splice(1, 0, T('cssItalic'));
   if (cont) out.splice(1, 0, T('cssCont', { a: state.wrange[0], b: state.wrange[1] }));

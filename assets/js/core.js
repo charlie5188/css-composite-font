@@ -420,6 +420,22 @@ const ENGINE = (() => {
   return { id: '', name: '', v: '' };
 })();
 const typoSupported = (t, v) => t.attr || CSS.supports(t.prop, v);
+/* 数字样式（OpenType 特性）：写进数字所用字体的 @font-face 规则（font-feature-settings 描述符：Chrome 140、Firefox 34、Safari 10）。
+   每一项不选（''）就按字体的默认。数字和西文用同一个字体时规则是合在一起的，这几个特性基本只改数字 */
+const NUM_OPTS = [      // [特性, 名称, 按钮上的短名称]
+  { key: 'fig', label: { zh: '字形', ja: '字形', tw: '字形' }, vals: [
+    ['lnum', { zh: '等高数字', ja: 'ライニング数字', tw: '等高數字' }, { zh: '等高', ja: 'ライニング', tw: '等高' }],
+    ['onum', { zh: '旧式数字', ja: 'オールドスタイル数字', tw: '舊式數字' }, { zh: '旧式', ja: 'オールドスタイル', tw: '舊式' }]] },
+  { key: 'spc', label: { zh: '字宽', ja: '字幅', tw: '字寬' }, vals: [
+    ['pnum', { zh: '比例数字', ja: 'プロポーショナル数字', tw: '比例數字' }, { zh: '比例', ja: 'プロポーショナル', tw: '比例' }],
+    ['tnum', { zh: '等宽数字', ja: '等幅数字', tw: '等寬數字' }, { zh: '等宽', ja: '等幅', tw: '等寬' }]] },
+  { key: 'zero', label: { zh: '零', ja: 'ゼロ', tw: '零' }, vals: [
+    ['zero', { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零' }, { zh: '斜线零', ja: 'スラッシュ付き', tw: '斜線零' }]] },
+];
+const NUM_TAGS = NUM_OPTS.flatMap(o => o.vals.map(v => v[0]));
+const numTags = () => NUM_OPTS.map(o => state.num?.[o.key]).filter(t => NUM_TAGS.includes(t));
+const numFeat = () => numTags().map(t => `"${t}"`).join(', ');
+const numLabel = t => tr(NUM_OPTS.flatMap(o => o.vals).find(v => v[0] === t)[1]);
 
 /* 预设的西文大小：以汉字字体自带西文为基准，取「按大写高对齐」与「按 x 高对齐」的几何平均，
    大写高不超过自带西文的 103%（见度量对齐面板的说明）。基线都为 0：这些组合的中线偏差在 ±2% em 以内。 */
@@ -468,6 +484,7 @@ function stateFromPreset(p, prev) {
     wmode: prev?.wmode || 'steps',
     wrange: prev?.wrange || [100, 900],
     italic: !!prev?.italic,
+    num: { ...(prev?.num || {}) },
     classes: freshClasses(p),
     custom: [],
     view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, compare: false, cmp: 'plain', weight: 400 },
@@ -513,6 +530,7 @@ function normalizeState() {
   state.scope = state.scope || '';
   state.wmode = state.wmode === 'cont' ? 'cont' : 'steps';        // 字重：分档 / 连续（可变字体）
   state.italic = !!state.italic;                                   // 导出斜体
+  state.num = Object.fromEntries(NUM_OPTS.map(o => [o.key, o.vals.some(v => v[0] === state.num?.[o.key]) ? state.num[o.key] : '']));      // 数字样式
   delete state.stretch; delete state.view.wstretch;                // 「字宽跟随页面」已删除
   const wr = Array.isArray(state.wrange) ? state.wrange.map(Math.round) : [];
   state.wrange = wr[0] >= 100 && wr[1] <= 900 && wr[0] < wr[1] ? wr : [100, 900];      // 连续模式导出的粗细范围
@@ -659,6 +677,8 @@ function buildPlan(W = BASE_W, live = false, ital = false) {
     if (!r.font) return;
     plan.push({ ...fin(r), range: rng, owners: ['#' + i] });
   });
+  const feat = numFeat();      // 数字样式写进负责数字的那一条规则（和西文同一字体时就是西文那一条）
+  if (feat) for (const p of plan) if (p.owners.includes('digit')) p.feat = feat;
   return plan;
 }
 /* ================= 连续字重：按档位分段 =================
@@ -687,7 +707,7 @@ function buildSegments(live = false, skipBase = false) {      // skipBase：汉�
     if (!span) continue;
     const cf = pl => pl.map(p => ({ ...p, font: contFont(p.font) }));
     const plan = cf(buildPlan(W, live)), iplan = state.italic ? cf(buildPlan(W, live, true)) : null;
-    const k = pl => pl.slice(skipBase ? 1 : 0).map(p => `${fontKey(p.font)}|${p.size}|${fvsKey(p.fvs)}|${p.owners.join(',')}`).join(';');
+    const k = pl => pl.slice(skipBase ? 1 : 0).map(p => `${fontKey(p.font)}|${p.size}|${fvsKey(p.fvs)}|${p.feat || ''}|${p.owners.join(',')}`).join(';');
     const key = k(plan) + (iplan ? '/' + k(iplan) : '');
     const last = segs[segs.length - 1];
     if (last && last.key === key) last.hi = span[1]; else segs.push({ lo: span[0], hi: span[1], W, plan, iplan, key });
@@ -744,6 +764,7 @@ async function rebuildNow() {
       const d = { display: 'swap', weight: sg.lo === sg.hi ? String(W) : `${sg.lo} ${sg.hi}`, style };
       const fvs = fvsOf(x.p, W, cont);
       if (fvs) d.variationSettings = fvs;
+      if (x.p.feat) d.featureSettings = x.p.feat;
       if (x.range) d.unicodeRange = fmtRanges(x.range);
       if (x.p.size !== 100) d.sizeAdjust = `${x.p.size}%`;
       try { faces.push(new FontFace(fam, x.face.buffer || x.face.src, d)); } catch (e) { /* 忽略无效的规则 */ }

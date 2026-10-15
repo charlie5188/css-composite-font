@@ -130,6 +130,12 @@ $('#grpPop').addEventListener('toggle', e => {
   pop.style.top = (r.bottom + 8 + pop.offsetHeight > innerHeight ? Math.max(8, r.top - pop.offsetHeight - 8) : r.bottom + 8) + 'px';
 });
 $('#grpPop').addEventListener('click', e => {
+  const nb = e.target.closest('[data-num]');      // 数字样式
+  if (nb || (e.target.closest('[data-act="gpreset"]') && $('#grpPop').dataset.cls === 'digit')) {
+    if (nb) state.num[nb.dataset.num] = nb.dataset.v; else for (const k of Object.keys(state.num)) state.num[k] = '';
+    changed({ fonts: true }); renderGroups();
+    return;
+  }
   if (e.target.closest('[data-act="gpreset"]')) {
     const id = $('#grpPop').dataset.cls;
     for (const k of Object.keys(state.moved)) if (k.startsWith(id + '.')) delete state.moved[k];
@@ -185,7 +191,7 @@ function initToolbar() {
     (v().specShow ||= {})[k] = !specShown()[k];
     syncToolbar(); drawSpecimen(); saveState();
   });
-  for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vCompare', 'compare'], ['vItalic', 'italic']])
+  for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vRules', 'rules'], ['vCompare', 'compare'], ['vItalic', 'italic']])
     $('#' + id).addEventListener('click', () => { v()[key] = !v()[key]; syncToolbar(); renderPreview(); renderExport(); saveState(); });
   $('#cmpMode').addEventListener('change', e => { v().cmp = e.target.value; updateNaive(); saveState(); });
   $('#vWeight').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) setPreviewWeight(+b.dataset.w); });
