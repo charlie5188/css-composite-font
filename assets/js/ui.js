@@ -162,11 +162,27 @@ function initToolbar() {
   $('#sizeAdjustWarn').hidden = SUPPORT.sizeAdjust;
 
   const v = () => state.view;
-  $('#sampleTabs').addEventListener('click', e => {
-    const b = e.target.closest('[data-sample]'); if (!b) return;
-    const k = b.dataset.sample;
-    v().sample = k; v().text = SAMPLES[k].text; state.typo.lang = SAMPLES[k].lang;
+  /* 示例页签。自定义页签：「+ 自定义」从当前的文字开始建一个，换到别的页签也一直保留，点 × 才删掉 */
+  const showSample = k => {
+    if (k === 'custom') { v().sample = 'custom'; v().text = v().customText; if (v().customLang) state.typo.lang = v().customLang; }
+    else { v().sample = k; v().text = SAMPLES[k].text; state.typo.lang = SAMPLES[k].lang; }
     syncToolbar(); renderEditor(); renderPreview(); renderExport(); rebuild(); saveState();      // 语言变了：注音那一行、地区检查跟着变
+  };
+  $('#sampleTabs').addEventListener('click', e => {
+    if (e.target.closest('[data-act="addcustom"]')) {
+      v().customText = v().text; v().customLang = state.typo.lang;
+      showSample('custom'); $('#sample').focus();
+      return;
+    }
+    if (e.target.closest('[data-act="delcustom"]')) {
+      const was = v().sample === 'custom';
+      delete v().customText; delete v().customLang;
+      if (was) showSample(orderedSamples()[0]); else { renderSampleTabs(); saveState(); }
+      return;
+    }
+    const b = e.target.closest('[data-sample]'); if (!b) return;
+    showSample(b.dataset.sample);
+    if (b.dataset.sample === 'custom') $('#sample').focus();
   });
   $('#vSize').addEventListener('input', e => { v().size = +e.target.value; syncToolbar(); renderPreview(); saveState(); });
   $('#vLh').addEventListener('input', e => { v().lh = +e.target.value; syncToolbar(); renderPreview(); saveState(); });
@@ -201,17 +217,10 @@ function initToolbar() {
     if (step !== v().weight) { v().weight = step; renderEditor(); updateNaive(); drawSpecimen(); }
     saveState();
   });
-  $('#editTextBtn').addEventListener('click', () => {
-    const box = $('#sampleBox'), open = box.hidden;
-    box.hidden = !open;
-    $('#editTextBtn').setAttribute('aria-expanded', open);
-    if (open) $('#sample').focus();
-  });
   const reloadForText = debounce(() => rebuild(), 600);
   $('#sample').addEventListener('input', e => {
-    v().text = e.target.value;
-    v().sample = Object.keys(SAMPLES).find(k => SAMPLES[k].text === v().text) || 'custom';
-    renderSampleTabs(); renderPreview(); saveState(); reloadForText();
+    v().text = v().customText = e.target.value;
+    renderPreview(); saveState(); reloadForText();
   });
   $('#typoRows').addEventListener('click', e => {
     const b = e.target.closest('[data-typo]'); if (!b) return;

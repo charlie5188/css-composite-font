@@ -455,9 +455,11 @@ function contIgnored() {
 const SAMPLE_ORDER = { zh: ['zh', 'tw', 'hk', 'ja'], tw: ['tw', 'hk', 'zh', 'ja'], ja: ['ja', 'zh', 'tw', 'hk'] };
 const orderedSamples = () => { const first = SAMPLE_ORDER[UI] || SAMPLE_ORDER.zh; return [...first, ...Object.keys(SAMPLES).filter(k => !first.includes(k))]; };
 function renderSampleTabs() {
-  const cur = state.view.sample;
+  const v = state.view, cur = v.sample, has = v.customText != null;
   $('#sampleTabs').innerHTML = orderedSamples().map(k => [k, SAMPLES[k]]).map(([k, s]) => `<button type="button" role="tab" data-sample="${k}" aria-selected="${cur === k}">${esc(tr(s.label))}</button>`).join('') +
-    (cur in SAMPLES ? '' : `<button type="button" role="tab" aria-selected="true" disabled>${esc(T('customSample'))}</button>`);
+    (has ? `<span class="ctab"><button type="button" role="tab" data-sample="custom" aria-selected="${cur === 'custom'}" aria-controls="sampleBox">${esc(T('customSample'))}</button><button type="button" class="ctab-x" data-act="delcustom" aria-label="${esc(T('customDel'))}" title="${esc(T('customDel'))}">×</button></span>`
+      : `<button type="button" class="tab-add" data-act="addcustom">+ ${esc(T('customSample'))}</button>`);
+  $('#sampleBox').hidden = cur !== 'custom';      // 只有自定义页签可以编辑
 }
 function renderLangOptions() {
   $('#exLang').innerHTML = `<option value="">${esc(T('anyLang'))}</option>` + TYPO.find(t => t.key === 'lang').values.map(([v, d]) => `<option value="${v}">${esc(tr(d))}</option>`).join('');

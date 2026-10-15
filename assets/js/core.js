@@ -579,7 +579,11 @@ function normalizeState() {
     const k = state.typo.lang?.startsWith('ja') ? 'ja' : 'zh';
     Object.assign(state.view, { sample: k, text: SAMPLES[k].text, size: 24, lh: 1.85 });
   }
-  if (state.view.sample in SAMPLES) state.view.text = SAMPLES[state.view.sample].text;     // 选的是示例时跟着示例更新（改过的文字已经是 custom）
+  if (!(state.view.sample in SAMPLES) && state.view.customText == null) {      // 以前改过的文字：变成自定义页签
+    state.view.customText = state.view.text || ''; state.view.customLang = state.typo.lang; state.view.sample = 'custom';
+  }
+  if (state.view.sample === 'custom') state.view.text = state.view.customText;
+  else if (state.view.sample in SAMPLES) state.view.text = SAMPLES[state.view.sample].text;     // 选的是示例时跟着示例更新（改过的文字已经是 custom）
   if (!state.weights.includes(state.view.weight)) state.view.weight = state.weights.includes(400) ? 400 : state.weights[0];
   if (state.presetBase === undefined && state.preset) state.presetBase = presetSnap();      // 旧的保存数据：以现在为准
   rebuildClassRanges();

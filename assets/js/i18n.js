@@ -11,6 +11,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 /* ================= 界面文字 ================= */
 const I18N = {
   zh: {
+    customDel: '删除自定义页签',
     autoAdjProgress: '正在调整… {i}/{n}', autoAdjDone: '已调整',
     autoAdj: '自动调整大小和基线', autoAdjTip: '一键调整半角西文：每个导出的字重分别算出合适的大小（汉字越粗，字面看起来越大），再让大写字母的中线对齐汉字字面的中线。偏差在 2% em 以内时基线保持 0，导出仍是纯 CSS', tAuto: '已自动调整：西文大小 {size}{shift}', autoSizeRange: '{lo}–{hi}%（{n} 个字重分别设定）', autoShift: '，基线 {v}（导出时会附带 JS）', autoNoShift: '，基线不用动（偏差 {d}% em）',
     measuringW: '正在测量 {w}…',
@@ -55,7 +56,7 @@ const I18N = {
     legendBase: '汉字（基础字体）不着色', legendCustom: '例外',
     sampleText: '示例文本',
     typoTitle: '高级排版属性', typoSumHint: 'CSS 原生属性，大多数情况保持默认即可', typoChanged: '已改 {n} 项', browserNow: '当前浏览器：{b}',
-    editText: '编辑文本', langLabel: '语言', previewWeight: '字重',
+    langLabel: '语言', previewWeight: '字重',
     wAuto: '自动 {w}', wselAria: '{w} 时使用的粗细', wnameAria: '{w} 时使用的字体名或文件',
     wBanner: '正在调整 {w}：这里改的粗细和大小只作用于 {w}；本机字体和字体文件在「选择字体…」里指定这个字重用的名称。', ownSet: '单独设定', viewMenu: '显示', vfContTitle: '连续字重模式：这个可变字体的粗细直接跟随页面的 font-weight（{a}–{b}），不需要单独设定', exWMode: '字重模式', wmStepsShort: '分档', wmContShort: '连续', wmStepsTip: '每个字重导出一组规则；可变字体可以单独细调各类别的粗细', wmContTip: '页面可以用任意粗细（范围在导出里设定）；可变字体的粗细直接跟随页面，不能单独设定', exWRange: '字重范围', vItalic: '斜体', exItalic: '斜体（em、i）', exItalicOff: '不导出：浏览器把所有字模拟倾斜', exItalicOn: '导出：西文用斜体，汉字等保持正体', cssItalic: '/* 斜体：每组规则另有一份 font-style: italic。有斜体的类别用斜体字体（或倾斜轴）；\n * 没有斜体的类别（汉字、假名等）用正体文件、也声明成 italic，浏览器就不会把它们模拟倾斜。 */', cssItalicHead: '/* --- 斜体 --- */', cssUpright: '（没有斜体，保持正体）', cssNoSynth: '没有斜体的字保持正体，不让浏览器模拟倾斜', cssFvsAx: '/* font-variation-settings 固定了可变字体的其他轴（宽度、笔画粗细等）：Chrome 140+、Firefox 62+ 支持；Safari 不认这一行，按字体的默认值显示。 */', cssAxAuto: '{t} 跟随字号', axHead: '可变轴', axNoteG: '对这个类别的所有字重生效。调过的轴会加进 Google Fonts 的请求，文件大约变成两倍。', axNote: '对这个类别的所有字重生效。', axUnknown: 'WOFF2 是压缩格式，浏览器读不出它有哪些可变轴。想调宽度等轴，请上传同一字体的 TTF / OTF / WOFF。', axReset: '默认', axOpszOff: '不随字号（固定在 {d}）', axOpszAuto: '跟随字号', axFix: '固定值', axAutoShort: '自动', axN: '{n} 个轴', axMore: '更多轴（{n}）', axNone: '{n} 个轴，都是默认值', pkItalYes: '斜体：{name}', pkItalSlant: '斜体：用倾斜轴（{t} {v}）', pkItalNo: '没有斜体：斜体文字里保持正体', pkItalChecking: '正在查找斜体…', ffItal: '斜体文件（可选）', wrFaux: '上限低于 600：页面里的粗体（b、strong、标题等）会变成浏览器模拟的加粗，不是字体本身的粗体。', wrLo: '下限', wrHi: '上限', wrAll: '全部', wrAny: '最大', wrCommon: '共同', wrAllTip: '页面上 100–900 的任何粗细都按设定显示', wrAnyTip: '至少有一个可变字体还在变化的范围。超出某个字体的范围时，那个字体停在它的端点，和其他类别的粗细比例会变。\n{list}', wrCommonTip: '所有可变字体都能变化的范围：在这里面各类别一起变粗变细，比例不变。页面用到范围以外的粗细时，按最接近的端点显示。\n{list}', wContNote: '连续模式下，可变字体的粗细直接跟随页面，下面这些单独设定的粗细不生效（设定仍然保留，切回分档会恢复）：{list}', cssCont: '/* 连续字重：每组规则的 font-weight 是一个范围，页面上可以用 {a}–{b} 之间的任意值，范围以外的按最接近的端点显示。\n * 可变字体在范围内无级变化；静态字体停在最接近的档位。 */', pkEmpty: '还没有选字体。填写字族名、本机字体名或上传字体文件后，这里会显示预览。', covLatin: '拉丁字母', covDigit: '数字', covKana: '假名', covSC: '简体中文', covTC: '繁体中文', covJP: '日本汉字', covKR: '韩文', covSym: '全角符号', covMiss: '红框里的字这个字体没有，会交给后面的字体显示', covTitle: '抽查 {n} 个字，这个字体有 {k} 个', vfCjkCost: 'CJK 可变字体的每个分片约为静态的 1.9 倍。页面只用一两个字重时，建议这里用整百粗细，改调西文的粗细。', vfTitle: '可变字体 · {a}–{b}：可以填任意粗细，例如 430', pkVf: '可变字体，粗细可以填 {a}–{b} 之间的任意值', lfVar: '这是可变字体（可以填任意粗细）', cssFvs: '/* font-variation-settings 用于细调可变字体的粗细和其他轴：Chrome 140+、Firefox 62+ 支持；Safari 不认这一行，粗细按 font-weight 那一档、其他轴按字体的默认值显示。 */', ffPath: '导出时这个字重使用的文件', pkScopeW: '只用于 {w}', pkScopeAll: '所有字重', pkForW: '{w} 时', wBack: '回到 400',
     exWeights: '字重（可多选）', exBase: '基础字体', exBaseLink: '引用 Google Fonts（最短）', exBaseExpand: '展开为 @font-face（可自托管）',
@@ -99,6 +100,7 @@ const I18N = {
     pkChecking: '正在检测…', pkGoogleOk: '已找到 · {n} 个分片', pkLocalOk: '已在这台电脑上找到', pkFileOk: '字体文件可用', pkLocalStill: '。仍可使用，导出后在装有该字体的电脑上生效', regForms: '字形是{got}的写法，和校样的语言「{lang}」不一致。', reg_sc: '简体中文', reg_tw: '台湾', reg_hk: '香港', reg_jp: '日文', reg_kr: '韩文', regPunctCorner: '这个字体的标点靠左下（大陆、日本的写法），校样的语言「{lang}」的标点应该居中。', regPunctCenter: '这个字体的标点居中（台湾、香港的写法），校样的语言「{lang}」的标点应该靠左下。', pkPunctCenter: '标点居中（台湾、香港的写法）', pkPunctCorner: '标点靠左下（大陆、日本的写法）', covHK: '香港字', gBopoTop: '注音字面 上', gBopoBot: '注音字面 下', sgBopo: '注音', exRegWarn: '字体和适用语言「{lang}」不一致：{list}。', exRegForms: '汉字字体 {font} 是{got}的字形', exRegPunctCorner: '{font} 的标点靠左下（应该居中）', exRegPunctCenter: '{font} 的标点居中（应该靠左下）', gpHintBopo: '关闭 = 改由半角西文显示。单独写出的 ˊ ˇ ˋ ˙ 在西文里几乎只出现在语言学、国际音标里；法语、汉语拼音等的带调字母（é、ǎ、ü）是另外的码位，一直归半角西文，不受这个开关影响。', covPinyin: '汉语拼音', pkUse: '使用这个字体',
   },
   ja: {
+    customDel: 'カスタムのタブを削除',
     autoAdjProgress: '調整中… {i}/{n}', autoAdjDone: '調整しました',
     autoAdj: 'サイズとベースラインを自動調整', autoAdjTip: '半角欧文をワンクリックで調整します。書き出すウェイトごとに合うサイズを計算し（漢字は太いほど字面が大きく見えます）、大文字の中心線を漢字の字面の中心にそろえます。ずれが 2% em 以内ならベースラインは 0 のままで、書き出しは CSS だけで済みます', tAuto: '自動調整しました：欧文のサイズ {size}{shift}', autoSizeRange: '{lo}–{hi}%（{n} 個のウェイトでそれぞれ設定）', autoShift: '、ベースライン {v}（書き出しに JS が付きます）', autoNoShift: '、ベースラインはそのまま（ずれ {d}% em）',
     measuringW: '{w} を計測中…',
@@ -143,7 +145,7 @@ const I18N = {
     legendBase: '漢字（ベースフォント）は色分けしない', legendCustom: '例外',
     sampleText: 'サンプルテキスト',
     typoTitle: '詳細な組版プロパティ', typoSumHint: 'CSS ネイティブのプロパティ。たいていは初期値のままで十分です', typoChanged: '{n} 件変更済み', browserNow: '現在のブラウザ：{b}',
-    editText: 'テキストを編集', langLabel: '言語', previewWeight: 'ウェイト',
+    langLabel: '言語', previewWeight: 'ウェイト',
     wAuto: '自動 {w}', wselAria: '{w} のときに使う太さ', wnameAria: '{w} のときに使うフォント名またはファイル',
     wBanner: '{w} を調整中：ここで変えた太さとサイズは {w} だけに適用されます。ローカルフォントとファイルは「フォントを選択…」でこのウェイトの名前を指定します。', ownSet: '個別設定', viewMenu: '表示', vfContTitle: '連続ウェイト：この可変フォントの太さはページの font-weight にそのまま従います（{a}–{b}）。個別の設定は不要です', exWMode: 'ウェイトの方式', wmStepsShort: '段階', wmContShort: '連続', wmStepsTip: 'ウェイトごとに規則を 1 組書き出します。可変フォントはクラスごとに太さを微調整できます', wmContTip: 'ページで任意の太さを使えます（範囲は書き出しで設定）。可変フォントの太さはページにそのまま従い、個別には設定できません', exWRange: 'ウェイトの範囲', vItalic: 'イタリック', exItalic: 'イタリック（em・i）', exItalicOff: '書き出さない：ブラウザがすべての文字を擬似的に傾ける', exItalicOn: '書き出す：欧文はイタリック、和文などは正体のまま', cssItalic: '/* イタリック：各組の規則に font-style: italic の版を加えています。イタリックのあるクラスはイタリック体（または傾斜軸）を使い、\n * ないクラス（漢字・かななど）は正体のファイルを italic として宣言するので、ブラウザが擬似的に傾けません。 */', cssItalicHead: '/* --- イタリック --- */', cssUpright: '（イタリックがないため正体のまま）', cssNoSynth: 'イタリックのない文字を擬似的に傾けない', cssFvsAx: '/* font-variation-settings で可変フォントのほかの軸（幅・グレードなど）を固定しています。Chrome 140+、Firefox 62+ が対応し、Safari ではフォントの既定値で表示されます。 */', cssAxAuto: '{t} は文字サイズに追従', axHead: '可変軸', axNoteG: 'このクラスの全ウェイトに適用されます。調整した軸は Google Fonts のリクエストに加わり、ファイルはおよそ 2 倍になります。', axNote: 'このクラスの全ウェイトに適用されます。', axUnknown: 'WOFF2 は圧縮形式のため、ブラウザでは可変軸を読み取れません。幅などの軸を調整するには、同じフォントの TTF / OTF / WOFF を読み込んでください。', axReset: '既定', axOpszOff: '文字サイズに追従しない（{d} に固定）', axOpszAuto: '文字サイズに追従', axFix: '固定値', axAutoShort: '自動', axN: '軸 {n}', axMore: 'そのほかの軸（{n}）', axNone: '{n} 軸・すべて既定値', pkItalYes: 'イタリック：{name}', pkItalSlant: 'イタリック：傾斜軸を使用（{t} {v}）', pkItalNo: 'イタリックなし：イタリックの箇所でも正体のまま', pkItalChecking: 'イタリックを探しています…', ffItal: 'イタリックのファイル（任意）', wrFaux: '上限が 600 未満です。ページ内の太字（b、strong、見出しなど）はフォント本来の太字ではなく、ブラウザの擬似ボールドになります。', wrLo: '下限', wrHi: '上限', wrAll: '全域', wrAny: '最大', wrCommon: '共通', wrAllTip: 'ページで 100–900 のどの太さを使っても設定どおりに表示されます', wrAnyTip: 'どれか 1 つでも可変フォントが変化する範囲です。あるフォントの範囲を超えると、そのフォントは端の太さで止まり、ほかのクラスとの太さの比率が変わります。\n{list}', wrCommonTip: 'すべての可変フォントが変化できる範囲です。この中ではクラス全体が同じ比率で太く・細くなります。範囲外の太さがページで使われると、最も近い端の太さで表示されます。\n{list}', wContNote: '連続モードでは可変フォントの太さがページにそのまま従うため、次の個別設定は効きません（設定は残り、段階に戻すと復元されます）：{list}', cssCont: '/* 連続ウェイト：各規則の font-weight は範囲で、ページでは {a}–{b} の任意の値を使えます。範囲外の値は最も近い端で表示されます。\n * 可変フォントは範囲内で無段階に変わり、静的フォントは最も近い段階で表示されます。 */', pkEmpty: 'まだフォントが選ばれていません。ファミリー名やローカルフォント名を入力するか、フォントファイルを読み込むとここにプレビューが表示されます。', covLatin: 'ラテン文字', covDigit: '数字', covKana: 'かな', covSC: '簡体字', covTC: '繁体字', covJP: '日本の漢字', covKR: 'ハングル', covSym: '全角記号', covMiss: '赤枠の文字はこのフォントになく、後ろのフォントで表示されます', covTitle: '{n} 文字を調べ、このフォントには {k} 文字あります', vfCjkCost: 'CJK の可変フォントは分割ファイル 1 つあたり静的版の約 1.9 倍になります。ページで使うウェイトが 1〜2 個なら、ここは 100 単位にして欧文側の太さで調整するのがおすすめです。', vfTitle: '可変フォント · {a}–{b}：430 のように任意の太さを入力できます', pkVf: '可変フォント。太さは {a}–{b} の任意の値を入力できます', lfVar: '可変フォント（任意の太さを入力できる）', cssFvs: '/* font-variation-settings で可変フォントの太さとほかの軸を微調整しています。Chrome 140+、Firefox 62+ が対応し、Safari では太さは font-weight の段階、ほかの軸はフォントの既定値で表示されます。 */', ffPath: '書き出し時にこのウェイトで使うファイル', pkScopeW: '{w} だけに使う', pkScopeAll: '全ウェイト', pkForW: '{w} のとき', wBack: '400 に戻る',
     exWeights: 'ウェイト（複数選択可）', exBase: 'ベースフォント', exBaseLink: 'Google Fonts を参照（最短）', exBaseExpand: '@font-face に展開（セルフホスト用）',
@@ -188,6 +190,7 @@ const I18N = {
   },
   /* 繁體中文（台灣）：先用 OpenCC（s2twp）從簡體轉換，再逐條改成台灣用語（字型、預設集、進階、直排、直立……） */
   tw: {
+    customDel: '刪除自訂分頁',
     autoAdjProgress: '正在調整… {i}/{n}', autoAdjDone: '已調整',
     autoAdj: '自動調整大小和基線', autoAdjTip: '一鍵調整半形西文：每個匯出的字重分別算出合適的大小（漢字越粗，字面看起來越大），再讓大寫字母的中線對齊漢字字面的中線。偏差在 2% em 以內時基線保持 0，匯出仍是純 CSS', tAuto: '已自動調整：西文大小 {size}{shift}', autoSizeRange: '{lo}–{hi}%（{n} 個字重分別設定）', autoShift: '，基線 {v}（匯出時會附帶 JS）', autoNoShift: '，基線不用動（偏差 {d}% em）',
     measuringW: '正在測量 {w}…',
@@ -218,7 +221,7 @@ const I18N = {
     compare: '對照其他做法', loading: '載入字型…', customSample: '自訂', liveLabel: '複合字型', cmp: '對照', cmpPlain: '普通 font-family 後備', cmpFsa: '後備 + font-size-adjust',
     cmpAria: '對照的做法', hintPlain: '西文字型排在前面，按原始大小顯示；它所包含的引號、破折號也會搶走，變成比例寬度。',
     hintFsa: '把每個字型的大寫高都統一到 {r} em（取自漢字字型自帶的西文），漢字字型基本不變，西文被縮放。它對所有字型一視同仁，不能按字元類別分配字型，引號仍歸西文字型。', legendBase: '漢字（基礎字型）不著色', legendCustom: '例外',
-    sampleText: '範例文字', typoTitle: '進階排版屬性', typoSumHint: 'CSS 原生屬性，大多數情況保持預設即可', typoChanged: '已改 {n} 項', browserNow: '目前瀏覽器：{b}', editText: '編輯文字',
+    sampleText: '範例文字', typoTitle: '進階排版屬性', typoSumHint: 'CSS 原生屬性，大多數情況保持預設即可', typoChanged: '已改 {n} 項', browserNow: '目前瀏覽器：{b}',
     langLabel: '語言', previewWeight: '字重', wAuto: '自動 {w}', wselAria: '{w} 時使用的粗細', wnameAria: '{w} 時使用的字型名或檔案',
     wBanner: '正在調整 {w}：這裡改的粗細和大小只作用於 {w}；本機字型和字型檔案在「選擇字型…」裡指定這個字重用的名稱。', ownSet: '單獨設定', viewMenu: '顯示',
     vfContTitle: '連續字重模式：這個可變字型的粗細直接跟隨頁面的 font-weight（{a}–{b}），不需要單獨設定', exWMode: '字重模式', wmStepsShort: '分段', wmContShort: '連續',
