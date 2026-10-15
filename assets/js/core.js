@@ -367,19 +367,42 @@ Hànyǔ Pīnyīn · nǚ lǜ lüè · Běijīng` },
 };
 
 /* CSS 原生排版属性。sup：各浏览器开始支持的版本（MDN browser-compat-data，2026-10） */
+/* 高级排版属性的示意图卡片：段落用横条、汉字用小方块画，虚线是版心边缘。选中时跟着变成黑色 */
+const tSvg = body => `<svg class="tt-svg" viewBox="0 0 48 30" aria-hidden="true">${body}</svg>`;
+const tBars = rows => rows.map(([x, w, y]) => `<rect x="${x}" y="${y}" width="${w}" height="3" rx=".6"/>`).join('');
+const tEdge = (...xs) => xs.map(x => `<path d="M${x} 1v28" class="tt-edge"/>`).join('');
+/* text-justify：一行「汉字 汉字 word 汉字 汉字」，多出来的 8 个单位分给哪些空隙 */
+const tJust = gaps => {
+  const w = [4, 4, 10, 4, 4]; let x = 4, out = '';
+  w.forEach((ww, i) => { out += ww === 10 ? `<rect x="${x}" y="9.5" width="10" height="2.5" rx=".6"/>` : `<rect x="${x}" y="8" width="4" height="4" rx=".4"/>`; x += ww + (gaps[i] ?? 0); });
+  return out + `<rect x="4" y="18" width="4" height="4" rx=".4"/><rect x="9" y="18" width="4" height="4" rx=".4"/>` + tEdge(44.5);
+};
+const TILE_SVG = {
+  wrap: { wrap: tBars([[4, 40, 4], [4, 40, 11], [4, 40, 18], [4, 5, 25]]), pretty: tBars([[4, 40, 4], [4, 40, 11], [4, 31, 18], [4, 14, 25]]), balance: tBars([[4, 34, 4], [4, 34, 11], [4, 34, 18], [4, 31, 25]]) },
+  align: { justify: tBars([[4, 40, 4], [4, 40, 11], [4, 40, 18], [4, 22, 25]]), start: tBars([[4, 36, 4], [4, 40, 11], [4, 31, 18], [4, 22, 25]]), center: tBars([[8, 32, 4], [4, 40, 11], [10, 28, 18], [13, 22, 25]]) },
+  hang: {
+    none: tBars([[6, 30, 6], [6, 34, 14], [6, 20, 22]]) + '<circle cx="38.5" cy="8" r="1.4"/>' + tEdge(5.5, 41.5),
+    'allow-end': tBars([[6, 35, 6], [6, 34, 14], [6, 20, 22]]) + '<circle cx="43.5" cy="8" r="1.4"/>' + tEdge(5.5, 41.5),
+    'first allow-end last': tBars([[6, 35, 6], [6, 34, 14], [6, 35, 22]]) + '<circle cx="43.5" cy="8" r="1.4"/><path d="M4.6 5.2H2.6V9.6" class="tt-mark"/><path d="M42.8 20v4.4h2" class="tt-mark"/>' + tEdge(5.5, 41.5),
+  },
+};
+TILE_SVG.justify = { auto: tJust([3, 4, 4, 3]), 'inter-character': tJust([3, 4, 4, 3]), 'inter-word': tJust([1, 6, 6, 1]), none: tJust([1, 2, 2, 1]) };
+const tSvgTile = key => v => `<span class="tt-s tt-pic" aria-hidden="true">${tSvg(TILE_SVG[key][v])}</span>`;
+/* 换行、标点挤压：用当前的合成字体，在窄框里真的排一段，左边的线是版心边缘 */
+const tBox = (prop, text, lang) => v => `<span class="tt-s tt-box"${lang ? ` lang="${lang}"` : ''} style="${prop}:${v}" aria-hidden="true">${text}</span>`;
 const TYPO = [
   { key: 'lang', label: { zh: '语言', ja: '言語', tw: '語言' }, prop: 'lang', attr: true, def: 'zh-Hans',
     values: [['zh-Hans', { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文' }], ['zh-Hant-TW', { zh: '繁體中文（台灣）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）' }], ['zh-Hant-HK', { zh: '繁體中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）' }], ['ja', { zh: '日本語', ja: '日本語', tw: '日本語' }], ['ko', { zh: '한국어', ja: '韓国語', tw: '한국어' }], ['en', { zh: 'English', ja: '英語', tw: 'English' }]],
     note: { zh: 'HTML 的 lang 属性，不是 CSS。它决定字形的地区变体、禁则规则，word-break: auto-phrase 也依赖它。', ja: 'HTML の lang 属性で、CSS ではありません。字形の地域差や禁則を決め、word-break: auto-phrase もこれに依存します。', tw: 'HTML 的 lang 屬性，不是 CSS。它決定字形的地區變體、禁則規則，word-break: auto-phrase 也依賴它。' } },
-  { key: 'autospace', label: { zh: '中西间距', ja: '和欧間のアキ', tw: '中西文間距' }, prop: 'text-autospace', def: 'normal', always: true,
+  { key: 'autospace', label: { zh: '中西间距', ja: '和欧間のアキ', tw: '中西文間距' }, prop: 'text-autospace', def: 'normal', always: true, tiles: '字Ab字12字', tileW: 112, tileFs: 18, tileCode: true,
     sup: { chrome: '140', firefox: '145', safari: '18.4' },
     values: [['normal', { zh: '加 1/8 em', ja: '1/8 em 空ける', tw: '加 1/8 em' }], ['no-autospace', { zh: '不加', ja: '空けない', tw: '不加' }], ['ideograph-alpha', { zh: '只在字母旁', ja: '英字の前後のみ', tw: '只在字母旁' }], ['ideograph-numeric', { zh: '只在数字旁', ja: '数字の前後のみ', tw: '只在數字旁' }], ['auto', { zh: '由浏览器决定', ja: 'ブラウザに任せる', tw: '由瀏覽器決定' }]],
     note: { zh: '只在没有空格的地方加，已经手动敲了空格的不会再加。Chrome 实测初始值是 no-autospace，所以导出时总会写出这一行。', ja: 'スペースのない箇所にだけ入り、手で入れたスペースには追加されません。Chrome の実際の初期値は no-autospace なので、書き出しでは常にこの行を出力します。', tw: '只在沒有空格的地方加，已經手動敲了空格的不會再加。Chrome 實測初始值是 no-autospace，所以匯出時總會寫出這一行。' } },
-  { key: 'trim', label: { zh: '标点挤压', ja: '約物の詰め', tw: '標點擠壓' }, prop: 'text-spacing-trim', def: 'space-first', init: 'normal',
+  { key: 'trim', label: { zh: '标点挤压', ja: '約物の詰め', tw: '標點擠壓' }, prop: 'text-spacing-trim', def: 'space-first', init: 'normal', tiles: true, tileHtml: tBox('text-spacing-trim', '「甲乙」「丙丁」'), tileW: 112, tileCode: true,
     sup: { chrome: '123', firefox: '—', safari: '—' },
     values: [['normal', { zh: '相邻标点挤压，行首不挤', ja: '隣接する約物を詰める。行頭は詰めない', tw: '相鄰標點擠壓，行首不擠' }], ['space-all', { zh: '全部保持全角', ja: 'すべて全角のまま', tw: '全部保持全形' }], ['space-first', { zh: '行首也挤压，段首行除外', ja: '行頭も詰める（段落の 1 行目を除く）', tw: '行首也擠壓，段首行除外' }], ['trim-start', { zh: '行首也挤压，包括段首行', ja: '行頭も詰める（1 行目を含む）', tw: '行首也擠壓，包括段首行' }]],
     note: { zh: '例如「。」」连在一起时，其中一个收成半角。目前只有 Chromium 实现。', ja: 'たとえば「。」」が続くと片方が半角になります。現在は Chromium だけが実装しています。', tw: '例如「。」」連在一起時，其中一個收成半形。目前只有 Chromium 實作。' } },
-  { key: 'wordBreak', label: { zh: '换行单位', ja: '改行の単位', tw: '換行單位' }, prop: 'word-break', def: 'normal',
+  { key: 'wordBreak', label: { zh: '换行单位', ja: '改行の単位', tw: '換行單位' }, prop: 'word-break', def: 'normal', tiles: true, tileHtml: tBox('word-break', '美しい日本語の文章', 'ja'), tileW: 112, tileCode: true,
     sup: { chrome: '119', firefox: '—', safari: '—' },
     values: [['normal', { zh: '逐字', ja: '1 文字ずつ', tw: '逐字' }], ['auto-phrase', { zh: '按词组', ja: '文節単位', tw: '按詞組' }]],
     note: { zh: 'auto-phrase 只对 lang="ja" 和 lang="ko" 生效，适合标题和短文。', ja: 'auto-phrase は lang="ja" と lang="ko" でのみ有効で、見出しや短い文に向いています。', tw: 'auto-phrase 只對 lang="ja" 和 lang="ko" 生效，適合標題和短文。' } },
@@ -387,21 +410,21 @@ const TYPO = [
     sup: { chrome: '58', firefox: '69', safari: '11' },
     values: [['auto', null], ['loose', { zh: '宽松', ja: 'ゆるい', tw: '寬鬆' }], ['normal', null], ['strict', { zh: '严格', ja: '厳しい', tw: '嚴格' }], ['anywhere', { zh: '任意处断行', ja: 'どこでも改行', tw: '任意處斷行' }]],
     note: { zh: '哪些字不能放在行首或行尾，例如句号、逗号不放在行首。auto 由浏览器按语言决定；strict 更严格，小写假名（っ、ゃ）和长音「ー」也不放行首，日文正文常用；loose 更宽松，适合窄栏；anywhere 在任何地方都可以断行。', ja: '行頭・行末に置けない文字の規則です（句読点を行頭に置かないなど）。auto はブラウザが言語に応じて決めます。strict はより厳しく、小書きのかな（っ・ゃ）や長音記号「ー」も行頭に置きません（日本語の本文でよく使います）。loose はゆるく、狭い段組み向けです。anywhere はどこでも改行します。', tw: '哪些字不能放在行首或行尾，例如句號、逗號不放在行首。auto 由瀏覽器按語言決定；strict 更嚴格，小寫假名（っ、ゃ）和長音「ー」也不放行首，日文內文常用；loose 更寬鬆，適合窄欄；anywhere 在任何地方都可以斷行。' } },
-  { key: 'wrap', label: { zh: '段落换行', ja: '段落の折り返し', tw: '段落換行' }, prop: 'text-wrap', def: 'pretty', init: 'wrap',
+  { key: 'wrap', label: { zh: '段落换行', ja: '段落の折り返し', tw: '段落換行' }, prop: 'text-wrap', def: 'pretty', init: 'wrap', tiles: true, tileHtml: tSvgTile('wrap'), tileW: 96, tileCode: true,
     sup: { chrome: 'balance 114 · pretty 117', firefox: 'balance 121', safari: 'balance 17.5 · pretty 26' },
     values: [['wrap', null], ['pretty', { zh: '避免末行孤字', ja: '最終行の孤立を避ける', tw: '避免末行孤字' }], ['balance', { zh: '各行等长（标题）', ja: '行長をそろえる（見出し）', tw: '各行等長（標題）' }]],
     note: { zh: 'Chrome 的 pretty 只调整段落最后四行。', ja: 'Chrome の pretty は段落の最後の 4 行だけを調整します。', tw: 'Chrome 的 pretty 只調整段落最後四行。' } },
-  { key: 'align', label: { zh: '对齐', ja: '揃え', tw: '對齊' }, prop: 'text-align', def: 'justify',
+  { key: 'align', label: { zh: '对齐', ja: '揃え', tw: '對齊' }, prop: 'text-align', def: 'justify', tiles: true, tileHtml: tSvgTile('align'), tileW: 96, tileCode: true,
     values: [['justify', { zh: '两端对齐', ja: '両端揃え', tw: '兩端對齊' }], ['start', { zh: '齐头', ja: '行頭揃え', tw: '靠行首對齊' }], ['center', { zh: '居中', ja: '中央揃え', tw: '置中' }]] },
-  { key: 'justify', label: { zh: '对齐方式', ja: '両端揃えの方法', tw: '對齊方式' }, prop: 'text-justify', def: 'auto',
+  { key: 'justify', label: { zh: '对齐方式', ja: '両端揃えの方法', tw: '對齊方式' }, prop: 'text-justify', def: 'auto', tiles: true, tileHtml: tSvgTile('justify'), tileW: 96, tileCode: true,
     sup: { chrome: '145', firefox: '55', safari: '—' },
     values: [['auto', null], ['inter-character', { zh: '字间分配', ja: '字間で調整', tw: '字間分配' }], ['inter-word', { zh: '只在词间', ja: '語間のみ', tw: '只在詞間' }], ['none', null]],
     note: { zh: '配合 text-align: justify 使用。', ja: 'text-align: justify と組み合わせて使います。', tw: '配合 text-align: justify 使用。' } },
-  { key: 'hang', label: { zh: '标点悬挂', ja: 'ぶら下がり', tw: '標點懸掛' }, prop: 'hanging-punctuation', def: 'none',
+  { key: 'hang', label: { zh: '标点悬挂', ja: 'ぶら下がり', tw: '標點懸掛' }, prop: 'hanging-punctuation', def: 'none', tiles: true, tileHtml: tSvgTile('hang'), tileW: 112, tileCode: true,
     sup: { chrome: '—', firefox: '—', safari: '10' },
-    values: [['none', null], ['allow-end', { zh: '行尾句读可悬挂', ja: '行末の句読点をぶら下げる', tw: '行尾句讀可懸掛' }], ['first allow-end last', null]],
+    values: [['none', null], ['allow-end', { zh: '行尾句读可悬挂', ja: '行末の句読点をぶら下げる', tw: '行尾句讀可懸掛' }], ['first allow-end last', { zh: '段首段尾的引号括号也悬挂', ja: '段落の最初と最後の括弧も', tw: '段首段尾的引號括號也懸掛' }]],
     note: { zh: '让行尾的句号、逗号伸出版心，右边缘看起来更齐。目前只有 Safari 支持，其他浏览器照常排。first / last 让段落开头、结尾的引号和括号也悬挂。', ja: '行末の句読点を版面の外にはみ出させ、右端をそろえて見せます。現在対応しているのは Safari だけで、ほかのブラウザでは通常どおり組まれます。first / last は段落の最初・最後の括弧や引用符もぶら下げます。', tw: '讓行尾的句號、逗號伸出版心，右邊緣看起來更齊。目前只有 Safari 支援，其他瀏覽器照常排。first / last 讓段落開頭、結尾的引號和括號也懸掛。' } },
-  { key: 'feat', label: { zh: '字距特性', ja: '字詰めの機能', tw: '字距特性' }, prop: 'font-feature-settings', def: 'normal',
+  { key: 'feat', label: { zh: '字距特性', ja: '字詰めの機能', tw: '字距特性' }, prop: 'font-feature-settings', def: 'normal', tiles: '「アイ」、ウ。', tileW: 112, tileFs: 17, tileCode: true,
     sup: { chrome: '48', firefox: '34', safari: '9.1' },
     values: [['normal', null], ['"palt"', { zh: '假名标点比例宽', ja: 'かなと約物をプロポーショナルに', tw: '假名標點比例寬' }], ['"halt"', { zh: '标点半角', ja: '約物を半角に', tw: '標點半形' }]],
     note: { zh: '日文排版常用的 OpenType 特性。palt 让假名和标点按字形本身的宽度排，字距更紧，适合标题；halt 只把标点压成半宽。正文一般保持 normal。字体没有这些特性时不起作用；思源 / Noto CJK 等字体的标点也支持。', ja: '和文組版でよく使う OpenType 機能です。palt はかなや約物を字形そのものの幅で組み、字間が詰まるので見出し向きです。halt は約物だけを半角にします。本文はふつう normal のままです。フォントにこれらの機能がなければ効きません。源ノ / Noto CJK などのフォントは約物も対応しています。', tw: '日文排版常用的 OpenType 特性。palt 讓假名和標點按字形本身的寬度排，字距更緊，適合標題；halt 只把標點壓成半寬。內文一般保持 normal。字型沒有這些特性時不起作用；思源 / Noto CJK 等字型的標點也支援。' } },

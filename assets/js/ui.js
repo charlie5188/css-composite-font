@@ -351,7 +351,7 @@ function renderTypoRows() {
       `<span class="${b === ENGINE.id ? 'cur' : ''}">${{ chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' }[b]} ${esc(t.sup[b])}</span>`).join('') : `<span>${esc(T('allBrowsers'))}</span>`;
     /* 数字样式这类：一排字样卡片，每张用当前的数字字体排出这个样式 */
     const ctl = t.tiles ? `<div class="typo-tiles" role="radiogroup" aria-labelledby="tyl-${t.key}"${t.tileW ? ` style="--tile-w:${t.tileW}px${t.tileFs ? `;--tile-fs:${t.tileFs}px` : ''}"` : ''}>${t.values.map(([v, d, tip]) =>
-      `<button type="button" role="radio" data-typo="${t.key}" data-v="${esc(v)}" aria-checked="${state.typo[t.key] === v}" title="${esc(v)}"><span class="tt-s" style="${t.prop}:${esc(v)}" aria-hidden="true">${esc(t.tiles)}</span><span class="tt-l">${esc(tr(d))}${tip ? `<small>${esc(tr(tip))}</small>` : ''}</span></button>`).join('')}</div>`
+      `<button type="button" role="radio" data-typo="${t.key}" data-v="${esc(v)}" aria-checked="${state.typo[t.key] === v}" title="${esc(v)}">${t.tileHtml ? t.tileHtml(v) : `<span class="tt-s" style="${t.prop}:${esc(v)}" aria-hidden="true">${esc(t.tiles)}</span>`}<span class="tt-l">${esc(d ? tr(d) : v)}${tip ? `<small>${esc(tr(tip))}</small>` : t.tileCode && d ? `<code>${esc(v)}</code>` : ''}</span></button>`).join('')}</div>`
       : `<select id="ty-${t.key}">${opts}</select>`;
     return `<div class="typo-row${t.tiles ? ' tiles' : ''}">
       <span class="typo-name">${t.tiles ? `<b id="tyl-${t.key}">${esc(tr(t.label))}</b>` : `<label for="ty-${t.key}"><b>${esc(tr(t.label))}</b></label>`}<span class="lab-i"><code>${t.attr ? esc(T('langAttr')) : t.prop}</code>${t.note ? `<button type="button" class="info" data-info="typo:${t.key}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}">i</button>` : ''}</span></span>
