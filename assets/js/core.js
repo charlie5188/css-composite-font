@@ -315,7 +315,7 @@ const SAMPLES = {
   /* 正文示例按真实的中日文写：西文是日常文章里自然会出现的品牌、产品、缩写和单位（iPhone、5G、UI、km）。
      特意放进几种挤在一起的写法：「2026年，增长了12.5%（GMV…）」「人工智能（AI）」「她说：“……”」，
      日文对应「前年比12.5%増（…約1,200店）」「人工知能（AI）」「「……（予想の1.5倍）……」と話す」 */
-  zh: { label: { zh: '简体', ja: '簡体字', tw: '簡體' }, lang: 'zh-Hans', text:
+  zh: { label: { zh: '简体', ja: '簡体', tw: '簡體' }, lang: 'zh-Hans', text:
 `清晨6点半，第一班地铁驶出西直门站。车厢里人还不多，有人戴着AirPods听播客，有人用iPhone回复微信消息。这条线路全长27.6公里，共有19座车站，工作日客流量超过80万人次。
 
 2026年，北京独立咖啡馆的数量增长了12.5%（GMV同比增长约20%），不少店开始用人工智能（AI）排班和订货。车站旁新开的这家只卖三样：美式18元，拿铁22元，换燕麦奶加3元，也可以在App上提前下单。营业时间写在门口的小黑板上——工作日7:30开门，周末晚半小时；Wi-Fi密码贴在收银台旁边。
@@ -328,19 +328,19 @@ const SAMPLES = {
 
 店主の林さんは以前、SaaS企業でUIデザイナーをしていた。「開店から1か月で4,000杯以上（予想の1.5倍）が売れました。来てくれるのは、ほとんど常連さんです」と話す。` },
   /* 台湾、香港：同样的内容按各自的用语写。台湾用「」作引号、「人工智慧」「營收年增」；香港夹着粤语字（嘅、咗、嚟、啲、冇），价格写 $ */
-  tw: { label: { zh: '台湾', ja: '台湾', tw: '台灣' }, lang: 'zh-Hant-TW', text:
+  tw: { label: { zh: '繁体TW', ja: '繁体TW', tw: '繁體TW' }, lang: 'zh-Hant-TW', text:
 `早上6點半，第一班捷運從終點站開出。車廂裡人還不多，有人戴著AirPods聽Podcast，有人用iPhone回LINE訊息。這條路線全長27.6公里，共有19個車站，平日運量超過80萬人次。
 
 2026年，台北獨立咖啡店的數量成長了12.5%（營收年增約20%），不少店家開始用人工智慧（AI）排班和叫貨。車站旁新開的這家只賣三樣：美式70元、拿鐵90元，換燕麥奶加15元，也可以用App預先點餐。營業時間寫在門口的小黑板上——平日7:30開門，週末晚半小時；Wi-Fi密碼貼在櫃檯旁邊。
 
 店長林曉以前在一家SaaS公司做UI設計。她說：「開幕第一個月賣出了4,000多杯（比預期多了一半），來的大多是熟客……慢一點也沒關係。」` },
-  hk: { label: { zh: '香港', ja: '香港', tw: '香港' }, lang: 'zh-Hant-HK', text:
+  hk: { label: { zh: '繁体HK', ja: '繁体HK', tw: '繁體HK' }, lang: 'zh-Hant-HK', text:
 `早上6時半，第一班港鐵列車駛出總站。車廂內人不多，有人戴着AirPods聽Podcast，有人用iPhone覆WhatsApp。這條路線全長27.6公里，設有19個車站，平日客量超過80萬人次。
 
 2026年，本港獨立咖啡店數目增加了12.5%（營業額按年升約20%），不少店舖開始用人工智能（AI）編更和訂貨。車站旁新開的這間只賣三款：Americano $38、Latte $42，轉燕麥奶加$5，亦可以用App預先落單。營業時間寫在門口的小黑板上——平日7:30開門，週末遲半小時；Wi-Fi密碼貼在收銀處旁邊。
 
 店主林曉以前在一間SaaS公司做UI設計。佢話：「開業頭一個月賣咗4,000幾杯（比預期多咗一半），嚟嘅大多係熟客……慢啲都冇所謂。」` },
-  en: { label: { zh: '西文为主', ja: '欧文中心', tw: '西文為主' }, lang: 'zh-Hans', text:
+  en: { label: { zh: '西文为主', ja: '欧文', tw: '西文為主' }, lang: 'zh-Hans', text:
 `Latin type set beside Chinese characters usually looks a size too small. A CJK glyph fills most of its em square, while a Latin x-height often covers less than half of it. 汉字几乎占满字身框，而西文的x高通常不到字身的一半。
 
 A composite font fixes this one character class at a time. Quotes, dashes and the ellipsis (“ ” — …) are the hard cases, because Chinese and English share the same code points.` },
