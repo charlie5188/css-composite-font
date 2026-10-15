@@ -224,14 +224,7 @@ function initToolbar() {
     renderTypoStatus(); renderPreview(); renderExport(); saveState();
   });
 
-  $('#mApply').addEventListener('click', autoSizeAll);
-  $('#mCenter').addEventListener('click', () => {
-    if (!lastMeasure) return toast(T('tNotReady'));
-    const lat = state.classes.latin;
-    lat.shift = Math.min(30, Math.max(-30, round(resolveCls('latin').shift + lastMeasure.midEm * 100)));
-    changed({});
-    toast(T('tShift', { v: (lat.shift > 0 ? '+' : '') + lat.shift }));
-  });
+  $('#autoAdj').addEventListener('click', autoAdjust);
 
   $('#exName').addEventListener('input', e => { state.name = e.target.value; renderExport(); saveState(); });
   const setWeights = ws => {
@@ -421,33 +414,53 @@ function idealScale() {
   }
   return 0.83 / lastMeasure.capRatio;
 }
-/* 每个导出的字重分别量、分别设定：汉字越粗，笔画往外扩，字面看起来越大，合适的西文大小也跟着变（各预设实测相差 2–5%）。
-   400 写进基础设定；其他字重和 400 相差不到 0.5 的沿用 400，否则写成这个字重自己的大小 */
+/* 一键自动调整（字符类别旁的魔法棒）：
+   1. 大小：每个导出的字重分别量、分别设定。汉字越粗，笔画往外扩，字面看起来越大，合适的西文大小也跟着变（各预设实测相差 2–5%）。
+      400 写进基础设定；其他字重和 400 相差不到 0.5 的沿用 400，否则写成这个字重自己的大小。
+   2. 基线：调好大小后，按 400（没导出 400 时按当前字重）量大写字母的中线和汉字字面中线的差。
+      差在 2% em 以内看不出来，基线保持 0——不为了看不出的差别让导出多一段 JS */
+const SHIFT_MIN = 2;
 let autoBusy = false;
-async function autoSizeAll() {
+async function autoAdjust() {
   if (autoBusy) return;
   const cont = state.wmode === 'cont', list = cont ? WEIGHTS.filter(W => stepSpan(W)) : [...state.weights];
   const W0 = state.view.weight, C0 = state.view.wcont, sizes = {};
-  autoBusy = true; $('#mApply').disabled = true;
+  const at = async W => { state.view.weight = W; if (cont) state.view.wcont = W; await rebuildNow(); };      // 载入这个字重的字体并重画参考图
+  const btn = $('#autoAdj');
+  autoBusy = true; btn.disabled = true; btn.setAttribute('aria-busy', 'true');
+  let shift = null, mid = null;
   try {
     for (const W of list) {
       setBusy(T('measuringW', { w: W }));
-      state.view.weight = W; if (cont) state.view.wcont = W;
-      await rebuildNow();      // 载入这个字重的字体并重画参考图：lastMeasure、lastRef 就是这个字重的
+      await at(W);
       const k = idealScale();
       if (k) sizes[W] = Math.min(200, Math.max(50, round(resolveCls('latin', W, true).size * k)));
     }
+    const ws = Object.keys(sizes).map(Number);
+    if (ws.length) {
+      const base = sizes[BASE_W] ?? sizes[ws[0]];
+      setSizeAt('latin', BASE_W, base);
+      for (const W of list) if (W !== BASE_W) setSizeAt('latin', W, sizes[W] != null && Math.abs(sizes[W] - base) >= 0.5 ? sizes[W] : null);
+      refreshCustomRanges();
+      await at(list.includes(BASE_W) ? BASE_W : W0);
+      if (lastMeasure) {
+        const cur = resolveCls('latin').shift;
+        mid = lastMeasure.midEm * 100;                        // 正值 = 大写中线偏低
+        const target = round(cur + mid);
+        shift = Math.abs(target) < SHIFT_MIN ? 0 : Math.min(30, Math.max(-30, target));
+        state.classes.latin.shift = shift || null;
+      }
+    }
   } finally {
-    state.view.weight = W0; state.view.wcont = C0; autoBusy = false; $('#mApply').disabled = false; setBusy('');
+    state.view.weight = W0; state.view.wcont = C0; autoBusy = false; btn.disabled = false; btn.removeAttribute('aria-busy'); setBusy('');
   }
-  const ws = Object.keys(sizes).map(Number);
-  if (!ws.length) { rebuild(); return toast(T('tNotReady')); }
-  const base = sizes[BASE_W] ?? sizes[ws[0]];
-  setSizeAt('latin', BASE_W, base);
-  for (const W of list) if (W !== BASE_W) setSizeAt('latin', W, sizes[W] != null && Math.abs(sizes[W] - base) >= 0.5 ? sizes[W] : null);
   syncToolbar(); changed({ fonts: true });
-  const vals = ws.map(W => sizes[W]), lo = Math.min(...vals), hi = Math.max(...vals);
-  toast(lo === hi ? T('tSize', { v: lo }) : T('tSizeAll', { n: ws.length, lo, hi }));
+  const vals = Object.values(sizes);
+  if (!vals.length) return toast(T('tNotReady'));
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const size = lo === hi ? `${lo}%` : T('autoSizeRange', { lo, hi, n: vals.length });
+  const sh = shift == null ? '' : shift ? T('autoShift', { v: (shift > 0 ? '+' : '') + shift }) : T('autoNoShift', { d: Math.abs(mid).toFixed(1) });
+  toast(T('tAuto', { size, shift: sh }));
 }
 /* 把现在的设定存成自己的预设 */
 function savePresetAs(n) {

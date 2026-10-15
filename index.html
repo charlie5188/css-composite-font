@@ -8,14 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=2a1111d9">
-<script src="assets/js/i18n.js?v=9abcf89d" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=08b5381f">
+<script src="assets/js/i18n.js?v=68def9e3" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
 <script src="assets/js/core.js?v=aad56f60" defer></script>
 <script src="assets/js/render.js?v=56b3458d" defer></script>
 <script src="assets/js/export.js?v=1b1135a4" defer></script>
-<script src="assets/js/ui.js?v=c41ab3de" defer></script>
+<script src="assets/js/ui.js?v=9f296311" defer></script>
 </head>
 <body>
 <div class="app">
@@ -55,7 +55,7 @@
 
   <div class="bench">
     <section class="compose" id="editor" data-ta="aria-label:classes">
-      <div class="sec-row"><h2 class="label lab-i"><span data-t="classes"></span><button type="button" class="info" data-info="classInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2></div>
+      <div class="sec-row"><h2 class="label lab-i"><span data-t="classes"></span><button type="button" class="info" data-info="classInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2><button type="button" class="tbtn wand" id="autoAdj" data-ta="title:autoAdjTip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.2 13.8 9.6 6.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8.7 5.5l1.8 1.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12.2 1.4v2.4M11 2.6h2.4M14.4 6v1.8M13.5 6.9h1.8M6.6 1.6v1.6M5.8 2.4h1.6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg><span data-t="autoAdj"></span></button></div>
       <div class="wbanner" id="wBanner" hidden></div>
       <div id="classRows"></div>
       <div class="sec-row sub"><h3 class="label lab-i"><span data-t="custom"></span><button type="button" class="info" data-info="customInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h3><button class="tbtn" id="addCustom" type="button" data-t="add"></button></div>
@@ -127,8 +127,6 @@
         </div>
         <div class="spec-wrap"><canvas id="spec" data-ta="aria-label:specAria"></canvas></div>
         <div class="m-actions">
-          <button class="btn" id="mApply" type="button" data-t="applySize" data-ta="title:applySizeTip"></button>
-          <button class="btn" id="mCenter" type="button" data-t="center" data-ta="title:centerTip"></button>
           <span class="m-lm"><span class="lab-i"><label for="exLm" data-t="exLm"></label><button type="button" class="info" data-info="lmInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exLm"><option value="han" data-t="exLmHan"></option><option value="off" data-t="exLmOff"></option></select></span>
         </div>
       </section>
