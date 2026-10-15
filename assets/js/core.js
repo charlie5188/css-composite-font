@@ -785,6 +785,7 @@ async function rebuildNow() {
   updateNaive();
   drawSpecimen();
   renderExport();
+  checkMissSoon();
 }
 const rebuild = debounce(rebuildNow, 70);
 /* 斜体文件加载失败（例如 Google 上这个粗细没有斜体）时，这一条改用正体 */
@@ -817,6 +818,6 @@ function updateNaive() {
 }
 function onSourcesChanged() {
   if (!$('#editor').contains(document.activeElement)) renderEditor(); else renderChipsStatus();
-  renderExportSoon(); renderPresetCardsSoon();
+  renderExportSoon(); renderPresetCardsSoon(); checkMissSoon();
 }
 function setBusy(t) { $('#busy').textContent = t; }

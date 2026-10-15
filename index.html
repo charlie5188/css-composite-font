@@ -8,14 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=141de4e8">
-<script src="assets/js/i18n.js?v=670197e0" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=23d941ba">
+<script src="assets/js/i18n.js?v=22a52a7e" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
-<script src="assets/js/core.js?v=b1d04f97" defer></script>
-<script src="assets/js/render.js?v=e15d06db" defer></script>
+<script src="assets/js/core.js?v=c7594e64" defer></script>
+<script src="assets/js/render.js?v=81750ba5" defer></script>
 <script src="assets/js/export.js?v=766c4356" defer></script>
-<script src="assets/js/ui.js?v=9eb79477" defer></script>
+<script src="assets/js/ui.js?v=1bfcd975" defer></script>
 </head>
 <body>
 <div class="app">
@@ -95,6 +95,7 @@
             <button class="tog" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
             <button class="tog" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
             <button class="tog" type="button" id="vRules" aria-pressed="false" data-t="vRules"></button>
+            <button class="tog" type="button" id="vMiss" aria-pressed="false" data-t="vMiss"></button>
             <button class="tog" type="button" id="vCompare" aria-pressed="false" data-t="compare"></button>
             <button class="tog" type="button" id="vItalic" aria-pressed="false" data-t="vItalic"></button>
           </div>
@@ -112,6 +113,7 @@
         </div>
       </div>
       <div class="legend" id="legend" hidden></div>
+      <div class="miss-note" id="missNote" aria-live="polite" hidden></div>
 
       <section class="panel" aria-labelledby="metricsLabel">
         <div class="panel-head"><h2 class="label lab-i" id="metricsLabel"><span data-t="metrics"></span><button type="button" class="info" data-info="metricsInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2>

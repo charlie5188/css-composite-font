@@ -312,6 +312,7 @@ function renderPreview() {
     pt.replaceChildren(frag);
   }
   paintClasses(pt, hl);
+  checkMissSoon();
   $('#naiveText').textContent = v.text;
   $('#naiveWrap').hidden = !v.compare;
   $('#liveLabel').hidden = !v.compare;
@@ -321,6 +322,70 @@ function renderPreview() {
   if (v.colorize) legend.innerHTML = visibleClasses().filter(c => c.id !== 'han').map(c => `<span style="--c:var(--c-${c.id})"><i></i>${esc(tr(c.name))}</span>`).join('') +
     (state.custom.length ? `<span style="--c:var(--c-custom)"><i></i>${esc(T('legendCustom'))}</span>` : '') + `<span>${esc(T('legendBase'))}</span>`;
   root.style.setProperty('--generic', state.generic !== 'auto' ? state.generic : guessGeneric());
+}
+/* ================= 缺字 =================
+   校样里每个字按「本类别的字体 → （例外字符所在类别的字体）→ 汉字基础字体」检查，第一个有这个字的字体就是实际显示它的字体。
+   不是本类别的字体 = 一级（合成字体里的其他字体代替）；都没有 = 二级（落到系统字体）。
+   空白、组合附加符号、格式字符本来就没有宽度，不检查 */
+let missTok = 0, missMap = null;
+const MISS_SKIP = /[\s\p{M}\p{Cf}]/u;
+async function checkMiss() {
+  const tok = ++missTok, el = $('#missNote');
+  if (!state.view.miss) { missMap = null; paintMiss(); el.hidden = true; return; }
+  const W = state.view.weight, base = resolveCls('han', W, true);
+  const setAt = o => o === 'other' ? resolveCls('han', W, true) : o[0] === '#' ? resolveCustom(state.custom[+o.slice(1)], W, true) : resolveCls(o, W, true);
+  const chains = new Map(), need = new Map();
+  for (const c of new Set(state.view.text)) {
+    if (MISS_SKIP.test(c)) continue;
+    const cp = c.codePointAt(0), o = ownerOf(cp), rs = [setAt(o)];
+    if (o[0] === '#') rs.push(resolveCls(classOf(cp) || 'han', W, true));
+    rs.push(base);
+    const chain = [...new Map(rs.filter(r => r.font).map(usedFont).map(f => [fontKey(f), f])).values()];      // 实际加载的字体，去重
+    chains.set(c, chain);
+    for (const f of chain) { const k = fontKey(f); if (!need.has(k)) need.set(k, new Set()); need.get(k).add(c); }
+  }
+  el.hidden = false;
+  if (!el.textContent) el.textContent = T('missChecking');
+  const miss = new Map();      // 字体 → 这个字体没有的字；还在加载的字体不判断（null）
+  await Promise.all([...need].map(async ([k, cs]) => {
+    const src = sources.get(k);
+    miss.set(k, !src || src.status === 'loading' ? null : src.status === 'error' ? cs : await missingIn(src, [...cs]));
+  }));
+  if (tok !== missTok) return;
+  missMap = new Map();
+  const groups = new Map();
+  for (const [c, chain] of chains) {
+    const has = f => { const m = miss.get(fontKey(f)); return !m || !m.has(c); };
+    if (has(chain[0])) continue;
+    const by = chain.slice(1).find(has), lv = by ? 1 : 2, gk = shortName(chain[0]) + '|' + (by ? shortName(by) : '');
+    missMap.set(c, lv);
+    if (!groups.has(gk)) groups.set(gk, { from: shortName(chain[0]), by: by && shortName(by), lv, cs: [] });
+    groups.get(gk).cs.push(c);
+  }
+  paintMiss();
+  el.innerHTML = groups.size ? [...groups.values()].sort((a, b) => b.lv - a.lv).map(g =>
+    `<p class="lv${g.lv}"><i></i><span>${esc(T(g.lv === 1 ? 'missBy' : 'missSys', { font: g.from, by: g.by, n: g.cs.length }))}<b>${esc(g.cs.slice(0, 60).join(' '))}${g.cs.length > 60 ? ' …' : ''}</b></span></p>`).join('')
+    : `<p class="ok">${esc(T('missNone'))}</p>`;
+}
+const checkMissSoon = debounce(checkMiss, 120);
+/* 用 Highlight API 标出缺字，不改 DOM（竖排也不会乱） */
+function paintMiss() {
+  if (!HL_OK) return;
+  const sets = [null, new Highlight(), new Highlight()];
+  sets[1].priority = sets[2].priority = 1;      // 盖在类别着色上面
+  if (missMap?.size) {
+    const walker = document.createTreeWalker($('#proofText'), NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+      const node = walker.currentNode;
+      let i = 0;
+      for (const ch of node.data) {
+        const lv = missMap.get(ch);
+        if (lv) { const r = new Range(); r.setStart(node, i); r.setEnd(node, i + ch.length); sets[lv].add(r); }
+        i += ch.length;
+      }
+    }
+  }
+  CSS.highlights.set('cf-miss1', sets[1]); CSS.highlights.set('cf-miss2', sets[2]);
 }
 const HL_OK = typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight === 'function';
 const HL_KEYS = ['latin', 'digit', 'kana', 'bopo', 'punct', 'symbol', 'shared', 'custom'];
@@ -385,9 +450,10 @@ function syncToolbar() {
   $('#vCompare').setAttribute('aria-pressed', v.compare);
   $('#vItalic').setAttribute('aria-pressed', !!v.italic);
   $('#vRules').setAttribute('aria-pressed', !!v.rules);
+  $('#vMiss').setAttribute('aria-pressed', !!v.miss);
   const sh = specShown();
   document.querySelectorAll('#specViewPop [data-sg]').forEach(b => b.setAttribute('aria-pressed', !!sh[b.dataset.sg]));
-  const nOn = [v.vertical, v.colorize, v.rules, v.compare, v.italic].filter(Boolean).length;
+  const nOn = [v.vertical, v.colorize, v.rules, v.miss, v.compare, v.italic].filter(Boolean).length;
   $('#viewCount').textContent = nOn ? ` · ${nOn}` : '';
   $('#cmpMode').value = v.cmp;
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }

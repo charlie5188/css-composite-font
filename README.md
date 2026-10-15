@@ -42,7 +42,7 @@ For each character the browser checks the rules from the last one backwards. The
 - Traditional Chinese for Taiwan and Hong Kong: presets (Noto Serif TC / Noto Sans TC / Noto Sans HK, PingFang TC) and sample texts in each region's usage. The class table warns when the fonts don't fit the proof's language, and the export area when they don't fit the target language: it measures where the full-width comma sits (centred in Taiwan and Hong Kong, bottom-left in mainland China and Japan; fonts such as Noto CJK switch by `lang`, so the measurement uses the language too) and reads the region of the glyph forms from the family name (SC / TC / HK / JP). The font picker shows the punctuation position and checks Hong Kong characters (Cantonese and HKSCS).
 - Zhuyin (Bopomofo). A Zhuyin class covers ㄅㄆㄇ and the tone marks ˊ ˇ ˋ ˙, which otherwise sit in the Latin range and would be drawn by the Latin font. Accented Latin letters (é, à) are different code points and stay Latin; the tone marks can be switched back to Latin from the gear.
 - Native CSS properties for CJK text (`text-autospace`, `text-spacing-trim`, `word-break: auto-phrase`, `line-break`, `text-wrap` and more) are written into the exported rule, with the browser versions that support them. The defaults assume body text: `text-wrap: pretty`, plus `line-break: strict` for Japanese.
-- Live proof with sample texts (Chinese, Japanese, mostly Latin, manga dialogue, a character table) or your own text, at any weight, with vertical writing, colour-coded classes (CSS Custom Highlight API, so the layout is not changed), ruled lines for each line box, italics, and a side-by-side comparison with a plain `font-family` fallback or `font-size-adjust`.
+- Live proof with sample texts (Chinese, Japanese, mostly Latin, manga dialogue, a character table) or your own text, at any weight, with vertical writing, colour-coded classes (CSS Custom Highlight API, so the layout is not changed), ruled lines for each line box, missing-glyph marks (characters the class font lacks are tinted by whether another font in the composite or the system font ends up drawing them), italics, and a side-by-side comparison with a plain `font-family` fallback or `font-size-adjust`.
 - Settings are kept in the browser; each section and the whole tool can be reset.
 - Interface in Simplified Chinese, Traditional Chinese (Taiwan usage) and Japanese, light and dark themes.
 
@@ -105,7 +105,7 @@ InDesign / Illustrator の「合成フォント」のように、漢字・かな
 - 台湾・香港の繁体字中国語。プリセット（Noto Serif TC / Noto Sans TC / Noto Sans HK、PingFang TC）と、それぞれの地域の言い回しで書いたサンプル文があります。フォントが校正刷りの言語に合わないときは文字クラスの表で、対象の言語に合わないときは書き出し欄で知らせます。全角の読点の位置を測り（台湾・香港は中央、中国大陸・日本は左下寄り。Noto CJK のように `lang` で切り替わるフォントがあるので、測るときも言語を指定）、字形の地域はファミリー名（SC / TC / HK / JP）から判断します。フォント選択では句読点の位置を表示し、香港の字（広東語・HKSCS）の収録も確かめます。
 - 注音符号。注音のクラスが ㄅㄆㄇ と声調記号 ˊ ˇ ˋ ˙ を受け持ちます（声調記号はもとは欧文の範囲にあり、移さないと欧文フォントで表示されます）。アクセント付きの欧文字（é・à）は別の符号位置なので欧文のままで、声調記号は歯車から欧文に戻せます。
 - CSS ネイティブの組版プロパティ（`text-autospace`、`text-spacing-trim`、`word-break: auto-phrase`、`line-break`、`text-wrap` など）を、対応ブラウザのバージョンとともに書き出す規則に含めます。初期値は本文を想定し、`text-wrap: pretty`、日本語では `line-break: strict` です。
-- 校正刷り：サンプル文（中国語・日本語・欧文中心・マンガの台詞・文字表）または自分の文で、任意のウェイトで確認できます。縦組み、クラスの色分け（CSS Custom Highlight API を使うので組版は変わりません）、行の罫線、イタリック、通常の `font-family` フォールバックや `font-size-adjust` との比較にも対応します。
+- 校正刷り：サンプル文（中国語・日本語・欧文中心・マンガの台詞・文字表）または自分の文で、任意のウェイトで確認できます。縦組み、クラスの色分け（CSS Custom Highlight API を使うので組版は変わりません）、行の罫線、欠字の表示（クラスのフォントにない文字を、合成フォントのほかのフォントで代わりに表示されるか、システムフォントまで落ちるかで色分け）、イタリック、通常の `font-family` フォールバックや `font-size-adjust` との比較にも対応します。
 - 設定はブラウザに保存され、項目ごと・全体のリセットができます。
 - 簡体字中国語・繁体字中国語（台湾の用語）・日本語の UI、ライト・ダークテーマ。
 
@@ -145,7 +145,7 @@ InDesign / Illustrator の「合成フォント」のように、漢字・かな
 - 台湾、香港的繁体中文：预设（Noto Serif TC / Noto Sans TC / Noto Sans HK、苹方-繁）和按各地用语写的示例文字。字体和校样的语言不符时，类别表里会提示；和适用语言不符时，导出区会提示：量全角逗号的位置（台湾、香港居中，大陆、日本靠左下；Noto CJK 这类字体会按 `lang` 切换，所以测量时也带上语言），并按字族名（SC / TC / HK / JP）判断字形的地区。选择字体时会显示标点位置，并检查香港字（粤语用字、HKSCS）的覆盖。
 - 注音符号。注音这一类负责 ㄅㄆㄇ 和声调号 ˊ ˇ ˋ ˙（声调号原本在西文的区段里，不归过来就会用西文字体显示）。带重音的西文字母（é、à）是另外的码位，仍归西文；声调号也可以在齿轮里改回西文。
 - CSS 原生 CJK 排版属性（`text-autospace`、`text-spacing-trim`、`word-break: auto-phrase`、`line-break`、`text-wrap` 等）会写进导出的规则，并注明支持的浏览器版本。默认值以正文为前提：`text-wrap: pretty`，日文另加 `line-break: strict`。
-- 实时校样：示例文字（中文、日文、西文为主、漫画对白、字符表）或自己的文字，可以切换任意字重；支持竖排、类别着色（用 CSS Custom Highlight API，不改变排版）、行线、斜体，以及和普通 `font-family` 回退、`font-size-adjust` 做法的对照。
+- 实时校样：示例文字（中文、日文、西文为主、漫画对白、字符表）或自己的文字，可以切换任意字重；支持竖排、类别着色（用 CSS Custom Highlight API，不改变排版）、行线、缺字标注（本类别的字体没有的字，按「由合成字体里的其他字体代替」和「落到系统字体」两级着色）、斜体，以及和普通 `font-family` 回退、`font-size-adjust` 做法的对照。
 - 设定保存在浏览器里；每一块和整个工具都可以重置。
 - 简体中文、繁体中文（台湾用语）、日本語界面，浅色和深色模式。
 
