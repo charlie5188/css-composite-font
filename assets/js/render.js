@@ -144,7 +144,8 @@ function renderEditor() {
   banner.hidden = W === BASE_W;
   const wAdj = W !== BASE_W && (Object.keys(state.wOver[W] || {}).some(k => Object.keys(state.wOver[W][k]).length) || Object.keys(state.weightNames).some(k => k.endsWith('|' + W)));
   if (W !== BASE_W) banner.innerHTML = `<span>${esc(T('wBanner', { w: W }))}</span><span class="wb-act">${wAdj ? `<button type="button" class="tbtn" data-act="wclear">${esc(T('wClear'))}</button>` : ''}${state.weights.includes(BASE_W) ? `<button type="button" class="tbtn" data-act="wback">${esc(T('wBack'))}</button>` : ''}</span>`;
-  const head = `<div class="ct-row ct-head" aria-hidden="true"><span class="ct-glyph"></span><span>${esc(T('colClass'))}</span><span>${esc(T('colFont'))}</span><span class="r">${esc(T('colSize'))}</span><span class="r">${esc(T('colShift'))}</span><span></span></div>`;
+  const info = k => `<button type="button" class="info" data-info="${k}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}">i</button>`;
+  const head = `<div class="ct-row ct-head"><span class="ct-glyph"></span><span>${esc(T('colClass'))}</span><span>${esc(T('colFont'))}</span><span class="r lab-i">${esc(T('colSize'))}${info('sizeInfo')}</span><span class="r lab-i">${esc(T('colShift'))}${info('shiftInfo')}</span><span></span></div>`;
   $('#classRows').innerHTML = head + visibleClasses().map(c => {
     const o = state.classes[c.id];
     const tip = c.id === 'shared' ? T('sharedHint') : '';

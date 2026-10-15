@@ -150,6 +150,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .ct-row{--name-w:108px;display:grid;grid-template-columns:28px var(--name-w) minmax(0,1fr) 48px 48px 14px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule);--c:var(--c-custom)}
 .ct-head{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:14px 0 8px;border-bottom:1px solid var(--line)}
 .ct-head .r{text-align:right;padding-right:6px}
+.ct-head .r.lab-i{display:flex;justify-content:flex-end;gap:4px;white-space:nowrap}      /* 放不下时往左边空着的表头里伸 */
 :root:lang(ja) .ct-row{--name-w:126px}
 .ct-glyph{font-family:var(--cf),var(--generic);font-size:22px;line-height:1;white-space:nowrap;overflow:hidden;text-align:center}
 .ct-name{display:grid;gap:1px;min-width:0;line-height:1.25}
@@ -208,6 +209,9 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .info-pop dl{margin:10px 0 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px}
 .info-pop dt{font-weight:600;color:var(--ink);white-space:nowrap}
 .info-pop dd{margin:0}
+.info-pop dl.stack{grid-template-columns:minmax(0,1fr);gap:2px}      /* 选项名很长时：名称在上，说明在下 */
+.info-pop dl.stack dt{white-space:normal}
+.info-pop dl.stack dd+dt{margin-top:8px}
 .info-pop dl+p{margin-top:10px}
 .info-pop code,.info-pop .mono{font-family:var(--mono);font-size:.92em}
 .empty{padding:2px 0 10px;font-size:12px;color:var(--muted);line-height:1.6}
