@@ -11,6 +11,7 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 /* ================= 界面文字 ================= */
 const I18N = {
   zh: {
+    guides: '参考线',
     customAdd: '添加自定义文本',
     missTipBy: '{font} 没有「{c}」，改由 {by} 显示。', missTipSys: '{font} 没有「{c}」，合成字体里也没有别的字体能接手，由系统字体显示。',
     customDel: '删除这组自定义文本',
@@ -102,6 +103,7 @@ const I18N = {
     pkChecking: '正在检测…', pkGoogleOk: '已找到 · {n} 个分片', pkLocalOk: '已在这台电脑上找到', pkFileOk: '字体文件可用', pkLocalStill: '。仍可使用，导出后在装有该字体的电脑上生效', regForms: '字形是{got}的写法，和校样的语言「{lang}」不一致。', reg_sc: '简体中文', reg_tw: '台湾', reg_hk: '香港', reg_jp: '日文', reg_kr: '韩文', regPunctCorner: '这个字体的标点靠左下（大陆、日本的写法），校样的语言「{lang}」的标点应该居中。', regPunctCenter: '这个字体的标点居中（台湾、香港的写法），校样的语言「{lang}」的标点应该靠左下。', pkPunctCenter: '标点居中（台湾、香港的写法）', pkPunctCorner: '标点靠左下（大陆、日本的写法）', covHK: '香港字', gBopoTop: '注音字面 上', gBopoBot: '注音字面 下', sgBopo: '注音', exRegWarn: '字体和适用语言「{lang}」不一致：{list}。', exRegForms: '汉字字体 {font} 是{got}的字形', exRegPunctCorner: '{font} 的标点靠左下（应该居中）', exRegPunctCenter: '{font} 的标点居中（应该靠左下）', gpHintBopo: '关闭 = 改由半角西文显示。单独写出的 ˊ ˇ ˋ ˙ 在西文里几乎只出现在语言学、国际音标里；法语、汉语拼音等的带调字母（é、ǎ、ü）是另外的码位，一直归半角西文，不受这个开关影响。', covPinyin: '汉语拼音', pkUse: '使用这个字体',
   },
   ja: {
+    guides: 'ガイド',
     customAdd: 'カスタムテキストを追加',
     missTipBy: '{font} には「{c}」がないため、{by} で表示されます。', missTipSys: '{font} には「{c}」がなく、合成フォントのほかのフォントでも代わりに表示できないため、システムフォントで表示されます。',
     customDel: 'このカスタムテキストを削除',
@@ -194,6 +196,7 @@ const I18N = {
   },
   /* 繁體中文（台灣）：先用 OpenCC（s2twp）從簡體轉換，再逐條改成台灣用語（字型、預設集、進階、直排、直立……） */
   tw: {
+    guides: '參考線',
     customAdd: '新增自訂文字',
     missTipBy: '{font} 沒有「{c}」，改由 {by} 顯示。', missTipSys: '{font} 沒有「{c}」，複合字型裡也沒有別的字型能接手，由系統字型顯示。',
     customDel: '刪除這組自訂文字',

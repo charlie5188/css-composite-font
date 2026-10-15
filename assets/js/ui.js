@@ -226,14 +226,8 @@ function initToolbar() {
     pop.style.left = Math.max(8, r.right - pop.offsetWidth) + 'px';
     pop.style.top = (r.bottom + 6 + pop.offsetHeight > innerHeight ? Math.max(8, r.top - pop.offsetHeight - 6) : r.bottom + 6) + 'px';
   });
-  /* 度量参考图的「显示」：西文、数字、假名的参考线分别开关 */
-  $('#specViewPop').addEventListener('toggle', e => {
-    if (e.newState !== 'open') return;
-    const r = $('#specViewBtn').getBoundingClientRect(), pop = e.currentTarget;
-    pop.style.left = Math.max(8, r.right - pop.offsetWidth) + 'px';
-    pop.style.top = (r.bottom + 6 + pop.offsetHeight > innerHeight ? Math.max(8, r.top - pop.offsetHeight - 6) : r.bottom + 6) + 'px';
-  });
-  $('#specViewPop').addEventListener('click', e => {
+  /* 度量参考图的工具条：西文、数字、假名、注音的参考线分别开关（图例兼开关） */
+  $('#specBar').addEventListener('click', e => {
     const b = e.target.closest('[data-sg]'); if (!b) return;
     const k = b.dataset.sg;
     (v().specShow ||= {})[k] = !specShown()[k];

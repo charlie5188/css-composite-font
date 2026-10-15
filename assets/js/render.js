@@ -505,7 +505,7 @@ function syncToolbar() {
   $('#vRules').setAttribute('aria-pressed', !!v.rules);
   $('#vMiss').setAttribute('aria-pressed', !!v.miss);
   const sh = specShown();
-  document.querySelectorAll('#specViewPop [data-sg]').forEach(b => b.setAttribute('aria-pressed', !!sh[b.dataset.sg]));
+  document.querySelectorAll('#specBar [data-sg]').forEach(b => b.setAttribute('aria-pressed', !!sh[b.dataset.sg]));
   $('#cmpMode').value = v.cmp;
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }
   renderTypoStatus();
@@ -590,7 +590,7 @@ function drawSpecimen() {
   const span = show.reduce((s, ch) => s + ctx.measureText(ch).width, 0) + fs * GAP * (show.length - 1);
   if (span > plotR - 24) fs = Math.floor(fs * (plotR - 24) / span);
   const nLines = 3 + (sh.latin ? 3 : 0) + (sh.digit ? 2 : 0) + (sh.kana ? 2 : 0) + (sh.bopo ? 2 : 0);
-  const LT = 38;      // 右上角浮着「显示」按钮：参考线的标签从这以下开始排
+  const LT = 9;      // 参考线的标签最高排到这里
   const H = Math.round(Math.min(300, Math.max(140, fs * 1.75, nLines * 13 + 16 + LT - 7)));
   const dpr = window.devicePixelRatio || 1;
   cv.style.height = H + 'px';
