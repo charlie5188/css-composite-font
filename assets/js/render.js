@@ -229,6 +229,12 @@ function renderNumHint() {
   const el = $('#numHint'); if (!el) return;
   const { f, fx } = digitFx();
   el.hidden = !fx;
+  /* 卡片：这个字体没有的样式淡一些（排出来和默认一样），鼠标停留时说明 */
+  document.querySelectorAll('#typoRows [data-typo="num"], #typoRows [data-typo="zero"]').forEach(b => {
+    const lack = fx ? b.dataset.v.split(' ').map(v => NUM_FEAT[v]).filter(t => t && numWhy(fx, t) === 'none') : [];
+    b.classList.toggle('lack', !!lack.length);
+    b.title = b.dataset.v + (lack.length ? ' — ' + T('numLacks', { font: shortName(f), list: lack.map(numLabel).join(T('joiner')) }) : '');
+  });
   if (!fx) return;
   const font = shortName(f), none = numTags().filter(t => numWhy(fx, t) === 'none');
   el.textContent = T('numDefIs', { font, list: [fx.def.fig, fx.def.spc].map(numLabel).join(T('joiner')) }) +

@@ -406,14 +406,19 @@ const TYPO = [
   { key: 'feat', label: { zh: '字距特性', ja: '字詰めの機能', tw: '字距特性' }, prop: 'font-feature-settings', def: 'normal',
     sup: { chrome: '48', firefox: '34', safari: '9.1' },
     values: [['normal', null], ['"palt"', { zh: '假名标点比例宽', ja: 'かなと約物をプロポーショナルに', tw: '假名標點比例寬' }], ['"halt"', { zh: '标点半角', ja: '約物を半角に', tw: '標點半形' }]] },
-  /* 数字样式：和 InDesign 的「数字样式」一样的五种。斜线零单独一行，导出时两行合成一条 font-variant-numeric */
-  { key: 'num', label: { zh: '数字样式', ja: '数字のスタイル', tw: '數字樣式' }, prop: 'font-variant-numeric', def: 'normal',
+  /* 数字样式：和 InDesign 的「数字样式」一样的五种。斜线零单独一行，导出时两行合成一条 font-variant-numeric。
+     tiles：用字样卡片选（每张卡片用当前的数字字体排出这个样式），第三项是用途提示 */
+  { key: 'num', label: { zh: '数字样式', ja: '数字のスタイル', tw: '數字樣式' }, prop: 'font-variant-numeric', def: 'normal', tiles: '11,980',
     sup: { chrome: '52', firefox: '34', safari: '9.1' },
-    values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設' }], ['lining-nums tabular-nums', { zh: '等高等宽（表格、金额）', ja: 'ライニング・等幅（表・金額）', tw: '等高等寬（表格、金額）' }], ['lining-nums proportional-nums', { zh: '等高比例', ja: 'ライニング・プロポーショナル', tw: '等高比例' }], ['oldstyle-nums proportional-nums', { zh: '旧式比例（西文正文）', ja: 'オールドスタイル・プロポーショナル（欧文の本文）', tw: '舊式比例（西文內文）' }], ['oldstyle-nums tabular-nums', { zh: '旧式等宽', ja: 'オールドスタイル・等幅', tw: '舊式等寬' }]],
+    values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設' }],
+      ['lining-nums tabular-nums', { zh: '等高等宽', ja: 'ライニング・等幅', tw: '等高等寬' }, { zh: '表格、金额', ja: '表・金額', tw: '表格、金額' }],
+      ['lining-nums proportional-nums', { zh: '等高比例', ja: 'ライニング・プロポーショナル', tw: '等高比例' }],
+      ['oldstyle-nums proportional-nums', { zh: '旧式比例', ja: 'オールドスタイル・プロポーショナル', tw: '舊式比例' }, { zh: '西文正文', ja: '欧文の本文', tw: '西文內文' }],
+      ['oldstyle-nums tabular-nums', { zh: '旧式等宽', ja: 'オールドスタイル・等幅', tw: '舊式等寬' }]],
     note: { zh: '和 InDesign 的「数字样式」一样的五种。等高 / 旧式是数字的高低，比例 / 等宽是数字的宽度。效果取决于显示数字的那个字体有没有这些 OpenType 特性；Google Fonts 的网页字体删掉了旧式数字和斜线零。写在使用规则里，页面上可以按元素改，例如只让表格用等宽数字。', ja: 'InDesign の「数字スタイル」と同じ 5 種類です。ライニング / オールドスタイルは数字の高さ、プロポーショナル / 等幅は数字の幅です。効果は数字を表示するフォントにこれらの OpenType 機能があるかどうかで決まります。Google Fonts の Web フォントではオールドスタイル数字とスラッシュ付きゼロが削られています。使用側の規則に書かれるので、表だけ等幅数字にするなど、要素ごとに変えられます。', tw: '和 InDesign 的「數字樣式」一樣的五種。等高 / 舊式是數字的高低，比例 / 等寬是數字的寬度。效果取決於顯示數字的那個字型有沒有這些 OpenType 特性；Google Fonts 的網頁字型刪掉了舊式數字和斜線零。寫在使用規則裡，頁面上可以按元素改，例如只讓表格用等寬數字。' } },
-  { key: 'zero', label: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零' }, prop: 'font-variant-numeric', def: 'normal',
+  { key: 'zero', label: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零' }, prop: 'font-variant-numeric', def: 'normal', tiles: '100',
     sup: { chrome: '52', firefox: '34', safari: '9.1' },
-    values: [['normal', { zh: '不用', ja: '使わない', tw: '不用' }], ['slashed-zero', { zh: '用斜线零（和字母 O 区分）', ja: 'スラッシュ付き（O と区別）', tw: '用斜線零（和字母 O 區分）' }]] },
+    values: [['normal', { zh: '不用', ja: '使わない', tw: '不用' }], ['slashed-zero', { zh: '斜线零', ja: 'スラッシュ付き', tw: '斜線零' }, { zh: '和字母 O 区分', ja: 'O と区別', tw: '和字母 O 區分' }]] },
 ];
 /* 工具的默认值以正文为前提：段落换行用 pretty；日文正文的禁则用 strict。
    def 是工具的默认值，init 是 CSS 的初始值：导出时只省略等于 init 的值 */

@@ -209,6 +209,11 @@ function initToolbar() {
     v().sample = Object.keys(SAMPLES).find(k => SAMPLES[k].text === v().text) || 'custom';
     renderSampleTabs(); renderPreview(); saveState(); reloadForText();
   });
+  $('#typoRows').addEventListener('click', e => {
+    const b = e.target.closest('[data-typo]'); if (!b) return;
+    state.typo[b.dataset.typo] = b.dataset.v;
+    renderTypoStatus(); renderPreview(); renderExport(); saveState();
+  });
   $('#typoRows').addEventListener('change', e => {
     const t = TYPO.find(x => 'ty-' + x.key === e.target.id); if (!t) return;
     state.typo[t.key] = e.target.value;
@@ -325,9 +330,13 @@ function renderTypoRows() {
     const opts = t.values.map(([v, d]) => `<option value="${esc(v)}">${esc(v)}${d ? ' · ' + esc(tr(d)) : ''}${typoSupported(t, v) ? '' : esc(T('unsupported'))}</option>`).join('');
     const sup = t.sup ? ['chrome', 'firefox', 'safari'].map(b =>
       `<span class="${b === ENGINE.id ? 'cur' : ''}">${{ chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' }[b]} ${esc(t.sup[b])}</span>`).join('') : `<span>${esc(T('allBrowsers'))}</span>`;
-    return `<div class="typo-row">
-      <span class="typo-name"><label for="ty-${t.key}"><b>${esc(tr(t.label))}</b></label><span class="lab-i"><code>${t.attr ? esc(T('langAttr')) : t.prop}</code>${t.note ? `<button type="button" class="info" data-info="typo:${t.key}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}">i</button>` : ''}</span></span>
-      <select id="ty-${t.key}">${opts}</select>
+    /* 数字样式这类：一排字样卡片，每张用当前的数字字体排出这个样式 */
+    const ctl = t.tiles ? `<div class="typo-tiles" role="radiogroup" aria-labelledby="tyl-${t.key}">${t.values.map(([v, d, tip]) =>
+      `<button type="button" role="radio" data-typo="${t.key}" data-v="${esc(v)}" aria-checked="${state.typo[t.key] === v}" title="${esc(v)}"><span class="tt-s" style="font-variant-numeric:${esc(v)}" aria-hidden="true">${esc(t.tiles)}</span><span class="tt-l">${esc(tr(d))}${tip ? `<small>${esc(tr(tip))}</small>` : ''}</span></button>`).join('')}</div>`
+      : `<select id="ty-${t.key}">${opts}</select>`;
+    return `<div class="typo-row${t.tiles ? ' tiles' : ''}">
+      <span class="typo-name">${t.tiles ? `<b id="tyl-${t.key}">${esc(tr(t.label))}</b>` : `<label for="ty-${t.key}"><b>${esc(tr(t.label))}</b></label>`}<span class="lab-i"><code>${t.attr ? esc(T('langAttr')) : t.prop}</code>${t.note ? `<button type="button" class="info" data-info="typo:${t.key}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}">i</button>` : ''}</span></span>
+      ${ctl}
       <div class="typo-sup" data-key="${t.key}">${sup}</div>${t.key === 'num' ? '<p class="typo-note" id="numHint" hidden></p>' : ''}
     </div>`;
   }).join('');
@@ -335,6 +344,7 @@ function renderTypoRows() {
   renderTypoStatus();
 }
 function renderTypoStatus() {
+  document.querySelectorAll('#typoRows [data-typo]').forEach(b => b.setAttribute('aria-checked', state.typo[b.dataset.typo] === b.dataset.v));
   renderNumHint();
   const n = TYPO.filter(t => !t.attr && state.typo[t.key] !== typoDef(t)).length;
   $('#typoChanged').textContent = n ? T('typoChanged', { n }) : '';
