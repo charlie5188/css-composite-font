@@ -337,6 +337,8 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .export-head h2{margin:0 0 4px;font-size:clamp(26px,3vw,36px);font-weight:500;letter-spacing:-.015em;line-height:1.1}
 .ex-fields{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-end;padding-bottom:20px;border-bottom:1px solid var(--line)}
 .field{display:grid;gap:6px}
+/* 字体和适用语言不一致的提示：在导出设置的最后单独占一整行，不撑开「适用语言」那一栏 */
+.ex-warn{flex-basis:100%;margin:0;font-size:12px;line-height:1.55;color:var(--caution);background:var(--caution-bg);padding:7px 10px;border-radius:3px}
 .field label,.field .flabel{font-size:12px;color:var(--muted)}
 .field input{width:210px}
 .chips{display:flex;flex-wrap:wrap;gap:4px}
