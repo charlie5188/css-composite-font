@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=85fd4b1f">
-<script src="assets/js/i18n.js?v=beb1c5b8" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=971dc641">
+<script src="assets/js/i18n.js?v=e04d0e6f" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
 <script src="assets/js/core.js?v=71f2a6f9" defer></script>
@@ -54,7 +54,9 @@
 
   <div class="bench">
     <section class="compose" id="editor" data-ta="aria-label:classes">
-      <!-- 字重：左栏管字体的全部设定（字重决定表格里正在编辑哪一档），右栏只管预览 -->
+      <!-- 左窗格分两节，各有一条吸顶的标题栏：
+           字体一节的标题栏是字重（表格编辑的是这一档）；往下滚到排版一节时，字重栏跟着这一节滚走，换成「排版 · 所有字重通用」 -->
+      <div class="pane-sec">
       <div class="weight-bar">
         <div class="w-row">
         <label class="ctl" id="vWcontLab" for="vWcont" hidden><span data-t="previewWeight"></span><input type="range" id="vWcont" min="100" max="900" step="1"><output id="vWcontOut" for="vWcont"></output></label>
@@ -68,8 +70,9 @@
       <div id="classRows"></div>
       <div class="sec-row sub"><h3 class="label lab-i"><span data-t="custom"></span><button type="button" class="info" data-info="customInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h3><button class="tbtn" id="addCustom" type="button" data-t="add"></button></div>
       <div id="customRows"></div>
+      </div>
       <details class="typo" id="typoBox">
-        <summary><span class="typo-sum"><b data-t="typoTitle"></b></span><span class="typo-changed" id="typoChanged"></span><button type="button" class="tbtn typo-reset" id="typoReset" data-t="typoReset" hidden></button></summary>
+        <summary><span class="typo-sum"><b data-t="typoTitle"></b><span class="typo-scope" data-t="typoScope"></span></span><span class="typo-changed" id="typoChanged"></span><button type="button" class="tbtn typo-reset" id="typoReset" data-t="typoReset" hidden></button></summary>
         <div class="typo-body">
           <div class="hint lab-i"><span id="browserName"></span><button type="button" class="info" data-info="typoInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></div>
           <div id="typoRows"></div>

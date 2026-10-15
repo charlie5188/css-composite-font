@@ -408,16 +408,19 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .match select{font-size:12px}
 
 .typo{border-top:1px solid var(--line);margin:22px calc(0px - var(--px)) 0;padding:0 var(--px);min-width:0}
-.typo>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 0}
+/* 排版一节的标题栏：和字重栏一样高、一样吸顶。滚到这一节时字重栏已经跟着上一节滚走了，看得出这些设定不分字重 */
+.typo>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;min-height:var(--bar-h);margin:0 calc(0px - var(--px));padding:0 var(--px);position:sticky;top:0;z-index:5;background:var(--sheet);border-bottom:1px solid var(--line)}
+.typo:not([open])>summary{border-bottom:0}
+.typo-scope{font-size:12px;font-weight:400;color:var(--muted);padding-left:12px;border-left:1px solid var(--line);line-height:18px}
 .typo>summary::-webkit-details-marker{display:none}
 .typo>summary::before{content:"";flex:none;width:7px;height:7px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);transition:transform .15s}
 .typo[open]>summary::before{transform:rotate(45deg)}
 @media (prefers-reduced-motion:reduce){.typo>summary::before{transition:none}}
-.typo-sum{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 12px;flex:1;min-width:0}
-.typo-sum b{font-size:14px;font-weight:600}
+.typo-sum{display:flex;flex-wrap:wrap;align-items:center;gap:2px 12px;flex:1;min-width:0}
+.typo-sum b{font-size:13px;font-weight:600}
 .typo-changed{font-size:12px;color:var(--accent);white-space:nowrap}
 .typo-reset{font-size:12px;padding:0;white-space:nowrap}
-.typo-body{display:grid;gap:4px;padding:0 0 12px}
+.typo-body{display:grid;gap:4px;padding:10px 0 12px}
 /* 左列较窄：名称和选项并排，浏览器支持另起一行 */
 .typo-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:4px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
 .typo-row .typo-sup{grid-column:1/-1}
