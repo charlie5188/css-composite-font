@@ -188,8 +188,38 @@ function initToolbar() {
     showSample(b.dataset.sample);
     if (customAt(b.dataset.sample)) $('#sample').focus();
   });
-  $('#vSize').addEventListener('input', e => { v().size = +e.target.value; syncToolbar(); renderPreview(); saveState(); });
-  $('#vLh').addEventListener('input', e => { v().lh = +e.target.value; syncToolbar(); renderPreview(); saveState(); });
+  $('#sampleTabs').addEventListener('scroll', tabFade, { passive: true });
+  $('#sampleTabs').addEventListener('wheel', e => {      // 没有触控板时：竖向滚轮也能横向滚页签
+    const t = e.currentTarget;
+    if (t.scrollWidth <= t.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+    t.scrollLeft += e.deltaY; e.preventDefault();
+  }, { passive: false });
+  new ResizeObserver(tabFade).observe($('#sampleTabs'));
+  /* 字号、行高的数字框：输入中途（比如打到一半的「1」）不在范围内就先不管，离开或回车时再收进范围 */
+  const NUM = { size: { el: '#vSize', min: 12, max: 160, dp: 0, px: 0.5 }, lh: { el: '#vLh', min: 1, max: 2.6, dp: 2, px: 0.01 } };
+  const setNum = (k, x) => {
+    const n = NUM[k], r = Math.min(n.max, Math.max(n.min, +(+x).toFixed(n.dp)));
+    if (r === v()[k]) return;
+    v()[k] = r; syncToolbar(); renderPreview(); saveState();
+  };
+  for (const [k, n] of Object.entries(NUM)) {
+    const el = $(n.el);
+    el.addEventListener('input', () => { const x = parseFloat(el.value); if (x >= n.min && x <= n.max) setNum(k, x); });
+    el.addEventListener('change', () => { const x = parseFloat(el.value); if (isFinite(x)) setNum(k, x); el.value = k === 'lh' ? (+v().lh).toFixed(2) : v().size; });
+    el.addEventListener('keydown', e => { if (e.key === 'Enter') el.blur(); });
+  }
+  /* 左右拖动图标调整：字号每 2px 变 1，行高每 1px 变 0.01 */
+  document.querySelectorAll('[data-scrub]').forEach(ic => ic.addEventListener('pointerdown', e => {
+    const k = ic.dataset.scrub, n = NUM[k], x0 = e.clientX, v0 = v()[k];
+    e.preventDefault(); ic.setPointerCapture(e.pointerId); document.body.classList.add('scrubbing');
+    const move = ev => setNum(k, v0 + (ev.clientX - x0) * n.px * (ev.shiftKey ? 10 : 1));
+    const up = ev => {
+      ic.removeEventListener('pointermove', move); ic.removeEventListener('pointerup', up); ic.removeEventListener('pointercancel', up);
+      document.body.classList.remove('scrubbing');
+      if (Math.abs(ev.clientX - x0) < 3) $(n.el).select();      // 没拖动：当成点击，选中框里的数字
+    };
+    ic.addEventListener('pointermove', move); ic.addEventListener('pointerup', up); ic.addEventListener('pointercancel', up);
+  }));
   $('#viewPop').addEventListener('toggle', e => {      // 菜单贴在按钮下方、右对齐
     if (e.newState !== 'open') return;
     const r = $('#viewBtn').getBoundingClientRect(), pop = e.currentTarget;

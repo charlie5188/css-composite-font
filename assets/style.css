@@ -267,16 +267,35 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .sample-box{display:grid;gap:6px}
 textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);border:1px solid var(--ink);border-radius:3px;padding:12px 14px;font-family:var(--ui);font-size:14px;line-height:1.7}
 .sheet{--pad:clamp(22px,4.6vw,68px);--pad-y:clamp(16px,2.2vw,28px);background:var(--sheet);border:1px solid var(--line);padding:var(--pad-y) var(--pad) calc(var(--pad-y) + 6px);min-width:0;display:grid;gap:14px}
-/* 校样的工具条：贴着白纸顶边通栏。上一层是示例页签，下一层左边字号、行高，右边「显示」；长文往下滚时停在窗口顶上 */
+/* 校样的工具条：贴着白纸顶边通栏，一行。左边示例页签（放不下时横向滚动），右边字号、行高、「显示」；长文往下滚时停在窗口顶上 */
 .sheet{border-top-color:var(--ink)}      /* 和左栏字重那条黑线对齐 */
-.sheet-bar{position:sticky;top:0;z-index:5;line-height:1.4;font-family:var(--ui);margin:calc(0px - var(--pad-y)) calc(0px - var(--pad)) 4px;background:var(--sheet);border-bottom:1px solid var(--line)}
-.sheet-bar .sample-tabs{padding:0 12px 0 var(--pad);border-bottom:1px solid var(--line);margin-bottom:0}
-.sheet-bar .sample-tabs button{padding-top:12px;padding-bottom:9px}
-.sheet-bar .sample-tabs .tab-add{padding-top:9px;padding-bottom:7px}
-.bar-ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:8px 24px;padding:8px 12px 8px var(--pad)}
-.bar-ctrl .view-btn{margin-left:auto}
-.bar-ctrl .ctl input[type=range]{width:110px}
-@media (max-width:560px){.sheet-bar .sample-tabs,.bar-ctrl{padding-left:12px}.bar-ctrl{gap:6px 16px}.bar-ctrl .ctl input[type=range]{width:90px}}
+.sheet-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:12px;line-height:1.4;font-family:var(--ui);margin:calc(0px - var(--pad-y)) calc(0px - var(--pad)) 4px;padding:0 10px 0 16px;background:var(--sheet);border-bottom:1px solid var(--line)}
+.sheet-bar .sample-tabs{flex:1 1 auto;align-self:stretch;gap:14px;margin-bottom:-1px}
+.sheet-bar .sample-tabs button{padding-top:13px;padding-bottom:10px}
+.sheet-bar .sample-tabs .tab-add{padding-top:10px;padding-bottom:8px}
+.bar-ctrl{display:flex;align-items:center;gap:4px;flex:none}
+.sample-tabs.fade-l{-webkit-mask-image:linear-gradient(to right,transparent,#000 36px);mask-image:linear-gradient(to right,transparent,#000 36px)}
+/* 「+」总是贴在页签区右端看得见；后面还有页签时，它左边淡出一段盖住被截断的页签 */
+.sheet-bar .sample-tabs .tab-add{position:sticky;right:0;flex:none;background:linear-gradient(var(--sheet),var(--sheet)) top/100% calc(100% - 1px) no-repeat}      /* 底下 1px 留空：不盖住工具条的底线 */
+.sheet-bar .sample-tabs .tab-add::before{content:"";position:absolute;top:0;bottom:1px;right:100%;width:28px;background:linear-gradient(to right,transparent,var(--sheet));pointer-events:none;opacity:0}
+.sheet-bar .sample-tabs.fade-r .tab-add::before{opacity:1}
+.bar-ctrl .view-btn{margin-left:6px}
+/* 紧凑的数字框：图标 + 数字 + 单位；图标可以左右拖动 */
+.num{display:inline-flex;align-items:center;height:30px;padding:0 8px 0 2px;border:1px solid transparent;border-radius:4px;font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap}
+.num:hover{border-color:var(--line)}
+.num:focus-within{border-color:var(--ink)}
+.num-ic{display:grid;place-items:center;width:26px;height:28px;cursor:ew-resize;color:var(--muted);touch-action:none}
+.num-ic svg{width:15px;height:15px}
+.num:hover .num-ic{color:var(--ink)}
+.num input{width:4ch;border:0;padding:0;background:none;font:inherit;color:var(--ink);font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield}
+.num input:focus{outline:none}
+.num #vSize{width:3ch}
+.num input::-webkit-inner-spin-button,.num input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.num .unit{margin-left:2px;color:var(--faint);font-variant-numeric:tabular-nums}
+.num output.unit::before{content:"· ";white-space:pre}
+body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
+/* 窄屏：页签单独一行在上，数字框和「显示」在下 */
+@media (max-width:620px){.sheet-bar{flex-wrap:wrap;padding:0 8px 4px 12px;gap:0 8px}.sheet-bar .sample-tabs{flex-basis:100%;border-bottom:1px solid var(--line);margin:0 -8px 4px -12px;padding:0 8px 0 12px}.bar-ctrl{flex:1}.bar-ctrl .view-btn{margin-left:auto}}
 .sheet>div{min-width:0}
 .proof-text{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:var(--fst,normal);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0}
 /* 行线：每一行的行框（高 = 字号 × 行高）。某一行被撑高时，下面的字就会和线错开 */

@@ -481,6 +481,13 @@ function renderSampleTabs() {
     cs.map((c, i) => `<span class="ctab"><button type="button" role="tab" data-sample="c${i}" aria-selected="${cur === 'c' + i}" aria-controls="sampleBox">${esc(name(i))}</button><button type="button" class="ctab-x" data-act="delcustom" data-i="${i}" aria-label="${esc(T('customDel'))}" title="${esc(T('customDel'))}">×</button></span>`).join('') +
     `<button type="button" class="tab-add" data-act="addcustom" aria-label="${esc(T('customAdd'))}" title="${esc(T('customAdd'))}">+</button>`;
   $('#sampleBox').hidden = !/^c\d+$/.test(cur);      // 只有自定义页签可以编辑
+  tabFade();
+}
+/* 页签放不下时横向滚动：还有没露出来的一侧淡出，提示可以滚 */
+function tabFade() {
+  const t = $('#sampleTabs'), max = t.scrollWidth - t.clientWidth;
+  t.classList.toggle('fade-l', t.scrollLeft > 2);
+  t.classList.toggle('fade-r', t.scrollLeft < max - 2);
 }
 function renderLangOptions() {
   $('#exLang').innerHTML = `<option value="">${esc(T('anyLang'))}</option>` + TYPO.find(t => t.key === 'lang').values.map(([v, d]) => `<option value="${v}">${esc(tr(d))}</option>`).join('');
@@ -488,8 +495,9 @@ function renderLangOptions() {
 function syncToolbar() {
   const v = state.view;
   renderSampleTabs();
-  $('#vSize').value = v.size; $('#vSizeOut').textContent = `${v.size}px`;
-  $('#vLh').value = v.lh; $('#vLhOut').textContent = `${(+v.lh).toFixed(2)} · ${+(v.size * v.lh).toFixed(1)}px`;      // 倍数和实际的行距
+  if (document.activeElement !== $('#vSize')) $('#vSize').value = v.size;      // 正在输入时不改写框里的字
+  if (document.activeElement !== $('#vLh')) $('#vLh').value = (+v.lh).toFixed(2);
+  $('#vLhOut').textContent = `${+(v.size * v.lh).toFixed(1)}px`;      // 倍数在框里，实际的行距跟在后面
   $('#vVertical').setAttribute('aria-pressed', v.vertical);
   $('#vColor').setAttribute('aria-pressed', v.colorize);
   $('#vCompare').setAttribute('aria-pressed', v.compare);
