@@ -143,12 +143,21 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 @media (max-width:1000px){.compose{position:static;max-height:none;overflow:visible}}
 .compose .sec-row{border-top:1px solid var(--ink);padding-top:14px;margin-bottom:0}
 /* 字符类别旁的魔法棒：一键调整大小和基线 */
-.tbtn.wand{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink)}
+.tbtn.wand{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink);text-decoration:none}
+.tbtn.wand .wand-lab{text-decoration:underline;text-decoration-color:var(--faint);text-underline-offset:4px}
+.tbtn.wand:hover .wand-lab{text-decoration-color:currentColor}
 .tbtn.wand svg{width:15px;height:15px;flex:none}
-.tbtn.wand[aria-busy="true"]{color:var(--muted)}
-.tbtn.wand[aria-busy="true"] svg{animation:wand 1s ease-in-out infinite}
-@keyframes wand{50%{transform:rotate(-14deg)}}
-@media (prefers-reduced-motion:reduce){.tbtn.wand[aria-busy="true"] svg{animation:none}}
+.tbtn.wand:disabled{opacity:1;cursor:progress}
+/* 调整中：魔法棒换成转圈，文字显示进度；完成后短暂显示绿色对勾 */
+.tbtn.wand .spin,.tbtn.wand .ok-mark{display:none}
+.tbtn.wand[aria-busy="true"]{color:var(--accent)}
+.tbtn.wand[aria-busy="true"] svg,.tbtn.wand.done svg{display:none}
+.tbtn.wand[aria-busy="true"] .spin{display:inline-block;width:13px;height:13px;border:2px solid color-mix(in srgb,currentColor 25%,transparent);border-top-color:currentColor;border-radius:50%;animation:wandspin .8s linear infinite;flex:none}
+.tbtn.wand.done{color:var(--ok)}
+.tbtn.wand.done .ok-mark{display:inline-block;width:15px;text-align:center;font-weight:700}
+.tbtn.wand .wand-lab{font-variant-numeric:tabular-nums}
+@keyframes wandspin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.tbtn.wand[aria-busy="true"] .spin{animation-duration:2.4s}}
 .compose .sec-row.sub{border-top:0;margin-top:22px;padding-top:0;margin-bottom:6px}
 .wb-act{display:flex;gap:14px;flex-wrap:wrap}
 .wbanner{margin:10px 0 4px;padding:10px 12px;border-radius:3px;background:var(--sheet);border:1px solid var(--accent);font-size:12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}

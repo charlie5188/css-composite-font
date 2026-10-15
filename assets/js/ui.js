@@ -432,18 +432,20 @@ function idealScale() {
    2. 基线：调好大小后，按 400（没导出 400 时按当前字重）量大写字母的中线和汉字字面中线的差。
       差在 2% em 以内看不出来，基线保持 0——不为了看不出的差别让导出多一段 JS */
 const SHIFT_MIN = 2;
-let autoBusy = false;
+let autoBusy = false, autoDoneTimer = 0;
 async function autoAdjust() {
   if (autoBusy) return;
   const cont = state.wmode === 'cont', list = cont ? WEIGHTS.filter(W => stepSpan(W)) : [...state.weights];
   const W0 = state.view.weight, C0 = state.view.wcont, sizes = {};
   const at = async W => { state.view.weight = W; if (cont) state.view.wcont = W; await rebuildNow(); };      // 载入这个字重的字体并重画参考图
-  const btn = $('#autoAdj');
-  autoBusy = true; btn.disabled = true; btn.setAttribute('aria-busy', 'true');
+  const btn = $('#autoAdj'), lab = btn.querySelector('.wand-lab'), n = list.length + 1;      // 每个字重量一次，最后再量一次基线
+  const step = i => { lab.textContent = T('autoAdjProgress', { i, n }); };
+  clearTimeout(autoDoneTimer); btn.classList.remove('done');
+  autoBusy = true; btn.disabled = true; btn.setAttribute('aria-busy', 'true'); step(0);
   let shift = null, mid = null;
   try {
-    for (const W of list) {
-      setBusy(T('measuringW', { w: W }));
+    for (const [i, W] of list.entries()) {
+      setBusy(T('measuringW', { w: W })); step(i);
       await at(W);
       const k = idealScale();
       if (k) sizes[W] = Math.min(200, Math.max(50, round(resolveCls('latin', W, true).size * k)));
@@ -453,7 +455,7 @@ async function autoAdjust() {
       const base = sizes[BASE_W] ?? sizes[ws[0]];
       setSizeAt('latin', BASE_W, base);
       for (const W of list) if (W !== BASE_W) setSizeAt('latin', W, sizes[W] != null && Math.abs(sizes[W] - base) >= 0.5 ? sizes[W] : null);
-      refreshCustomRanges();
+      refreshCustomRanges(); step(list.length);
       await at(list.includes(BASE_W) ? BASE_W : W0);
       if (lastMeasure) {
         const cur = resolveCls('latin').shift;
@@ -466,6 +468,9 @@ async function autoAdjust() {
   } finally {
     state.view.weight = W0; state.view.wcont = C0; autoBusy = false; btn.disabled = false; btn.removeAttribute('aria-busy'); setBusy('');
   }
+  /* 完成：按钮上短暂显示「✓ 已调整」，再换回原来的文字 */
+  lab.textContent = T('autoAdjDone'); btn.classList.add('done');
+  autoDoneTimer = setTimeout(() => { btn.classList.remove('done'); lab.textContent = T('autoAdj'); }, 1800);
   syncToolbar(); changed({ fonts: true });
   const vals = Object.values(sizes);
   if (!vals.length) return toast(T('tNotReady'));
