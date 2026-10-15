@@ -430,10 +430,6 @@ const TYPO = [
   { key: 'eaWidth', label: { zh: '假名与标点宽度', ja: 'かなと約物の幅', tw: '假名與標點寬度' }, prop: 'font-variant-east-asian', def: 'normal', tiles: 'イリ「ア」ﾃｽ', tileW: 150, tileFs: 18,
     sup: { chrome: '63', firefox: '34', safari: '9.1' },
     values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設' }], ['proportional-width', { zh: '比例宽', ja: 'プロポーショナル', tw: '比例寬' }, { zh: '按字形本身的宽度', ja: '字形そのものの幅', tw: '按字形本身的寬度' }], ['full-width', { zh: '全角', ja: '全角', tw: '全形' }, { zh: '半角假名也变全角', ja: '半角カナも全角に', tw: '半形假名也變全形' }]] },
-  { key: 'emoji', label: { zh: 'emoji 显示', ja: '絵文字の表示', tw: 'emoji 顯示' }, prop: 'font-variant-emoji', def: 'normal', tiles: '☺✔❤⌚', tileW: 108,
-    sup: { chrome: '131', firefox: '141', safari: '—' },
-    values: [['normal', { zh: '默认', ja: '既定', tw: '預設' }], ['text', { zh: '文字', ja: 'テキスト', tw: '文字' }, { zh: '单色，跟随字体', ja: '単色・フォントに従う', tw: '單色，跟隨字型' }], ['emoji', { zh: '彩色 emoji', ja: 'カラー絵文字', tw: '彩色 emoji' }], ['unicode', { zh: '按 Unicode 默认', ja: 'Unicode の既定', tw: '按 Unicode 預設' }]],
-    note: { zh: '☺ ✔ ❤ 这类符号既可以显示成普通文字，也可以显示成彩色 emoji。「文字」用合成字体里的字形（单色，大小和笔画跟正文一致）；「彩色 emoji」用系统的 emoji 字体；「按 Unicode 默认」按每个字符的 Unicode 默认显示方式。字符后面带有变体选择符（U+FE0E / U+FE0F）时以它为准。Safari 还不支持，会照常显示。', ja: '☺ ✔ ❤ のような記号は、ふつうの文字としても、カラー絵文字としても表示できます。「テキスト」は合成フォントの字形（単色で、本文と大きさや線がそろう）、「カラー絵文字」はシステムの絵文字フォント、「Unicode の既定」は文字ごとの Unicode の既定の表示方法を使います。文字の後ろに異体字セレクタ（U+FE0E / U+FE0F）があればそちらが優先されます。Safari は未対応で、通常どおり表示されます。', tw: '☺ ✔ ❤ 這類符號既可以顯示成一般文字，也可以顯示成彩色 emoji。「文字」用複合字型裡的字形（單色，大小和筆畫跟內文一致）；「彩色 emoji」用系統的 emoji 字型；「按 Unicode 預設」按每個字元的 Unicode 預設顯示方式。字元後面帶有變體選擇符（U+FE0E / U+FE0F）時以它為準。Safari 還不支援，會照常顯示。' } },
 ];
 /* 几行合成一条 CSS 属性：数字样式 + 斜线零 → font-variant-numeric；字形标准 + 宽度 → font-variant-east-asian */
 const TYPO_MERGE = { 'font-variant-numeric': ['num', 'zero'], 'font-variant-east-asian': ['eaVar', 'eaWidth'] };
@@ -541,6 +537,7 @@ function normalizeState() {
   if (state.typo?.lang === 'zh-Hant') state.typo.lang = 'zh-Hant-TW';       // 「繁體中文」拆成台湾、香港
   if (state.scope === 'zh-Hant') state.scope = 'zh-Hant-TW';
   if (state.typo) delete state.typo.tcy;                                   // 纵中横已删除
+  if (state.typo) delete state.typo.emoji;                                 // emoji 显示已删除
   state.typo = { ...typoDefaults(state.typo?.lang), ...(state.typo || {}) };
   if (state.v === 3) {      // v4 起正文默认：text-wrap: pretty；日文 line-break: strict。仍是旧默认值的改成新默认值
     if (state.typo.wrap === 'wrap') state.typo.wrap = 'pretty';
