@@ -445,6 +445,8 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* 真的排一段：窄框（4 个字宽），左边一条线是版心边缘，看行首有没有缩进 */
 .tt-box{display:block;width:4em;font-size:19px;line-height:1.35;white-space:normal;text-align:start;overflow:visible;padding-left:0;box-shadow:-1px 0 0 var(--accent);min-height:2.7em}
 .tt-box[lang="ja"]{width:5em}
+/* 禁则：4 字宽、3 行，标点和间距固定（不跟着别的设置变），只看在哪里断行 */
+.tt-box.tt-lb{width:4em;min-height:4.05em;text-spacing-trim:space-all;text-autospace:no-autospace;font-feature-settings:normal}
 .typo-note{grid-column:1/-1;margin:2px 0 0;font-size:12px;line-height:1.55;color:var(--muted)}
 .typo-note.warn{color:var(--caution);background:var(--caution-bg);padding:6px 10px;border-radius:3px}
 .typo-name{display:grid;line-height:1.35}

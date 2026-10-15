@@ -389,7 +389,7 @@ const TILE_SVG = {
 TILE_SVG.justify = { auto: tJust([3, 4, 4, 3]), 'inter-character': tJust([3, 4, 4, 3]), 'inter-word': tJust([1, 6, 6, 1]), none: tJust([1, 2, 2, 1]) };
 const tSvgTile = key => v => `<span class="tt-s tt-pic" aria-hidden="true">${tSvg(TILE_SVG[key][v])}</span>`;
 /* 换行、标点挤压：用当前的合成字体，在窄框里真的排一段，左边的线是版心边缘 */
-const tBox = (prop, text, lang) => v => `<span class="tt-s tt-box"${lang ? ` lang="${lang}"` : ''} style="${prop}:${v}" aria-hidden="true">${text}</span>`;
+const tBox = (prop, text, lang, cls = '') => v => `<span class="tt-s tt-box${cls}"${lang ? ` lang="${lang}"` : ''} style="${prop}:${v}" aria-hidden="true">${text}</span>`;
 const TYPO = [
   { key: 'lang', label: { zh: '语言', ja: '言語', tw: '語言' }, prop: 'lang', attr: true, def: 'zh-Hans',
     values: [['zh-Hans', { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文' }], ['zh-Hant-TW', { zh: '繁體中文（台灣）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）' }], ['zh-Hant-HK', { zh: '繁體中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）' }], ['ja', { zh: '日本語', ja: '日本語', tw: '日本語' }], ['ko', { zh: '한국어', ja: '韓国語', tw: '한국어' }], ['en', { zh: 'English', ja: '英語', tw: 'English' }]],
@@ -406,9 +406,9 @@ const TYPO = [
     sup: { chrome: '119', firefox: '—', safari: '—' },
     values: [['normal', { zh: '逐字', ja: '1 文字ずつ', tw: '逐字' }], ['auto-phrase', { zh: '按词组', ja: '文節単位', tw: '按詞組' }]],
     note: { zh: 'auto-phrase 只对 lang="ja" 和 lang="ko" 生效，适合标题和短文。', ja: 'auto-phrase は lang="ja" と lang="ko" でのみ有効で、見出しや短い文に向いています。', tw: 'auto-phrase 只對 lang="ja" 和 lang="ko" 生效，適合標題和短文。' } },
-  { key: 'lineBreak', label: { zh: '禁则', ja: '禁則', tw: '禁則' }, prop: 'line-break', def: 'strict', init: 'auto',
+  { key: 'lineBreak', label: { zh: '禁则', ja: '禁則', tw: '禁則' }, prop: 'line-break', def: 'strict', init: 'auto', tiles: true, tileHtml: tBox('line-break', 'まあ時々、ちょっと', 'ja', ' tt-lb'), tileW: 88, tileCode: true,      /* 这句在 4 字宽里，5 个值各断在不同的地方（auto 在 Chrome 里和 normal 一样） */
     sup: { chrome: '58', firefox: '69', safari: '11' },
-    values: [['auto', null], ['loose', { zh: '宽松', ja: 'ゆるい', tw: '寬鬆' }], ['normal', null], ['strict', { zh: '严格', ja: '厳しい', tw: '嚴格' }], ['anywhere', { zh: '任意处断行', ja: 'どこでも改行', tw: '任意處斷行' }]],
+    values: [['auto', { zh: '由浏览器决定', ja: 'ブラウザに任せる', tw: '由瀏覽器決定' }], ['loose', { zh: '宽松', ja: 'ゆるい', tw: '寬鬆' }], ['normal', { zh: '标准', ja: '標準', tw: '標準' }], ['strict', { zh: '严格', ja: '厳しい', tw: '嚴格' }], ['anywhere', { zh: '任意处断行', ja: 'どこでも改行', tw: '任意處斷行' }]],
     note: { zh: '哪些字不能放在行首或行尾，例如句号、逗号不放在行首。auto 由浏览器按语言决定；strict 更严格，小写假名（っ、ゃ）和长音「ー」也不放行首，日文正文常用；loose 更宽松，适合窄栏；anywhere 在任何地方都可以断行。', ja: '行頭・行末に置けない文字の規則です（句読点を行頭に置かないなど）。auto はブラウザが言語に応じて決めます。strict はより厳しく、小書きのかな（っ・ゃ）や長音記号「ー」も行頭に置きません（日本語の本文でよく使います）。loose はゆるく、狭い段組み向けです。anywhere はどこでも改行します。', tw: '哪些字不能放在行首或行尾，例如句號、逗號不放在行首。auto 由瀏覽器按語言決定；strict 更嚴格，小寫假名（っ、ゃ）和長音「ー」也不放行首，日文內文常用；loose 更寬鬆，適合窄欄；anywhere 在任何地方都可以斷行。' } },
   { key: 'wrap', label: { zh: '段落换行', ja: '段落の折り返し', tw: '段落換行' }, prop: 'text-wrap', def: 'pretty', init: 'wrap', tiles: true, tileHtml: tSvgTile('wrap'), tileW: 96, tileCode: true,
     sup: { chrome: 'balance 114 · pretty 117', firefox: 'balance 121', safari: 'balance 17.5 · pretty 26' },
