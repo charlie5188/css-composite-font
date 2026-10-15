@@ -499,7 +499,7 @@ function syncToolbar() {
   $('#exWeightsField').hidden = cont;
   $('#exGeneric').value = state.generic;
   $('#exItalic').value = state.italic ? '1' : '0';
-  $('#exLm').value = state.lineMetrics;
+  const lm = $('#exLm'); if (lm) lm.value = state.lineMetrics;
   $('#exLang').value = state.scope;
 }
 

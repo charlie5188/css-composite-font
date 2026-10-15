@@ -219,6 +219,7 @@ function initToolbar() {
     renderTypoStatus(); renderPreview(); renderExport(); saveState();
   });
   $('#typoRows').addEventListener('change', e => {
+    if (e.target.id === 'exLm') { state.lineMetrics = e.target.value; renderTypoStatus(); rebuild(); renderExport(); saveState(); return; }
     const t = TYPO.find(x => 'ty-' + x.key === e.target.id); if (!t) return;
     state.typo[t.key] = e.target.value;
     renderTypoStatus(); renderPreview(); renderExport(); saveState();
@@ -263,7 +264,6 @@ function initToolbar() {
   for (const id of ['exWLo', 'exWHi']) $('#' + id).addEventListener('change', () => setWRange(parseFloat($('#exWLo').value), parseFloat($('#exWHi').value)));
   $('#exBase').addEventListener('change', e => { state.baseMode = e.target.value; renderExport(); saveState(); });
   /* 斜体：导出时另写一组 font-style: italic 的规则；校样的「斜体」开关用来看效果 */
-  $('#exLm').addEventListener('change', e => { state.lineMetrics = e.target.value; rebuild(); renderExport(); saveState(); });
   $('#exItalic').addEventListener('change', e => { state.italic = e.target.value === '1'; renderEditor(); rebuild(); renderExport(); saveState(); });
   $('#exGeneric').addEventListener('change', e => { state.generic = e.target.value; renderPreview(); renderExport(); saveState(); });
   /* 选了语言时校样也按这个语言排（字形地区差异、禁则），不限语言时校样沿用示例文字的语言 */
@@ -317,14 +317,26 @@ function renderTypoRows() {
       ${ctl}
       <div class="typo-sup" data-key="${t.key}">${sup}</div>${t.hint ? `<p class="typo-note" id="${t.hint}" hidden></p>` : ''}
     </div>`;
-  }).join('');
+  }).join('') + lmRow();
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }
+  $('#exLm').value = state.lineMetrics;
   renderTypoStatus();
+}
+/* 行高度量：写在 @font-face 的 ascent-override 等描述符里，几乎都用推荐值，所以放在高级排版属性的最后 */
+const LM_SUP = { chrome: '87', firefox: '89', safari: '—' };
+function lmRow() {
+  const ok = typeof FontFace !== 'undefined' && 'ascentOverride' in FontFace.prototype;
+  const sup = ['chrome', 'firefox', 'safari'].map(b => `<span class="${b === ENGINE.id ? `cur ${ok ? 'ok' : 'no'}` : ''}"${b === ENGINE.id ? ` title="${esc(T(ok ? 'supOk' : 'supNo'))}"` : ''}>${{ chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' }[b]} ${LM_SUP[b]}</span>`).join('');
+  return `<div class="typo-row">
+      <span class="typo-name"><label for="exLm"><b>${esc(T('exLm'))}</b></label><span class="lab-i"><code>ascent-override</code><button type="button" class="info" data-info="lmInfo" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}">i</button></span></span>
+      <select id="exLm"><option value="han">${esc(T('exLmHan'))}</option><option value="off">${esc(T('exLmOff'))}</option></select>
+      <div class="typo-sup">${sup}</div>
+    </div>`;
 }
 function renderTypoStatus() {
   document.querySelectorAll('#typoRows [data-typo]').forEach(b => b.setAttribute('aria-checked', state.typo[b.dataset.typo] === b.dataset.v));
   renderNumHint(); renderEaMarks();
-  const n = TYPO.filter(t => !t.attr && state.typo[t.key] !== typoDef(t)).length;
+  const n = TYPO.filter(t => !t.attr && state.typo[t.key] !== typoDef(t)).length + (state.lineMetrics === 'off' ? 1 : 0);
   $('#typoChanged').textContent = n ? T('typoChanged', { n }) : '';
   $('#typoReset').hidden = !n;
   for (const t of TYPO) {
@@ -919,6 +931,8 @@ function initReset() {
   $('#typoReset').addEventListener('click', e => {
     e.preventDefault();      // 按钮在 summary 里，别让它顺便折叠面板
     for (const t of TYPO) if (!t.attr) state.typo[t.key] = typoDef(t);
+    const lmWas = state.lineMetrics; state.lineMetrics = 'han';
+    if (lmWas !== 'han') rebuild();
     renderTypoRows(); renderPreview(); renderExport(); saveState();
   });
   let armedT = null;
