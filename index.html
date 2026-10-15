@@ -8,8 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=bbf2c656">
-<script src="assets/js/i18n.js?v=f0d7b842" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=325d2ac3">
+<script src="assets/js/i18n.js?v=bfb824f7" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
 <script src="assets/js/core.js?v=f02a6d7d" defer></script>
@@ -71,8 +71,9 @@
       <div class="sec-row wand-row"><span class="lab-i"><span class="seg" id="vWMode" role="radiogroup" data-ta="aria-label:exWMode"><button type="button" role="radio" data-m="steps" data-t="wmStepsShort" data-ta="title:wmStepsTip"></button><button type="button" role="radio" data-m="cont" data-t="wmContShort" data-ta="title:wmContTip"></button></span><button type="button" class="info" data-info="wmodeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><button type="button" class="tbtn wand" id="autoAdj" data-ta="title:autoAdjTip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.2 13.8 9.6 6.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8.7 5.5l1.8 1.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12.2 1.4v2.4M11 2.6h2.4M14.4 6v1.8M13.5 6.9h1.8M6.6 1.6v1.6M5.8 2.4h1.6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg><span class="spin" aria-hidden="true"></span><span class="ok-mark" aria-hidden="true">✓</span><span class="wand-lab" data-t="autoAdj"></span></button></div>
       <div class="wbanner" id="wBanner" hidden></div>
       <div id="classRows"></div>
-      <div class="sec-row sub"><h3 class="label lab-i"><span data-t="custom"></span><button type="button" class="info" data-info="customInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h3><button class="tbtn" id="addCustom" type="button" data-t="add"></button></div>
       <div id="customRows"></div>
+      <!-- 表格最后一行：添加例外字符（例外字符一行行接在类别后面，所以不另设标题） -->
+      <div class="ct-add-row"><button type="button" class="ct-add" id="addCustom"><span class="plus" aria-hidden="true">+</span><span data-t="addCustomRow"></span></button><button type="button" class="info" data-info="customInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></div>
       <!-- 字体特性：选哪个字形（OpenType 特性）和行高度量，属于字体，但不分字重 -->
       <div class="sec-row sub feat-head"><h3 class="label lab-i"><span data-t="featTitle"></span></h3><span class="feat-scope" data-t="featScope"></span><span class="typo-changed" id="featChanged"></span><button type="button" class="tbtn typo-reset" id="featReset" data-t="typoReset" hidden></button></div>
       <div class="typo-body" id="featRows"></div>

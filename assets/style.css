@@ -243,6 +243,11 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .info-pop dl+p{margin-top:10px}
 .info-pop code,.info-pop .mono{font-family:var(--mono);font-size:.92em}
 .empty{padding:2px 0 10px;font-size:12px;color:var(--muted);line-height:1.6}
+/* 表格最后一行「+ 添加例外字符」：整行都能点，加号对齐字样那一列 */
+.ct-add-row{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--rule)}
+.ct-add{flex:1;display:flex;align-items:center;gap:8px;min-height:44px;padding:0;border:0;background:none;font-size:13px;color:var(--muted);text-align:left}
+.ct-add .plus{width:28px;text-align:center;font-size:20px;line-height:1;font-weight:300}
+.ct-add:hover{color:var(--ink)}
 @media (max-width:440px){.ct-row{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 50px 50px 14px}.ct-glyph{display:none}.ct-row .chars{grid-column:1/2}.ct-row .ct-ax{grid-column:2/3}}
 
 /* ---------- tester ---------- */
