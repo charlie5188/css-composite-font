@@ -8,12 +8,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=683edf9e">
+<link rel="stylesheet" href="assets/style.css?v=b8f678de">
 <script src="assets/js/i18n.js?v=17d96e6b" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
 <script src="assets/js/core.js?v=a5cc8204" defer></script>
-<script src="assets/js/render.js?v=7abccf0d" defer></script>
+<script src="assets/js/render.js?v=c8cf50c6" defer></script>
 <script src="assets/js/export.js?v=1b1135a4" defer></script>
 <script src="assets/js/ui.js?v=8abda924" defer></script>
 </head>
@@ -69,12 +69,8 @@
     </section>
 
     <section class="tester" data-ta="aria-label:proof">
-      <div class="tester-head">
-        <div class="sample-tabs" id="sampleTabs" role="tablist" data-ta="aria-label:sample"></div>
-      </div>
-      <div class="tester-ctrl">
-        <label class="ctl" for="vSize"><span data-t="fontSize"></span><input type="range" id="vSize" min="12" max="160" step="1"><output id="vSizeOut" for="vSize"></output></label>
-        <label class="ctl" for="vLh"><span data-t="lineHeight"></span><input type="range" id="vLh" min="1" max="2.6" step="0.05"><output id="vLhOut" for="vLh"></output></label>
+      <!-- 字重同时影响下面的校样和度量参考图（以及字符类别里正在编辑的字重），所以放在最上面 -->
+      <div class="weight-bar">
         <div class="w-row">
         <label class="ctl" id="vWcontLab" for="vWcont" hidden><span data-t="previewWeight"></span><input type="range" id="vWcont" min="100" max="900" step="1"><output id="vWcontOut" for="vWcont"></output></label>
         <span class="ctl" id="vWeightLab" hidden><span data-t="previewWeight"></span><span class="seg mono" id="vWeight" role="radiogroup" data-ta="aria-label:previewWeight"></span></span>
@@ -82,6 +78,13 @@
         </div>
         <span class="busy" id="busy" aria-live="polite"></span>
         <div class="wmode-note" id="vWNote" hidden></div>
+      </div>
+      <div class="tester-head">
+        <div class="sample-tabs" id="sampleTabs" role="tablist" data-ta="aria-label:sample"></div>
+      </div>
+      <div class="tester-ctrl">
+        <label class="ctl" for="vSize"><span data-t="fontSize"></span><input type="range" id="vSize" min="12" max="160" step="1"><output id="vSizeOut" for="vSize"></output></label>
+        <label class="ctl" for="vLh"><span data-t="lineHeight"></span><input type="range" id="vLh" min="1" max="2.6" step="0.05"><output id="vLhOut" for="vLh"></output></label>
       </div>
       <div class="sample-box" id="sampleBox" hidden>
         <label class="hint" for="sample" data-t="sampleText"></label>

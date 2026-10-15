@@ -508,6 +508,8 @@ function syncToolbar() {
   $('#vWeight').innerHTML = state.weights.map(w => `<button type="button" role="radio" data-w="${w}" aria-checked="${w === state.view.weight}" title="${esc(wTip(w))}"${wTag(w) ? ' class="wl"' : ''}>${w}${wTag(w)}</button>`).join('');
   const cont = state.wmode === 'cont';
   $('#vWeightLab').hidden = cont || state.weights.length < 2;
+  { const c = $('#vWeight'), sel = c.querySelector('[aria-checked="true"]');      // 放不下时，把选中的字重滚到看得见的地方
+    if (sel && c.scrollWidth > c.clientWidth) { const cr = c.getBoundingClientRect(), r = sel.getBoundingClientRect(); c.scrollLeft += (r.left + r.width / 2) - (cr.left + cr.width / 2); } }
   $('#vWcontLab').hidden = !cont;
   $('#vWcont').min = state.wrange[0]; $('#vWcont').max = state.wrange[1];       // 滑块只走导出的范围
   $('#vWcont').value = v.wcont; $('#vWcontOut').textContent = v.wcont;

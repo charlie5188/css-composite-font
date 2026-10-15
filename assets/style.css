@@ -237,7 +237,8 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 
 /* ---------- tester ---------- */
 .tester{min-width:0}
-.tester-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;border-top:1px solid var(--ink);border-bottom:1px solid var(--line)}
+.weight-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 28px;padding:12px 0;border-top:1px solid var(--ink);position:relative}
+.tester-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 /* 页签的下划线要压在分隔线上：整排往下挪 1px，而不是让按钮超出容器（那样会出现 1px 的垂直滚动） */
 .sample-tabs{display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;min-width:0;margin-bottom:-1px}
 .sample-tabs::-webkit-scrollbar{display:none}
