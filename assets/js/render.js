@@ -170,6 +170,20 @@ function renderEditor() {
     </div>`).join('')
     : '';
 }
+/* 直排 + 中西间距：Chrome 在元素边界上加 1/8 em 时，会把边界后面的字画到前面去（叠字）。
+   所以直排时 span 自己不加间距，边界上该加的 1/8 em 改用 margin 补上（汉字假名和字母数字之间才加） */
+const IDEO_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Bopomofo}]/u, ALNUM_RE = /[\p{L}\p{N}]/u;
+function vAutospace(pt) {
+  const kind = ch => !ch ? 0 : IDEO_RE.test(ch) ? 1 : ALNUM_RE.test(ch) ? 2 : 0;
+  const gap = (a, b) => !!(kind(a) && kind(b) && kind(a) !== kind(b));
+  const nodes = [...pt.childNodes], first = n => [...(n?.textContent || '')][0], last = n => [...(n?.textContent || '')].pop();
+  nodes.forEach((n, i) => {
+    if (n.nodeType !== 1) return;
+    n.style.textAutospace = 'no-autospace';
+    n.style.marginInlineStart = nodes[i - 1]?.nodeType === 3 && gap(last(nodes[i - 1]), first(n)) ? '.125em' : '';      // 前面是 span 时由它的 margin-inline-end 负责，不重复加
+    n.style.marginInlineEnd = gap(last(n), first(nodes[i + 1])) ? '.125em' : '';
+  });
+}
 /* 齿轮弹出的分组开关：打开 = 留在本类别，关闭 = 改由半角西文显示 */
 function renderGroups() {
   const pop = $('#grpPop'), id = pop.dataset.cls; if (!id || !GROUPS[id]) return;
@@ -339,6 +353,7 @@ function renderPreview() {
     flush();
     if (plain) frag.append(plain);
     pt.replaceChildren(frag);
+    if (v.vertical && state.typo.autospace !== 'no-autospace') vAutospace(pt);
   }
   paintClasses(pt, hl);
   checkMissSoon();
