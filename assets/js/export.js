@@ -34,10 +34,11 @@ function exportGroups() {
 }
 function buildCss() {
   const plan = buildPlan(), groups = exportGroups(), cont = state.wmode === 'cont';
+  if (lmOn()) for (const g of groups) { const f = g.plan[0].font; if (f && !LM.has(lmKey(f))) ensureLineMetrics(f).then(() => renderExportSoon()); }      // 还没测过的汉字字体：测完再刷新
   const fam = cssFamilyName(), generic = state.generic !== 'auto' ? state.generic : guessGeneric();
   const linkBase = state.baseMode === 'link' && groups.every(g => canLinkBase(g.plan));
   const out = [T(linkBase ? 'cssHLink' : 'cssH', { fam })];
-  let stack = `"${fam}"`, count = 0, usedFvs = false, usedAxes = false;
+  let stack = `"${fam}"`, count = 0, usedFvs = false, usedAxes = false, usedLm = false;
   const notes = [];
   if (linkBase) {     // 汉字基础字体直接引用 Google 的 CSS，不复制它的分片规则
     const bf = plan[0].font, axis = cont ? vfAxisNow(bf) : null, [a, b] = state.wrange;
@@ -74,6 +75,8 @@ function buildCss() {
       const fvs = fvsOf(x.p, W, g.cont);
       if (fvs) { out.push(`  font-variation-settings: ${fvs};`); if (fvs.includes('"wght"')) usedFvs = true; else usedAxes = true; }
       if (x.p.size !== 100) out.push(`  size-adjust: ${x.p.size}%;`);
+      const ov = x.p !== pl[0] && overridesFor(x.p, g.plan[0]);
+      if (ov) { out.push(`  ascent-override: ${ov.ascent};`, `  descent-override: ${ov.descent};`, `  line-gap-override: ${ov.lineGap};`); usedLm = true; }
       if (x.range) out.push(`  unicode-range: ${wrapRanges(x.range, '    ')};`);
       out.push('}');
     }
@@ -83,13 +86,14 @@ function buildCss() {
     emit(g, g.plan, 'normal');
     if (g.iplan) { out.push('', T('cssItalicHead')); emit(g, g.iplan, 'italic'); }
   }
+  if (usedLm) out.splice(1, 0, T('cssLm'));
   if (usedFvs || usedAxes) out.splice(1, 0, T(usedFvs ? 'cssFvs' : 'cssFvsAx'));
   if (state.italic) out.splice(1, 0, T('cssItalic'));
   if (cont) out.splice(1, 0, T('cssCont', { a: state.wrange[0], b: state.wrange[1] }));
   const extra = [];
   for (const t of TYPO) {
-    if (t.key === 'zero') continue;      // 和数字样式合成一条 font-variant-numeric
-    const val = t.key === 'num' ? numValue() : state.typo[t.key];
+    if (typoMergedAway(t)) continue;      // 几行合成一条：数字样式 + 斜线零、字形标准 + 宽度
+    const val = typoValue(t);
     if (t.attr || !val || (!t.always && val === (t.init ?? t.def))) continue;
     const sup = t.sup ? `Chrome ${t.sup.chrome} · Firefox ${t.sup.firefox} · Safari ${t.sup.safari}` : '';
     extra.push([`  ${t.prop}: ${val};`, `/* ${tr(t.label)}${sup ? ' · ' + sup : ''} */`]);

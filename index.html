@@ -8,14 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=d3d97011">
-<script src="assets/js/i18n.js?v=015fb3fc" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=64e1d655">
+<script src="assets/js/i18n.js?v=ffe5e621" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
-<script src="assets/js/core.js?v=9fe14913" defer></script>
-<script src="assets/js/render.js?v=ba30de7f" defer></script>
-<script src="assets/js/export.js?v=f162419f" defer></script>
-<script src="assets/js/ui.js?v=a444f12a" defer></script>
+<script src="assets/js/core.js?v=46dc6b98" defer></script>
+<script src="assets/js/render.js?v=b3011cad" defer></script>
+<script src="assets/js/export.js?v=1b1135a4" defer></script>
+<script src="assets/js/ui.js?v=5ea25484" defer></script>
 </head>
 <body>
 <div class="app">
@@ -159,6 +159,7 @@
       <div class="field"><span class="lab-i"><label for="exGeneric" data-t="exGeneric"></label><button type="button" class="info" data-info="genericInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exGeneric"><option value="auto" data-t="auto"></option><option value="serif">serif</option><option value="sans-serif">sans-serif</option></select></div>
       <div class="field"><span class="lab-i"><label for="exLang" data-t="exLang"></label><button type="button" class="info" data-info="scopeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exLang"></select></div>
       <p class="ex-warn" id="exLangWarn" hidden></p>
+      <div class="field"><span class="lab-i"><label for="exLm" data-t="exLm"></label><button type="button" class="info" data-info="lmInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exLm"><option value="han" data-t="exLmHan"></option><option value="off" data-t="exLmOff"></option></select></div>
       <div class="field"><span class="lab-i"><label for="exItalic" data-t="exItalic"></label><button type="button" class="info" data-info="italicInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exItalic"><option value="1" data-t="exItalicOn"></option><option value="0" data-t="exItalicOff"></option></select></div>
     </div>
     </div>
@@ -196,6 +197,7 @@
         <h3>可变轴</h3>
         <p>「选择字体…」里可以调可变字体的其他轴，例如宽度、笔画粗细（GRAD）、光学尺寸。Google Fonts 只保留请求里写了的轴，其余固定在默认值、从文件里去掉，所以调过的轴会加进请求，文件大约变成两倍。固定的值写在 <code>@font-face</code> 的 <code>font-variation-settings</code> 里，Safari 不认这一行，会按默认值显示。光学尺寸选「跟随字号」时，浏览器按实际字号设定 opsz；实测 Chrome 用的是 size-adjust 放大之后的字号，正好对应西文实际显示的大小。</p>
         <p>「高级排版属性」里的「数字样式」「斜线零」对应 <code>font-variant-numeric</code>，写在使用规则里（Chrome 52+、Firefox 34+、Safari 9.1+），页面上还可以按元素改，比如只让表格用等宽数字。效果取决于显示数字的那个字体有没有这些 OpenType 特性：工具会检测它默认是哪种数字，选了它没有的样式时会提示。Google Fonts 的网页字体删掉了大部分特性，没有旧式数字和斜线零。</p>
+        <p>行高度量：合成字体的行高（line-height: normal）和基线在行里的位置，浏览器取自负责空格的那条规则，也就是半角西文的字体，而且是 size-adjust 放大之后的。导出时默认给基础字体以外的规则写上汉字字体的 <code>ascent-override</code>、<code>descent-override</code>、<code>line-gap-override</code>；size-adjust 会把它们再放大一次，所以写的是除过之后的值。这样排出来和纯汉字字体一样。Chrome 87+、Firefox 89+ 支持，Safari 会忽略。</p>
         <h3>繁体中文：台湾和香港</h3>
         <p>「适用语言」的繁体中文分成台湾和香港两种。导出时用 <code>:is(:lang(…))</code> 把常见写法都包进去：台湾版匹配 <code>zh-Hant</code>、<code>zh-TW</code>，香港版匹配 <code>zh-HK</code>、<code>zh-Hant-HK</code> 和澳门的写法。原因是 <code>:lang(zh-Hant)</code> 匹配不到 <code>lang="zh-TW"</code>：浏览器不会从地区推出文字。简体中文同样会加上 <code>zh-CN</code>、<code>zh-SG</code>。</p>
         <p>两地的写法和大陆不同：标点在字身正中（大陆、日本靠左下），字形也按各自的标准。工具会量全角标点的位置，并按字族名判断字形的地区：和校样的语言不一致时在类别表里提示，和适用语言不一致时在导出区提示。思源、Noto CJK 这类一个文件含多个地区字形的字体会按 lang 切换，所以测量时也带上语言。</p>
@@ -241,6 +243,7 @@
         <h3>可變軸</h3>
         <p>「選擇字型…」裡可以調可變字型的其他軸，例如寬度、筆畫粗細（GRAD）、光學尺寸。Google Fonts 只保留請求裡寫了的軸，其餘固定在預設值、從檔案裡去掉，所以調過的軸會加進請求，檔案大約變成兩倍。固定的值寫在 <code>@font-face</code> 的 <code>font-variation-settings</code> 裡，Safari 不認這一行，會按預設值顯示。光學尺寸選「跟隨字號」時，瀏覽器按實際字號設定 opsz；實測 Chrome 用的是 size-adjust 放大之後的字號，正好對應西文實際顯示的大小。</p>
         <p>「進階排版屬性」裡的「數字樣式」「斜線零」對應 <code>font-variant-numeric</code>，寫在使用規則裡（Chrome 52+、Firefox 34+、Safari 9.1+），頁面上還可以按元素改，比如只讓表格用等寬數字。效果取決於顯示數字的那個字型有沒有這些 OpenType 特性：工具會檢測它預設是哪種數字，選了它沒有的樣式時會提示。Google Fonts 的網頁字型刪掉了大部分特性，沒有舊式數字和斜線零。</p>
+        <p>行高度量：複合字型的行高（line-height: normal）和基線在行裡的位置，瀏覽器取自負責空格的那條規則，也就是半形西文的字型，而且是 size-adjust 放大之後的。匯出時預設給基礎字型以外的規則寫上漢字字型的 <code>ascent-override</code>、<code>descent-override</code>、<code>line-gap-override</code>；size-adjust 會把它們再放大一次，所以寫的是除過之後的值。這樣排出來和純漢字字型一樣。Chrome 87+、Firefox 89+ 支援，Safari 會忽略。</p>
         <h3>繁體中文：台灣和香港</h3>
         <p>「適用語言」的繁體中文分成台灣和香港兩種。匯出時用 <code>:is(:lang(…))</code> 把常見寫法都包進去：台灣版比對 <code>zh-Hant</code>、<code>zh-TW</code>，香港版比對 <code>zh-HK</code>、<code>zh-Hant-HK</code> 和澳門的寫法。原因是 <code>:lang(zh-Hant)</code> 比對不到 <code>lang="zh-TW"</code>：瀏覽器不會從地區推出文字。簡體中文同樣會加上 <code>zh-CN</code>、<code>zh-SG</code>。</p>
         <p>兩地的寫法和中國大陸不同：標點居中（大陸、日本靠左下），字形也依各自的標準。工具會量全形標點的位置，並依字族名判斷字形的地區：和校樣的語言不一致時在類別表裡提示，和適用語言不一致時在匯出區提示。思源、Noto CJK 這類一個檔案含多個地區字形的字型會依 lang 切換，所以測量時也帶上語言。</p>
@@ -286,6 +289,7 @@
         <h3>可変軸</h3>
         <p>「フォントを選択…」で、幅・グレード（GRAD）・オプティカルサイズなど、可変フォントのほかの軸を調整できます。Google Fonts はリクエストに書いた軸だけを残し、残りは既定値に固定してファイルから取り除くため、調整した軸はリクエストに加わり、ファイルはおよそ 2 倍になります。固定した値は <code>@font-face</code> の <code>font-variation-settings</code> に書かれ、Safari はこの行を無視して既定値で表示します。オプティカルサイズを「文字サイズに追従」にすると、ブラウザが実際の文字サイズから opsz を決めます。Chrome は実測で size-adjust で拡大した後のサイズを使うので、欧文が実際に表示される大きさと一致します。</p>
         <p>「詳細な組版プロパティ」の「数字のスタイル」「スラッシュ付きゼロ」は <code>font-variant-numeric</code> に対応し、使用側の規則に書かれます（Chrome 52+、Firefox 34+、Safari 9.1+）。ページでは要素ごとに変えることもでき、たとえば表だけ等幅数字にできます。効果は数字を表示するフォントにこれらの OpenType 機能があるかどうかで決まります。ツールはそのフォントの既定の数字を調べ、ない機能を選ぶと知らせます。Google Fonts の Web フォントでは多くの機能が削られていて、オールドスタイル数字とスラッシュ付きゼロはありません。</p>
+        <p>行のメトリクス：合成フォントの行の高さ（line-height: normal）と、行の中のベースラインの位置は、スペースを受け持つ規則、つまり半角欧文のフォント（それも size-adjust で拡大した後のもの）から決まります。書き出しでは既定で、ベース以外の規則に漢字フォントの <code>ascent-override</code>・<code>descent-override</code>・<code>line-gap-override</code> を書きます。size-adjust がもう一度掛かるので、割り戻した値です。これで漢字フォントだけで組んだときと同じになります。Chrome 87+、Firefox 89+ が対応し、Safari は無視します。</p>
         <h3>繁体字中国語：台湾と香港</h3>
         <p>「対象の言語」の繁体字中国語は、台湾と香港の 2 つに分かれています。書き出しでは <code>:is(:lang(…))</code> でよく使われる書き方をまとめて指定します。台湾版は <code>zh-Hant</code>・<code>zh-TW</code>、香港版は <code>zh-HK</code>・<code>zh-Hant-HK</code> とマカオの書き方に一致します。<code>:lang(zh-Hant)</code> は <code>lang="zh-TW"</code> に一致しないためです（ブラウザは地域から文字体系を推測しません）。簡体字も同様に <code>zh-CN</code>・<code>zh-SG</code> を加えます。</p>
         <p>台湾と香港では句読点を字面の中央に置き（中国大陸・日本は左下寄り）、字形もそれぞれの規範に従います。ツールは全角約物の位置を測り、ファミリー名から字形の地域を判断します。校正刷りの言語と一致しないときは文字クラスの表で、対象の言語と一致しないときは書き出し欄で知らせます。源ノ角ゴシックや Noto CJK のように 1 つのファイルに複数地域の字形を持つフォントは lang で切り替わるので、測るときも言語を指定しています。</p>

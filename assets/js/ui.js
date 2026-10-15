@@ -96,7 +96,7 @@ const INFO = {
   metricsInfo: () => `<p>${esc(T('metricsHint'))}</p><p>${esc(T('mixInfo'))}</p><p>${T('refNote')}</p>`,
   typoInfo: () => T('typoFoot'),
   italicInfo: () => T('italicInfo'),
-  wmodeInfo: () => T('wmodeInfo'), sizeInfo: () => T('sizeInfo'), shiftInfo: () => T('shiftInfo'),
+  lmInfo: () => T('lmInfo'), wmodeInfo: () => T('wmodeInfo'), sizeInfo: () => T('sizeInfo'), shiftInfo: () => T('shiftInfo'),
   nameInfo: () => T('nameInfo'), weightsInfo: () => T('weightsInfo'), wrangeInfo: () => T('wrangeInfo'),
   baseInfo: () => T('baseInfo'), genericInfo: () => T('genericInfo'), scopeInfo: () => T('scopeInfo'),
 };
@@ -290,6 +290,7 @@ function initToolbar() {
   for (const id of ['exWLo', 'exWHi']) $('#' + id).addEventListener('change', () => setWRange(parseFloat($('#exWLo').value), parseFloat($('#exWHi').value)));
   $('#exBase').addEventListener('change', e => { state.baseMode = e.target.value; renderExport(); saveState(); });
   /* 斜体：导出时另写一组 font-style: italic 的规则；校样的「斜体」开关用来看效果 */
+  $('#exLm').addEventListener('change', e => { state.lineMetrics = e.target.value; rebuild(); renderExport(); saveState(); });
   $('#exItalic').addEventListener('change', e => { state.italic = e.target.value === '1'; renderEditor(); rebuild(); renderExport(); saveState(); });
   $('#exGeneric').addEventListener('change', e => { state.generic = e.target.value; renderPreview(); renderExport(); saveState(); });
   /* 选了语言时校样也按这个语言排（字形地区差异、禁则），不限语言时校样沿用示例文字的语言 */
@@ -335,13 +336,13 @@ function renderTypoRows() {
     const sup = t.sup ? ['chrome', 'firefox', 'safari'].map(b =>
       `<span class="${b === ENGINE.id ? 'cur' : ''}">${{ chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' }[b]} ${esc(t.sup[b])}</span>`).join('') : `<span>${esc(T('allBrowsers'))}</span>`;
     /* 数字样式这类：一排字样卡片，每张用当前的数字字体排出这个样式 */
-    const ctl = t.tiles ? `<div class="typo-tiles" role="radiogroup" aria-labelledby="tyl-${t.key}">${t.values.map(([v, d, tip]) =>
-      `<button type="button" role="radio" data-typo="${t.key}" data-v="${esc(v)}" aria-checked="${state.typo[t.key] === v}" title="${esc(v)}"><span class="tt-s" style="font-variant-numeric:${esc(v)}" aria-hidden="true">${esc(t.tiles)}</span><span class="tt-l">${esc(tr(d))}${tip ? `<small>${esc(tr(tip))}</small>` : ''}</span></button>`).join('')}</div>`
+    const ctl = t.tiles ? `<div class="typo-tiles" role="radiogroup" aria-labelledby="tyl-${t.key}"${t.tileW ? ` style="--tile-w:${t.tileW}px${t.tileFs ? `;--tile-fs:${t.tileFs}px` : ''}"` : ''}>${t.values.map(([v, d, tip]) =>
+      `<button type="button" role="radio" data-typo="${t.key}" data-v="${esc(v)}" aria-checked="${state.typo[t.key] === v}" title="${esc(v)}"><span class="tt-s" style="${t.prop}:${esc(v)}" aria-hidden="true">${esc(t.tiles)}</span><span class="tt-l">${esc(tr(d))}${tip ? `<small>${esc(tr(tip))}</small>` : ''}</span></button>`).join('')}</div>`
       : `<select id="ty-${t.key}">${opts}</select>`;
     return `<div class="typo-row${t.tiles ? ' tiles' : ''}">
       <span class="typo-name">${t.tiles ? `<b id="tyl-${t.key}">${esc(tr(t.label))}</b>` : `<label for="ty-${t.key}"><b>${esc(tr(t.label))}</b></label>`}<span class="lab-i"><code>${t.attr ? esc(T('langAttr')) : t.prop}</code>${t.note ? `<button type="button" class="info" data-info="typo:${t.key}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}">i</button>` : ''}</span></span>
       ${ctl}
-      <div class="typo-sup" data-key="${t.key}">${sup}</div>${t.key === 'num' ? '<p class="typo-note" id="numHint" hidden></p>' : ''}
+      <div class="typo-sup" data-key="${t.key}">${sup}</div>${t.hint ? `<p class="typo-note" id="${t.hint}" hidden></p>` : ''}
     </div>`;
   }).join('');
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }
@@ -349,7 +350,7 @@ function renderTypoRows() {
 }
 function renderTypoStatus() {
   document.querySelectorAll('#typoRows [data-typo]').forEach(b => b.setAttribute('aria-checked', state.typo[b.dataset.typo] === b.dataset.v));
-  renderNumHint();
+  renderNumHint(); renderEaMarks();
   const n = TYPO.filter(t => !t.attr && state.typo[t.key] !== typoDef(t)).length;
   $('#typoChanged').textContent = n ? T('typoChanged', { n }) : '';
   $('#typoReset').hidden = !n;

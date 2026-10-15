@@ -411,7 +411,7 @@ const TYPO = [
     note: { zh: '日文排版常用的 OpenType 特性。palt 让假名和标点按字形本身的宽度排，字距更紧，适合标题；halt 只把标点压成半宽。正文一般保持 normal。字体没有这些特性时不起作用；思源 / Noto CJK 等字体的标点也支持。', ja: '和文組版でよく使う OpenType 機能です。palt はかなや約物を字形そのものの幅で組み、字間が詰まるので見出し向きです。halt は約物だけを半角にします。本文はふつう normal のままです。フォントにこれらの機能がなければ効きません。源ノ / Noto CJK などのフォントは約物も対応しています。', tw: '日文排版常用的 OpenType 特性。palt 讓假名和標點按字形本身的寬度排，字距更緊，適合標題；halt 只把標點壓成半寬。內文一般保持 normal。字型沒有這些特性時不起作用；思源 / Noto CJK 等字型的標點也支援。' } },
   /* 数字样式：和 InDesign 的「数字样式」一样的五种。斜线零单独一行，导出时两行合成一条 font-variant-numeric。
      tiles：用字样卡片选（每张卡片用当前的数字字体排出这个样式），第三项是用途提示 */
-  { key: 'num', label: { zh: '数字样式', ja: '数字のスタイル', tw: '數字樣式' }, prop: 'font-variant-numeric', def: 'normal', tiles: '11,980',
+  { key: 'num', label: { zh: '数字样式', ja: '数字のスタイル', tw: '數字樣式' }, prop: 'font-variant-numeric', def: 'normal', tiles: '11,980', hint: 'numHint',
     sup: { chrome: '52', firefox: '34', safari: '9.1' },
     values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設' }],
       ['lining-nums tabular-nums', { zh: '等高等宽', ja: 'ライニング・等幅', tw: '等高等寬' }, { zh: '表格、金额', ja: '表・金額', tw: '表格、金額' }],
@@ -422,7 +422,25 @@ const TYPO = [
   { key: 'zero', label: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零' }, prop: 'font-variant-numeric', def: 'normal', tiles: '100',
     sup: { chrome: '52', firefox: '34', safari: '9.1' },
     values: [['normal', { zh: '不用', ja: '使わない', tw: '不用' }], ['slashed-zero', { zh: '斜线零', ja: 'スラッシュ付き', tw: '斜線零' }, { zh: '和字母 O 区分', ja: 'O と区別', tw: '和字母 O 區分' }]] },
+  /* 东亚字形：字形标准（JIS 各版、旧字形 / 简化字形）和假名标点的宽度，两行合成一条 font-variant-east-asian */
+  { key: 'eaVar', label: { zh: '字形标准', ja: '字形の規格', tw: '字形標準' }, prop: 'font-variant-east-asian', def: 'normal', tiles: '辻葛飴鴎国', tileW: 128, hint: 'eaHint',
+    sup: { chrome: '63', firefox: '34', safari: '9.1' },
+    values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設' }], ['jis04', { zh: 'JIS2004', ja: 'JIS2004', tw: 'JIS2004' }, { zh: '现行标准', ja: '現行の規格', tw: '現行標準' }], ['jis90', { zh: 'JIS90', ja: 'JIS90', tw: 'JIS90' }, { zh: '2004 年以前', ja: '2004 年より前', tw: '2004 年以前' }], ['jis83', { zh: 'JIS83', ja: 'JIS83', tw: 'JIS83' }], ['jis78', { zh: 'JIS78', ja: 'JIS78', tw: 'JIS78' }], ['traditional', { zh: '旧字形', ja: '旧字体', tw: '舊字形' }], ['simplified', { zh: '简化字形', ja: '簡略字形', tw: '簡化字形' }]],
+    note: { zh: '日文汉字有几版字形标准：JIS2004 是现行标准，例如「辻」的走之是两点、「飴」的食字旁是新写法；JIS90 是 2004 年以前 Windows XP 等使用的写法，JIS83、JIS78 更早。旧字形把字换成传统写法（例如国 → 國），简化字形相反。需要字体本身带有这些字形：冬青黑体（Hiragino）、游明朝等本机字体通常有，Google Fonts 的网页字体把这些特性删掉了。和校样的语言无关，中文字体如果带有这些特性也会生效。', ja: '日本語の漢字には字形の規格がいくつかあります。JIS2004 は現行の規格で、たとえば「辻」のしんにょうは 2 点、「飴」の食偏は新しい形です。JIS90 は 2004 年より前（Windows XP など）の形で、JIS83・JIS78 はさらに古い形です。旧字体は字を伝統的な形に（国 → 國）、簡略字形はその逆にします。フォント自体がこれらの字形を持っている必要があり、ヒラギノや游明朝などのローカルフォントにはたいていありますが、Google Fonts の Web フォントではこれらの機能が削られています。校正刷りの言語とは関係なく、中国語フォントでも機能があれば効きます。', tw: '日文漢字有幾版字形標準：JIS2004 是現行標準，例如「辻」的辶是兩點、「飴」的食字旁是新寫法；JIS90 是 2004 年以前 Windows XP 等使用的寫法，JIS83、JIS78 更早。舊字形把字換成傳統寫法（例如国 → 國），簡化字形相反。需要字型本身帶有這些字形：冬青黑體（Hiragino）、游明朝等本機字型通常有，Google Fonts 的網頁字型把這些特性刪掉了。和校樣的語言無關，中文字型如果帶有這些特性也會生效。' } },
+  { key: 'eaWidth', label: { zh: '假名与标点宽度', ja: 'かなと約物の幅', tw: '假名與標點寬度' }, prop: 'font-variant-east-asian', def: 'normal', tiles: 'イリ「ア」ﾃｽ', tileW: 150, tileFs: 18,
+    sup: { chrome: '63', firefox: '34', safari: '9.1' },
+    values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設' }], ['proportional-width', { zh: '比例宽', ja: 'プロポーショナル', tw: '比例寬' }, { zh: '按字形本身的宽度', ja: '字形そのものの幅', tw: '按字形本身的寬度' }], ['full-width', { zh: '全角', ja: '全角', tw: '全形' }, { zh: '半角假名也变全角', ja: '半角カナも全角に', tw: '半形假名也變全形' }]] },
+  { key: 'emoji', label: { zh: 'emoji 显示', ja: '絵文字の表示', tw: 'emoji 顯示' }, prop: 'font-variant-emoji', def: 'normal', tiles: '☺✔❤⌚', tileW: 108,
+    sup: { chrome: '131', firefox: '141', safari: '—' },
+    values: [['normal', { zh: '默认', ja: '既定', tw: '預設' }], ['text', { zh: '文字', ja: 'テキスト', tw: '文字' }, { zh: '单色，跟随字体', ja: '単色・フォントに従う', tw: '單色，跟隨字型' }], ['emoji', { zh: '彩色 emoji', ja: 'カラー絵文字', tw: '彩色 emoji' }], ['unicode', { zh: '按 Unicode 默认', ja: 'Unicode の既定', tw: '按 Unicode 預設' }]],
+    note: { zh: '☺ ✔ ❤ 这类符号既可以显示成普通文字，也可以显示成彩色 emoji。「文字」用合成字体里的字形（单色，大小和笔画跟正文一致）；「彩色 emoji」用系统的 emoji 字体；「按 Unicode 默认」按每个字符的 Unicode 默认显示方式。字符后面带有变体选择符（U+FE0E / U+FE0F）时以它为准。Safari 还不支持，会照常显示。', ja: '☺ ✔ ❤ のような記号は、ふつうの文字としても、カラー絵文字としても表示できます。「テキスト」は合成フォントの字形（単色で、本文と大きさや線がそろう）、「カラー絵文字」はシステムの絵文字フォント、「Unicode の既定」は文字ごとの Unicode の既定の表示方法を使います。文字の後ろに異体字セレクタ（U+FE0E / U+FE0F）があればそちらが優先されます。Safari は未対応で、通常どおり表示されます。', tw: '☺ ✔ ❤ 這類符號既可以顯示成一般文字，也可以顯示成彩色 emoji。「文字」用複合字型裡的字形（單色，大小和筆畫跟內文一致）；「彩色 emoji」用系統的 emoji 字型；「按 Unicode 預設」按每個字元的 Unicode 預設顯示方式。字元後面帶有變體選擇符（U+FE0E / U+FE0F）時以它為準。Safari 還不支援，會照常顯示。' } },
 ];
+/* 几行合成一条 CSS 属性：数字样式 + 斜线零 → font-variant-numeric；字形标准 + 宽度 → font-variant-east-asian */
+const TYPO_MERGE = { 'font-variant-numeric': ['num', 'zero'], 'font-variant-east-asian': ['eaVar', 'eaWidth'] };
+const typoValue = t => TYPO_MERGE[t.prop] ? TYPO_MERGE[t.prop].map(k => state.typo[k]).filter(v => v && v !== 'normal').join(' ') || 'normal' : state.typo[t.key];
+const typoMergedAway = t => TYPO_MERGE[t.prop] && TYPO_MERGE[t.prop][0] !== t.key;      // 合并到前一行，导出时不单独写
+/* 东亚字形的值和 OpenType 特性的对应：检查字体有没有这些字形时用 */
+const EA_FEAT = { jis78: 'jp78', jis83: 'jp83', jis90: 'jp90', jis04: 'jp04', simplified: 'smpl', traditional: 'trad', 'full-width': 'fwid', 'proportional-width': 'pwid' };
 /* 工具的默认值以正文为前提：段落换行用 pretty；日文正文的禁则用 strict。
    def 是工具的默认值，init 是 CSS 的初始值：导出时只省略等于 init 的值 */
 const typoDef = (t, lang = state?.typo?.lang) => t.defJa && /^ja/.test(lang || '') ? t.defJa : t.def;
@@ -441,7 +459,7 @@ const typoSupported = (t, v) => t.attr || CSS.supports(t.prop, v);
 const NUM_FEAT = { 'lining-nums': 'lnum', 'oldstyle-nums': 'onum', 'proportional-nums': 'pnum', 'tabular-nums': 'tnum', 'slashed-zero': 'zero' };
 const NUM_TAGS = Object.values(NUM_FEAT);
 const NUM_LABEL = { lnum: { zh: '等高数字', ja: 'ライニング数字', tw: '等高數字' }, onum: { zh: '旧式数字', ja: 'オールドスタイル数字', tw: '舊式數字' }, pnum: { zh: '比例数字', ja: 'プロポーショナル数字', tw: '比例數字' }, tnum: { zh: '等宽数字', ja: '等幅数字', tw: '等寬數字' }, zero: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零' } };
-const numValue = () => [state.typo.num, state.typo.zero].filter(v => v && v !== 'normal').join(' ') || 'normal';
+const numValue = () => typoValue(TYPO.find(t => t.key === 'num'));
 const numTags = () => numValue().split(' ').map(v => NUM_FEAT[v]).filter(Boolean);
 const numLabel = t => tr(NUM_LABEL[t]);
 
@@ -491,7 +509,8 @@ function stateFromPreset(p, prev) {
     scope: prev?.scope ?? '',
     wmode: prev?.wmode || 'steps',
     wrange: prev?.wrange || [100, 900],
-    italic: prev ? !!prev.italic : true,      // 默认导出斜体：西文用真斜体，汉字保持正体
+    italic: prev ? !!prev.italic : true,
+    lineMetrics: prev?.lineMetrics || 'han',      // 默认导出斜体：西文用真斜体，汉字保持正体
     classes: freshClasses(p),
     custom: [],
     view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, miss: true, compare: false, cmp: 'plain', weight: 400 },
@@ -542,6 +561,7 @@ function normalizeState() {
   state.scope = state.scope || '';
   state.wmode = state.wmode === 'cont' ? 'cont' : 'steps';        // 字重：分档 / 连续（可变字体）
   state.italic = !!state.italic;                                   // 导出斜体
+  state.lineMetrics = state.lineMetrics === 'off' ? 'off' : 'han';  // 行高度量对齐汉字字体（默认打开）
   if (state.num) {        // 数字样式原来在半角数字的齿轮里（按 OpenType 特性分开存），移到高级排版属性
     const n = state.num;
     if (n.fig || n.spc) state.typo.num = `${n.fig === 'onum' ? 'oldstyle' : 'lining'}-nums ${n.spc === 'tnum' ? 'tabular' : 'proportional'}-nums`;
@@ -768,6 +788,7 @@ async function rebuildNow() {
   const segs = cont ? buildSegments(true) : [{ lo: W, hi: W, plan: buildPlan(W, true), iplan: state.italic ? buildPlan(W, true, true) : null }];
   setBusy(T('loading'));
   await Promise.all(segs.flatMap(sg => [...sg.plan, ...(sg.iplan || [])].map(p => source(p.font).promise)));
+  if (lmOn()) await Promise.all(segs.map(sg => ensureLineMetrics(sg.plan[0].font)));
   if (my !== gen) return;
   const fam = `__cf_live_${my}`;
   const faces = [];
@@ -781,6 +802,8 @@ async function rebuildNow() {
       if (fvs) d.variationSettings = fvs;
       if (x.range) d.unicodeRange = fmtRanges(x.range);
       if (x.p.size !== 100) d.sizeAdjust = `${x.p.size}%`;
+      const ov = x.p !== pl[0] && overridesFor(x.p, sg.plan[0]);
+      if (ov) Object.assign(d, { ascentOverride: ov.ascent, descentOverride: ov.descent, lineGapOverride: ov.lineGap });
       try { faces.push(new FontFace(fam, x.face.buffer || x.face.src, d)); } catch (e) { /* 忽略无效的规则 */ }
     }
   }
@@ -802,6 +825,41 @@ async function rebuildNow() {
   checkMissSoon();
 }
 const rebuild = debounce(rebuildNow, 70);
+/* ================= 行高度量 =================
+   合成字体的行高（line-height: normal）和基线在行框里的位置，取自负责空格的那条规则，也就是半角西文，而且是 size-adjust 放大之后的。
+   给基础字体以外的规则写上汉字基础字体的 ascent / descent / line gap，合成字体排起来就和汉字字体一样。
+   覆盖值还会再乘以 size-adjust，所以要先除掉。同一个 Google 字族各字重的度量相同，按字族记一次 */
+const LM = new Map();
+const lmKey = f => f.kind === 'google' ? 'g:' + f.family : fontKey(f);
+const lmOn = () => state.lineMetrics !== 'off';
+async function ensureLineMetrics(f) {
+  if (!f) return null;
+  const key = lmKey(f);
+  if (LM.has(key)) return LM.get(key);
+  const s = source(f);
+  await s.promise;
+  if (s.status !== 'ok' || LM.has(key)) return LM.get(key) || null;
+  try { await document.fonts.load(`100px "${s.family}"`, '国'); } catch (e) { /* 照常测量 */ }
+  const c = document.createElement('canvas').getContext('2d');
+  c.font = `100px "${s.family}"`;
+  const m = c.measureText('国'), a = m.fontBoundingBoxAscent / 100, d = m.fontBoundingBoxDescent / 100;
+  const el = document.createElement('div');      // 行距（line gap）：line-height: normal 的行高减去 ascent + descent
+  el.style.cssText = `position:absolute;visibility:hidden;left:-9999px;white-space:nowrap;font:100px/normal "${s.family}"`;
+  el.textContent = '国';
+  document.body.append(el);
+  const g = Math.max(0, el.getBoundingClientRect().height / 100 - a - d);
+  el.remove();
+  const lm = a > 0 ? { a, d, g } : null;
+  LM.set(key, lm);
+  return lm;
+}
+/* 一条非基础规则要写的覆盖值；base 是这一组的汉字基础字体规则（它自己的大小也算进去） */
+function overridesFor(p, base) {
+  const lm = lmOn() && p.range && base?.font && LM.get(lmKey(base.font));
+  if (!lm) return null;
+  const k = (base.size || 100) / p.size, f = x => `${+(x * 100 * k).toFixed(2)}%`;
+  return { ascent: f(lm.a), descent: f(lm.d), lineGap: f(lm.g) };
+}
 /* 斜体文件加载失败（例如 Google 上这个粗细没有斜体）时，这一条改用正体 */
 function italFallback(pl) {
   return pl.map(p => p.font?.kind === 'google' && p.font.ital && sources.get(fontKey(p.font))?.status === 'error'

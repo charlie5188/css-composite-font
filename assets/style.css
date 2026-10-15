@@ -337,11 +337,11 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .typo-row .typo-sup{grid-column:1/-1}
 /* 数字样式的字样卡片：标题在上，卡片占整行 */
 .typo-row.tiles{grid-template-columns:minmax(0,1fr)}
-.typo-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(86px,1fr));gap:6px}
+.typo-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(var(--tile-w,86px),100%),1fr));gap:6px}
 .typo-tiles button{display:grid;gap:5px;justify-items:center;align-content:start;padding:10px 6px 8px;border:1px solid var(--line);border-radius:4px;background:var(--sheet);color:var(--ink);text-align:center;min-width:0}
 .typo-tiles button:hover{border-color:var(--faint)}
 .typo-tiles button[aria-checked="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
-.tt-s{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:normal;font-size:22px;line-height:1.25;white-space:nowrap}
+.tt-s{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:normal;font-size:var(--tile-fs,22px);line-height:1.25;white-space:nowrap;max-width:100%;overflow:hidden}
 .tt-l{font-size:11px;line-height:1.35;color:var(--muted)}
 .tt-l small{display:block;font-size:10.5px;color:var(--faint)}
 .typo-tiles button[aria-checked="true"] .tt-l{color:var(--ink)}

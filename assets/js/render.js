@@ -183,45 +183,57 @@ function renderGroups() {
 /* ================= 数字样式 =================
    在这个字体里有没有效果：每个特性单独加上画一遍 0–9，和不加时逐像素比较。一样 = 字体没有这个特性，或者本来就是这样
    （例如默认就是等高数字时，选「等高」不会有变化）。Google Fonts 的网页字体删掉了大部分特性，onum、zero 都没有 */
-const numFxCache = new Map();
 let numSeq = 0;
 function digitFx() {
   const f = usedFont(resolveCls('digit', state.view.weight, true)), s = f && sources.get(fontKey(f));
   if (s?.status !== 'ok') return { f, fx: null, checking: false };
-  const r = numFx(fontKey(f), s);
-  return { f, fx: r && !r.unknown ? r : null, checking: !r };
+  const fx = numFx(f);
+  return { f, fx, checking: !fx && featCache.get(fontKey(f) + '|0123456789') === 'pending' };
 }
-function numFx(key, s) {
-  const c = numFxCache.get(key);
-  if (c) return c === 'pending' ? null : c;
-  numFxCache.set(key, 'pending');
+/* 字体有没有某些 OpenType 特性：每个特性单独加上把 text 画一遍，和不加时逐像素比较（一样 = 没有效果）。
+   extra(ctx, 基准字族名) 可以顺便量别的东西。结果按「字体 + 文字」缓存，测完调用 done */
+const featCache = new Map();
+function featFx(f, text, tags, done, extra) {
+  const s = f && sources.get(fontKey(f));
+  if (s?.status !== 'ok') return null;
+  const key = fontKey(f) + '|' + text, c = featCache.get(key);
+  if (c) return c === 'pending' ? null : c.unknown ? null : c;
+  featCache.set(key, 'pending');
   (async () => {
-    const fcs = s.faces.filter(fc => !fc.range || inRanges(fc.range, 0x30)), id = '__cf_num' + (++numSeq), all = [];
+    const cps = [...text].map(ch => ch.codePointAt(0));
+    const fcs = s.faces.filter(fc => !fc.range || cps.some(cp => inRanges(fc.range, cp))), id = '__cf_ft' + (++numSeq), all = [];
     const fam = tag => {
       for (const fc of fcs) {
-        try { const ff = new FontFace(id + tag, fc.buffer || fc.src, tag ? { featureSettings: `"${tag}"` } : {}); document.fonts.add(ff); all.push(ff); } catch (e) { /* 忽略 */ }
+        try {
+          const d = { ...(fc.range ? { unicodeRange: fmtRanges(fc.range) } : {}), ...(tag ? { featureSettings: `"${tag}"` } : {}) };
+          const ff = new FontFace(id + tag, fc.buffer || fc.src, d); document.fonts.add(ff); all.push(ff);
+        } catch (e) { /* 忽略 */ }
       }
       return id + tag;
     };
-    const names = ['', ...NUM_TAGS].map(fam);
-    await Promise.allSettled(all.map(f => f.load()));
+    const names = ['', ...tags].map(fam);
+    await Promise.allSettled(all.map(ff => ff.load()));
     let out = { unknown: true };      // 加载失败：不标注
-    if (all.length && all.every(f => f.status === 'loaded')) {
-      const cv = document.createElement('canvas'); cv.width = 640; cv.height = 80;
+    if (all.length && all.every(ff => ff.status === 'loaded')) {
+      const cv = document.createElement('canvas'); cv.width = 720; cv.height = 80;
       const ctx = cv.getContext('2d', { willReadFrequently: true });
-      const draw = n => { ctx.clearRect(0, 0, 640, 80); ctx.font = `48px "${n}"`; ctx.fillText('0123456789', 4, 60); return new Uint32Array(ctx.getImageData(0, 0, 640, 80).data.buffer); };
+      const draw = n => { ctx.clearRect(0, 0, 720, 80); ctx.font = `48px "${n}"`; ctx.fillText(text, 4, 60); return new Uint32Array(ctx.getImageData(0, 0, 720, 80).data.buffer); };
       const base = draw(names[0]);
-      out = Object.fromEntries(NUM_TAGS.map((t, i) => { const d = draw(names[i + 1]); return [t, d.some((v, j) => v !== base[j])]; }));
-      /* 默认的数字：0 的高度更接近 x 高 = 旧式；1 和 0 一样宽 = 等宽 */
-      ctx.font = `48px "${names[0]}"`;
-      const m = ch => ctx.measureText(ch), a0 = m('0').actualBoundingBoxAscent;
-      out.def = { fig: a0 < (m('x').actualBoundingBoxAscent + m('H').actualBoundingBoxAscent) / 2 ? 'onum' : 'lnum', spc: Math.abs(m('1').width - m('0').width) < 0.5 ? 'tnum' : 'pnum' };
+      out = Object.fromEntries(tags.map((t, i) => { const d = draw(names[i + 1]); return [t, d.some((v, j) => v !== base[j])]; }));
+      if (extra) { ctx.font = `48px "${names[0]}"`; Object.assign(out, extra(ctx)); }
     }
-    all.forEach(f => document.fonts.delete(f));
-    numFxCache.set(key, out);
-    renderNumHint();
+    all.forEach(ff => document.fonts.delete(ff));
+    featCache.set(key, out);
+    done?.();
   })();
   return null;
+}
+/* 数字：默认的数字也量出来——0 的高度更接近 x 高 = 旧式；1 和 0 一样宽 = 等宽 */
+function numFx(f) {
+  return featFx(f, '0123456789', NUM_TAGS, renderNumHint, ctx => {
+    const m = ch => ctx.measureText(ch), a0 = m('0').actualBoundingBoxAscent;
+    return { def: { fig: a0 < (m('x').actualBoundingBoxAscent + m('H').actualBoundingBoxAscent) / 2 ? 'onum' : 'lnum', spc: Math.abs(m('1').width - m('0').width) < 0.5 ? 'tnum' : 'pnum' } };
+  });
 }
 /* 没有变化的原因：默认就是这样（'default'），或者字体里没有（'none'） */
 const numWhy = (fx, t) => fx[t] ? '' : t === fx.def.fig || t === fx.def.spc ? 'default' : 'none';
@@ -241,6 +253,27 @@ function renderNumHint() {
   el.textContent = T('numDefIs', { font, list: [fx.def.fig, fx.def.spc].map(numLabel).join(T('joiner')) }) +
     (none.length ? T('numLacks', { font, list: none.map(numLabel).join(T('joiner')) }) + (f.kind === 'google' ? T('numGoogleShort') : '') : '');
   el.classList.toggle('warn', !!none.length);
+}
+/* 字形标准、假名标点宽度的卡片：这个字体里没有效果的选项淡一些；字形标准一个都没有时在下面说明 */
+const EA_SAMPLE = { eaVar: '辻葛飴鴎国', eaWidth: 'イリ「ア」ﾃｽ' };
+function renderEaMarks() {
+  const W = state.view.weight, fonts = { eaVar: usedFont(resolveCls('han', W, true)), eaWidth: usedFont(resolveCls('kana', W, true)) };
+  const fx = {};
+  for (const k of ['eaVar', 'eaWidth']) {
+    const t = TYPO.find(x => x.key === k), tags = t.values.map(v => EA_FEAT[v[0]]).filter(Boolean);
+    fx[k] = featFx(fonts[k], EA_SAMPLE[k], tags, renderEaMarks);
+    /* JIS 各版里只有一版没变化、其他几版有变化：字体默认就是那一版（例如 ProN 字体默认就是 JIS2004），不算没有 */
+    const jisAny = fx[k] && ['jp78', 'jp83', 'jp90', 'jp04'].some(t => fx[k][t]);
+    document.querySelectorAll(`#typoRows [data-typo="${k}"]`).forEach(b => {
+      const tag = EA_FEAT[b.dataset.v], none = !!(tag && fx[k] && !fx[k][tag]), isDef = none && /^jp/.test(tag) && jisAny;
+      b.classList.toggle('lack', none && !isDef);
+      b.title = b.dataset.v + (none ? ' — ' + T(isDef ? 'eaDefault' : 'eaLack', { font: shortName(fonts[k]) }) : '');
+    });
+  }
+  const el = $('#eaHint'); if (!el) return;
+  const none = fx.eaVar && !['jp78', 'jp83', 'jp90', 'jp04', 'smpl', 'trad'].some(t => fx.eaVar[t]);
+  el.hidden = !none;
+  if (none) el.textContent = T('eaNone', { font: shortName(fonts.eaVar) }) + (fonts.eaVar.kind === 'google' ? T('eaGoogle') : '');
 }
 /* 改了某一格后，只更新其他格的继承值，不重绘表格（保持输入焦点） */
 function refreshInherited() {
@@ -270,7 +303,7 @@ function renderPreview() {
   for (const el of [pt, $('#naiveText')]) {
     for (const t of TYPO) {
       if (t.attr) el.lang = state.typo[t.key];
-      else el.style.setProperty(t.prop, t.prop === 'font-variant-numeric' ? numValue() : state.typo[t.key]);
+      else el.style.setProperty(t.prop, typoValue(t));
     }
   }
   /* 类别着色优先用 CSS Highlight API：不拆 DOM，排版和不着色时完全一样（拆成 span 会让竖排里的西文和后面的字重叠）。
@@ -471,6 +504,7 @@ function syncToolbar() {
   $('#exWeightsField').hidden = cont;
   $('#exGeneric').value = state.generic;
   $('#exItalic').value = state.italic ? '1' : '0';
+  $('#exLm').value = state.lineMetrics;
   $('#exLang').value = state.scope;
 }
 
