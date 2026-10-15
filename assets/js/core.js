@@ -403,13 +403,6 @@ const TYPO = [
   { key: 'hang', label: { zh: '标点悬挂', ja: 'ぶら下がり', tw: '標點懸掛' }, prop: 'hanging-punctuation', def: 'none',
     sup: { chrome: '—', firefox: '—', safari: '10' },
     values: [['none', null], ['allow-end', { zh: '行尾句读可悬挂', ja: '行末の句読点をぶら下げる', tw: '行尾句讀可懸掛' }], ['first allow-end last', null]] },
-  /* 纵中横：浏览器只认 text-combine-upright: all（digits 写法 Chrome 不支持），所以由导出的 JS 把短数字包进 span，只在直排的元素里生效 */
-  { key: 'tcy', label: { zh: '纵中横', ja: '縦中横', tw: '縱中橫排' }, prop: 'text-combine-upright', js: true, def: 'none',
-    sup: { chrome: '48', firefox: '48', safari: '15.4' },
-    values: [['none', { zh: '不处理', ja: 'しない', tw: '不處理' }], ['2', { zh: '两位以内的半角数字', ja: '2 桁までの半角数字', tw: '兩位以內的半形數字' }], ['3', { zh: '三位以内的半角数字', ja: '3 桁までの半角数字', tw: '三位以內的半形數字' }]],
-    note: { zh: '直排时把短的半角数字横着排进一格，例如「19日」。只对直排的元素生效。浏览器只支持 text-combine-upright: all，所以由导出的 JS 把数字包进 span；带小数点、冒号的数字（12.5、7:30）保持原样。',
-      ja: '縦組みで短い半角数字を 1 文字分に横向きで収めます（例：「19日」）。縦組みの要素でのみ有効です。ブラウザが対応しているのは text-combine-upright: all だけなので、書き出した JS が数字を span で囲みます。小数点やコロンを含む数字（12.5、7:30）はそのままです。',
-      tw: '直排時把短的半形數字橫排進一格，例如「19日」。只對直排的元素生效。瀏覽器只支援 text-combine-upright: all，所以由匯出的 JS 把數字包進 span；帶小數點、冒號的數字（12.5、7:30）維持原樣。' } },
   { key: 'feat', label: { zh: '字距特性', ja: '字詰めの機能', tw: '字距特性' }, prop: 'font-feature-settings', def: 'normal',
     sup: { chrome: '48', firefox: '34', safari: '9.1' },
     values: [['normal', null], ['"palt"', { zh: '假名标点比例宽', ja: 'かなと約物をプロポーショナルに', tw: '假名標點比例寬' }], ['"halt"', { zh: '标点半角', ja: '約物を半角に', tw: '標點半形' }]] },
@@ -426,7 +419,7 @@ const ENGINE = (() => {
   if ((m = ua.match(/Version\/([\d.]+).*Safari/))) return { id: 'safari', name: 'Safari', v: m[1] };
   return { id: '', name: '', v: '' };
 })();
-const typoSupported = (t, v) => t.attr || CSS.supports(t.prop, t.js ? 'all' : v);
+const typoSupported = (t, v) => t.attr || CSS.supports(t.prop, v);
 
 /* 预设的西文大小：以汉字字体自带西文为基准，取「按大写高对齐」与「按 x 高对齐」的几何平均，
    大写高不超过自带西文的 103%（见度量对齐面板的说明）。基线都为 0：这些组合的中线偏差在 ±2% em 以内。 */
@@ -504,6 +497,7 @@ function normalizeState() {
   for (const c of CLASSES) state.classes[c.id] ||= { follow: c.follow || null, font: null, size: null, shift: null };     // 后来新增的类别
   if (state.typo?.lang === 'zh-Hant') state.typo.lang = 'zh-Hant-TW';       // 「繁體中文」拆成台湾、香港
   if (state.scope === 'zh-Hant') state.scope = 'zh-Hant-TW';
+  if (state.typo) delete state.typo.tcy;                                   // 纵中横已删除
   state.typo = { ...typoDefaults(state.typo?.lang), ...(state.typo || {}) };
   if (state.v === 3) {      // v4 起正文默认：text-wrap: pretty；日文 line-break: strict。仍是旧默认值的改成新默认值
     if (state.typo.wrap === 'wrap') state.typo.wrap = 'pretty';

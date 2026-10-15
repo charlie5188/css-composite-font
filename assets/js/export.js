@@ -89,7 +89,7 @@ function buildCss() {
   const extra = [];
   for (const t of TYPO) {
     const val = state.typo[t.key];
-    if (t.attr || t.js || !val || (!t.always && val === (t.init ?? t.def))) continue;      // 纵中横由 JS 处理
+    if (t.attr || !val || (!t.always && val === (t.init ?? t.def))) continue;
     const sup = t.sup ? `Chrome ${t.sup.chrome} · Firefox ${t.sup.firefox} · Safari ${t.sup.safari}` : '';
     extra.push([`  ${t.prop}: ${val};`, `/* ${tr(t.label)}${sup ? ' · ' + sup : ''} */`]);
   }
@@ -135,19 +135,18 @@ function shiftTable() {
   }
   return merged;
 }
-/* 导出的 JS：基线偏移（把字符包进 span 相对移动）和纵中横（直排时把短数字包进 span 横排）。两样都不需要时返回 null */
+/* 导出的 JS：@font-face 没有基线描述符，需要偏移的字符包进 span 相对移动。没有偏移时返回 null */
 function buildJs() {
-  const segs = shiftTable(), tcy = +state.typo.tcy || 0;
-  if (!segs.length && !tcy) return null;
+  const segs = shiftTable();
+  if (!segs.length) return null;
   const rows = segs.map(([a, b, v]) => `[0x${hex(a)}, 0x${hex(b)}, ${+v.toFixed(4)}]`);
   const table = []; for (let i = 0; i < rows.length; i += 3) table.push('    ' + rows.slice(i, i + 3).join(', '));
-  return T(segs.length && tcy ? 'jsHeadBoth' : tcy ? 'jsHeadTcy' : 'jsHead', { fam: cssFamilyName() }) + `
+  return T('jsHead', { fam: cssFamilyName() }) + `
 (() => {
   const SELECTOR = '${scopeSel()}';
-  const SHIFT = [${segs.length ? ` ${T('jsTable')}
+  const SHIFT = [ ${T('jsTable')}
 ${table.join(',\n')}
-  ` : ''}];
-  const TCY = ${tcy};   ${T('jsTcy')}
+  ];
   const shiftOf = cp => {
     let lo = 0, hi = SHIFT.length - 1;
     while (lo <= hi) {
@@ -156,30 +155,25 @@ ${table.join(',\n')}
     }
     return 0;
   };
-  const tcyRe = TCY ? new RegExp(\`(?<![0-9.,:])[0-9]{1,\${TCY}}(?![0-9.,:])\`, 'g') : null;
-  const skip = el => !el || el.closest('[data-cf-shift], [data-cf-tcy], script, style, textarea, code, pre');
+  const skip = el => !el || el.closest('[data-cf-shift], script, style, textarea, code, pre');
   function apply(root) {
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
     const nodes = [];
     while (walker.nextNode()) if (!skip(walker.currentNode.parentElement)) nodes.push(walker.currentNode);
     for (const node of nodes) {
-      const up = new Set();      // 纵中横的字（只在直排的元素里）
-      if (tcyRe && getComputedStyle(node.parentElement).writingMode.startsWith('vertical'))
-        for (const m of node.data.matchAll(tcyRe)) for (let i = m.index; i < m.index + m[0].length; i++) up.add(i);
       const runs = [];
-      let cur = null, i = 0;
+      let cur = null;
       for (const ch of node.data) {
-        const s = shiftOf(ch.codePointAt(0)), u = up.has(i);
-        if (cur && cur.s === s && cur.u === u) cur.t += ch; else runs.push(cur = { s, u, t: ch });
-        i += ch.length;
+        const s = shiftOf(ch.codePointAt(0));
+        if (cur && cur.s === s) cur.t += ch; else runs.push(cur = { s, t: ch });
       }
-      if (!runs.some(r => r.s || r.u)) continue;
+      if (!runs.some(r => r.s)) continue;
       const frag = document.createDocumentFragment();
       for (const r of runs) {
-        if (!r.s && !r.u) { frag.append(r.t); continue; }
+        if (!r.s) { frag.append(r.t); continue; }
         const span = document.createElement('span');
-        if (r.s) { span.dataset.cfShift = ''; span.style.cssText = \`position:relative;inset-block-start:\${-r.s}em;\`; }
-        if (r.u) { span.dataset.cfTcy = ''; span.style.textCombineUpright = 'all'; }
+        span.dataset.cfShift = '';
+        span.style.cssText = \`position:relative;inset-block-start:\${-r.s}em\`;
         span.textContent = r.t;
         frag.append(span);
       }

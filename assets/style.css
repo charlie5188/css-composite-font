@@ -254,7 +254,7 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .r[data-k="han"]{--k:var(--c-han)} .r[data-k="kana"]{--k:var(--c-kana)} .r[data-k="punct"]{--k:var(--c-punct)}
 .r[data-k="symbol"]{--k:var(--c-symbol)} .r[data-k="shared"]{--k:var(--c-shared)} .r[data-k="latin"]{--k:var(--c-latin)}
 .r[data-k="digit"]{--k:var(--c-digit)} .r[data-k="bopo"]{--k:var(--c-bopo)}
-.tcy{text-combine-upright:all}      /* 纵中横 */ .r[data-k="custom"]{--k:var(--c-custom)}
+.r[data-k="custom"]{--k:var(--c-custom)}
 .colorize .r[data-k="other"],.colorize .r[data-k="han"]{background:none;box-shadow:none}
 .compare-label{font-size:12px;color:var(--muted);margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .compare-label b{color:var(--ink);font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase}

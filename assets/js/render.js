@@ -205,29 +205,26 @@ function renderPreview() {
   for (const el of [pt, $('#naiveText')]) {
     for (const t of TYPO) {
       if (t.attr) el.lang = state.typo[t.key];
-      else if (!t.js) el.style.setProperty(t.prop, state.typo[t.key]);      // 纵中横另外用 span 处理
+      else el.style.setProperty(t.prop, state.typo[t.key]);
     }
   }
   /* 类别着色优先用 CSS Highlight API：不拆 DOM，排版和不着色时完全一样（拆成 span 会让竖排里的西文和后面的字重叠）。
      只有基线偏移必须包 span；浏览器不支持 Highlight API 时才退回用 span 着色 */
   const hl = HL_OK && v.colorize, spanColor = v.colorize && !HL_OK;
   pt.classList.toggle('colorize', spanColor);
-  /* 纵中横：直排时，前后不是数字、小数点、冒号的 1–N 位半角数字横排进一格（和导出的 JS 规则相同） */
-  const tcyN = v.vertical ? +state.typo.tcy || 0 : 0, up = new Set();
-  if (tcyN) for (const m of v.text.matchAll(new RegExp(`(?<![0-9.,:])[0-9]{1,${tcyN}}(?![0-9.,:])`, 'g'))) for (let i = m.index; i < m.index + m[0].length; i++) up.add(i);
-  if (!(spanColor || anyShift() || up.size)) pt.textContent = v.text;
+  if (!(spanColor || anyShift())) pt.textContent = v.text;
   else {
     /* 不需要 span 的文字合成一个文本节点：直排时，西文、数字和汉字分在相邻的文本节点里，Chrome 会把后面的字叠上去 */
     const frag = document.createDocumentFragment();
-    let cur = null, curUp = false, buf = '', plain = '';
+    let cur = null, buf = '', plain = '';
     const flush = () => {
       if (!buf) return;
       const sh = settingOf(cur).shift;
-      if (!spanColor && !sh && !curUp) plain += buf;
+      if (!spanColor && !sh) plain += buf;
       else {
         if (plain) { frag.append(plain); plain = ''; }
         const s = document.createElement('span');
-        s.className = 'r' + (curUp ? ' tcy' : '');
+        s.className = 'r';
         s.dataset.k = cur[0] === '#' ? 'custom' : cur;
         if (sh) s.style.setProperty('--sh', sh / 100);
         s.textContent = buf;
@@ -235,12 +232,7 @@ function renderPreview() {
       }
       buf = '';
     };
-    let i = 0;
-    for (const ch of v.text) {
-      const o = ownerOf(ch.codePointAt(0)), u = up.has(i);
-      if (o !== cur || u !== curUp) { flush(); cur = o; curUp = u; }
-      buf += ch; i += ch.length;
-    }
+    for (const ch of v.text) { const o = ownerOf(ch.codePointAt(0)); if (o !== cur) { flush(); cur = o; } buf += ch; }
     flush();
     if (plain) frag.append(plain);
     pt.replaceChildren(frag);
