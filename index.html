@@ -8,14 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=276c61e4">
-<script src="assets/js/i18n.js?v=545b3df5" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=863c927a">
+<script src="assets/js/i18n.js?v=f0d7b842" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
-<script src="assets/js/core.js?v=8937c288" defer></script>
-<script src="assets/js/render.js?v=d7e3526d" defer></script>
+<script src="assets/js/core.js?v=03492760" defer></script>
+<script src="assets/js/render.js?v=57734d5d" defer></script>
 <script src="assets/js/export.js?v=1b1135a4" defer></script>
-<script src="assets/js/ui.js?v=4f967b98" defer></script>
+<script src="assets/js/ui.js?v=87544abe" defer></script>
 </head>
 <body>
 <div class="app">
@@ -73,6 +73,9 @@
       <div id="classRows"></div>
       <div class="sec-row sub"><h3 class="label lab-i"><span data-t="custom"></span><button type="button" class="info" data-info="customInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h3><button class="tbtn" id="addCustom" type="button" data-t="add"></button></div>
       <div id="customRows"></div>
+      <!-- 字体特性：选哪个字形（OpenType 特性）和行高度量，属于字体，但不分字重 -->
+      <div class="sec-row sub feat-head"><h3 class="label lab-i"><span data-t="featTitle"></span></h3><span class="feat-scope" data-t="featScope"></span><span class="typo-changed" id="featChanged"></span><button type="button" class="tbtn typo-reset" id="featReset" data-t="typoReset" hidden></button></div>
+      <div class="typo-body" id="featRows"></div>
       </div>
       <div class="pane-sec typo" id="paneTypo" role="tabpanel" aria-labelledby="ltabTypo" hidden>
         <div class="typo-head"><span class="typo-scope" data-t="typoScope"></span><span class="typo-changed" id="typoChanged"></span><button type="button" class="tbtn typo-reset" id="typoReset" data-t="typoReset" hidden></button></div>

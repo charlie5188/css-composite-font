@@ -258,17 +258,19 @@ function initToolbar() {
     const m = /^c(\d+)$/.exec(v().sample); if (m && v().customs[+m[1]]) v().customs[+m[1]].text = e.target.value;
     renderPreview(); saveState(); reloadForText();
   });
-  $('#typoRows').addEventListener('click', e => {
+  for (const box of ['#typoRows', '#featRows']) {      // 排版页签、字体页签里的字体特性：同一套卡片和下拉
+  $(box).addEventListener('click', e => {
     const b = e.target.closest('[data-typo]'); if (!b) return;
     state.typo[b.dataset.typo] = b.dataset.v;
     renderTypoStatus(); renderPreview(); renderExport(); saveState();
   });
-  $('#typoRows').addEventListener('change', e => {
+  $(box).addEventListener('change', e => {
     if (e.target.id === 'exLm') { state.lineMetrics = e.target.value; renderTypoStatus(); rebuild(); renderExport(); saveState(); return; }
     const t = TYPO.find(x => 'ty-' + x.key === e.target.id); if (!t) return;
     state.typo[t.key] = e.target.value;
     renderTypoStatus(); renderPreview(); renderExport(); saveState();
   });
+  }
 
   $('#autoAdj').addEventListener('click', autoAdjust);
 
@@ -349,7 +351,7 @@ function initToolbar() {
 }
 function renderTypoRows() {
   $('#browserName').textContent = ENGINE.name ? T('browserNow', { b: `${ENGINE.name} ${ENGINE.v}` }) : '';
-  $('#typoRows').innerHTML = TYPO.filter(t => !t.attr).map(t => {
+  const row = t => {
     const opts = t.values.map(([v, d]) => `<option value="${esc(v)}">${esc(v)}${d ? ' · ' + esc(tr(d)) : ''}${typoSupported(t, v) ? '' : esc(T('unsupported'))}</option>`).join('');
     const sup = t.sup ? ['chrome', 'firefox', 'safari'].map(b =>
       `<span class="${b === ENGINE.id ? 'cur' : ''}">${{ chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' }[b]} ${esc(t.sup[b])}</span>`).join('') : `<span>${esc(T('allBrowsers'))}</span>`;
@@ -362,7 +364,10 @@ function renderTypoRows() {
       ${ctl}
       <div class="typo-sup" data-key="${t.key}">${sup}</div>${t.hint ? `<p class="typo-note" id="${t.hint}" hidden></p>` : ''}
     </div>`;
-  }).join('') + lmRow();
+  };
+  const rows = TYPO.filter(t => !t.attr);
+  $('#typoRows').innerHTML = rows.filter(t => !isFontTypo(t)).map(row).join('');
+  $('#featRows').innerHTML = rows.filter(isFontTypo).map(row).join('') + lmRow();
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }
   $('#exLm').value = state.lineMetrics;
   renderTypoStatus();
@@ -379,12 +384,15 @@ function lmRow() {
     </div>`;
 }
 function renderTypoStatus() {
-  document.querySelectorAll('#typoRows [data-typo]').forEach(b => b.setAttribute('aria-checked', state.typo[b.dataset.typo] === b.dataset.v));
+  document.querySelectorAll('#typoRows [data-typo], #featRows [data-typo]').forEach(b => b.setAttribute('aria-checked', state.typo[b.dataset.typo] === b.dataset.v));
   renderNumHint(); renderEaMarks();
-  const n = TYPO.filter(t => !t.attr && state.typo[t.key] !== typoDef(t)).length + (state.lineMetrics === 'off' ? 1 : 0);
+  const changed = TYPO.filter(t => !t.attr && state.typo[t.key] !== typoDef(t));
+  const n = changed.filter(t => !isFontTypo(t)).length, nf = changed.filter(isFontTypo).length + (state.lineMetrics === 'off' ? 1 : 0);
   $('#typoChanged').textContent = n ? T('typoChanged', { n }) : '';
   $('#typoCount').textContent = n || '';      // 页签上的小红点：改了几项
   $('#typoReset').hidden = !n;
+  $('#featChanged').textContent = nf ? T('typoChanged', { n: nf }) : '';
+  $('#featReset').hidden = !nf;
   for (const t of TYPO) {
     const cur = document.querySelector(`.typo-sup[data-key="${t.key}"] .cur`);
     if (!cur) continue;
@@ -981,8 +989,12 @@ function resetAll() {
   toast(T('tReset'));
 }
 function initReset() {
-  $('#typoReset').addEventListener('click', e => {
-    for (const t of TYPO) if (!t.attr) state.typo[t.key] = typoDef(t);
+  $('#typoReset').addEventListener('click', () => {
+    for (const t of TYPO) if (!t.attr && !isFontTypo(t)) state.typo[t.key] = typoDef(t);
+    renderTypoRows(); renderPreview(); renderExport(); saveState();
+  });
+  $('#featReset').addEventListener('click', () => {
+    for (const t of TYPO) if (isFontTypo(t)) state.typo[t.key] = typoDef(t);
     const lmWas = state.lineMetrics; state.lineMetrics = 'han';
     if (lmWas !== 'han') rebuild();
     renderTypoRows(); renderPreview(); renderExport(); saveState();

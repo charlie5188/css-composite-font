@@ -243,7 +243,7 @@ function renderNumHint() {
   const { f, fx } = digitFx();
   el.hidden = !fx;
   /* 卡片：这个字体没有的样式淡一些（排出来和默认一样），鼠标停留时说明 */
-  document.querySelectorAll('#typoRows [data-typo="num"], #typoRows [data-typo="zero"]').forEach(b => {
+  document.querySelectorAll('#featRows [data-typo="num"], #featRows [data-typo="zero"]').forEach(b => {
     const lack = fx ? b.dataset.v.split(' ').map(v => NUM_FEAT[v]).filter(t => t && numWhy(fx, t) === 'none') : [];
     b.classList.toggle('lack', !!lack.length);
     b.title = b.dataset.v + (lack.length ? ' — ' + T('numLacks', { font: shortName(f), list: lack.map(numLabel).join(T('joiner')) }) : '');
@@ -264,7 +264,7 @@ function renderEaMarks() {
     fx[k] = featFx(fonts[k], EA_SAMPLE[k], tags, renderEaMarks);
     /* JIS 各版里只有一版没变化、其他几版有变化：字体默认就是那一版（例如 ProN 字体默认就是 JIS2004），不算没有 */
     const jisAny = fx[k] && ['jp78', 'jp83', 'jp90', 'jp04'].some(t => fx[k][t]);
-    document.querySelectorAll(`#typoRows [data-typo="${k}"]`).forEach(b => {
+    document.querySelectorAll(`#featRows [data-typo="${k}"]`).forEach(b => {
       const tag = EA_FEAT[b.dataset.v], none = !!(tag && fx[k] && !fx[k][tag]), isDef = none && /^jp/.test(tag) && jisAny;
       b.classList.toggle('lack', none && !isDef);
       b.title = b.dataset.v + (none ? ' — ' + T(isDef ? 'eaDefault' : 'eaLack', { font: shortName(fonts[k]) }) : '');

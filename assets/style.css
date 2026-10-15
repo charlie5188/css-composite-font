@@ -413,6 +413,10 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .typo{min-width:0}
 .typo-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:14px 0 2px}
 .typo-scope{flex:1 1 220px;font-size:12px;line-height:1.55;color:var(--muted)}
+/* 字体页签最后的「字体特性」：标题和例外字符一样，后面一句说明不分字重 */
+.compose .sec-row.feat-head{align-items:center;justify-content:flex-start;gap:6px 12px;margin-top:26px}
+.feat-scope{flex:1 1 auto;font-size:12px;color:var(--muted)}
+#featRows{padding-top:0}
 .typo-changed{font-size:12px;color:var(--accent);white-space:nowrap}
 .typo-reset{font-size:12px;padding:0;white-space:nowrap}
 .typo-body{display:grid;gap:4px;padding:6px 0 12px}

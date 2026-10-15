@@ -424,13 +424,13 @@ const TYPO = [
     sup: { chrome: '—', firefox: '—', safari: '10' },
     values: [['none', null], ['allow-end', { zh: '行尾句读可悬挂', ja: '行末の句読点をぶら下げる', tw: '行尾句讀可懸掛' }], ['first allow-end last', { zh: '段首段尾的引号括号也悬挂', ja: '段落の最初と最後の括弧も', tw: '段首段尾的引號括號也懸掛' }]],
     note: { zh: '让行尾的句号、逗号伸出版心，右边缘看起来更齐。目前只有 Safari 支持，其他浏览器照常排。first / last 让段落开头、结尾的引号和括号也悬挂。', ja: '行末の句読点を版面の外にはみ出させ、右端をそろえて見せます。現在対応しているのは Safari だけで、ほかのブラウザでは通常どおり組まれます。first / last は段落の最初・最後の括弧や引用符もぶら下げます。', tw: '讓行尾的句號、逗號伸出版心，右邊緣看起來更齊。目前只有 Safari 支援，其他瀏覽器照常排。first / last 讓段落開頭、結尾的引號和括號也懸掛。' } },
-  { key: 'feat', label: { zh: '字距特性', ja: '字詰めの機能', tw: '字距特性' }, prop: 'font-feature-settings', def: 'normal', tiles: '「アイ」、ウ。', tileW: 112, tileFs: 17, tileCode: true,
+  { key: 'feat', grp: 'font', label: { zh: '字距特性', ja: '字詰めの機能', tw: '字距特性' }, prop: 'font-feature-settings', def: 'normal', tiles: '「アイ」、ウ。', tileW: 112, tileFs: 17, tileCode: true,
     sup: { chrome: '48', firefox: '34', safari: '9.1' },
     values: [['normal', null], ['"palt"', { zh: '假名标点比例宽', ja: 'かなと約物をプロポーショナルに', tw: '假名標點比例寬' }], ['"halt"', { zh: '标点半角', ja: '約物を半角に', tw: '標點半形' }]],
     note: { zh: '日文排版常用的 OpenType 特性。palt 让假名和标点按字形本身的宽度排，字距更紧，适合标题；halt 只把标点压成半宽。正文一般保持 normal。字体没有这些特性时不起作用；思源 / Noto CJK 等字体的标点也支持。', ja: '和文組版でよく使う OpenType 機能です。palt はかなや約物を字形そのものの幅で組み、字間が詰まるので見出し向きです。halt は約物だけを半角にします。本文はふつう normal のままです。フォントにこれらの機能がなければ効きません。源ノ / Noto CJK などのフォントは約物も対応しています。', tw: '日文排版常用的 OpenType 特性。palt 讓假名和標點按字形本身的寬度排，字距更緊，適合標題；halt 只把標點壓成半寬。內文一般保持 normal。字型沒有這些特性時不起作用；思源 / Noto CJK 等字型的標點也支援。' } },
   /* 数字样式：和 InDesign 的「数字样式」一样的五种。斜线零单独一行，导出时两行合成一条 font-variant-numeric。
      tiles：用字样卡片选（每张卡片用当前的数字字体排出这个样式），第三项是用途提示 */
-  { key: 'num', label: { zh: '数字样式', ja: '数字のスタイル', tw: '數字樣式' }, prop: 'font-variant-numeric', def: 'normal', tiles: '11,980', hint: 'numHint',
+  { key: 'num', grp: 'font', label: { zh: '数字样式', ja: '数字のスタイル', tw: '數字樣式' }, prop: 'font-variant-numeric', def: 'normal', tiles: '11,980', hint: 'numHint',
     sup: { chrome: '52', firefox: '34', safari: '9.1' },
     values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設' }],
       ['lining-nums tabular-nums', { zh: '等高等宽', ja: 'ライニング・等幅', tw: '等高等寬' }, { zh: '表格、金额', ja: '表・金額', tw: '表格、金額' }],
@@ -438,19 +438,21 @@ const TYPO = [
       ['oldstyle-nums proportional-nums', { zh: '旧式比例', ja: 'オールドスタイル・プロポーショナル', tw: '舊式比例' }, { zh: '西文正文', ja: '欧文の本文', tw: '西文內文' }],
       ['oldstyle-nums tabular-nums', { zh: '旧式等宽', ja: 'オールドスタイル・等幅', tw: '舊式等寬' }]],
     note: { zh: '和 InDesign 的「数字样式」一样的五种。等高 / 旧式是数字的高低，比例 / 等宽是数字的宽度。效果取决于显示数字的那个字体有没有这些 OpenType 特性；Google Fonts 的网页字体删掉了旧式数字和斜线零。写在使用规则里，页面上可以按元素改，例如只让表格用等宽数字。', ja: 'InDesign の「数字スタイル」と同じ 5 種類です。ライニング / オールドスタイルは数字の高さ、プロポーショナル / 等幅は数字の幅です。効果は数字を表示するフォントにこれらの OpenType 機能があるかどうかで決まります。Google Fonts の Web フォントではオールドスタイル数字とスラッシュ付きゼロが削られています。使用側の規則に書かれるので、表だけ等幅数字にするなど、要素ごとに変えられます。', tw: '和 InDesign 的「數字樣式」一樣的五種。等高 / 舊式是數字的高低，比例 / 等寬是數字的寬度。效果取決於顯示數字的那個字型有沒有這些 OpenType 特性；Google Fonts 的網頁字型刪掉了舊式數字和斜線零。寫在使用規則裡，頁面上可以按元素改，例如只讓表格用等寬數字。' } },
-  { key: 'zero', label: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零' }, prop: 'font-variant-numeric', def: 'normal', tiles: '100',
+  { key: 'zero', grp: 'font', label: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零' }, prop: 'font-variant-numeric', def: 'normal', tiles: '100',
     sup: { chrome: '52', firefox: '34', safari: '9.1' },
     values: [['normal', { zh: '不用', ja: '使わない', tw: '不用' }], ['slashed-zero', { zh: '斜线零', ja: 'スラッシュ付き', tw: '斜線零' }, { zh: '和字母 O 区分', ja: 'O と区別', tw: '和字母 O 區分' }]] },
   /* 东亚字形：字形标准（JIS 各版、旧字形 / 简化字形）和假名标点的宽度，两行合成一条 font-variant-east-asian */
-  { key: 'eaVar', label: { zh: '字形标准', ja: '字形の規格', tw: '字形標準' }, prop: 'font-variant-east-asian', def: 'normal', tiles: '辻葛飴鴎国', tileW: 128, hint: 'eaHint',
+  { key: 'eaVar', grp: 'font', label: { zh: '字形标准', ja: '字形の規格', tw: '字形標準' }, prop: 'font-variant-east-asian', def: 'normal', tiles: '辻葛飴鴎国', tileW: 128, hint: 'eaHint',
     sup: { chrome: '63', firefox: '34', safari: '9.1' },
     values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設' }], ['jis04', { zh: 'JIS2004', ja: 'JIS2004', tw: 'JIS2004' }, { zh: '现行标准', ja: '現行の規格', tw: '現行標準' }], ['jis90', { zh: 'JIS90', ja: 'JIS90', tw: 'JIS90' }, { zh: '2004 年以前', ja: '2004 年より前', tw: '2004 年以前' }], ['jis83', { zh: 'JIS83', ja: 'JIS83', tw: 'JIS83' }], ['jis78', { zh: 'JIS78', ja: 'JIS78', tw: 'JIS78' }], ['traditional', { zh: '旧字形', ja: '旧字体', tw: '舊字形' }], ['simplified', { zh: '简化字形', ja: '簡略字形', tw: '簡化字形' }]],
     note: { zh: '日文汉字有几版字形标准：JIS2004 是现行标准，例如「辻」的走之是两点、「飴」的食字旁是新写法；JIS90 是 2004 年以前 Windows XP 等使用的写法，JIS83、JIS78 更早。旧字形把字换成传统写法（例如国 → 國），简化字形相反。需要字体本身带有这些字形：冬青黑体（Hiragino）、游明朝等本机字体通常有，Google Fonts 的网页字体把这些特性删掉了。和校样的语言无关，中文字体如果带有这些特性也会生效。', ja: '日本語の漢字には字形の規格がいくつかあります。JIS2004 は現行の規格で、たとえば「辻」のしんにょうは 2 点、「飴」の食偏は新しい形です。JIS90 は 2004 年より前（Windows XP など）の形で、JIS83・JIS78 はさらに古い形です。旧字体は字を伝統的な形に（国 → 國）、簡略字形はその逆にします。フォント自体がこれらの字形を持っている必要があり、ヒラギノや游明朝などのローカルフォントにはたいていありますが、Google Fonts の Web フォントではこれらの機能が削られています。校正刷りの言語とは関係なく、中国語フォントでも機能があれば効きます。', tw: '日文漢字有幾版字形標準：JIS2004 是現行標準，例如「辻」的辶是兩點、「飴」的食字旁是新寫法；JIS90 是 2004 年以前 Windows XP 等使用的寫法，JIS83、JIS78 更早。舊字形把字換成傳統寫法（例如国 → 國），簡化字形相反。需要字型本身帶有這些字形：冬青黑體（Hiragino）、游明朝等本機字型通常有，Google Fonts 的網頁字型把這些特性刪掉了。和校樣的語言無關，中文字型如果帶有這些特性也會生效。' } },
-  { key: 'eaWidth', label: { zh: '假名与标点宽度', ja: 'かなと約物の幅', tw: '假名與標點寬度' }, prop: 'font-variant-east-asian', def: 'normal', tiles: 'イリ「ア」ﾃｽ', tileW: 150, tileFs: 18,
+  { key: 'eaWidth', grp: 'font', label: { zh: '假名与标点宽度', ja: 'かなと約物の幅', tw: '假名與標點寬度' }, prop: 'font-variant-east-asian', def: 'normal', tiles: 'イリ「ア」ﾃｽ', tileW: 150, tileFs: 18,
     sup: { chrome: '63', firefox: '34', safari: '9.1' },
     values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設' }], ['proportional-width', { zh: '比例宽', ja: 'プロポーショナル', tw: '比例寬' }, { zh: '按字形本身的宽度', ja: '字形そのものの幅', tw: '按字形本身的寬度' }], ['full-width', { zh: '全角', ja: '全角', tw: '全形' }, { zh: '半角假名也变全角', ja: '半角カナも全角に', tw: '半形假名也變全形' }]] },
 ];
 /* 几行合成一条 CSS 属性：数字样式 + 斜线零 → font-variant-numeric；字形标准 + 宽度 → font-variant-east-asian */
+/* grp: 'font' 的几行是字体的事（用哪个字形），放在「字体」页签；其余是排版的事，放在「排版」页签 */
+const isFontTypo = t => t.grp === 'font';
 const TYPO_MERGE = { 'font-variant-numeric': ['num', 'zero'], 'font-variant-east-asian': ['eaVar', 'eaWidth'] };
 const typoValue = t => TYPO_MERGE[t.prop] ? TYPO_MERGE[t.prop].map(k => state.typo[k]).filter(v => v && v !== 'normal').join(' ') || 'normal' : state.typo[t.key];
 const typoMergedAway = t => TYPO_MERGE[t.prop] && TYPO_MERGE[t.prop][0] !== t.key;      // 合并到前一行，导出时不单独写
