@@ -318,7 +318,8 @@ function syncToolbar() {
   $('#vColor').setAttribute('aria-pressed', v.colorize);
   $('#vCompare').setAttribute('aria-pressed', v.compare);
   $('#vItalic').setAttribute('aria-pressed', !!v.italic);
-  document.querySelectorAll('#specViewPop [data-sg]').forEach(b => b.setAttribute('aria-pressed', (v.specShow || {})[b.dataset.sg] ?? true));
+  const sh = specShown();
+  document.querySelectorAll('#specViewPop [data-sg]').forEach(b => b.setAttribute('aria-pressed', !!sh[b.dataset.sg]));
   const nOn = [v.vertical, v.colorize, v.compare, v.italic].filter(Boolean).length;
   $('#viewCount').textContent = nOn ? ` · ${nOn}` : '';
   $('#cmpMode').value = v.cmp;
@@ -366,25 +367,24 @@ function measureRef() {
 }
 /* 度量参考图：汉字字面为基准，叠上西文（大写高、x 高）、数字（数字高）、假名（假名字面）的参考线。
    西文、数字、假名可以在「显示」里分别隐藏；下面的读数只在对应项显示时出现 */
+/* 度量参考图的显示项：菜单里的项目固定；注音默认只在校样语言是繁體中文（台灣）时勾选，手动勾过的以手动为准 */
+const specShown = () => ({ latin: true, digit: true, kana: true, bopo: state.typo.lang === 'zh-Hant-TW', ...(state.view.specShow || {}) });
 function drawSpecimen() {
-  const cv = $('#spec'), sh = { latin: true, digit: true, kana: true, ...(state.view.specShow || {}) };
+  const cv = $('#spec'), sh = specShown();
   const W = cv.clientWidth || 600;
   const ctx = cv.getContext('2d');
   const labelW = Math.min(150, W * 0.3), plotR = W - labelW;
   const fam = `${liveFamily ? `"${liveFamily}", ` : ''}serif`;
   const shiftOf = ch => settingOf(ownerOf(ch.codePointAt(0))).shift / 100;
-  /* 画出来的字：汉字总在；西文 H x g、数字 0、假名 あ 按显示设定 */
-  /* 「假名」那一项在语言是繁體中文（台灣）时换成注音 */
-  const bopo = state.typo.lang === 'zh-Hant-TW', k2 = bopo ? 'ㄅ' : 'あ';
-  document.querySelector('#specViewPop [data-sg=kana]').textContent = T(bopo ? 'sgBopo' : 'sgKana');
-  $('#mKanaBox dt').textContent = T(bopo ? 'mBopo' : 'mKana');
-  const show = [['国', 'han'], ...(sh.kana ? [[k2, bopo ? 'bopo' : 'kana']] : []), ...(sh.latin ? [['H', 'latin'], ['x', 'latin'], ['g', 'latin']] : []), ...(sh.digit ? [['0', 'digit']] : [])];
+  /* 画出来的字：汉字总在；假名 あ、注音 ㄅ、西文 Hxg（连在一起，按字体本身的字距）、数字 0 按显示设定 */
+  const show = ['国', ...(sh.kana ? ['あ'] : []), ...(sh.bopo ? ['ㄅ'] : []), ...(sh.latin ? ['Hxg'] : []), ...(sh.digit ? ['0'] : [])];
+  const GAP = 0.2;      // 各组之间的距离（字号的倍数）
   /* 字号先按宽度定（最大 140px），画布高度再跟着字号走：窄屏上不会留出大片空白 */
   let fs = 140;
   ctx.font = `${fs}px ${fam}`;
-  const span = show.reduce((s, [ch]) => s + ctx.measureText(ch).width, 0) + fs * 0.18 * (show.length - 1);
+  const span = show.reduce((s, ch) => s + ctx.measureText(ch).width, 0) + fs * GAP * (show.length - 1);
   if (span > plotR - 24) fs = Math.floor(fs * (plotR - 24) / span);
-  const nLines = 3 + (sh.latin ? 3 : 0) + (sh.digit ? 2 : 0) + (sh.kana ? 2 : 0);
+  const nLines = 3 + (sh.latin ? 3 : 0) + (sh.digit ? 2 : 0) + (sh.kana ? 2 : 0) + (sh.bopo ? 2 : 0);
   const H = Math.round(Math.min(270, Math.max(140, fs * 1.75, nLines * 13 + 16)));
   const dpr = window.devicePixelRatio || 1;
   cv.style.height = H + 'px';
@@ -395,13 +395,14 @@ function drawSpecimen() {
   ctx.font = glyphFont;
   ctx.textBaseline = 'alphabetic';
   const m = ch => { const t = ctx.measureText(ch); return { ch, asc: t.actualBoundingBoxAscent, desc: t.actualBoundingBoxDescent, w: t.width, shift: shiftOf(ch) * fs }; };
-  const han = m('国'), cap = m('H'), xg = m('x'), fig = m('0'), kana = m(k2);
+  const han = m('国'), cap = m('H'), xg = m('x'), fig = m('0'), kana = m('あ'), bopo = m('ㄅ');
   const baseY = Math.round(H / 2 + (han.asc - han.desc) / 2);      // 汉字字面放在画布正中
   const hanTop = baseY - han.asc - han.shift, hanBot = baseY + han.desc - han.shift;
   const latBase = baseY - cap.shift, capTop = latBase - cap.asc, xTop = baseY - xg.shift - xg.asc;
   const figBase = baseY - fig.shift, figTop = figBase - fig.asc;
   const kanaTop = baseY - kana.shift - kana.asc, kanaBot = baseY - kana.shift + kana.desc;
-  const C = { ink: cssVar('--ink'), muted: cssVar('--muted'), han: cssVar('--muted'), lat: cssVar('--c-latin'), dig: cssVar('--c-digit'), kana: cssVar(bopo ? '--c-bopo' : '--c-kana'), band: cssVar('--faint') };
+  const bopoTop = baseY - bopo.shift - bopo.asc, bopoBot = baseY - bopo.shift + bopo.desc;
+  const C = { ink: cssVar('--ink'), muted: cssVar('--muted'), han: cssVar('--muted'), lat: cssVar('--c-latin'), dig: cssVar('--c-digit'), kana: cssVar('--c-kana'), bopo: cssVar('--c-bopo'), band: cssVar('--faint') };
 
   ctx.save(); ctx.globalAlpha = 0.16; ctx.fillStyle = C.band; ctx.fillRect(0, hanTop, plotR, hanBot - hanTop); ctx.restore();
   const lines = [{ y: hanTop, c: C.han, t: T('gFaceTop') }, { y: hanBot, c: C.han, t: T('gFaceBot') }, { y: baseY, c: C.muted, t: T('gBase') }];
@@ -413,7 +414,8 @@ function drawSpecimen() {
     lines.push({ y: figTop, c: C.dig, t: T('gFig') });
     if (fig.shift) lines.push({ y: figBase, c: C.dig, t: T('gDigBase'), dash: [2, 3] });
   }
-  if (sh.kana) lines.push({ y: kanaTop, c: C.kana, t: T(bopo ? 'gBopoTop' : 'gKanaTop'), dash: [6, 3] }, { y: kanaBot, c: C.kana, t: T(bopo ? 'gBopoBot' : 'gKanaBot'), dash: [6, 3] });
+  if (sh.kana) lines.push({ y: kanaTop, c: C.kana, t: T('gKanaTop'), dash: [6, 3] }, { y: kanaBot, c: C.kana, t: T('gKanaBot'), dash: [6, 3] });
+  if (sh.bopo) lines.push({ y: bopoTop, c: C.bopo, t: T('gBopoTop'), dash: [6, 3] }, { y: bopoBot, c: C.bopo, t: T('gBopoBot'), dash: [6, 3] });
   ctx.font = `11px ${cssVar('--ui') || 'sans-serif'}`;
   ctx.textBaseline = 'middle';
   /* 标签按线的位置排，间距至少 12px；超出画布底部时整体上移 */
@@ -429,10 +431,10 @@ function drawSpecimen() {
   });
   ctx.setLineDash([]);
   ctx.font = glyphFont; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = C.ink;
-  const glyphs = show.map(([ch]) => m(ch));
-  const total = glyphs.reduce((s, g) => s + g.w, 0) + fs * 0.18 * (glyphs.length - 1);
+  const glyphs = show.map(m);
+  const total = glyphs.reduce((s, g) => s + g.w, 0) + fs * GAP * (glyphs.length - 1);
   let x = Math.max(12, (plotR - total) / 2);
-  for (const g of glyphs) { ctx.fillText(g.ch, x, baseY - g.shift); x += g.w + fs * 0.18; }
+  for (const g of glyphs) { ctx.fillText(g.ch, x, baseY - g.shift); x += g.w + fs * GAP; }
 
   lastRef = measureRef();
   const refEl = $('#mRef');
@@ -440,7 +442,8 @@ function drawSpecimen() {
     : T('refLine', { font: lastRef.font, cap: (lastRef.cap * 100).toFixed(1), x: (lastRef.x * 100).toFixed(1) });
 
   const face = han.asc + han.desc, pct = v => `${(v * 100).toFixed(1)}<small>%</small>`;
-  $('#mFigBox').hidden = !sh.digit; $('#mKanaBox').hidden = !sh.kana;
+  $('#mFigBox').hidden = !sh.digit; $('#mKanaBox').hidden = !sh.kana; $('#mBopoBox').hidden = !sh.bopo;
+  $('#mBopo').innerHTML = face >= 1 && bopo.asc >= 1 ? pct((bopo.asc + bopo.desc) / face) : '–';
   $('#mFig').innerHTML = face >= 1 && fig.asc >= 1 ? pct(fig.asc / face) : '–';
   $('#mKana').innerHTML = face >= 1 && kana.asc >= 1 ? pct((kana.asc + kana.desc) / face) : '–';
   if (face < 1 || cap.asc < 1) { lastMeasure = null; $('#mCap').textContent = $('#mX').textContent = $('#mMid').textContent = '–'; return; }
@@ -450,6 +453,8 @@ function drawSpecimen() {
   $('#mCap').innerHTML = pct(capRatio);
   $('#mX').innerHTML = pct(xRatio);
   const mid = midPx / fs * 100;
-  $('#mMid').innerHTML = Math.abs(mid) < 0.25 ? `0.0<small>% em · ${esc(T('centered'))}</small>`
-    : `${esc(mid > 0 ? T('low') : T('high'))} ${Math.abs(mid).toFixed(1)}<small>% em</small>`;
+  /* 读数格较窄：偏高、偏低用箭头，完整说法放在悬停提示里 */
+  const centered = Math.abs(mid) < 0.25;
+  $('#mMid').innerHTML = centered ? '±0.0<small>% em</small>' : `${mid > 0 ? '↓' : '↑'}${Math.abs(mid).toFixed(1)}<small>% em</small>`;
+  $('#mMid').title = centered ? T('centered') : `${mid > 0 ? T('low') : T('high')} ${Math.abs(mid).toFixed(1)}% em`;
 }

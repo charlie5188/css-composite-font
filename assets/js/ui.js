@@ -181,8 +181,8 @@ function initToolbar() {
   });
   $('#specViewPop').addEventListener('click', e => {
     const b = e.target.closest('[data-sg]'); if (!b) return;
-    const sh = (v().specShow ||= { latin: true, digit: true, kana: true });
-    sh[b.dataset.sg] = !(sh[b.dataset.sg] ?? true);
+    const k = b.dataset.sg;
+    (v().specShow ||= {})[k] = !specShown()[k];
     syncToolbar(); drawSpecimen(); saveState();
   });
   for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vCompare', 'compare'], ['vItalic', 'italic']])
@@ -283,7 +283,7 @@ function initToolbar() {
   $('#exLang').addEventListener('change', e => {
     state.scope = e.target.value;
     if (state.scope) state.typo.lang = state.scope;
-    renderEditor(); renderPreview(); drawSpecimen(); renderExport(); saveState();
+    syncToolbar(); renderEditor(); renderPreview(); drawSpecimen(); renderExport(); saveState();
   });
   const tabs = { tabCss: 'css', tabJs: 'js', tabNotes: 'notes' };
   for (const [id, key] of Object.entries(tabs)) $('#' + id).addEventListener('click', () => {
@@ -354,12 +354,15 @@ function famOf(f) {
   const s = source(f);
   return s.status === 'ok' ? `'${s.family}', var(--ui)` : 'var(--ui)';
 }
-function presetCard({ id, name, tag, cls, ja, user, active }) {
+/* 缩略字样「永 ? Ag」：中间那个字按文字写法换——简体「体」、繁体「體」、日文「あ」，一眼看出是哪种中文 */
+const SCRIPT_CHAR = { sc: '体', tc: '體', jp: 'あ' };
+const scriptOfLang = lang => /^ja/.test(lang || '') ? 'jp' : /^zh-Hant/.test(lang || '') ? 'tc' : 'sc';
+function presetCard({ id, name, tag, cls, script, user, active }) {
   const { han, lat, kana, size } = presetFonts(cls);
   const miss = [han, lat].some(f => f?.kind === 'local' && sources.get(fontKey(f))?.status === 'error');
   return `<div class="pcard-wrap"><button type="button" class="pcard" data-preset="${esc(id)}" aria-pressed="${active}">
-      <span class="pspec" aria-hidden="true"><span style="font-family:${famOf(han)}">永</span><span style="font-family:${famOf(ja ? kana : han)}">${ja ? 'あ' : '字'}</span><span style="font-family:${famOf(lat)};font-size:${size}%">Ag</span></span>
-      <span class="ptag">${esc(tag)}</span>
+      <span class="pspec" aria-hidden="true"><span style="font-family:${famOf(han)}">永</span><span style="font-family:${famOf(script === 'jp' ? kana : han)}">${SCRIPT_CHAR[script]}</span><span style="font-family:${famOf(lat)};font-size:${size}%">Ag</span></span>
+      <span class="ptag" title="${esc(tag)}">${esc(tag)}</span>
       <span class="pname">${esc(name)}</span>
       ${miss ? `<span class="pmiss">${esc(T('presetMissing'))}</span>` : ''}
     </button>${user ? `<button type="button" class="pdel" data-del="${esc(id.slice(5))}" aria-label="${esc(T('presetDelete'))} ${esc(name)}">×</button>` : ''}</div>`;
@@ -372,9 +375,9 @@ const PRESET_ORDER = {
 };
 const orderedPresets = () => { const o = PRESET_ORDER[UI] || PRESET_ORDER.zh, at = id => (i => i < 0 ? 99 : i)(o.indexOf(id)); return [...PRESETS].sort((a, b) => at(a.id) - at(b.id)); };
 function renderPresetCards() {
-  const cards = orderedPresets().map(p => presetCard({ id: p.id, name: tr(p.name), tag: tr(p.tag), cls: freshClasses(p), ja: p.region === 'jp', active: state.preset === p.id }));
+  const cards = orderedPresets().map(p => presetCard({ id: p.id, name: tr(p.name), tag: tr(p.tag), cls: freshClasses(p), script: p.region === 'hk' ? 'tc' : p.region, active: state.preset === p.id }));
   for (const [n, snap] of Object.entries(userPresets)) if (snap?.classes?.han)
-    cards.push(presetCard({ id: 'user:' + n, name: n, tag: T('presetMine'), cls: snap.classes, ja: /^ja/.test(snap.typo?.lang || ''), user: true, active: state.preset === 'user:' + n }));
+    cards.push(presetCard({ id: 'user:' + n, name: n, tag: T('presetMine'), cls: snap.classes, script: scriptOfLang(snap.typo?.lang), user: true, active: state.preset === 'user:' + n }));
   $('#presetCards').innerHTML = cards.join('');
   fitPresets();
 }
