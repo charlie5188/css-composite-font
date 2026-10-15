@@ -475,8 +475,6 @@ function syncToolbar() {
   $('#vMiss').setAttribute('aria-pressed', !!v.miss);
   const sh = specShown();
   document.querySelectorAll('#specViewPop [data-sg]').forEach(b => b.setAttribute('aria-pressed', !!sh[b.dataset.sg]));
-  const nOn = [v.vertical, v.colorize, v.rules, v.miss, v.compare, v.italic].filter(Boolean).length;
-  $('#viewCount').textContent = nOn ? ` · ${nOn}` : '';
   $('#cmpMode').value = v.cmp;
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }
   renderTypoStatus();

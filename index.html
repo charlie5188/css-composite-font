@@ -8,12 +8,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=98e598f8">
+<link rel="stylesheet" href="assets/style.css?v=013dff03">
 <script src="assets/js/i18n.js?v=b508c0d4" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
 <script src="assets/js/core.js?v=49d3c19d" defer></script>
-<script src="assets/js/render.js?v=0a308b68" defer></script>
+<script src="assets/js/render.js?v=1b7320fb" defer></script>
 <script src="assets/js/export.js?v=1b1135a4" defer></script>
 <script src="assets/js/ui.js?v=388658e1" defer></script>
 </head>
@@ -92,7 +92,7 @@
 
       <div class="sheet" id="sheet">
         <div class="sheet-bar togs">
-          <button class="tog view-btn" type="button" id="viewBtn" popovertarget="viewPop" aria-haspopup="true"><span data-t="viewMenu"></span><span id="viewCount"></span></button>
+          <button class="tog view-btn" type="button" id="viewBtn" popovertarget="viewPop" aria-haspopup="true"><span data-t="viewMenu"></span></button>
           <div class="view-pop" id="viewPop" popover role="group" data-ta="aria-label:viewMenu">
             <button class="tog" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
             <button class="tog" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
@@ -117,11 +117,10 @@
       <div class="legend" id="legend" hidden></div>
       <div class="miss-note" id="missNote" aria-live="polite" hidden></div>
 
-      <section class="panel" aria-labelledby="metricsLabel">
-        <div class="panel-head"><h2 class="label lab-i" id="metricsLabel"><span data-t="metrics"></span><button type="button" class="info" data-info="metricsInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2>
-        </div>
+      <section class="panel" data-ta="aria-label:metrics">
         <div class="spec-wrap">
           <div class="spec-bar togs">
+            <button type="button" class="info" data-info="metricsInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button>
             <button class="tog view-btn" type="button" id="specViewBtn" popovertarget="specViewPop" aria-haspopup="true"><span data-t="viewMenu"></span></button>
             <div class="view-pop" id="specViewPop" popover role="group" data-ta="aria-label:viewMenu">
               <button class="tog" type="button" data-sg="latin" aria-pressed="true" data-t="sgLatin"></button>
