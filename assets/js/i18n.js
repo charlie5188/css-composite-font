@@ -11,7 +11,8 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 /* ================= 界面文字 ================= */
 const I18N = {
   zh: {
-    leaveTitle: '当前的修改还没有保存', leaveMsg: '切换到「{name}」后，现在的设定会被替换。要先存为预设吗？', leaveName: '新预设的名称', leaveSave: '存为预设并切换', leaveDiscard: '不保存，直接切换', applySizeTip: '按汉字字体自带西文的比例，算出「半角西文」的大小',
+    tSizeAll: '已分别调整 {n} 个字重的西文大小（{lo}–{hi}%）', measuringW: '正在测量 {w}…',
+    leaveTitle: '当前的修改还没有保存', leaveMsg: '切换到「{name}」后，现在的设定会被替换。要先存为预设吗？', leaveName: '新预设的名称', leaveSave: '存为预设并切换', leaveDiscard: '不保存，直接切换', applySizeTip: '每个导出的字重分别测量、分别设定「半角西文」的大小：汉字越粗，字面看起来越大，合适的西文大小也会变。以汉字字体自带的西文比例为准',
     centerTip: '让大写字母的中线对齐汉字字面的中线，写入「半角西文」的基线（导出时需要 JS）',
     eaDefault: '{font} 默认就是这种字形',
     exLm: '行高度量', exLmHan: '对齐汉字字体（推荐）', exLmOff: '不调整', lmInfo: '<p>合成字体的行高和基线在行里的位置，浏览器取自负责空格的那条规则，也就是半角西文的字体（而且是放大之后的），不是汉字字体。</p><p>结果是：行高固定时，汉字在行里会偏上或偏下（黑体 × Inter 实测偏 7%）；行高为 normal 时，只有西文的行会比有汉字的行矮（实测矮 1/6），行距忽大忽小。</p><dl class="stack"><dt>对齐汉字字体</dt><dd>给西文等规则写上汉字字体的 <code>ascent-override</code>、<code>descent-override</code>、<code>line-gap-override</code>（已经除掉 size-adjust），排出来和纯汉字字体一样。Chrome 87+、Firefox 89+ 支持；Safari 会忽略这几行，表现和不调整一样。</dd><dt>不调整</dt><dd>各字体用自己的度量。</dd></dl>', cssLm: '/* ascent-override / descent-override / line-gap-override：西文等规则使用汉字字体的行高度量（已除以 size-adjust），\n * 行高和基线位置都和汉字字体一致。Chrome 87+、Firefox 89+ 支持；Safari 会忽略，按各字体自己的度量显示。 */', eaLack: '{font} 里没有这种字形', eaNone: '{font} 没有这些字形标准，选了也不会变。', eaGoogle: 'Google Fonts 的网页字体删掉了这些特性；冬青黑体、游明朝等本机字体，或者上传的字体文件才有。',
@@ -66,10 +67,10 @@ const I18N = {
    
     gFaceTop: '汉字字面 上', gFaceBot: '汉字字面 下', gCap: '大写高', gX: 'x 高', gBase: '基线', gLatBase: '西文基线', gFig: '数字高', gDigBase: '数字基线', gKanaTop: '假名字面 上', gKanaBot: '假名字面 下', sgLatin: '西文', sgDigit: '数字', sgKana: '假名',
     mixInfo: '「大写高与 x 高折中」以汉字字体自带的西文为基准，取两种对齐的几何平均，并且大写高不超过自带西文的 103%。',
-    applySize: '自动调整西文大小', center: '西文垂直居中',
+    applySize: '自动调整各字重的西文大小', center: '西文垂直居中',
    
    
-    refNote: '<b>怎么调</b>：西文看起来比汉字小，就把「半角西文」的大小调大；大写字母（比如 IBM）比汉字还显眼，就调小。西文看起来偏低，把它的基线往正数调；偏高就往负数调。拿不准时点「自动调整西文大小」，再以正文里看着顺眼为准。',
+    refNote: '<b>怎么调</b>：西文看起来比汉字小，就把「半角西文」的大小调大；大写字母（比如 IBM）比汉字还显眼，就调小。西文看起来偏低，把它的基线往正数调；偏高就往负数调。拿不准时点「自动调整各字重的西文大小」，再以正文里看着顺眼为准。',
     tNotReady: '字体还没加载完，稍后再试',
     tSize: '半角西文大小调整为 {v}%', tShift: '半角西文基线偏移 {v}%。导出时会附带 JS',
     tCopied: '已复制', tCopyFail: '无法写入剪贴板，已选中代码，请按 ⌘C / Ctrl+C', tSaved: '已保存预设「{n}」，只保存在这个浏览器里', tSavedFile: '。字体文件不会被保存，下次需要重新上传', tDeleted: '已删除预设',
@@ -96,7 +97,8 @@ const I18N = {
     pkChecking: '正在检测…', pkGoogleOk: '已找到 · {n} 个分片', pkLocalOk: '已在这台电脑上找到', pkFileOk: '字体文件可用', pkLocalStill: '。仍可使用，导出后在装有该字体的电脑上生效', regForms: '字形是{got}的写法，和校样的语言「{lang}」不一致。', reg_sc: '简体中文', reg_tw: '台湾', reg_hk: '香港', reg_jp: '日文', reg_kr: '韩文', regPunctCorner: '这个字体的标点靠左下（大陆、日本的写法），校样的语言「{lang}」的标点应该居中。', regPunctCenter: '这个字体的标点居中（台湾、香港的写法），校样的语言「{lang}」的标点应该靠左下。', pkPunctCenter: '标点居中（台湾、香港的写法）', pkPunctCorner: '标点靠左下（大陆、日本的写法）', covHK: '香港字', gBopoTop: '注音字面 上', gBopoBot: '注音字面 下', sgBopo: '注音', exRegWarn: '字体和适用语言「{lang}」不一致：{list}。', exRegForms: '汉字字体 {font} 是{got}的字形', exRegPunctCorner: '{font} 的标点靠左下（应该居中）', exRegPunctCenter: '{font} 的标点居中（应该靠左下）', gpHintBopo: '关闭 = 改由半角西文显示。单独写出的 ˊ ˇ ˋ ˙ 在西文里几乎只出现在语言学、国际音标里；法语、汉语拼音等的带调字母（é、ǎ、ü）是另外的码位，一直归半角西文，不受这个开关影响。', covPinyin: '汉语拼音', pkUse: '使用这个字体',
   },
   ja: {
-    leaveTitle: '変更がまだ保存されていません', leaveMsg: '「{name}」に切り替えると、今の設定は置き換えられます。先にプリセットとして保存しますか？', leaveName: '新しいプリセットの名前', leaveSave: '保存して切り替える', leaveDiscard: '保存せずに切り替える', applySizeTip: '漢字フォント付属の欧文の比率から「半角欧文」のサイズを計算します',
+    tSizeAll: '{n} 個のウェイトの欧文サイズをそれぞれ調整しました（{lo}–{hi}%）', measuringW: '{w} を計測中…',
+    leaveTitle: '変更がまだ保存されていません', leaveMsg: '「{name}」に切り替えると、今の設定は置き換えられます。先にプリセットとして保存しますか？', leaveName: '新しいプリセットの名前', leaveSave: '保存して切り替える', leaveDiscard: '保存せずに切り替える', applySizeTip: '書き出すウェイトごとに計測し、「半角欧文」のサイズをそれぞれ設定します。漢字は太いほど字面が大きく見えるため、合う欧文のサイズも変わります。漢字フォント付属の欧文の比率が基準です',
     centerTip: '大文字の中心線を漢字の字面の中心にそろえ、「半角欧文」のベースラインに反映します（書き出しには JS が必要）',
     eaDefault: '{font} はもともとこの字形',
     exLm: '行のメトリクス', exLmHan: '漢字フォントに合わせる（推奨）', exLmOff: '調整しない', lmInfo: '<p>合成フォントの行の高さと、行の中のベースラインの位置は、スペースを受け持つ規則、つまり半角欧文のフォント（それも拡大した後のもの）から決まり、漢字フォントからではありません。</p><p>そのため、行送りを固定すると漢字が行の中で上か下に寄り（黒体 × Inter で実測 7%）、行送りが normal だと欧文だけの行が漢字のある行より低くなって（実測で 1/6）、行間が不ぞろいになります。</p><dl class="stack"><dt>漢字フォントに合わせる</dt><dd>欧文などの規則に漢字フォントの <code>ascent-override</code>・<code>descent-override</code>・<code>line-gap-override</code> を書き（size-adjust の分は割り戻し済み）、漢字フォントだけで組んだときと同じにします。Chrome 87+、Firefox 89+ が対応し、Safari はこれらの行を無視して「調整しない」と同じになります。</dd><dt>調整しない</dt><dd>各フォントが自分のメトリクスを使います。</dd></dl>', cssLm: '/* ascent-override / descent-override / line-gap-override：欧文などの規則に漢字フォントの行のメトリクスを使います（size-adjust の分は割り戻し済み）。\n * 行の高さもベースラインの位置も漢字フォントと同じになります。Chrome 87+、Firefox 89+ が対応し、Safari では各フォント自身のメトリクスで表示されます。 */', eaLack: '{font} にはこの字形がない', eaNone: '{font} にはこれらの字形の規格がなく、選んでも変わりません。', eaGoogle: 'Google Fonts の Web フォントではこれらの機能が削られています。ヒラギノや游明朝などのローカルフォントか、フォントファイルを使ってください。',
@@ -151,10 +153,10 @@ const I18N = {
    
     gFaceTop: '字面 上', gFaceBot: '字面 下', gCap: 'キャップハイト', gX: 'x ハイト', gBase: 'ベースライン', gLatBase: '欧文ベースライン', gFig: '数字の高さ', gDigBase: '数字ベースライン', gKanaTop: 'かな字面 上', gKanaBot: 'かな字面 下', sgLatin: '欧文', sgDigit: '数字', sgKana: 'かな',
     mixInfo: '「キャップハイトと x ハイトの中間」は漢字フォント付属の欧文を基準に、2 つの合わせ方の幾何平均を取ります。キャップハイトは付属欧文の 103% を超えません。',
-    applySize: '欧文のサイズを自動調整', center: '欧文を天地中央に',
+    applySize: 'ウェイトごとに欧文のサイズを自動調整', center: '欧文を天地中央に',
    
    
-    refNote: '<b>調整のしかた</b>：欧文が漢字より小さく見えたら「半角欧文」のサイズを上げます。大文字（IBM など）が漢字より目立つなら下げます。欧文が低く見えたらベースラインをプラスに、高く見えたらマイナスにします。迷ったら「欧文のサイズを自動調整」を押し、最後は本文での見た目で決めてください。',
+    refNote: '<b>調整のしかた</b>：欧文が漢字より小さく見えたら「半角欧文」のサイズを上げます。大文字（IBM など）が漢字より目立つなら下げます。欧文が低く見えたらベースラインをプラスに、高く見えたらマイナスにします。迷ったら「ウェイトごとに欧文のサイズを自動調整」を押し、最後は本文での見た目で決めてください。',
     tNotReady: 'フォントの読み込みが終わっていません。少し待ってからもう一度試してください',
     tSize: '半角欧文のサイズを {v}% にしました', tShift: '半角欧文のベースラインを {v}% シフトしました。書き出しに JS が付きます',
     tCopied: 'コピーしました', tCopyFail: 'クリップボードに書き込めませんでした。コードを選択したので ⌘C / Ctrl+C を押してください', tSaved: 'プリセット「{n}」を保存しました（このブラウザにのみ保存）', tSavedFile: '。フォントファイルは保存されないため、次回はもう一度読み込んでください', tDeleted: 'プリセットを削除しました',
@@ -182,7 +184,8 @@ const I18N = {
   },
   /* 繁體中文（台灣）：先用 OpenCC（s2twp）從簡體轉換，再逐條改成台灣用語（字型、預設集、進階、直排、直立……） */
   tw: {
-    leaveTitle: '目前的修改還沒有儲存', leaveMsg: '切換到「{name}」後，現在的設定會被取代。要先存為預設集嗎？', leaveName: '新預設集的名稱', leaveSave: '儲存並切換', leaveDiscard: '不儲存，直接切換', applySizeTip: '按漢字字型自帶西文的比例，算出「半形西文」的大小',
+    tSizeAll: '已分別調整 {n} 個字重的西文大小（{lo}–{hi}%）', measuringW: '正在測量 {w}…',
+    leaveTitle: '目前的修改還沒有儲存', leaveMsg: '切換到「{name}」後，現在的設定會被取代。要先存為預設集嗎？', leaveName: '新預設集的名稱', leaveSave: '儲存並切換', leaveDiscard: '不儲存，直接切換', applySizeTip: '每個匯出的字重分別測量、分別設定「半形西文」的大小：漢字越粗，字面看起來越大，合適的西文大小也會變。以漢字字型自帶的西文比例為準',
     centerTip: '讓大寫字母的中線對齊漢字字面的中線，寫入「半形西文」的基線（匯出時需要 JS）',
     eaDefault: '{font} 預設就是這種字形',
     exLm: '行高度量', exLmHan: '對齊漢字字型（建議）', exLmOff: '不調整', lmInfo: '<p>複合字型的行高和基線在行裡的位置，瀏覽器取自負責空格的那條規則，也就是半形西文的字型（而且是放大之後的），不是漢字字型。</p><p>結果是：行高固定時，漢字在行裡會偏上或偏下（黑體 × Inter 實測偏 7%）；行高為 normal 時，只有西文的行會比有漢字的行矮（實測矮 1/6），行距忽大忽小。</p><dl class="stack"><dt>對齊漢字字型</dt><dd>給西文等規則寫上漢字字型的 <code>ascent-override</code>、<code>descent-override</code>、<code>line-gap-override</code>（已經除掉 size-adjust），排出來和純漢字字型一樣。Chrome 87+、Firefox 89+ 支援；Safari 會忽略這幾行，表現和不調整一樣。</dd><dt>不調整</dt><dd>各字型用自己的度量。</dd></dl>', cssLm: '/* ascent-override / descent-override / line-gap-override：西文等規則使用漢字字型的行高度量（已除以 size-adjust），\n * 行高和基線位置都和漢字字型一致。Chrome 87+、Firefox 89+ 支援；Safari 會忽略，按各字型自己的度量顯示。 */', eaLack: '{font} 裡沒有這種字形', eaNone: '{font} 沒有這些字形標準，選了也不會變。', eaGoogle: 'Google Fonts 的網頁字型刪掉了這些特性；冬青黑體、游明朝等本機字型，或者上傳的字型檔案才有。',
@@ -240,8 +243,8 @@ const I18N = {
     gFaceTop: '漢字字面 上', gFaceBot: '漢字字面 下', gCap: '大寫高', gX: 'x 高', gBase: '基線', gLatBase: '西文基線', gFig: '數字高', gDigBase: '數字基線',
     gKanaTop: '假名字面 上', gKanaBot: '假名字面 下', sgLatin: '西文', sgDigit: '數字', sgKana: '假名',
     mixInfo: '「大寫高與 x 高折中」以漢字字型自帶的西文為基準，取兩種對齊的幾何平均，並且大寫高不超過自帶西文的 103%。',
-    applySize: '自動調整西文大小', center: '西文垂直置中',
-    refNote: '<b>怎麼調</b>：西文看起來比漢字小，就把「半形西文」的大小調大；大寫字母（例如 IBM）比漢字還顯眼，就調小。西文看起來偏低，把它的基線往正數調；偏高就往負數調。拿不準時點「自動調整西文大小」，再以正文裡看著順眼為準。', tNotReady: '字型還沒載入完，稍後再試',
+    applySize: '自動調整各字重的西文大小', center: '西文垂直置中',
+    refNote: '<b>怎麼調</b>：西文看起來比漢字小，就把「半形西文」的大小調大；大寫字母（例如 IBM）比漢字還顯眼，就調小。西文看起來偏低，把它的基線往正數調；偏高就往負數調。拿不準時點「自動調整各字重的西文大小」，再以正文裡看著順眼為準。', tNotReady: '字型還沒載入完，稍後再試',
     tSize: '半形西文大小調整為 {v}%', tShift: '半形西文基線偏移 {v}%。匯出時會附帶 JS', tCopied: '已複製', tCopyFail: '無法寫入剪貼簿，已選中程式碼，請按 ⌘C / Ctrl+C',
     tSaved: '已儲存預設集「{n}」，只儲存在這個瀏覽器裡', tSavedFile: '。字型檔案不會被儲存，下次需要重新上傳', tDeleted: '已刪除預設集', export: '匯出', exportTitle: '匯出 CSS', exName: 'font-family 名稱',
     exGeneric: '通用後備', auto: '自動', tabJs: 'JS', tabNotes: '原理與限制', copy: '複製程式碼', download: '下載檔案', exportAria: '匯出內容', stats: '{n} 條 @font-face · {kb} KB',

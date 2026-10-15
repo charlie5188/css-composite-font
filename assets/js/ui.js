@@ -224,20 +224,7 @@ function initToolbar() {
     renderTypoStatus(); renderPreview(); renderExport(); saveState();
   });
 
-  $('#mApply').addEventListener('click', () => {
-    if (!lastMeasure) return toast(T('tNotReady'));
-    /* 以汉字字体自带的西文为基准，取「按大写高对齐」和「按 x 高对齐」的几何平均，大写高不超过自带西文的 103%；
-       汉字字体没有自带西文时，让大写高占字面的 83% */
-    let k;
-    if (lastRef && !lastRef.none) {
-      const sCap = lastRef.cap / lastMeasure.capRatio, sX = lastRef.x / lastMeasure.xRatio;
-      k = Math.min(Math.sqrt(sCap * sX), 1.03 * sCap);
-    } else k = 0.83 / lastMeasure.capRatio;
-    const W = state.view.weight, next = Math.min(200, Math.max(50, round(resolveCls('latin', W, true).size * k)));
-    setSizeAt('latin', W, next);
-    changed({ fonts: true });
-    toast(T('tSize', { v: next }));
-  });
+  $('#mApply').addEventListener('click', autoSizeAll);
   $('#mCenter').addEventListener('click', () => {
     if (!lastMeasure) return toast(T('tNotReady'));
     const lat = state.classes.latin;
@@ -423,6 +410,44 @@ function applyPreset(id) {
   normalizeState();
   state.presetBase = presetSnap();
   refreshCustomRanges(); syncToolbar(); renderEditor(); renderPreview(); renderPresetCards(); rebuild(); saveState();
+}
+/* 自动调整西文大小：以汉字字体自带的西文为基准，取「按大写高对齐」和「按 x 高对齐」的几何平均，大写高不超过自带西文的 103%；
+   汉字字体没有自带西文时，让大写高占字面的 83%。返回要乘的倍数，量不到时为 null */
+function idealScale() {
+  if (!lastMeasure) return null;
+  if (lastRef && !lastRef.none) {
+    const sCap = lastRef.cap / lastMeasure.capRatio, sX = lastRef.x / lastMeasure.xRatio;
+    return Math.min(Math.sqrt(sCap * sX), 1.03 * sCap);
+  }
+  return 0.83 / lastMeasure.capRatio;
+}
+/* 每个导出的字重分别量、分别设定：汉字越粗，笔画往外扩，字面看起来越大，合适的西文大小也跟着变（各预设实测相差 2–5%）。
+   400 写进基础设定；其他字重和 400 相差不到 0.5 的沿用 400，否则写成这个字重自己的大小 */
+let autoBusy = false;
+async function autoSizeAll() {
+  if (autoBusy) return;
+  const cont = state.wmode === 'cont', list = cont ? WEIGHTS.filter(W => stepSpan(W)) : [...state.weights];
+  const W0 = state.view.weight, C0 = state.view.wcont, sizes = {};
+  autoBusy = true; $('#mApply').disabled = true;
+  try {
+    for (const W of list) {
+      setBusy(T('measuringW', { w: W }));
+      state.view.weight = W; if (cont) state.view.wcont = W;
+      await rebuildNow();      // 载入这个字重的字体并重画参考图：lastMeasure、lastRef 就是这个字重的
+      const k = idealScale();
+      if (k) sizes[W] = Math.min(200, Math.max(50, round(resolveCls('latin', W, true).size * k)));
+    }
+  } finally {
+    state.view.weight = W0; state.view.wcont = C0; autoBusy = false; $('#mApply').disabled = false; setBusy('');
+  }
+  const ws = Object.keys(sizes).map(Number);
+  if (!ws.length) { rebuild(); return toast(T('tNotReady')); }
+  const base = sizes[BASE_W] ?? sizes[ws[0]];
+  setSizeAt('latin', BASE_W, base);
+  for (const W of list) if (W !== BASE_W) setSizeAt('latin', W, sizes[W] != null && Math.abs(sizes[W] - base) >= 0.5 ? sizes[W] : null);
+  syncToolbar(); changed({ fonts: true });
+  const vals = ws.map(W => sizes[W]), lo = Math.min(...vals), hi = Math.max(...vals);
+  toast(lo === hi ? T('tSize', { v: lo }) : T('tSizeAll', { n: ws.length, lo, hi }));
 }
 /* 把现在的设定存成自己的预设 */
 function savePresetAs(n) {

@@ -550,14 +550,14 @@ function drawSpecimen() {
   const W = cv.clientWidth || 600;
   const ctx = cv.getContext('2d');
   const labelW = Math.min(150, W * 0.3), plotR = W - labelW;
-  const fam = `${liveFamily ? `"${liveFamily}", ` : ''}serif`;
+  const fam = `${liveFamily ? `"${liveFamily}", ` : ''}serif`, fw = state.wmode === 'cont' ? state.view.wcont : state.view.weight;
   const shiftOf = ch => settingOf(ownerOf(ch.codePointAt(0))).shift / 100;
   /* 画出来的字：汉字总在；假名 あ、注音 ㄅ、西文 Hxg（连在一起，按字体本身的字距）、数字 0 按显示设定 */
   const show = ['国', ...(sh.kana ? ['あ'] : []), ...(sh.bopo ? ['ㄅ'] : []), ...(sh.latin ? ['Hxg'] : []), ...(sh.digit ? ['0'] : [])];
   const GAP = 0.2;      // 各组之间的距离（字号的倍数）
   /* 字号先按宽度定（最大 140px），画布高度再跟着字号走：窄屏上不会留出大片空白 */
   let fs = 140;
-  ctx.font = `${fs}px ${fam}`;
+  ctx.font = `${fw} ${fs}px ${fam}`;
   const span = show.reduce((s, ch) => s + ctx.measureText(ch).width, 0) + fs * GAP * (show.length - 1);
   if (span > plotR - 24) fs = Math.floor(fs * (plotR - 24) / span);
   const nLines = 3 + (sh.latin ? 3 : 0) + (sh.digit ? 2 : 0) + (sh.kana ? 2 : 0) + (sh.bopo ? 2 : 0);
@@ -567,7 +567,7 @@ function drawSpecimen() {
   cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, W, H);
-  const glyphFont = `${fs}px ${fam}`;
+  const glyphFont = `${fw} ${fs}px ${fam}`;
   ctx.font = glyphFont;
   ctx.textBaseline = 'alphabetic';
   const m = ch => { const t = ctx.measureText(ch); return { ch, asc: t.actualBoundingBoxAscent, desc: t.actualBoundingBoxDescent, w: t.width, shift: shiftOf(ch) * fs }; };
