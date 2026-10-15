@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=346135ce">
+<link rel="stylesheet" href="assets/style.css?v=05dfdcf0">
 <script src="assets/js/i18n.js?v=349607e3" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
@@ -81,17 +81,16 @@
       <div class="tester-head">
         <div class="sample-tabs" id="sampleTabs" role="tablist" data-ta="aria-label:sample"></div>
       </div>
-      <div class="tester-ctrl">
-        <label class="ctl" for="vSize"><span data-t="fontSize"></span><input type="range" id="vSize" min="12" max="160" step="1"><output id="vSizeOut" for="vSize"></output></label>
-        <label class="ctl" for="vLh"><span data-t="lineHeight"></span><input type="range" id="vLh" min="1" max="2.6" step="0.05"><output id="vLhOut" for="vLh"></output></label>
-      </div>
       <div class="sample-box" id="sampleBox" hidden>
         <label class="hint" for="sample" data-t="sampleText"></label>
         <textarea id="sample" spellcheck="false"></textarea>
       </div>
 
       <div class="sheet" id="sheet">
-        <div class="sheet-bar togs">
+        <!-- 校样的工具条：字号、行高、显示方式都只管这张纸，所以放在纸面顶上 -->
+        <div class="sheet-bar" role="toolbar" data-ta="aria-label:proof">
+          <label class="ctl" for="vSize"><span data-t="fontSize"></span><input type="range" id="vSize" min="12" max="160" step="1"><output id="vSizeOut" for="vSize"></output></label>
+          <label class="ctl" for="vLh"><span data-t="lineHeight"></span><input type="range" id="vLh" min="1" max="2.6" step="0.05"><output id="vLhOut" for="vLh"></output></label>
           <button class="tog view-btn" type="button" id="viewBtn" popovertarget="viewPop" aria-haspopup="true"><span data-t="viewMenu"></span></button>
           <div class="view-pop" id="viewPop" popover role="group" data-ta="aria-label:viewMenu">
             <button class="tog" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
