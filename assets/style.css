@@ -237,7 +237,10 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .tester-head .tbtn{padding-bottom:12px;flex:none}
 .tester-ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:10px 28px;padding:14px 0;position:relative}
 .ctl{display:inline-flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);white-space:nowrap}
-#vWeightLab{max-width:100%;min-width:0}
+/* 字重一组（字重按钮 / 滑块 + 分档 / 连续）总是单独占一行，不在中途换行；放不下时字重按钮横向滚动 */
+.w-row{display:flex;flex-basis:100%;flex-wrap:nowrap;align-items:center;gap:16px;min-width:0}
+.w-row>.lab-i{flex:none}
+#vWeightLab{max-width:100%;min-width:0;flex:0 1 auto}
 #vWeight{flex:0 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}      /* 窄屏上 9 个字重放不下时横向滚动 */
 .ctl input[type=range]{width:120px}
 .ctl output{display:inline-block;font-family:var(--mono);font-size:11.5px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;width:4ch}
@@ -246,9 +249,9 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .busy{position:absolute;right:0;top:-1px;transform:translateY(-100%);padding-bottom:12px;font-size:11px;color:var(--muted);pointer-events:none;font-family:var(--mono)}
 .sample-box{display:grid;gap:6px;margin-bottom:14px}
 textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);border:1px solid var(--ink);border-radius:3px;padding:12px 14px;font-family:var(--ui);font-size:14px;line-height:1.7}
-.sheet{--pad:clamp(22px,4.6vw,68px);background:var(--sheet);border:1px solid var(--line);padding:var(--pad);min-width:0;display:grid;gap:32px}
+.sheet{--pad:clamp(22px,4.6vw,68px);--pad-y:clamp(16px,2.2vw,28px);background:var(--sheet);border:1px solid var(--line);padding:var(--pad-y) var(--pad) calc(var(--pad-y) + 6px);min-width:0;display:grid;gap:14px}
 /* 校样的显示方式：贴在白纸右上角，像纸面上的选项 */
-.sheet-bar{justify-content:flex-end;align-items:center;line-height:1.4;font-family:var(--ui);margin:calc(14px - var(--pad)) calc(14px - var(--pad)) -12px 0}
+.sheet-bar{justify-content:flex-end;align-items:center;line-height:1.4;font-family:var(--ui);margin:calc(10px - var(--pad-y)) calc(12px - var(--pad)) 0 0}
 .sheet>div{min-width:0}
 .proof-text{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:var(--fst,normal);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0}
 /* 行线：每一行的行框（高 = 字号 × 行高）。某一行被撑高时，下面的字就会和线错开 */
