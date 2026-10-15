@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=1de9c616">
+<link rel="stylesheet" href="assets/style.css?v=b43aa2ee">
 <script src="assets/js/i18n.js?v=ca5ce448" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
@@ -147,10 +147,8 @@
   </div>
 
   <section class="export" data-ta="aria-label:export">
-    <div class="export-head">
-      <h2 data-t="exportTitle"></h2>
-      <div class="ex-actions"><button class="btn" id="dlBtn" type="button" data-t="download" hidden></button><button class="btn primary" id="copyBtn" type="button" data-t="copy"></button></div>
-    </div>
+    <div class="ex-side">
+    <h2 data-t="exportTitle"></h2>
     <div class="ex-fields">
       <div class="field"><label for="exName" data-t="exName"></label><input id="exName" type="text" spellcheck="false"></div>
       <div class="field" id="exContField" hidden><span class="flabel" data-t="exWRange"></span><div class="wrange"><input type="number" id="exWLo" min="100" max="900" step="1" data-ta="aria-label:wrLo"><span class="wr-dash" aria-hidden="true">–</span><input type="number" id="exWHi" min="100" max="900" step="1" data-ta="aria-label:wrHi"><div class="chips wr-chips" id="exWPresets" role="group" data-ta="aria-label:exWRange"></div></div><p class="wr-note" id="exWNote" data-t="wrFaux" hidden></p></div>
@@ -158,13 +156,18 @@
       <div class="field" id="exBaseField"><label for="exBase" data-t="exBase"></label><select id="exBase"><option value="link" data-t="exBaseLink"></option><option value="expand" data-t="exBaseExpand"></option></select></div>
       <div class="field"><label for="exGeneric" data-t="exGeneric"></label><select id="exGeneric"><option value="auto" data-t="auto"></option><option value="serif">serif</option><option value="sans-serif">sans-serif</option></select></div>
       <div class="field"><label for="exLang" data-t="exLang"></label><select id="exLang"></select></div>
-      <div class="field"><label for="exItalic" data-t="exItalic"></label><select id="exItalic"><option value="0" data-t="exItalicOff"></option><option value="1" data-t="exItalicOn"></option></select></div>
       <p class="ex-warn" id="exLangWarn" hidden></p>
+      <div class="field"><label for="exItalic" data-t="exItalic"></label><select id="exItalic"><option value="0" data-t="exItalicOff"></option><option value="1" data-t="exItalicOn"></option></select></div>
     </div>
+    </div>
+    <div class="ex-out">
+    <div class="ex-top">
     <div class="tabs ex-tabs" role="tablist" data-ta="aria-label:exportAria">
       <button role="tab" type="button" id="tabCss" aria-selected="true" aria-controls="paneCode">CSS</button>
       <button role="tab" type="button" id="tabJs" aria-selected="false" aria-controls="paneCode" data-t="tabJs"></button>
       <button role="tab" type="button" id="tabNotes" aria-selected="false" aria-controls="paneNotes" data-t="tabNotes"></button>
+    </div>
+    <div class="ex-actions"><button class="btn" id="dlBtn" type="button" data-t="download" hidden></button><button class="btn primary" id="copyBtn" type="button" data-t="copy"></button></div>
     </div>
     <div id="paneCode" role="tabpanel">
       <div class="ex-bar" id="exBar" hidden><span class="hint" id="exNote"></span></div>
@@ -306,6 +309,7 @@
         </table></div>
         <p>出典：<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/text-autospace" target="_blank" rel="noopener">MDN text-autospace</a>、<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/text-spacing-trim" target="_blank" rel="noopener">text-spacing-trim</a>、<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/font-size-adjust" target="_blank" rel="noopener">font-size-adjust</a>、<a href="https://github.com/mdn/browser-compat-data" target="_blank" rel="noopener">MDN browser-compat-data</a>、<a href="https://developer.chrome.com/blog/css-i18n-features" target="_blank" rel="noopener">Chrome：CSS の新しい国際化機能</a>。</p>
       </div>
+    </div>
     </div>
   </section>
 

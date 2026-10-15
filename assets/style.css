@@ -333,14 +333,19 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 @media (max-width:700px){.typo-row{grid-template-columns:minmax(0,1fr)}}
 
 /* ---------- export ---------- */
-.export{margin-top:72px;border-top:1px solid var(--ink);padding-top:22px;min-width:0}
-.export-head{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;margin-bottom:22px}
-.ex-actions{display:flex;gap:10px;flex-wrap:wrap}
-.export-head h2{margin:0 0 4px;font-size:clamp(26px,3vw,36px);font-weight:500;letter-spacing:-.015em;line-height:1.1}
-.ex-fields{display:flex;flex-wrap:wrap;gap:16px 28px;align-items:flex-end;padding-bottom:20px;border-bottom:1px solid var(--line)}
+/* 导出：左列设定，右列结果。列宽和上面的编辑区一致 */
+.export{margin-top:72px;border-top:1px solid var(--ink);padding-top:22px;min-width:0;display:grid;grid-template-columns:minmax(380px,500px) minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:start}
+@media (max-width:1000px){.export{grid-template-columns:minmax(0,1fr);gap:28px}}
+.ex-side,.ex-out{min-width:0}
+.ex-side h2{margin:0 0 22px;font-size:clamp(26px,3vw,36px);font-weight:500;letter-spacing:-.015em;line-height:1.1}
+.ex-fields{display:grid;gap:18px}
+.ex-fields .field>input[type=text],.ex-fields .field>select{width:100%}
+.ex-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 20px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.ex-actions{display:flex;gap:10px;flex-wrap:wrap;padding:6px 0}
+@media (max-width:560px){.ex-actions{order:-1;flex-basis:100%}}      /* 窄屏：按钮放在标签页上面，标签页贴着分隔线 */
 .field{display:grid;gap:6px}
-/* 字体和适用语言不一致的提示：在导出设置的最后单独占一整行，不撑开「适用语言」那一栏 */
-.ex-warn{flex-basis:100%;margin:0;font-size:12px;line-height:1.55;color:var(--caution);background:var(--caution-bg);padding:7px 10px;border-radius:3px}
+/* 字体和适用语言不一致的提示：紧跟在「适用语言」下面 */
+.ex-warn{margin:-8px 0 0;font-size:12px;line-height:1.55;color:var(--caution);background:var(--caution-bg);padding:7px 10px;border-radius:3px}
 .field label,.field .flabel{font-size:12px;color:var(--muted)}
 .field input{width:210px}
 .chips{display:flex;flex-wrap:wrap;gap:4px}
@@ -348,14 +353,14 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .chips button:hover{border-color:var(--faint);color:var(--ink)}
 .chips button[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
 .tabs{display:flex;gap:22px;overflow-x:auto;overflow-y:hidden}
-.ex-tabs{margin-top:6px}
+.ex-tabs{margin-bottom:-1px}
 .tabs button{border:0;background:transparent;padding:14px 0 11px;font-size:13px;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
 .tabs button:hover{color:var(--ink)}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
-.ex-bar{padding:10px 0 12px}
+.ex-bar{padding:0 0 12px}
 .code{background:var(--code-bg);color:var(--code-ink);border-radius:4px;overflow:hidden}
 .code-meta{font-family:var(--mono);font-size:11.5px;color:var(--code-cm);padding:11px 20px;border-bottom:1px solid color-mix(in srgb,var(--code-ink) 12%,transparent)}
-.code pre{max-height:560px;overflow:auto;margin:0;padding:18px 20px;font-family:var(--mono);font-size:12.5px;line-height:1.65;white-space:pre;tab-size:2}
+.code pre{max-height:min(560px,70vh);overflow:auto;margin:0;padding:18px 20px;font-family:var(--mono);font-size:12.5px;line-height:1.65;white-space:pre;tab-size:2}
 .code .cm{color:var(--code-cm)} .code .at{color:var(--code-at)} .code .pr{color:var(--code-prop)}
 .notes{padding:8px 0 18px;display:grid;gap:12px;max-width:76ch}
 .notes h3{margin:12px 0 0;font-size:15px;font-weight:600}
