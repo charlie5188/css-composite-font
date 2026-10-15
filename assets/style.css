@@ -330,7 +330,7 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .leave{display:grid;gap:14px;padding:22px 24px 20px}
 .leave h2{margin:0;font-size:17px;font-weight:600}
 .leave p{margin:0;font-size:13px;line-height:1.6;color:var(--ink-2)}
-.leave .field input{width:100%}
+.leave input{width:100%}
 .leave-act{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:10px}
 .match{display:flex;flex-wrap:wrap;gap:10px 12px;align-items:center;font-size:12px;color:var(--muted)}
 .match input{width:64px}

@@ -14,7 +14,7 @@ const I18N = {
     autoAdjProgress: '正在调整… {i}/{n}', autoAdjDone: '已调整',
     autoAdj: '自动调整大小和基线', autoAdjTip: '一键调整半角西文：每个导出的字重分别算出合适的大小（汉字越粗，字面看起来越大），再让大写字母的中线对齐汉字字面的中线。偏差在 2% em 以内时基线保持 0，导出仍是纯 CSS', tAuto: '已自动调整：西文大小 {size}{shift}', autoSizeRange: '{lo}–{hi}%（{n} 个字重分别设定）', autoShift: '，基线 {v}（导出时会附带 JS）', autoNoShift: '，基线不用动（偏差 {d}% em）',
     measuringW: '正在测量 {w}…',
-    leaveTitle: '当前的修改还没有保存', leaveMsg: '切换到「{name}」后，现在的设定会被替换。要先存为预设吗？', leaveName: '新预设的名称', leaveSave: '存为预设并切换', leaveDiscard: '不保存，直接切换',
+    leaveTitle: '保存当前的修改？', leaveMsg: '切换到「{name}」后会丢失。', leaveSave: '保存', leaveDiscard: '不保存',
    
     eaDefault: '{font} 默认就是这种字形',
     exLm: '行高度量', exLmHan: '对齐汉字字体（推荐）', exLmOff: '不调整', lmInfo: '<p>合成字体的行高和基线在行里的位置，浏览器取自负责空格的那条规则，也就是半角西文的字体（而且是放大之后的），不是汉字字体。</p><p>结果是：行高固定时，汉字在行里会偏上或偏下（黑体 × Inter 实测偏 7%）；行高为 normal 时，只有西文的行会比有汉字的行矮（实测矮 1/6），行距忽大忽小。</p><dl class="stack"><dt>对齐汉字字体</dt><dd>给西文等规则写上汉字字体的 <code>ascent-override</code>、<code>descent-override</code>、<code>line-gap-override</code>（已经除掉 size-adjust），排出来和纯汉字字体一样。Chrome 87+、Firefox 89+ 支持；Safari 会忽略这几行，表现和不调整一样。</dd><dt>不调整</dt><dd>各字体用自己的度量。</dd></dl>', cssLm: '/* ascent-override / descent-override / line-gap-override：西文等规则使用汉字字体的行高度量（已除以 size-adjust），\n * 行高和基线位置都和汉字字体一致。Chrome 87+、Firefox 89+ 支持；Safari 会忽略，按各字体自己的度量显示。 */', eaLack: '{font} 里没有这种字形', eaNone: '{font} 没有这些字形标准，选了也不会变。', eaGoogle: 'Google Fonts 的网页字体删掉了这些特性；冬青黑体、游明朝等本机字体，或者上传的字体文件才有。',
@@ -102,7 +102,7 @@ const I18N = {
     autoAdjProgress: '調整中… {i}/{n}', autoAdjDone: '調整しました',
     autoAdj: 'サイズとベースラインを自動調整', autoAdjTip: '半角欧文をワンクリックで調整します。書き出すウェイトごとに合うサイズを計算し（漢字は太いほど字面が大きく見えます）、大文字の中心線を漢字の字面の中心にそろえます。ずれが 2% em 以内ならベースラインは 0 のままで、書き出しは CSS だけで済みます', tAuto: '自動調整しました：欧文のサイズ {size}{shift}', autoSizeRange: '{lo}–{hi}%（{n} 個のウェイトでそれぞれ設定）', autoShift: '、ベースライン {v}（書き出しに JS が付きます）', autoNoShift: '、ベースラインはそのまま（ずれ {d}% em）',
     measuringW: '{w} を計測中…',
-    leaveTitle: '変更がまだ保存されていません', leaveMsg: '「{name}」に切り替えると、今の設定は置き換えられます。先にプリセットとして保存しますか？', leaveName: '新しいプリセットの名前', leaveSave: '保存して切り替える', leaveDiscard: '保存せずに切り替える',
+    leaveTitle: '変更を保存しますか？', leaveMsg: '「{name}」に切り替えると失われます。', leaveSave: '保存', leaveDiscard: '保存しない',
    
     eaDefault: '{font} はもともとこの字形',
     exLm: '行のメトリクス', exLmHan: '漢字フォントに合わせる（推奨）', exLmOff: '調整しない', lmInfo: '<p>合成フォントの行の高さと、行の中のベースラインの位置は、スペースを受け持つ規則、つまり半角欧文のフォント（それも拡大した後のもの）から決まり、漢字フォントからではありません。</p><p>そのため、行送りを固定すると漢字が行の中で上か下に寄り（黒体 × Inter で実測 7%）、行送りが normal だと欧文だけの行が漢字のある行より低くなって（実測で 1/6）、行間が不ぞろいになります。</p><dl class="stack"><dt>漢字フォントに合わせる</dt><dd>欧文などの規則に漢字フォントの <code>ascent-override</code>・<code>descent-override</code>・<code>line-gap-override</code> を書き（size-adjust の分は割り戻し済み）、漢字フォントだけで組んだときと同じにします。Chrome 87+、Firefox 89+ が対応し、Safari はこれらの行を無視して「調整しない」と同じになります。</dd><dt>調整しない</dt><dd>各フォントが自分のメトリクスを使います。</dd></dl>', cssLm: '/* ascent-override / descent-override / line-gap-override：欧文などの規則に漢字フォントの行のメトリクスを使います（size-adjust の分は割り戻し済み）。\n * 行の高さもベースラインの位置も漢字フォントと同じになります。Chrome 87+、Firefox 89+ が対応し、Safari では各フォント自身のメトリクスで表示されます。 */', eaLack: '{font} にはこの字形がない', eaNone: '{font} にはこれらの字形の規格がなく、選んでも変わりません。', eaGoogle: 'Google Fonts の Web フォントではこれらの機能が削られています。ヒラギノや游明朝などのローカルフォントか、フォントファイルを使ってください。',
@@ -191,7 +191,7 @@ const I18N = {
     autoAdjProgress: '正在調整… {i}/{n}', autoAdjDone: '已調整',
     autoAdj: '自動調整大小和基線', autoAdjTip: '一鍵調整半形西文：每個匯出的字重分別算出合適的大小（漢字越粗，字面看起來越大），再讓大寫字母的中線對齊漢字字面的中線。偏差在 2% em 以內時基線保持 0，匯出仍是純 CSS', tAuto: '已自動調整：西文大小 {size}{shift}', autoSizeRange: '{lo}–{hi}%（{n} 個字重分別設定）', autoShift: '，基線 {v}（匯出時會附帶 JS）', autoNoShift: '，基線不用動（偏差 {d}% em）',
     measuringW: '正在測量 {w}…',
-    leaveTitle: '目前的修改還沒有儲存', leaveMsg: '切換到「{name}」後，現在的設定會被取代。要先存為預設集嗎？', leaveName: '新預設集的名稱', leaveSave: '儲存並切換', leaveDiscard: '不儲存，直接切換',
+    leaveTitle: '儲存目前的修改？', leaveMsg: '切換到「{name}」後會遺失。', leaveSave: '儲存', leaveDiscard: '不儲存',
    
     eaDefault: '{font} 預設就是這種字形',
     exLm: '行高度量', exLmHan: '對齊漢字字型（建議）', exLmOff: '不調整', lmInfo: '<p>複合字型的行高和基線在行裡的位置，瀏覽器取自負責空格的那條規則，也就是半形西文的字型（而且是放大之後的），不是漢字字型。</p><p>結果是：行高固定時，漢字在行裡會偏上或偏下（黑體 × Inter 實測偏 7%）；行高為 normal 時，只有西文的行會比有漢字的行矮（實測矮 1/6），行距忽大忽小。</p><dl class="stack"><dt>對齊漢字字型</dt><dd>給西文等規則寫上漢字字型的 <code>ascent-override</code>、<code>descent-override</code>、<code>line-gap-override</code>（已經除掉 size-adjust），排出來和純漢字字型一樣。Chrome 87+、Firefox 89+ 支援；Safari 會忽略這幾行，表現和不調整一樣。</dd><dt>不調整</dt><dd>各字型用自己的度量。</dd></dl>', cssLm: '/* ascent-override / descent-override / line-gap-override：西文等規則使用漢字字型的行高度量（已除以 size-adjust），\n * 行高和基線位置都和漢字字型一致。Chrome 87+、Firefox 89+ 支援；Safari 會忽略，按各字型自己的度量顯示。 */', eaLack: '{font} 裡沒有這種字形', eaNone: '{font} 沒有這些字形標準，選了也不會變。', eaGoogle: 'Google Fonts 的網頁字型刪掉了這些特性；冬青黑體、游明朝等本機字型，或者上傳的字型檔案才有。',
