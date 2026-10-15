@@ -392,21 +392,23 @@ function renderPresetCards() {
   const cards = orderedPresets().map(p => presetCard({ id: p.id, name: tr(p.name), tag: tr(p.tag), cls: freshClasses(p), script: p.region === 'hk' ? 'tc' : p.region, active: state.preset === p.id }));
   for (const [n, snap] of Object.entries(userPresets)) if (snap?.classes?.han)
     cards.push(presetCard({ id: 'user:' + n, name: n, tag: T('presetMine'), cls: snap.classes, script: scriptOfLang(snap.typo?.lang), user: true, active: state.preset === 'user:' + n }));
-  $('#presetCards').innerHTML = cards.join('');
+  /* 最后一格是展开 / 收起按钮，和卡片一样大 */
+  $('#presetCards').innerHTML = cards.join('') + `<button type="button" class="pmore" id="presetMore" aria-expanded="false" aria-controls="presetCards" hidden><i class="chev" aria-hidden="true"></i><span></span></button>`;
   fitPresets();
 }
 /* 收起时只留第一排：网格放得下几列就显示几张，其余在「全部预设」里。
    正在用的预设排在后面时，占第一排的最后一格，收起时也看得到当前选的是哪个 */
 function fitPresets() {
-  const grid = $('#presetCards'), cards = [...grid.children], open = !!state.view.presetsOpen;
+  const grid = $('#presetCards'), cards = [...grid.querySelectorAll('.pcard-wrap')], open = !!state.view.presetsOpen;
   const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length || 1;
-  const act = cards.findIndex(c => c.querySelector('.pcard[aria-pressed="true"]'));
-  const show = i => i < cols - (act >= cols ? 1 : 0) || i === act;
-  cards.forEach((c, i) => { c.hidden = !open && !show(i); });
-  const btn = $('#presetMore');
-  btn.hidden = cards.length <= cols;
+  const btn = $('#presetMore'), fits = cards.length <= cols;
+  /* 收起时一排里留出最后一格给展开按钮；正在用的预设排在后面时，占展开按钮前面那一格 */
+  const room = cols - 1, act = cards.findIndex(c => c.querySelector('.pcard[aria-pressed="true"]'));
+  const show = i => i < room - (act >= room ? 1 : 0) || i === act;
+  cards.forEach((c, i) => { c.hidden = !fits && !open && !show(i); });
+  btn.hidden = fits;
   btn.setAttribute('aria-expanded', open);
-  btn.firstElementChild.textContent = open ? T('presetLess') : T('presetAll', { n: cards.length });
+  btn.lastElementChild.textContent = open ? T('presetLess') : T('presetAll', { n: cards.length });
 }
 const renderPresetCardsSoon = debounce(renderPresetCards, 120);
 const hasFileFont = () => [...CLASSES.map(c => state.classes[c.id].font), ...state.custom.map(c => c.font)].some(f => f && f.kind === 'file');
@@ -541,7 +543,7 @@ function initPresets() {
   $('#leaveSave').addEventListener('click', leaveSave);
   $('#leaveName').addEventListener('keydown', e => { if (e.key === 'Enter') leaveSave(); });
   $('#savePresetBtn').addEventListener('click', openSave);
-  $('#presetMore').addEventListener('click', () => { state.view.presetsOpen = !state.view.presetsOpen; fitPresets(); saveState(); });
+  $('#presetCards').addEventListener('click', e => { if (e.target.closest('#presetMore')) { state.view.presetsOpen = !state.view.presetsOpen; fitPresets(); saveState(); } });
   let lastW = 0;      // 宽度变了才重新算列数（隐藏卡片只改变高度）
   new ResizeObserver(([e]) => { const w = Math.round(e.contentRect.width); if (w !== lastW) { lastW = w; fitPresets(); } }).observe($('#presetCards'));
   $('#presetCancel').addEventListener('click', closeSave);
