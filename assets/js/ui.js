@@ -92,7 +92,6 @@ const INFO = {
   presetInfo: () => esc(T('presetInfo')),
   classInfo: () => `<p>${esc(T('inheritHint'))}</p><dl>${CLASSES.map(c => `<dt>${esc(tr(c.name))}</dt><dd>${esc(tr(c.desc))}</dd>`).join('')}</dl>`,
   customInfo: () => T('customIntro'),
-  cmpInfo: () => esc(state.view.cmp === 'fsa' ? T('hintFsa', { r: lastFsaR ?? '…' }) : T('hintPlain')),
   metricsInfo: () => `<p>${esc(T('metricsHint'))}</p><p>${esc(T('mixInfo'))}</p><p>${T('refNote')}</p>`,
   typoInfo: () => T('typoFoot'),
   italicInfo: () => T('italicInfo'),
@@ -237,16 +236,15 @@ function initToolbar() {
     (v().specShow ||= {})[k] = !specShown()[k];
     syncToolbar(); drawSpecimen(); saveState();
   });
-  for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vRules', 'rules'], ['vMiss', 'miss'], ['vCompare', 'compare'], ['vItalic', 'italic']])
+  for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vRules', 'rules'], ['vMiss', 'miss'], ['vItalic', 'italic']])
     $('#' + id).addEventListener('click', () => { v()[key] = !v()[key]; syncToolbar(); renderPreview(); renderExport(); saveState(); });
-  $('#cmpMode').addEventListener('change', e => { v().cmp = e.target.value; updateNaive(); saveState(); });
   $('#vWeight').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) setPreviewWeight(+b.dataset.w); });
   /* 连续模式：滑块直接改校样的粗细（所有分段的规则都已建好）；表格编辑最接近的那一档 */
   $('#vWcont').addEventListener('input', e => {
     const w = +e.target.value, step = Math.min(900, Math.max(100, Math.round(w / 100) * 100));
     v().wcont = w; $('#vWcontOut').textContent = w;
     root.style.setProperty('--fw', w);
-    if (step !== v().weight) { v().weight = step; renderEditor(); updateNaive(); drawSpecimen(); }
+    if (step !== v().weight) { v().weight = step; renderEditor(); drawSpecimen(); }
     saveState();
   });
   const reloadForText = debounce(() => rebuild(), 600);

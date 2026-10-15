@@ -307,11 +307,9 @@ function renderPreview() {
   root.style.setProperty('--fs', v.size + 'px');
   root.style.setProperty('--lh', v.lh);
   root.style.setProperty('--fst', v.italic ? 'italic' : 'normal');
-  for (const el of [pt, $('#naiveText')]) {
-    for (const t of TYPO) {
-      if (t.attr) el.lang = state.typo[t.key];
-      else el.style.setProperty(t.prop, typoValue(t));
-    }
+  for (const t of TYPO) {
+    if (t.attr) pt.lang = state.typo[t.key];
+    else pt.style.setProperty(t.prop, typoValue(t));
   }
   /* 类别着色优先用 CSS Highlight API：不拆 DOM，排版和不着色时完全一样（拆成 span 会让竖排里的西文和后面的字重叠）。
      只有基线偏移必须包 span；浏览器不支持 Highlight API 时才退回用 span 着色 */
@@ -344,10 +342,6 @@ function renderPreview() {
   }
   paintClasses(pt, hl);
   checkMissSoon();
-  $('#naiveText').textContent = v.text;
-  $('#naiveWrap').hidden = !v.compare;
-  $('#liveLabel').hidden = !v.compare;
-  updateNaive();
   const legend = $('#legend');
   legend.hidden = !v.colorize;
   if (v.colorize) legend.innerHTML = visibleClasses().filter(c => c.id !== 'han').map(c => `<span style="--c:var(--c-${c.id})"><i></i>${esc(tr(c.name))}</span>`).join('') +
@@ -514,13 +508,11 @@ function syncToolbar() {
   $('#vLhOut').textContent = `${+(v.size * v.lh).toFixed(1)}px`;      // 倍数在框里，实际的行距跟在后面
   $('#vVertical').setAttribute('aria-pressed', v.vertical);
   $('#vColor').setAttribute('aria-pressed', v.colorize);
-  $('#vCompare').setAttribute('aria-pressed', v.compare);
   $('#vItalic').setAttribute('aria-pressed', !!v.italic);
   $('#vRules').setAttribute('aria-pressed', !!v.rules);
   $('#vMiss').setAttribute('aria-pressed', !!v.miss);
   const sh = specShown();
   document.querySelectorAll('#specBar [data-sg]').forEach(b => b.setAttribute('aria-pressed', !!sh[b.dataset.sg]));
-  $('#cmpMode').value = v.cmp;
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }
   renderTypoStatus();
   $('#sample').value = v.text;

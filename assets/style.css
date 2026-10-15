@@ -21,7 +21,7 @@
   --c-shared:#CC5E20; --c-latin:#3A8641; --c-digit:#2C69AE; --c-custom:#737A81; --c-bopo:#9A5B2A;
   --ui:"Instrument Sans","PingFang SC","Hiragino Sans GB","Hiragino Sans","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
-  --cf:serif; --cf-naive:serif; --generic:serif;
+  --cf:serif; --generic:serif;
 }
 :root:lang(zh-Hant){--ui:"Instrument Sans","PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif}
 :root:lang(ja){--ui:"Instrument Sans","Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic UI","Meiryo","Noto Sans JP",system-ui,sans-serif}
@@ -331,11 +331,10 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .sheet>div{min-width:0}
 /* 文字四周的留白一样宽：横排时去掉第一行上面、最后一行下面的半行距（行高多出来的部分），让上下留白量到字面，和左右一致 */
 .sheet:not(.vertical) .proof-text{margin-bottom:calc((1 - var(--lh,1.8)) * var(--fs,40px) / 2)}
-.sheet:not(.vertical) #liveLabel[hidden]+.proof-text{margin-top:calc((1 - var(--lh,1.8)) * var(--fs,40px) / 2)}
+.sheet:not(.vertical) .proof-text{margin-top:calc((1 - var(--lh,1.8)) * var(--fs,40px) / 2)}
 .proof-text{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:var(--fst,normal);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0}
 /* 行线：每一行的行框（高 = 字号 × 行高）。某一行被撑高时，下面的字就会和线错开 */
 .sheet.rules .proof-text{background-image:linear-gradient(to bottom,var(--ruled) 1px,transparent 1px);background-size:100% calc(1em * var(--lh,1.8));box-shadow:inset 0 -1px var(--ruled)}
-.proof-text.naive{font-family:var(--cf-naive),var(--generic);font-synthesis-weight:none}
 .sheet.vertical .proof-text{writing-mode:vertical-rl;width:100%;height:min(62vh,560px);overflow-x:auto;overflow-y:hidden}
 .sheet.rules.vertical .proof-text{background-image:linear-gradient(to left,var(--ruled) 1px,transparent 1px);background-size:calc(1em * var(--lh,1.8)) 100%;background-position:right top;background-attachment:local;box-shadow:none}
 .r{position:relative;inset-block-start:calc(var(--sh,0) * -1em)}
@@ -354,12 +353,6 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .r[data-k="digit"]{--k:var(--c-digit)} .r[data-k="bopo"]{--k:var(--c-bopo)}
 .r[data-k="custom"]{--k:var(--c-custom)}
 .colorize .r[data-k="other"],.colorize .r[data-k="han"]{background:none;box-shadow:none}
-.compare-label{font-size:12px;color:var(--muted);margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.compare-label b{color:var(--ink);font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase}
-.compare-label code{font-family:var(--mono);font-size:11px}
-.compare-label select{font-size:12px;padding:3px 6px}
-.naive-hint{font-size:12px;color:var(--muted);margin:-4px 0 12px;max-width:80ch}
-.sheet .divider{border-top:1px dashed var(--line)}
 /* 竖排、类别着色、对照：和字号、行高一样是看校样的方式，放在同一排 */
 .togs{display:flex;flex-wrap:wrap;gap:8px}
 /* 连续字重下不生效的设定：黄色提示，整行宽 */

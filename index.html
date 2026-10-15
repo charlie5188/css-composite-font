@@ -8,14 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=325d2ac3">
+<link rel="stylesheet" href="assets/style.css?v=ef9952a9">
 <script src="assets/js/i18n.js?v=ef494a38" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
-<script src="assets/js/core.js?v=21135285" defer></script>
-<script src="assets/js/render.js?v=4e81da2d" defer></script>
+<script src="assets/js/core.js?v=1bf32782" defer></script>
+<script src="assets/js/render.js?v=3c9f6e4b" defer></script>
 <script src="assets/js/export.js?v=1b1135a4" defer></script>
-<script src="assets/js/ui.js?v=87544abe" defer></script>
+<script src="assets/js/ui.js?v=175438b4" defer></script>
 </head>
 <body>
 <div class="app">
@@ -103,7 +103,6 @@
             <button class="tog" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
             <button class="tog" type="button" id="vRules" aria-pressed="false" data-t="vRules"></button>
             <button class="tog" type="button" id="vMiss" aria-pressed="false" data-t="vMiss"></button>
-            <button class="tog" type="button" id="vCompare" aria-pressed="false" data-t="compare"></button>
             <button class="tog" type="button" id="vItalic" aria-pressed="false" data-t="vItalic"></button>
           </div>
           </div>
@@ -113,15 +112,7 @@
           <textarea id="sample" spellcheck="false"></textarea>
         </div>
         <div>
-          <div class="compare-label" id="liveLabel" hidden><b data-t="liveLabel"></b><span>unicode-range + size-adjust</span></div>
           <div class="proof-text" id="proofText"></div>
-        </div>
-        <div id="naiveWrap" hidden>
-          <div class="divider"></div>
-          <div class="compare-label" style="margin-top:24px"><b data-t="cmp"></b>
-            <select id="cmpMode" data-ta="aria-label:cmpAria"><option value="plain" data-t="cmpPlain"></option><option value="fsa" data-t="cmpFsa"></option></select>
-            <button type="button" class="info" data-info="cmpInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button><code id="naiveCode"></code></div>
-          <div class="proof-text naive" id="naiveText"></div>
         </div>
       </div>
       <div class="legend" id="legend" hidden></div>

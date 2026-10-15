@@ -530,7 +530,7 @@ function stateFromPreset(p, prev) {
     lineMetrics: prev?.lineMetrics || 'han',      // 默认导出斜体：西文用真斜体，汉字保持正体
     classes: freshClasses(p),
     custom: [],
-    view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, miss: true, compare: false, cmp: 'plain', weight: 400 },
+    view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, miss: true, cmp: 'plain', weight: 400 },
     typo: prev?.typo ? { ...prev.typo } : { ...typoDefaults(SAMPLES[p.sample].lang), lang: SAMPLES[p.sample].lang },
   };
 }
@@ -589,7 +589,7 @@ function normalizeState() {
     if (state.typo.trim === 'space-first') state.typo.trim = 'trim-start';
     state.v = 9;
   }
-  state.view.cmp = state.view.cmp || 'plain';
+  delete state.view.compare; delete state.view.cmp;      // 「对照其他做法」已删除
   if (state.view.miss === undefined) state.view.miss = true;         // 「标出缺字」默认打开
   delete state.metric;                                              // 度量对齐的「按 … 对齐到 …%」已删除
   state.weights = Array.isArray(state.weights) && state.weights.length ? [...new Set(state.weights)].sort((a, b) => a - b) : [state.weight || 400];
@@ -871,7 +871,6 @@ async function rebuildNow() {
   root.style.setProperty('--fw', cont ? state.view.wcont : W);
   old.forEach(f => document.fonts.delete(f));
   setBusy('');
-  updateNaive();
   drawSpecimen();
   renderExport();
   checkMissSoon();
@@ -916,29 +915,6 @@ function overridesFor(p, base) {
 function italFallback(pl) {
   return pl.map(p => p.font?.kind === 'google' && p.font.ital && sources.get(fontKey(p.font))?.status === 'error'
     ? { ...p, font: (({ ital, ...rest }) => rest)(p.font), up: true } : p);
-}
-function hanCapRatio(han) {
-  const ctx = document.createElement('canvas').getContext('2d');
-  ctx.font = `100px "${han.family}"`;
-  return ctx.measureText('H').actualBoundingBoxAscent / 100;
-}
-let lastFsaR = null;
-function updateNaive() {
-  const latR = resolveCls('latin', state.view.weight, true), hanR = resolveCls('han', state.view.weight, true), latF = latR.font, hanF = hanR.font;
-  const lat = sources.get(fontKey(usedFont(latR))), han = sources.get(fontKey(usedFont(hanR)));
-  const fams = [lat, han].filter(s => s && s.status === 'ok').map(s => `"${s.family}"`);
-  root.style.setProperty('--cf-naive', [...new Set(fams)].join(', ') || 'serif');
-  const code = [`font-family: "${shortName(latF)}", "${shortName(hanF)}";`];
-  const el = $('#naiveText');
-  if (state.view.cmp === 'fsa' && han?.status === 'ok') {
-    const r = +hanCapRatio(han).toFixed(3);
-    el.style.fontSizeAdjust = `cap-height ${r}`;
-    code.push(`font-size-adjust: cap-height ${r};`);
-    lastFsaR = r;
-  } else {
-    el.style.fontSizeAdjust = '';
-  }
-  $('#naiveCode').textContent = code.join(' ');
 }
 function onSourcesChanged() {
   if (!$('#editor').contains(document.activeElement)) renderEditor(); else renderChipsStatus();
