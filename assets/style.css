@@ -440,8 +440,6 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* 真的排一段：窄框（4 个字宽），左边一条线是版心边缘，看行首有没有缩进 */
 .tt-box{display:block;width:4em;font-size:19px;line-height:1.35;white-space:normal;text-align:start;overflow:visible;padding-left:0;box-shadow:-1px 0 0 var(--accent);min-height:2.7em}
 .tt-box[lang="ja"]{width:5em}
-/* 对齐方式：一行强制两端对齐（text-align-last），两边的线是版心边缘；none 不分配，右边留空 */
-.tt-just{display:block;width:6.4em;font-size:16px;line-height:1.5;white-space:normal;text-align:justify;text-align-last:justify;box-shadow:-1px 0 0 var(--accent),1px 0 0 var(--accent);margin:4px 0}
 .typo-note{grid-column:1/-1;margin:2px 0 0;font-size:12px;line-height:1.55;color:var(--muted)}
 .typo-note.warn{color:var(--caution);background:var(--caution-bg);padding:6px 10px;border-radius:3px}
 .typo-name{display:grid;line-height:1.35}

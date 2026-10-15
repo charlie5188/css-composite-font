@@ -371,6 +371,12 @@ Hànyǔ Pīnyīn · nǚ lǜ lüè · Běijīng` },
 const tSvg = body => `<svg class="tt-svg" viewBox="0 0 48 30" aria-hidden="true">${body}</svg>`;
 const tBars = rows => rows.map(([x, w, y]) => `<rect x="${x}" y="${y}" width="${w}" height="3" rx=".6"/>`).join('');
 const tEdge = (...xs) => xs.map(x => `<path d="M${x} 1v28" class="tt-edge"/>`).join('');
+/* text-justify：一行「汉字 汉字 word 汉字 汉字」，多出来的 8 个单位分给哪些空隙 */
+const tJust = gaps => {
+  const w = [4, 4, 10, 4, 4]; let x = 4, out = '';
+  w.forEach((ww, i) => { out += ww === 10 ? `<rect x="${x}" y="9.5" width="10" height="2.5" rx=".6"/>` : `<rect x="${x}" y="8" width="4" height="4" rx=".4"/>`; x += ww + (gaps[i] ?? 0); });
+  return out + `<rect x="4" y="18" width="4" height="4" rx=".4"/><rect x="9" y="18" width="4" height="4" rx=".4"/>` + tEdge(44.5);
+};
 const TILE_SVG = {
   wrap: { wrap: tBars([[4, 40, 4], [4, 40, 11], [4, 40, 18], [4, 5, 25]]), pretty: tBars([[4, 40, 4], [4, 40, 11], [4, 31, 18], [4, 14, 25]]), balance: tBars([[4, 34, 4], [4, 34, 11], [4, 34, 18], [4, 31, 25]]) },
   align: { justify: tBars([[4, 40, 4], [4, 40, 11], [4, 40, 18], [4, 22, 25]]), start: tBars([[4, 36, 4], [4, 40, 11], [4, 31, 18], [4, 22, 25]]), center: tBars([[8, 32, 4], [4, 40, 11], [10, 28, 18], [13, 22, 25]]) },
@@ -380,6 +386,7 @@ const TILE_SVG = {
     'first allow-end last': tBars([[6, 35, 6], [6, 34, 14], [6, 35, 22]]) + '<circle cx="43.5" cy="8" r="1.4"/><path d="M4.6 5.2H2.6V9.6" class="tt-mark"/><path d="M42.8 20v4.4h2" class="tt-mark"/>' + tEdge(5.5, 41.5),
   },
 };
+TILE_SVG.justify = { auto: tJust([3, 4, 4, 3]), 'inter-character': tJust([3, 4, 4, 3]), 'inter-word': tJust([1, 6, 6, 1]), none: tJust([1, 2, 2, 1]) };
 const tSvgTile = key => v => `<span class="tt-s tt-pic" aria-hidden="true">${tSvg(TILE_SVG[key][v])}</span>`;
 /* 换行、标点挤压：用当前的合成字体，在窄框里真的排一段，左边的线是版心边缘 */
 const tBox = (prop, text, lang) => v => `<span class="tt-s tt-box"${lang ? ` lang="${lang}"` : ''} style="${prop}:${v}" aria-hidden="true">${text}</span>`;
@@ -409,7 +416,7 @@ const TYPO = [
     note: { zh: 'Chrome 的 pretty 只调整段落最后四行。', ja: 'Chrome の pretty は段落の最後の 4 行だけを調整します。', tw: 'Chrome 的 pretty 只調整段落最後四行。' } },
   { key: 'align', label: { zh: '对齐', ja: '揃え', tw: '對齊' }, prop: 'text-align', def: 'justify', tiles: true, tileHtml: tSvgTile('align'), tileW: 96, tileCode: true,
     values: [['justify', { zh: '两端对齐', ja: '両端揃え', tw: '兩端對齊' }], ['start', { zh: '齐头', ja: '行頭揃え', tw: '靠行首對齊' }], ['center', { zh: '居中', ja: '中央揃え', tw: '置中' }]] },
-  { key: 'justify', label: { zh: '对齐方式', ja: '両端揃えの方法', tw: '對齊方式' }, prop: 'text-justify', def: 'auto', tiles: true, tileHtml: v => `<span class="tt-s tt-just" style="text-justify:${v}" aria-hidden="true">文字排列</span>`, tileW: 112, tileCode: true,      /* 真的排一行两端对齐，只用汉字：多出来的空要么匀进字间，要么没地方放（中文没有词间空格） */
+  { key: 'justify', label: { zh: '对齐方式', ja: '両端揃えの方法', tw: '對齊方式' }, prop: 'text-justify', def: 'auto', tiles: true, tileHtml: tSvgTile('justify'), tileW: 96, tileCode: true,
     sup: { chrome: '145', firefox: '55', safari: '—' },
     values: [['auto', null], ['inter-character', { zh: '字间分配', ja: '字間で調整', tw: '字間分配' }], ['inter-word', { zh: '只在词间', ja: '語間のみ', tw: '只在詞間' }], ['none', null]],
     note: { zh: '配合 text-align: justify 使用。', ja: 'text-align: justify と組み合わせて使います。', tw: '配合 text-align: justify 使用。' } },
