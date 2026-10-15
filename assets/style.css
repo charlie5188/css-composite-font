@@ -250,7 +250,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .sample-tabs .ctab{display:inline-flex;align-items:center;gap:2px;flex:none}
 .sample-tabs .ctab-x{border:0;padding:14px 2px 11px;font-size:14px;line-height:1;color:var(--faint);border-bottom:2px solid transparent}
 .sample-tabs .ctab-x:hover{color:var(--warn)}
-.sample-tabs .tab-add{color:var(--faint)}
+.sample-tabs .tab-add{color:var(--muted);font-size:18px;line-height:1;min-width:32px;padding:11px 8px 9px;text-align:center}      /* 「+」本身很小：把可点的范围放大 */
 .sample-tabs .tab-add:hover{color:var(--ink)}
 .tester-head .tbtn{padding-bottom:12px;flex:none}
 .tester-ctrl{display:flex;flex-wrap:wrap;align-items:center;gap:10px 28px;padding:14px 0;position:relative}
