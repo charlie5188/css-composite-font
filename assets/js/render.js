@@ -397,9 +397,11 @@ function syncToolbar() {
   $('#mTarget').value = state.metric.target;
   $('#mTargetWrap').hidden = state.metric.basis === 'mix';
   $('#exName').value = state.name;
-  $('#exWeights').innerHTML = WEIGHTS.map(w => `<button type="button" data-w="${w}" aria-pressed="${state.weights.includes(w)}">${w}</button>`).join('');
+  $('#exWeights').innerHTML = WEIGHTS.map(w => `<span class="wc"><button type="button" data-w="${w}" aria-pressed="${state.weights.includes(w)}" title="${esc(wTip(w))}">${w}</button><small>${w === 400 ? esc(T('w400')) : w === 700 ? esc(T('w700')) : ''}</small></span>`).join('');
+  $('#exWAll').hidden = state.weights.length === WEIGHTS.length;
+  renderWHint();
   $('#exBase').value = state.baseMode;
-  $('#vWeight').innerHTML = state.weights.map(w => `<button type="button" role="radio" data-w="${w}" aria-checked="${w === state.view.weight}">${w}</button>`).join('');
+  $('#vWeight').innerHTML = state.weights.map(w => `<button type="button" role="radio" data-w="${w}" aria-checked="${w === state.view.weight}" title="${esc(wTip(w))}">${w}</button>`).join('');
   const cont = state.wmode === 'cont';
   $('#vWeightLab').hidden = cont || state.weights.length < 2;
   $('#vWcontLab').hidden = !cont;
@@ -414,6 +416,30 @@ function syncToolbar() {
   $('#exGeneric').value = state.generic;
   $('#exItalic').value = state.italic ? '1' : '0';
   $('#exLang').value = state.scope;
+}
+
+/* 字重的常用名。400 = normal（正文），700 = bold（b、strong、h1–h6 的默认） */
+const W_NAMES = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
+const wTip = w => `${w} · ${W_NAMES[w]}` + (w === 400 ? ' — ' + T('w400Tip') : w === 700 ? ' — ' + T('w700Tip') : '');
+/* 浏览器按 CSS 的字重匹配规则，从导出的字重里找最接近的（CSS Fonts 4 §5.2） */
+function matchWeight(ws, want) {
+  if (ws.includes(want)) return want;
+  const lo = ws.filter(w => w < want).sort((a, b) => b - a), hi = ws.filter(w => w > want).sort((a, b) => a - b);
+  if (want >= 400 && want <= 500) return hi.find(w => w <= 500) ?? lo[0] ?? hi[0];
+  return want < 400 ? lo[0] ?? hi[0] : hi[0] ?? lo[0];
+}
+/* 导出字重下面的提示：缺了 400 / 700 时说明正文、粗体会怎样显示；多选了其他字重时提醒只要这两个就够 */
+function renderWHint() {
+  const el = $('#exWHint'), ws = state.weights, miss = [400, 700].filter(w => !ws.includes(w)), out = [];
+  if (miss.includes(400)) out.push(T('wMiss400', { w: matchWeight(ws, 400) }));
+  if (miss.includes(700)) { const m = matchWeight(ws, 700); out.push(T(m < 600 ? 'wMiss700Faux' : 'wMiss700', { w: m })); }
+  const extra = ws.some(w => w !== 400 && w !== 700);
+  el.className = 'w-hint' + (miss.length ? ' warn' : '');
+  el.hidden = !miss.length && !extra;
+  if (el.hidden) return;
+  const cost = state.classes.han.font?.kind === 'google' ? T('wCostG') : '';
+  el.innerHTML = esc(miss.length ? out.join('') : T('wExtra') + cost) +
+    (miss.length ? ` <button type="button" class="tbtn" data-act="wadd">${esc(T('wAdd', { w: miss.join(T('joiner')) }))}</button>` : ` <button type="button" class="tbtn" data-act="w47">${esc(T('wOnly'))}</button>`);
 }
 
 /* ================= 度量 ================= */

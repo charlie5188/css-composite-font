@@ -251,15 +251,23 @@ function initToolbar() {
   });
 
   $('#exName').addEventListener('input', e => { state.name = e.target.value; renderExport(); saveState(); });
-  $('#exWeights').addEventListener('click', e => {
-    const b = e.target.closest('[data-w]'); if (!b) return;
-    const w = +b.dataset.w, set = new Set(state.weights);
-    if (set.has(w)) { if (set.size === 1) return; set.delete(w); } else set.add(w);
-    state.weights = [...set].sort((a, c) => a - c);
+  const setWeights = ws => {
+    state.weights = [...new Set(ws)].sort((a, c) => a - c);
     const prevW = state.view.weight;
     if (!state.weights.includes(prevW)) state.view.weight = state.weights.includes(BASE_W) ? BASE_W : state.weights[0];
     syncToolbar(); renderExport(); saveState();
     if (state.view.weight !== prevW) { renderEditor(); rebuild(); }
+  };
+  $('#exWeights').addEventListener('click', e => {
+    const b = e.target.closest('[data-w]'); if (!b) return;
+    const w = +b.dataset.w, set = new Set(state.weights);
+    if (set.has(w)) { if (set.size === 1) return; set.delete(w); } else set.add(w);
+    setWeights([...set]);
+  });
+  $('#exWAll').addEventListener('click', () => setWeights(WEIGHTS));
+  $('#exWHint').addEventListener('click', e => {
+    if (e.target.closest('[data-act="w47"]')) setWeights([400, 700]);
+    if (e.target.closest('[data-act="wadd"]')) setWeights([...state.weights, 400, 700]);
   });
   /* 字重模式：分档 / 连续（可变字体）。切换不会删掉任何设定 */
   $('#vWMode').addEventListener('click', e => {
