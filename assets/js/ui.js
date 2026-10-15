@@ -453,7 +453,7 @@ async function autoAdjust() {
     const ws = Object.keys(sizes).map(Number);
     if (ws.length) {
       const base = sizes[BASE_W] ?? sizes[ws[0]];
-      setSizeAt('latin', BASE_W, base);
+      setSizeAt('latin', BASE_W, base === inheritedSize('latin', BASE_W) ? null : base);      // 和继承来的一样就不写
       for (const W of list) if (W !== BASE_W) setSizeAt('latin', W, sizes[W] != null && Math.abs(sizes[W] - base) >= 0.5 ? sizes[W] : null);
       refreshCustomRanges(); step(list.length);
       await at(list.includes(BASE_W) ? BASE_W : W0);
