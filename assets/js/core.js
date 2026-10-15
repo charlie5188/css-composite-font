@@ -409,7 +409,7 @@ const TYPO = [
     note: { zh: 'Chrome 的 pretty 只调整段落最后四行。', ja: 'Chrome の pretty は段落の最後の 4 行だけを調整します。', tw: 'Chrome 的 pretty 只調整段落最後四行。' } },
   { key: 'align', label: { zh: '对齐', ja: '揃え', tw: '對齊' }, prop: 'text-align', def: 'justify', tiles: true, tileHtml: tSvgTile('align'), tileW: 96, tileCode: true,
     values: [['justify', { zh: '两端对齐', ja: '両端揃え', tw: '兩端對齊' }], ['start', { zh: '齐头', ja: '行頭揃え', tw: '靠行首對齊' }], ['center', { zh: '居中', ja: '中央揃え', tw: '置中' }]] },
-  { key: 'justify', label: { zh: '对齐方式', ja: '両端揃えの方法', tw: '對齊方式' }, prop: 'text-justify', def: 'auto', tiles: true, tileHtml: v => `<span class="tt-s tt-just" style="text-justify:${v}" aria-hidden="true">文字 Web 文字</span>`, tileW: 112, tileCode: true,      /* 真的排一行两端对齐，看多出来的空加在哪里 */
+  { key: 'justify', label: { zh: '对齐方式', ja: '両端揃えの方法', tw: '對齊方式' }, prop: 'text-justify', def: 'auto', tiles: true, tileHtml: v => `<span class="tt-s tt-just" style="text-justify:${v}" aria-hidden="true">文字排列</span>`, tileW: 112, tileCode: true,      /* 真的排一行两端对齐，只用汉字：多出来的空要么匀进字间，要么没地方放（中文没有词间空格） */
     sup: { chrome: '145', firefox: '55', safari: '—' },
     values: [['auto', null], ['inter-character', { zh: '字间分配', ja: '字間で調整', tw: '字間分配' }], ['inter-word', { zh: '只在词间', ja: '語間のみ', tw: '只在詞間' }], ['none', null]],
     note: { zh: '配合 text-align: justify 使用。', ja: 'text-align: justify と組み合わせて使います。', tw: '配合 text-align: justify 使用。' } },
