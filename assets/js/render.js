@@ -151,16 +151,16 @@ function renderEditor() {
     const groups = GROUPS[c.id] || [];
     const nMoved = groups.filter(g => isMoved(c.id, g)).length;
     const nIn = c.id === 'latin' ? Object.entries(GROUPS).reduce((n, [cid, gs]) => n + gs.filter(g => isMoved(cid, g)).length, 0) : 0;
-    const nums = c.id === 'digit' ? numTags().map(numLabel) : [];      // 半角数字的齿轮是数字样式
-    const note = [c.note ? tr(c.note) : '', nMoved ? T('movedNote', { n: nMoved }) : '', nIn ? T('movedIn', { n: nIn }) : '', ...nums].filter(Boolean).join(' · ');
-    const gear = groups.length || c.id === 'digit' ? `<button type="button" class="gear${nMoved || nums.length ? ' on' : ''}" data-act="groups" data-cls="${c.id}" popovertarget="grpPop" aria-label="${esc(c.id === 'digit' ? T('numHead') : T('gearAria', { c: tr(c.name) }))}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.76 2.85L6.8 0.8L9.2 0.8L9.24 2.85A5.3 5.3 0 0 1 10.77 3.48L12.24 2.06L13.94 3.76L12.52 5.23A5.3 5.3 0 0 1 13.15 6.76L15.2 6.8L15.2 9.2L13.15 9.24A5.3 5.3 0 0 1 12.52 10.77L13.94 12.24L12.24 13.94L10.77 12.52A5.3 5.3 0 0 1 9.24 13.15L9.2 15.2L6.8 15.2L6.76 13.15A5.3 5.3 0 0 1 5.23 12.52L3.76 13.94L2.06 12.24L3.48 10.77A5.3 5.3 0 0 1 2.85 9.24L0.8 9.2L0.8 6.8L2.85 6.76A5.3 5.3 0 0 1 3.48 5.23L2.06 3.76L3.76 2.06L5.23 3.48A5.3 5.3 0 0 1 6.76 2.85Z" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.25"/></svg></button>` : '';
+    const note = [c.note ? tr(c.note) : '', nMoved ? T('movedNote', { n: nMoved }) : '', nIn ? T('movedIn', { n: nIn }) : ''].filter(Boolean).join(' · ');
+    const gear = groups.length ? `<button type="button" class="gear${nMoved ? ' on' : ''}" data-act="groups" data-cls="${c.id}" popovertarget="grpPop" aria-label="${esc(T('gearAria', { c: tr(c.name) }))}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.76 2.85L6.8 0.8L9.2 0.8L9.24 2.85A5.3 5.3 0 0 1 10.77 3.48L12.24 2.06L13.94 3.76L12.52 5.23A5.3 5.3 0 0 1 13.15 6.76L15.2 6.8L15.2 9.2L13.15 9.24A5.3 5.3 0 0 1 12.52 10.77L13.94 12.24L12.24 13.94L10.77 12.52A5.3 5.3 0 0 1 9.24 13.15L9.2 15.2L6.8 15.2L6.76 13.15A5.3 5.3 0 0 1 5.23 12.52L3.76 13.94L2.06 12.24L3.48 10.77A5.3 5.3 0 0 1 2.85 9.24L0.8 9.2L0.8 6.8L2.85 6.76A5.3 5.3 0 0 1 3.48 5.23L2.06 3.76L3.76 2.06L5.23 3.48A5.3 5.3 0 0 1 6.76 2.85Z" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.25"/></svg></button>` : '';
     return `<div class="ct-row" data-id="${c.id}" style="--c:var(--c-${c.id})">
       <span class="ct-glyph" aria-hidden="true">${esc(GLYPH[c.id])}</span>
       <span class="ct-name"${tip ? ` title="${esc(tip)}"` : ''}><span class="nm"><i class="dot"></i>${esc(tr(c.name))}${gear}</span>${note ? `<small>${esc(note)}</small>` : ''}</span>
       <span class="ct-font">${fontCell(c.id, o, c.id === 'han', c.id !== 'latin')}</span>
-      ${numCell('size', c.id)}${numCell('shift', c.id)}<span></span>${axRow(c.id, o)}${errRow(c.id, o)}${regionRow(c.id)}${numRow(c.id)}
+      ${numCell('size', c.id)}${numCell('shift', c.id)}<span></span>${axRow(c.id, o)}${errRow(c.id, o)}${regionRow(c.id)}
     </div>`;
   }).join('');
+  renderNumHint();
   $('#customRows').innerHTML = state.custom.length ? state.custom.map((cu, i) => `<div class="ct-row" data-ci="${i}">
       <input class="chars" type="text" value="${esc(cu.chars)}" placeholder="${esc(T('customPh'))}" aria-label="${esc(T('custom'))}" spellcheck="false">
       <span class="ct-font">${fontCell('#' + i, cu, false, true)}</span>
@@ -171,10 +171,7 @@ function renderEditor() {
 }
 /* 齿轮弹出的分组开关：打开 = 留在本类别，关闭 = 改由半角西文显示 */
 function renderGroups() {
-  const pop = $('#grpPop'), id = pop.dataset.cls;
-  pop.classList.toggle('num', id === 'digit');
-  if (id === 'digit') return renderNumPop(pop);
-  if (!id || !GROUPS[id]) return;
+  const pop = $('#grpPop'), id = pop.dataset.cls; if (!id || !GROUPS[id]) return;
   const name = tr(CLS[id].name);
   pop.innerHTML = `<div class="gp-head"><b>${esc(T('gpHead', { c: name }))}</b><span class="hint">${esc(T(id === 'shared' ? 'gpHintShared' : id === 'bopo' ? 'gpHintBopo' : 'gpHintSymbol', { c: name }))}</span></div>` +
     GROUPS[id].map(g => `<div class="gp-row"><span class="gp-sample" aria-hidden="true">${esc(g.sample)}</span>
@@ -221,35 +218,22 @@ function numFx(key, s) {
     }
     all.forEach(f => document.fonts.delete(f));
     numFxCache.set(key, out);
-    if ($('#grpPop').dataset.cls === 'digit' && $('#grpPop').matches(':popover-open')) renderGroups();
-    if (numTags().length && !$('#editor').contains(document.activeElement)) renderEditor();
+    renderNumHint();
   })();
   return null;
 }
 /* 没有变化的原因：默认就是这样（'default'），或者字体里没有（'none'） */
 const numWhy = (fx, t) => fx[t] ? '' : t === fx.def.fig || t === fx.def.spc ? 'default' : 'none';
-/* 半角数字那一行：选了、但在这个字体里没有变化的数字样式 */
-function numRow(key) {
-  if (key !== 'digit' || !numTags().length) return '';
+/* 高级排版属性「数字样式」下面：显示数字的字体默认是哪种数字，选了的样式在这个字体里有没有 */
+function renderNumHint() {
+  const el = $('#numHint'); if (!el) return;
   const { f, fx } = digitFx();
-  if (!fx) return '';
-  const by = w => numTags().filter(t => numWhy(fx, t) === w).map(numLabel).join(T('joiner')), def = by('default'), none = by('none'), font = shortName(f);
-  if (!def && !none) return '';
-  return `<span class="ct-note">${esc([def && T('numIsDefault', { font, list: def }), none && T('numLacks', { font, list: none }) + (f.kind === 'google' ? T('numGoogleShort') : '')].filter(Boolean).join(''))}</span>`;
-}
-function renderNumPop(pop) {
-  const { f, fx, checking } = digitFx();
-  const opts = NUM_OPTS.map(o => `<div class="np-row"><span class="np-lab">${esc(tr(o.label))}</span><span class="seg" role="radiogroup" aria-label="${esc(tr(o.label))}">` +
-    [['', null, null], ...o.vals].map(([v, d, sh]) => {
-      const why = v && fx ? numWhy(fx, v) : '';
-      return `<button type="button" role="radio" data-num="${o.key}" data-v="${v}" aria-checked="${(state.num[o.key] || '') === v}"${why ? ' class="nofx"' : ''} title="${esc(v ? `${tr(d)} · "${v}"` + (why ? ' — ' + T(why === 'default' ? 'numTipDefault' : 'numTipNone', { font: shortName(f) }) : '') : T('numDefaultTip') + (fx && fx.def[o.key] ? '：' + numLabel(fx.def[o.key]) : ''))}">${esc(v ? tr(sh) : T('numDefault'))}</button>`;
-    }).join('') + '</span></div>').join('');
-  const anyNo = fx && NUM_TAGS.some(t => !fx[t]), lacks = fx && NUM_TAGS.some(t => numWhy(fx, t) === 'none');
-  pop.innerHTML = `<div class="gp-head"><b>${esc(T('numHead'))}</b><span class="hint">${esc(T('numHint', { font: f ? shortName(f) : '—' }))}</span></div>` +
-    `<div class="np-sample" aria-hidden="true">0123456789<span>1,111.00</span></div>` + opts +
-    (anyNo ? `<p class="np-note">${esc(T('numNoFxNote') + (lacks && f.kind === 'google' ? T('numGoogle') : ''))}</p>` : '') +
-    (checking ? `<p class="np-note">${esc(T('numChecking'))}</p>` : '') +
-    (numTags().length ? `<div class="gp-foot"><button type="button" class="tbtn" data-act="gpreset">${esc(T('gpReset'))}</button></div>` : '');
+  el.hidden = !fx;
+  if (!fx) return;
+  const font = shortName(f), none = numTags().filter(t => numWhy(fx, t) === 'none');
+  el.textContent = T('numDefIs', { font, list: [fx.def.fig, fx.def.spc].map(numLabel).join(T('joiner')) }) +
+    (none.length ? T('numLacks', { font, list: none.map(numLabel).join(T('joiner')) }) + (f.kind === 'google' ? T('numGoogleShort') : '') : '');
+  el.classList.toggle('warn', !!none.length);
 }
 /* 改了某一格后，只更新其他格的继承值，不重绘表格（保持输入焦点） */
 function refreshInherited() {
@@ -279,7 +263,7 @@ function renderPreview() {
   for (const el of [pt, $('#naiveText')]) {
     for (const t of TYPO) {
       if (t.attr) el.lang = state.typo[t.key];
-      else el.style.setProperty(t.prop, state.typo[t.key]);
+      else el.style.setProperty(t.prop, t.prop === 'font-variant-numeric' ? numValue() : state.typo[t.key]);
     }
   }
   /* 类别着色优先用 CSS Highlight API：不拆 DOM，排版和不着色时完全一样（拆成 span 会让竖排里的西文和后面的字重叠）。

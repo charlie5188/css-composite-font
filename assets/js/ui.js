@@ -130,12 +130,6 @@ $('#grpPop').addEventListener('toggle', e => {
   pop.style.top = (r.bottom + 8 + pop.offsetHeight > innerHeight ? Math.max(8, r.top - pop.offsetHeight - 8) : r.bottom + 8) + 'px';
 });
 $('#grpPop').addEventListener('click', e => {
-  const nb = e.target.closest('[data-num]');      // 数字样式
-  if (nb || (e.target.closest('[data-act="gpreset"]') && $('#grpPop').dataset.cls === 'digit')) {
-    if (nb) state.num[nb.dataset.num] = nb.dataset.v; else for (const k of Object.keys(state.num)) state.num[k] = '';
-    changed({ fonts: true }); renderGroups();
-    return;
-  }
   if (e.target.closest('[data-act="gpreset"]')) {
     const id = $('#grpPop').dataset.cls;
     for (const k of Object.keys(state.moved)) if (k.startsWith(id + '.')) delete state.moved[k];
@@ -334,13 +328,14 @@ function renderTypoRows() {
     return `<div class="typo-row">
       <span class="typo-name"><label for="ty-${t.key}"><b>${esc(tr(t.label))}</b></label><span class="lab-i"><code>${t.attr ? esc(T('langAttr')) : t.prop}</code>${t.note ? `<button type="button" class="info" data-info="typo:${t.key}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}">i</button>` : ''}</span></span>
       <select id="ty-${t.key}">${opts}</select>
-      <div class="typo-sup" data-key="${t.key}">${sup}</div>
+      <div class="typo-sup" data-key="${t.key}">${sup}</div>${t.key === 'num' ? '<p class="typo-note" id="numHint" hidden></p>' : ''}
     </div>`;
   }).join('');
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }
   renderTypoStatus();
 }
 function renderTypoStatus() {
+  renderNumHint();
   const n = TYPO.filter(t => !t.attr && state.typo[t.key] !== typoDef(t)).length;
   $('#typoChanged').textContent = n ? T('typoChanged', { n }) : '';
   $('#typoReset').hidden = !n;

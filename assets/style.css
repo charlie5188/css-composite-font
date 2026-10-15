@@ -15,6 +15,7 @@
   --ok:#1E7A3C;
   --warn:#C2361F;
   --caution:#7A5600; --caution-bg:#FCF1CF;
+  --miss1:#D99100;
   --code-bg:#121214; --code-ink:#D9D9D4; --code-cm:#7B7B74; --code-at:#A3ADFF; --code-prop:#E6C07C;
   --c-han:#6A58B0; --c-kana:#AF4C8C; --c-punct:#A47A06; --c-symbol:#2B867F;
   --c-shared:#CC5E20; --c-latin:#3A8641; --c-digit:#2C69AE; --c-custom:#737A81; --c-bopo:#9A5B2A;
@@ -27,7 +28,7 @@
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#0E0E0F; --sheet:#161617; --ink:#EDEDEA; --ink-2:#C9C9C5; --muted:#9A9A95; --faint:#5F5F5B; --line:#2B2B2C; --rule:#202021; --ruled:#2E3560;
-    --accent:#8391FF; --accent-ink:#0B0B12; --ok:#5BBE72; --warn:#F0745A; --caution:#F2C25B; --caution-bg:#2B2410;
+    --accent:#8391FF; --accent-ink:#0B0B12; --ok:#5BBE72; --warn:#F0745A; --caution:#F2C25B; --caution-bg:#2B2410; --miss1:#F2C25B;
     --code-bg:#0A0A0B; --code-ink:#D9D9D4; --code-cm:#6F6F69; --code-at:#A3ADFF; --code-prop:#E6C07C;
     --c-han:#A595EE; --c-kana:#E58BC4; --c-punct:#E0B544; --c-symbol:#5FC6BD;
     --c-shared:#F49159; --c-latin:#78C67F; --c-digit:#77AEEB; --c-custom:#A2A9B0; --c-bopo:#D9A06E;
@@ -36,7 +37,7 @@
 }
 :root[data-theme="dark"]{
   --bg:#0E0E0F; --sheet:#161617; --ink:#EDEDEA; --ink-2:#C9C9C5; --muted:#9A9A95; --faint:#5F5F5B; --line:#2B2B2C; --rule:#202021; --ruled:#2E3560;
-  --accent:#8391FF; --accent-ink:#0B0B12; --ok:#5BBE72; --warn:#F0745A; --caution:#F2C25B; --caution-bg:#2B2410;
+  --accent:#8391FF; --accent-ink:#0B0B12; --ok:#5BBE72; --warn:#F0745A; --caution:#F2C25B; --caution-bg:#2B2410; --miss1:#F2C25B;
   --code-bg:#0A0A0B; --code-ink:#D9D9D4; --code-cm:#6F6F69; --code-at:#A3ADFF; --code-prop:#E6C07C;
   --c-han:#A595EE; --c-kana:#E58BC4; --c-punct:#E0B544; --c-symbol:#5FC6BD;
   --c-shared:#F49159; --c-latin:#78C67F; --c-digit:#77AEEB; --c-custom:#A2A9B0; --c-bopo:#D9A06E;
@@ -284,14 +285,14 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);padding-top:10px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:8px;height:8px;border-radius:2px;background:var(--c)}
-/* 缺字：一级（合成字体里的其他字体代替）黄底，二级（落到系统字体）红底加波浪线 */
-::highlight(cf-miss1){background-color:color-mix(in srgb,var(--caution) 45%,transparent)}
-::highlight(cf-miss2){background-color:color-mix(in srgb,var(--warn) 28%,transparent);text-decoration:underline wavy 1.5px var(--warn)}
+/* 缺字：只加波浪下划线。一级（合成字体里的其他字体代替）黄色，二级（落到系统字体）红色 */
+::highlight(cf-miss1){text-decoration:underline wavy 1.5px var(--miss1)}
+::highlight(cf-miss2){text-decoration:underline wavy 1.5px var(--warn)}
 .miss-note{display:grid;gap:6px;padding-top:12px;font-size:12px;line-height:1.6;color:var(--muted)}
 .miss-note p{margin:0;display:flex;gap:8px;align-items:baseline}
-.miss-note i{flex:none;width:10px;height:10px;border-radius:2px;transform:translateY(1px)}
-.miss-note .lv1 i{background:color-mix(in srgb,var(--caution) 45%,transparent)}
-.miss-note .lv2 i{background:color-mix(in srgb,var(--warn) 28%,transparent);box-shadow:inset 0 -2px var(--warn)}
+.miss-note i{flex:none;width:12px;height:6px;transform:translateY(-2px);background:radial-gradient(circle at 50% 100%,transparent 2px,var(--c) 2px 3px,transparent 3px) 0 0/6px 6px repeat-x}
+.miss-note .lv1 i{--c:var(--miss1)}
+.miss-note .lv2 i{--c:var(--warn)}
 .miss-note b{font-weight:400;color:var(--ink);font-family:var(--cf),var(--generic);font-size:14px;margin-left:6px;word-break:break-all}
 .miss-note .ok{color:var(--ok)}
 
@@ -329,6 +330,8 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 /* 左列较窄：名称和选项并排，浏览器支持另起一行 */
 .typo-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:4px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
 .typo-row .typo-sup{grid-column:1/-1}
+.typo-note{grid-column:1/-1;margin:2px 0 0;font-size:12px;line-height:1.55;color:var(--muted)}
+.typo-note.warn{color:var(--caution);background:var(--caution-bg);padding:6px 10px;border-radius:3px}
 .typo-name{display:grid;line-height:1.35}
 .typo-name b{font-weight:600}
 .typo-name code{font-family:var(--mono);font-size:11px;color:var(--muted)}
@@ -394,15 +397,6 @@ button.wl small{font-family:var(--ui);font-size:11px;margin-left:5px;opacity:.75
 .foot .tbtn{font-size:12px;color:var(--muted);padding:0}
 .foot .tbtn:hover{color:var(--ink)}
 .foot .tbtn.armed{color:var(--warn)}
-.grp-pop.num{width:min(360px,calc(100vw - 24px))}
-.np-sample{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-size:26px;line-height:1.3;padding:8px 0 12px;display:flex;flex-wrap:wrap;gap:4px 18px;align-items:baseline;overflow:hidden}
-.np-sample span{font-size:18px;color:var(--ink-2)}
-.np-row{display:grid;gap:6px;padding:10px 0;border-top:1px solid var(--rule)}
-.np-lab{font-size:12px;color:var(--muted)}
-.np-row .seg{justify-self:start;max-width:100%;overflow-x:auto;scrollbar-width:none}
-.seg button.nofx{color:var(--faint);text-decoration:underline dotted 1px;text-underline-offset:3px}
-.seg button.nofx[aria-checked="true"]{color:var(--sheet);background:var(--faint)}
-.np-note{margin:0;padding:8px 0 10px;border-top:1px solid var(--rule);font-size:11.5px;line-height:1.55;color:var(--muted)}
 .gp-foot{display:flex;justify-content:flex-end;padding:6px 0 4px;border-top:1px solid var(--rule);margin-top:4px}
 .gp-foot .tbtn{font-size:12px}
 

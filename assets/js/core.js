@@ -406,6 +406,14 @@ const TYPO = [
   { key: 'feat', label: { zh: '字距特性', ja: '字詰めの機能', tw: '字距特性' }, prop: 'font-feature-settings', def: 'normal',
     sup: { chrome: '48', firefox: '34', safari: '9.1' },
     values: [['normal', null], ['"palt"', { zh: '假名标点比例宽', ja: 'かなと約物をプロポーショナルに', tw: '假名標點比例寬' }], ['"halt"', { zh: '标点半角', ja: '約物を半角に', tw: '標點半形' }]] },
+  /* 数字样式：和 InDesign 的「数字样式」一样的五种。斜线零单独一行，导出时两行合成一条 font-variant-numeric */
+  { key: 'num', label: { zh: '数字样式', ja: '数字のスタイル', tw: '數字樣式' }, prop: 'font-variant-numeric', def: 'normal',
+    sup: { chrome: '52', firefox: '34', safari: '9.1' },
+    values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設' }], ['lining-nums tabular-nums', { zh: '等高等宽（表格、金额）', ja: 'ライニング・等幅（表・金額）', tw: '等高等寬（表格、金額）' }], ['lining-nums proportional-nums', { zh: '等高比例', ja: 'ライニング・プロポーショナル', tw: '等高比例' }], ['oldstyle-nums proportional-nums', { zh: '旧式比例（西文正文）', ja: 'オールドスタイル・プロポーショナル（欧文の本文）', tw: '舊式比例（西文內文）' }], ['oldstyle-nums tabular-nums', { zh: '旧式等宽', ja: 'オールドスタイル・等幅', tw: '舊式等寬' }]],
+    note: { zh: '和 InDesign 的「数字样式」一样的五种。等高 / 旧式是数字的高低，比例 / 等宽是数字的宽度。效果取决于显示数字的那个字体有没有这些 OpenType 特性；Google Fonts 的网页字体删掉了旧式数字和斜线零。写在使用规则里，页面上可以按元素改，例如只让表格用等宽数字。', ja: 'InDesign の「数字スタイル」と同じ 5 種類です。ライニング / オールドスタイルは数字の高さ、プロポーショナル / 等幅は数字の幅です。効果は数字を表示するフォントにこれらの OpenType 機能があるかどうかで決まります。Google Fonts の Web フォントではオールドスタイル数字とスラッシュ付きゼロが削られています。使用側の規則に書かれるので、表だけ等幅数字にするなど、要素ごとに変えられます。', tw: '和 InDesign 的「數字樣式」一樣的五種。等高 / 舊式是數字的高低，比例 / 等寬是數字的寬度。效果取決於顯示數字的那個字型有沒有這些 OpenType 特性；Google Fonts 的網頁字型刪掉了舊式數字和斜線零。寫在使用規則裡，頁面上可以按元素改，例如只讓表格用等寬數字。' } },
+  { key: 'zero', label: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零' }, prop: 'font-variant-numeric', def: 'normal',
+    sup: { chrome: '52', firefox: '34', safari: '9.1' },
+    values: [['normal', { zh: '不用', ja: '使わない', tw: '不用' }], ['slashed-zero', { zh: '用斜线零（和字母 O 区分）', ja: 'スラッシュ付き（O と区別）', tw: '用斜線零（和字母 O 區分）' }]] },
 ];
 /* 工具的默认值以正文为前提：段落换行用 pretty；日文正文的禁则用 strict。
    def 是工具的默认值，init 是 CSS 的初始值：导出时只省略等于 init 的值 */
@@ -420,22 +428,14 @@ const ENGINE = (() => {
   return { id: '', name: '', v: '' };
 })();
 const typoSupported = (t, v) => t.attr || CSS.supports(t.prop, v);
-/* 数字样式（OpenType 特性）：写进数字所用字体的 @font-face 规则（font-feature-settings 描述符：Chrome 140、Firefox 34、Safari 10）。
-   每一项不选（''）就按字体的默认。数字和西文用同一个字体时规则是合在一起的，这几个特性基本只改数字 */
-const NUM_OPTS = [      // [特性, 名称, 按钮上的短名称]
-  { key: 'fig', label: { zh: '字形', ja: '字形', tw: '字形' }, vals: [
-    ['lnum', { zh: '等高数字', ja: 'ライニング数字', tw: '等高數字' }, { zh: '等高', ja: 'ライニング', tw: '等高' }],
-    ['onum', { zh: '旧式数字', ja: 'オールドスタイル数字', tw: '舊式數字' }, { zh: '旧式', ja: 'オールドスタイル', tw: '舊式' }]] },
-  { key: 'spc', label: { zh: '字宽', ja: '字幅', tw: '字寬' }, vals: [
-    ['pnum', { zh: '比例数字', ja: 'プロポーショナル数字', tw: '比例數字' }, { zh: '比例', ja: 'プロポーショナル', tw: '比例' }],
-    ['tnum', { zh: '等宽数字', ja: '等幅数字', tw: '等寬數字' }, { zh: '等宽', ja: '等幅', tw: '等寬' }]] },
-  { key: 'zero', label: { zh: '零', ja: 'ゼロ', tw: '零' }, vals: [
-    ['zero', { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零' }, { zh: '斜线零', ja: 'スラッシュ付き', tw: '斜線零' }]] },
-];
-const NUM_TAGS = NUM_OPTS.flatMap(o => o.vals.map(v => v[0]));
-const numTags = () => NUM_OPTS.map(o => state.num?.[o.key]).filter(t => NUM_TAGS.includes(t));
-const numFeat = () => numTags().map(t => `"${t}"`).join(', ');
-const numLabel = t => tr(NUM_OPTS.flatMap(o => o.vals).find(v => v[0] === t)[1]);
+/* 数字样式（高级排版属性里的「数字样式」「斜线零」，合成一条 font-variant-numeric）。
+   下面是各个值对应的 OpenType 特性：检查显示数字的字体有没有这些特性时用 */
+const NUM_FEAT = { 'lining-nums': 'lnum', 'oldstyle-nums': 'onum', 'proportional-nums': 'pnum', 'tabular-nums': 'tnum', 'slashed-zero': 'zero' };
+const NUM_TAGS = Object.values(NUM_FEAT);
+const NUM_LABEL = { lnum: { zh: '等高数字', ja: 'ライニング数字', tw: '等高數字' }, onum: { zh: '旧式数字', ja: 'オールドスタイル数字', tw: '舊式數字' }, pnum: { zh: '比例数字', ja: 'プロポーショナル数字', tw: '比例數字' }, tnum: { zh: '等宽数字', ja: '等幅数字', tw: '等寬數字' }, zero: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零' } };
+const numValue = () => [state.typo.num, state.typo.zero].filter(v => v && v !== 'normal').join(' ') || 'normal';
+const numTags = () => numValue().split(' ').map(v => NUM_FEAT[v]).filter(Boolean);
+const numLabel = t => tr(NUM_LABEL[t]);
 
 /* 预设的西文大小：以汉字字体自带西文为基准，取「按大写高对齐」与「按 x 高对齐」的几何平均，
    大写高不超过自带西文的 103%（见度量对齐面板的说明）。基线都为 0：这些组合的中线偏差在 ±2% em 以内。 */
@@ -471,7 +471,7 @@ function freshClasses(p) {
 }
 function stateFromPreset(p, prev) {
   return {
-    v: 4,
+    v: 5,
     preset: p.id,
     name: prev?.name || 'My Composite',
     weights: prev?.weights || [100, 200, 300, 400, 500, 600, 700, 800, 900],
@@ -483,11 +483,10 @@ function stateFromPreset(p, prev) {
     scope: prev?.scope ?? '',
     wmode: prev?.wmode || 'steps',
     wrange: prev?.wrange || [100, 900],
-    italic: !!prev?.italic,
-    num: { ...(prev?.num || {}) },
+    italic: prev ? !!prev.italic : true,      // 默认导出斜体：西文用真斜体，汉字保持正体
     classes: freshClasses(p),
     custom: [],
-    view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, compare: false, cmp: 'plain', weight: 400 },
+    view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, miss: true, compare: false, cmp: 'plain', weight: 400 },
     typo: prev?.typo ? { ...prev.typo } : { ...typoDefaults(SAMPLES[p.sample].lang), lang: SAMPLES[p.sample].lang },
     metric: prev?.metric || { basis: 'mix', target: 83 },
   };
@@ -521,7 +520,12 @@ function normalizeState() {
     if (/^ja/.test(state.typo.lang) && state.typo.lineBreak === 'auto') state.typo.lineBreak = 'strict';
     state.v = 4;
   }
+  if (state.v === 4) {      // v5 起默认导出斜体（以前默认不导出，em、i 里的西文也被模拟倾斜）
+    state.italic = true;
+    state.v = 5;
+  }
   state.view.cmp = state.view.cmp || 'plain';
+  if (state.view.miss === undefined) state.view.miss = true;         // 「标出缺字」默认打开
   state.metric = { basis: 'mix', target: 83, ...(state.metric || {}) };
   state.weights = Array.isArray(state.weights) && state.weights.length ? [...new Set(state.weights)].sort((a, b) => a - b) : [state.weight || 400];
   delete state.weight;
@@ -530,7 +534,12 @@ function normalizeState() {
   state.scope = state.scope || '';
   state.wmode = state.wmode === 'cont' ? 'cont' : 'steps';        // 字重：分档 / 连续（可变字体）
   state.italic = !!state.italic;                                   // 导出斜体
-  state.num = Object.fromEntries(NUM_OPTS.map(o => [o.key, o.vals.some(v => v[0] === state.num?.[o.key]) ? state.num[o.key] : '']));      // 数字样式
+  if (state.num) {        // 数字样式原来在半角数字的齿轮里（按 OpenType 特性分开存），移到高级排版属性
+    const n = state.num;
+    if (n.fig || n.spc) state.typo.num = `${n.fig === 'onum' ? 'oldstyle' : 'lining'}-nums ${n.spc === 'tnum' ? 'tabular' : 'proportional'}-nums`;
+    if (n.zero) state.typo.zero = 'slashed-zero';
+    delete state.num;
+  }
   delete state.stretch; delete state.view.wstretch;                // 「字宽跟随页面」已删除
   const wr = Array.isArray(state.wrange) ? state.wrange.map(Math.round) : [];
   state.wrange = wr[0] >= 100 && wr[1] <= 900 && wr[0] < wr[1] ? wr : [100, 900];      // 连续模式导出的粗细范围
@@ -677,8 +686,6 @@ function buildPlan(W = BASE_W, live = false, ital = false) {
     if (!r.font) return;
     plan.push({ ...fin(r), range: rng, owners: ['#' + i] });
   });
-  const feat = numFeat();      // 数字样式写进负责数字的那一条规则（和西文同一字体时就是西文那一条）
-  if (feat) for (const p of plan) if (p.owners.includes('digit')) p.feat = feat;
   return plan;
 }
 /* ================= 连续字重：按档位分段 =================
@@ -707,7 +714,7 @@ function buildSegments(live = false, skipBase = false) {      // skipBase：汉�
     if (!span) continue;
     const cf = pl => pl.map(p => ({ ...p, font: contFont(p.font) }));
     const plan = cf(buildPlan(W, live)), iplan = state.italic ? cf(buildPlan(W, live, true)) : null;
-    const k = pl => pl.slice(skipBase ? 1 : 0).map(p => `${fontKey(p.font)}|${p.size}|${fvsKey(p.fvs)}|${p.feat || ''}|${p.owners.join(',')}`).join(';');
+    const k = pl => pl.slice(skipBase ? 1 : 0).map(p => `${fontKey(p.font)}|${p.size}|${fvsKey(p.fvs)}|${p.owners.join(',')}`).join(';');
     const key = k(plan) + (iplan ? '/' + k(iplan) : '');
     const last = segs[segs.length - 1];
     if (last && last.key === key) last.hi = span[1]; else segs.push({ lo: span[0], hi: span[1], W, plan, iplan, key });
@@ -764,7 +771,6 @@ async function rebuildNow() {
       const d = { display: 'swap', weight: sg.lo === sg.hi ? String(W) : `${sg.lo} ${sg.hi}`, style };
       const fvs = fvsOf(x.p, W, cont);
       if (fvs) d.variationSettings = fvs;
-      if (x.p.feat) d.featureSettings = x.p.feat;
       if (x.range) d.unicodeRange = fmtRanges(x.range);
       if (x.p.size !== 100) d.sizeAdjust = `${x.p.size}%`;
       try { faces.push(new FontFace(fam, x.face.buffer || x.face.src, d)); } catch (e) { /* 忽略无效的规则 */ }
