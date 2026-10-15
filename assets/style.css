@@ -324,6 +324,8 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .panel{border-top:1px solid var(--ink);margin-top:44px;padding-top:14px;display:grid;gap:14px;min-width:0}
 .panel-head{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px}
 .spec-wrap{background:var(--sheet);border:1px solid var(--line);min-width:0}
+/* 参考图的「显示」放在白色区域右上角，和校样纸面上的一样 */
+.spec-bar{justify-content:flex-end;align-items:center;line-height:1.4;font-family:var(--ui);padding:10px 12px 0}
 #spec{display:block;width:100%;height:240px}
 /* 改过设定后换预设的确认框 */
 #leaveDlg{width:min(460px,calc(100vw - 32px))}

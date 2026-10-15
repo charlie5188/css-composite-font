@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=bd7b2af4">
+<link rel="stylesheet" href="assets/style.css?v=98e598f8">
 <script src="assets/js/i18n.js?v=b508c0d4" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
@@ -119,15 +119,19 @@
 
       <section class="panel" aria-labelledby="metricsLabel">
         <div class="panel-head"><h2 class="label lab-i" id="metricsLabel"><span data-t="metrics"></span><button type="button" class="info" data-info="metricsInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2>
-          <button class="tog view-btn" type="button" id="specViewBtn" popovertarget="specViewPop" aria-haspopup="true"><span data-t="viewMenu"></span></button>
-          <div class="view-pop" id="specViewPop" popover role="group" data-ta="aria-label:viewMenu">
-            <button class="tog" type="button" data-sg="latin" aria-pressed="true" data-t="sgLatin"></button>
-            <button class="tog" type="button" data-sg="digit" aria-pressed="true" data-t="sgDigit"></button>
-            <button class="tog" type="button" data-sg="kana" aria-pressed="true" data-t="sgKana"></button>
-            <button class="tog" type="button" data-sg="bopo" aria-pressed="false" data-t="sgBopo"></button>
-          </div>
         </div>
-        <div class="spec-wrap"><canvas id="spec" data-ta="aria-label:specAria"></canvas></div>
+        <div class="spec-wrap">
+          <div class="spec-bar togs">
+            <button class="tog view-btn" type="button" id="specViewBtn" popovertarget="specViewPop" aria-haspopup="true"><span data-t="viewMenu"></span></button>
+            <div class="view-pop" id="specViewPop" popover role="group" data-ta="aria-label:viewMenu">
+              <button class="tog" type="button" data-sg="latin" aria-pressed="true" data-t="sgLatin"></button>
+              <button class="tog" type="button" data-sg="digit" aria-pressed="true" data-t="sgDigit"></button>
+              <button class="tog" type="button" data-sg="kana" aria-pressed="true" data-t="sgKana"></button>
+              <button class="tog" type="button" data-sg="bopo" aria-pressed="false" data-t="sgBopo"></button>
+            </div>
+          </div>
+          <canvas id="spec" data-ta="aria-label:specAria"></canvas>
+        </div>
       </section>
 
     </section>
