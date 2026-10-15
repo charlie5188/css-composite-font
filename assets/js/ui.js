@@ -1015,6 +1015,7 @@ function init() {
   applyUI();
   rebuildNow();
   new ResizeObserver(debounce(drawSpecimen, 100)).observe($('#spec'));
+  new ResizeObserver(debounce(refreshVAutospace, 100)).observe($('#proofText'));      // 直排校样的高度跟着窗口变
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => drawSpecimen());
   new MutationObserver(() => drawSpecimen()).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 }

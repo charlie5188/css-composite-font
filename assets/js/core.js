@@ -874,6 +874,7 @@ async function rebuildNow() {
   root.style.setProperty('--cf', `"${fam}"`);
   root.style.setProperty('--fw', cont ? state.view.wcont : W);
   old.forEach(f => document.fonts.delete(f));
+  refreshVAutospace();      // 换了字体，换列的位置可能变了
   setBusy('');
   drawSpecimen();
   renderExport();

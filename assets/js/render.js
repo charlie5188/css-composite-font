@@ -171,18 +171,49 @@ function renderEditor() {
     : '';
 }
 /* 直排 + 中西间距：Chrome 在元素边界上加 1/8 em 时，会把边界后面的字画到前面去（叠字）。
-   所以直排时 span 自己不加间距，边界上该加的 1/8 em 改用 margin 补上（汉字假名和字母数字之间才加） */
+   所以直排时 span 自己不加间距，边界上该加的 1/8 em 改用 margin 补上（汉字假名和字母数字之间才加）。
+   和浏览器自己的中西间距一样，换列的地方（列首、列尾）不加：排好以后量一下边界两边的字在不在同一列。
+   去掉一处 margin 可能让后面换列的位置变了，所以再量一遍；去掉过的不再加回，免得来回跳 */
 const IDEO_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Bopomofo}]/u, ALNUM_RE = /[\p{L}\p{N}]/u;
 function vAutospace(pt) {
   const kind = ch => !ch ? 0 : IDEO_RE.test(ch) ? 1 : ALNUM_RE.test(ch) ? 2 : 0;
   const gap = (a, b) => !!(kind(a) && kind(b) && kind(a) !== kind(b));
   const nodes = [...pt.childNodes], first = n => [...(n?.textContent || '')][0], last = n => [...(n?.textContent || '')].pop();
+  const edges = [];      // [span, 'marginInlineStart' | 'marginInlineEnd', 边界前的节点, 边界后的节点]
   nodes.forEach((n, i) => {
     if (n.nodeType !== 1) return;
     n.style.textAutospace = 'no-autospace';
-    n.style.marginInlineStart = nodes[i - 1]?.nodeType === 3 && gap(last(nodes[i - 1]), first(n)) ? '.125em' : '';      // 前面是 span 时由它的 margin-inline-end 负责，不重复加
-    n.style.marginInlineEnd = gap(last(n), first(nodes[i + 1])) ? '.125em' : '';
+    n.style.marginInlineStart = n.style.marginInlineEnd = '';
+    if (nodes[i - 1]?.nodeType === 3 && gap(last(nodes[i - 1]), first(n))) edges.push([n, 'marginInlineStart', nodes[i - 1], n]);      // 前面是 span 时由它的 margin-inline-end 负责，不重复加
+    if (gap(last(n), first(nodes[i + 1]))) edges.push([n, 'marginInlineEnd', n, nodes[i + 1]]);
   });
+  if (!edges.length) return;
+  const charRect = (node, atEnd) => {      // 节点里第一个（或最后一个）字的位置
+    const t = node.nodeType === 3 ? node : node.firstChild, s = t.data, c = atEnd ? [...s].pop() : [...s][0], r = document.createRange();
+    r.setStart(t, atEnd ? s.length - c.length : 0); r.setEnd(t, atEnd ? s.length : c.length);
+    return r.getBoundingClientRect();
+  };
+  const sameCol = (a, b) => {
+    const ra = charRect(a, true), rb = charRect(b, false);
+    if (!ra.width || !rb.width) return true;      // 还没排版（校样不可见）：照常加
+    return Math.abs(ra.left + ra.width / 2 - rb.left - rb.width / 2) < ra.width / 2;
+  };
+  const dropped = new Set();
+  for (let k = 0; k < 4; k++) {
+    const want = edges.map((e, j) => !dropped.has(j) && sameCol(e[2], e[3]));      // 先全部量完再改，只排一次版
+    let changed = false;
+    edges.forEach(([el, side], j) => {
+      if (!want[j] && el.style[side]) dropped.add(j);
+      const v = want[j] ? '.125em' : '';
+      if (el.style[side] !== v) { el.style[side] = v; changed = true; }
+    });
+    if (!changed) break;
+  }
+}
+/* 换列的位置会随字体加载、校样高度变化：重新量一遍 */
+function refreshVAutospace() {
+  const pt = $('#proofText');
+  if (state.view.vertical && state.typo.autospace !== 'no-autospace' && pt.firstElementChild) vAutospace(pt);
 }
 /* 齿轮弹出的分组开关：打开 = 留在本类别，关闭 = 改由半角西文显示 */
 function renderGroups() {
@@ -332,24 +363,28 @@ function renderPreview() {
   if (!(spanColor || anyShift())) pt.textContent = v.text;
   else {
     /* 不需要 span 的文字合成一个文本节点：直排时，西文、数字和汉字分在相邻的文本节点里，Chrome 会把后面的字叠上去 */
-    const frag = document.createDocumentFragment();
+    /* 用 span 着色时按类别分 span；否则只有基线偏移需要 span，按偏移量分：
+       偏移相同的数字和字母（「27.6km」）放在同一个 span 里，字距不会被元素边界切断 */
+    const frag = document.createDocumentFragment(), shifts = new Map();
+    const shiftOf = o => { if (!shifts.has(o)) shifts.set(o, settingOf(o).shift); return shifts.get(o); };
+    const keyOf = o => spanColor ? o : shiftOf(o);
     let cur = null, buf = '', plain = '';
     const flush = () => {
       if (!buf) return;
-      const sh = settingOf(cur).shift;
+      const sh = shiftOf(cur);
       if (!spanColor && !sh) plain += buf;
       else {
         if (plain) { frag.append(plain); plain = ''; }
         const s = document.createElement('span');
         s.className = 'r';
-        s.dataset.k = cur[0] === '#' ? 'custom' : cur;
+        if (spanColor) s.dataset.k = cur[0] === '#' ? 'custom' : cur;
         if (sh) s.style.setProperty('--sh', sh / 100);
         s.textContent = buf;
         frag.append(s);
       }
       buf = '';
     };
-    for (const ch of v.text) { const o = ownerOf(ch.codePointAt(0)); if (o !== cur) { flush(); cur = o; } buf += ch; }
+    for (const ch of v.text) { const o = ownerOf(ch.codePointAt(0)); if (cur === null || keyOf(o) !== keyOf(cur)) { flush(); cur = o; } buf += ch; }
     flush();
     if (plain) frag.append(plain);
     pt.replaceChildren(frag);
