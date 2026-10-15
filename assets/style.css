@@ -320,14 +320,10 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 /* 缺字：只加波浪下划线。一级（合成字体里的其他字体代替）黄色，二级（落到系统字体）红色 */
 ::highlight(cf-miss1){text-decoration:underline wavy 1.5px var(--miss1)}
 ::highlight(cf-miss2){text-decoration:underline wavy 1.5px var(--warn)}
-/* 缺字：校样纸面最下面的黄色警告条，左右贴满纸面 */
-.miss-note{display:grid;gap:6px;margin:4px calc(-1 * var(--pad)) calc(-1 * (var(--pad-y) + 6px));padding:10px var(--pad);background:var(--caution-bg);color:var(--caution);font-size:12px;line-height:1.6;border-top:1px solid color-mix(in srgb,var(--caution) 25%,transparent)}
-.miss-note[hidden]{display:none}
-.miss-note p{margin:0;display:flex;gap:8px;align-items:baseline}
-.miss-note i{flex:none;width:12px;height:6px;transform:translateY(-2px);background:radial-gradient(circle at 50% 100%,transparent 2px,var(--c) 2px 3px,transparent 3px) 0 0/6px 6px repeat-x}
-.miss-note .lv1 i{--c:var(--miss1)}
-.miss-note .lv2 i{--c:var(--warn)}
-.miss-note b{font-weight:400;color:var(--ink);font-family:var(--cf),var(--generic);font-size:14px;margin-left:6px;word-break:break-all}
+/* 缺字：鼠标停在标了波浪线的字上时弹出的说明 */
+.miss-tip{position:fixed;z-index:30;max-width:min(320px,calc(100vw - 16px));padding:7px 10px;border-radius:4px;background:var(--caution-bg);color:var(--caution);border:1px solid color-mix(in srgb,var(--caution) 35%,transparent);font-size:12px;line-height:1.55;box-shadow:0 10px 24px -12px rgba(0,0,0,.35);pointer-events:none}
+.miss-tip[hidden]{display:none}
+.miss-tip.lv2{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
 
 /* ---------- metrics & advanced ---------- */
 .panel{margin-top:28px;display:grid;gap:14px;min-width:0}

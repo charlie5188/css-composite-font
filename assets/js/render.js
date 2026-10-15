@@ -354,8 +354,8 @@ function renderPreview() {
 let missTok = 0, missMap = null;
 const MISS_SKIP = /[\s\p{M}\p{Cf}]/u;
 async function checkMiss() {
-  const tok = ++missTok, el = $('#missNote');
-  if (!state.view.miss) { missMap = null; paintMiss(); el.hidden = true; return; }
+  const tok = ++missTok;
+  if (!state.view.miss) { missMap = null; paintMiss(); return; }
   const W = state.view.weight, base = resolveCls('han', W, true);
   const setAt = o => o === 'other' ? resolveCls('han', W, true) : o[0] === '#' ? resolveCustom(state.custom[+o.slice(1)], W, true) : resolveCls(o, W, true);
   const chains = new Map(), need = new Map();
@@ -374,20 +374,40 @@ async function checkMiss() {
     miss.set(k, !src || src.status === 'loading' ? null : src.status === 'error' ? cs : await missingIn(src, [...cs]));
   }));
   if (tok !== missTok) return;
-  missMap = new Map();
-  const groups = new Map();
+  missMap = new Map();      // 字 → { lv, from, by }：鼠标停在标出的字上时，提示里用
   for (const [c, chain] of chains) {
     const has = f => { const m = miss.get(fontKey(f)); return !m || !m.has(c); };
     if (has(chain[0])) continue;
-    const by = chain.slice(1).find(has), lv = by ? 1 : 2, gk = shortName(chain[0]) + '|' + (by ? shortName(by) : '');
-    missMap.set(c, lv);
-    if (!groups.has(gk)) groups.set(gk, { from: shortName(chain[0]), by: by && shortName(by), lv, cs: [] });
-    groups.get(gk).cs.push(c);
+    const by = chain.slice(1).find(has);
+    missMap.set(c, { lv: by ? 1 : 2, from: shortName(chain[0]), by: by && shortName(by) });
   }
   paintMiss();
-  el.hidden = !groups.size;      // 没有缺字时不显示
-  el.innerHTML = [...groups.values()].sort((a, b) => b.lv - a.lv).map(g =>
-    `<p class="lv${g.lv}"><i></i><span>${esc(T(g.lv === 1 ? 'missBy' : 'missSys', { font: g.from, by: g.by, n: g.cs.length }))}<b>${esc(g.cs.slice(0, 60).join(' '))}${g.cs.length > 60 ? ' …' : ''}</b></span></p>`).join('');
+}
+/* 鼠标停在标了波浪线的字上：在字旁边弹出说明 */
+function missTipAt(x, y) {
+  const tip = $('#missTip');
+  const hide = () => { tip.hidden = true; };
+  if (!missMap?.size) return hide();
+  const pos = document.caretPositionFromPoint?.(x, y), rng = pos ? null : document.caretRangeFromPoint?.(x, y);
+  const node = pos ? pos.offsetNode : rng?.startContainer, off = pos ? pos.offset : rng?.startOffset;
+  if (!node || node.nodeType !== 3 || !$('#proofText').contains(node)) return hide();
+  /* 光标位置在字和字之间：前后两个字都看一下，取鼠标真正落在上面的那个 */
+  for (const start of [off, off - 1, off - 2]) {
+    if (start < 0 || start >= node.data.length) continue;
+    const ch = String.fromCodePoint(node.data.codePointAt(start)), info = missMap.get(ch);
+    if (!info) continue;
+    const r = new Range(); r.setStart(node, start); r.setEnd(node, start + ch.length);
+    const b = r.getBoundingClientRect();
+    if (x < b.left || x > b.right || y < b.top || y > b.bottom) continue;
+    tip.textContent = T(info.lv === 1 ? 'missTipBy' : 'missTipSys', { c: ch, font: info.from, by: info.by });
+    tip.className = 'miss-tip lv' + info.lv;
+    tip.hidden = false;
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.max(8, Math.min(b.left, innerWidth - w - 8)) + 'px';
+    tip.style.top = (b.bottom + 6 + h > innerHeight ? b.top - h - 6 : b.bottom + 6) + 'px';
+    return;
+  }
+  hide();
 }
 const checkMissSoon = debounce(checkMiss, 120);
 /* 用 Highlight API 标出缺字，不改 DOM（竖排也不会乱） */
@@ -401,7 +421,7 @@ function paintMiss() {
       const node = walker.currentNode;
       let i = 0;
       for (const ch of node.data) {
-        const lv = missMap.get(ch);
+        const lv = missMap.get(ch)?.lv;
         if (lv) { const r = new Range(); r.setStart(node, i); r.setEnd(node, i + ch.length); sets[lv].add(r); }
         i += ch.length;
       }

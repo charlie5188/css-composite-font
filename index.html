@@ -8,14 +8,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=d51f7e9e">
-<script src="assets/js/i18n.js?v=760ce505" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=50e7b788">
+<script src="assets/js/i18n.js?v=17d96e6b" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
 <script src="assets/js/core.js?v=a5cc8204" defer></script>
-<script src="assets/js/render.js?v=a78776ee" defer></script>
+<script src="assets/js/render.js?v=2a41d4fc" defer></script>
 <script src="assets/js/export.js?v=1b1135a4" defer></script>
-<script src="assets/js/ui.js?v=ad373b13" defer></script>
+<script src="assets/js/ui.js?v=8abda924" defer></script>
 </head>
 <body>
 <div class="app">
@@ -111,7 +111,6 @@
             <button type="button" class="info" data-info="cmpInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button><code id="naiveCode"></code></div>
           <div class="proof-text naive" id="naiveText"></div>
         </div>
-        <div class="miss-note" id="missNote" role="status" aria-live="polite" hidden></div>
       </div>
       <div class="legend" id="legend" hidden></div>
 
@@ -310,6 +309,7 @@
   </footer>
 </div>
 
+<div class="miss-tip" id="missTip" role="tooltip" hidden></div>
 <dialog id="leaveDlg" aria-labelledby="leaveTitle">
   <div class="leave">
     <h2 id="leaveTitle" data-t="leaveTitle"></h2>

@@ -218,6 +218,9 @@ function initToolbar() {
     saveState();
   });
   const reloadForText = debounce(() => rebuild(), 600);
+  $('#proofText').addEventListener('pointermove', e => missTipAt(e.clientX, e.clientY));
+  $('#proofText').addEventListener('pointerleave', () => { $('#missTip').hidden = true; });
+  addEventListener('scroll', () => { $('#missTip').hidden = true; }, { passive: true });
   $('#sample').addEventListener('input', e => {
     v().text = v().customText = e.target.value;
     renderPreview(); saveState(); reloadForText();
