@@ -114,7 +114,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .sec-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
 /* 预设陈列：收起时只显示一排（放得下几张就显示几张），「全部预设」展开成多排，和 Google Docs 的模板陈列一样 */
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
-.pcard-wrap{position:relative;display:grid}
+.pcard-wrap{position:relative;display:grid;grid-template-columns:minmax(0,1fr)}      /* 卡片宽度只由外层网格决定，不被里面的字样撑开 */
 .pcard-wrap[hidden]{display:none}
 .preset-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px}
 .pmore{display:grid;place-content:center;justify-items:center;gap:8px;min-height:100%;padding:14px;border:1px dashed var(--faint);border-radius:4px;background:none;color:var(--muted);font-size:12.5px}
@@ -122,11 +122,12 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .pmore:hover{border-color:var(--ink);color:var(--ink)}
 .pmore .chev{width:9px;height:9px;border:solid currentColor;border-width:0 1.75px 1.75px 0;transform:rotate(45deg);transition:transform .15s}
 .pmore[aria-expanded="true"] .chev{transform:translateY(4px) rotate(225deg)}
-.pcard{display:grid;gap:6px;align-content:start;text-align:left;padding:14px 14px 13px;border:1px solid var(--line);background:var(--sheet);border-radius:4px;color:inherit}
+.pcard{display:grid;gap:6px;align-content:start;min-width:0;container-type:inline-size;text-align:left;padding:14px 14px 13px;border:1px solid var(--line);background:var(--sheet);border-radius:4px;color:inherit}
 .pcard:hover{border-color:var(--faint)}
 .pcard[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 /* 缩略字样：固定行高，各卡片的基线和下面的文字位置一致；只裁横向，g 的下伸部分不会被切掉 */
-.pspec{display:block;height:58px;font-size:46px;line-height:58px;white-space:nowrap;overflow-x:clip;overflow-y:visible;margin-bottom:8px;font-feature-settings:normal}
+/* 字号跟着卡片宽度缩：放不下时缩小，而不是把卡片撑宽 */
+.pspec{display:block;min-width:0;height:58px;font-size:min(46px,27cqi);line-height:58px;white-space:nowrap;overflow-x:clip;overflow-y:visible;margin-bottom:8px;font-feature-settings:normal}
 .ptag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .pname{font-size:14px;font-weight:600;line-height:1.3}
 .pmiss{font-size:11.5px;line-height:1.4;color:var(--warn)}
@@ -136,7 +137,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .save-form{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
 .save-form[hidden]{display:none}
 .save-form input{width:180px}
-@media (max-width:480px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}.pspec{font-size:36px;height:46px;line-height:46px}}
+@media (max-width:480px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}.pspec{font-size:min(36px,27cqi);height:46px;line-height:46px}}
 
 /* ---------- bench ---------- */
 /* 整个工作区是一张白纸：左窗格编辑、右窗格校样和参考图，中间一条细线。
