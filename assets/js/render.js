@@ -161,7 +161,7 @@ function renderEditor() {
       ${numCell('size', c.id)}${numCell('shift', c.id)}<span></span>${axRow(c.id, o)}${errRow(c.id, o)}${regionRow(c.id)}
     </div>`;
   }).join('');
-  renderNumHint();
+  renderNumHint(); renderEaMarks();      // 字体加载完以后重新检查数字、东亚字形的特性
   $('#customRows').innerHTML = state.custom.length ? state.custom.map((cu, i) => `<div class="ct-row" data-ci="${i}">
       <input class="chars" type="text" value="${esc(cu.chars)}" placeholder="${esc(T('customPh'))}" aria-label="${esc(T('custom'))}" spellcheck="false">
       <span class="ct-font">${fontCell('#' + i, cu, false, true)}</span>
@@ -269,6 +269,13 @@ function renderEaMarks() {
       b.classList.toggle('lack', none && !isDef);
       b.title = b.dataset.v + (none ? ' — ' + T(isDef ? 'eaDefault' : 'eaLack', { font: shortName(fonts[k]) }) : '');
     });
+  }
+  /* 宽度：比例宽、全角都没有时，在卡片下面说一句（卡片看起来都一样，不是没生效） */
+  const wh = $('#eaWHint');
+  if (wh) {
+    const noneW = fx.eaWidth && !['pwid', 'fwid'].some(t => fx.eaWidth[t]);
+    wh.hidden = !noneW;
+    if (noneW) wh.textContent = T('eaWNone', { font: shortName(fonts.eaWidth) }) + (fonts.eaWidth.kind === 'google' ? T('eaGoogle') : '');
   }
   const el = $('#eaHint'); if (!el) return;
   const none = fx.eaVar && !['jp78', 'jp83', 'jp90', 'jp04', 'smpl', 'trad'].some(t => fx.eaVar[t]);
