@@ -307,7 +307,6 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .miss-note .lv1 i{--c:var(--miss1)}
 .miss-note .lv2 i{--c:var(--warn)}
 .miss-note b{font-weight:400;color:var(--ink);font-family:var(--cf),var(--generic);font-size:14px;margin-left:6px;word-break:break-all}
-.miss-note .ok{color:var(--ok)}
 
 /* ---------- metrics & advanced ---------- */
 .panel{border-top:1px solid var(--ink);margin-top:44px;padding-top:14px;display:grid;gap:14px;min-width:0}

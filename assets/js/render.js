@@ -368,8 +368,6 @@ async function checkMiss() {
     chains.set(c, chain);
     for (const f of chain) { const k = fontKey(f); if (!need.has(k)) need.set(k, new Set()); need.get(k).add(c); }
   }
-  el.hidden = false;
-  if (!el.textContent) el.textContent = T('missChecking');
   const miss = new Map();      // 字体 → 这个字体没有的字；还在加载的字体不判断（null）
   await Promise.all([...need].map(async ([k, cs]) => {
     const src = sources.get(k);
@@ -387,9 +385,9 @@ async function checkMiss() {
     groups.get(gk).cs.push(c);
   }
   paintMiss();
-  el.innerHTML = groups.size ? [...groups.values()].sort((a, b) => b.lv - a.lv).map(g =>
-    `<p class="lv${g.lv}"><i></i><span>${esc(T(g.lv === 1 ? 'missBy' : 'missSys', { font: g.from, by: g.by, n: g.cs.length }))}<b>${esc(g.cs.slice(0, 60).join(' '))}${g.cs.length > 60 ? ' …' : ''}</b></span></p>`).join('')
-    : `<p class="ok">${esc(T('missNone'))}</p>`;
+  el.hidden = !groups.size;      // 没有缺字时不显示
+  el.innerHTML = [...groups.values()].sort((a, b) => b.lv - a.lv).map(g =>
+    `<p class="lv${g.lv}"><i></i><span>${esc(T(g.lv === 1 ? 'missBy' : 'missSys', { font: g.from, by: g.by, n: g.cs.length }))}<b>${esc(g.cs.slice(0, 60).join(' '))}${g.cs.length > 60 ? ' …' : ''}</b></span></p>`).join('');
 }
 const checkMissSoon = debounce(checkMiss, 120);
 /* 用 Highlight API 标出缺字，不改 DOM（竖排也不会乱） */
