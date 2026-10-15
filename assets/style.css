@@ -139,15 +139,22 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 @media (max-width:480px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}.pspec{font-size:36px;height:46px;line-height:46px}}
 
 /* ---------- bench ---------- */
-.bench{display:grid;grid-template-columns:minmax(380px,500px) minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:start;margin-top:40px}
+/* 整个工作区是一张白纸：左窗格编辑、右窗格校样和参考图，中间一条细线。
+   两个窗格顶上各有一条一样高的工具条，底线连成一条；所有控件都用同一套扁平样子 */
+.bench{display:grid;grid-template-columns:minmax(400px,540px) minmax(0,1fr);align-items:start;margin-top:40px;background:var(--sheet);border:1px solid var(--line);border-top-color:var(--ink)}
 @media (max-width:1000px){.bench{grid-template-columns:minmax(0,1fr)}}
-.compose{position:sticky;top:16px;max-height:calc(100vh - 32px);overflow:auto;min-width:0;padding-right:4px}
-@media (max-width:1000px){.compose{position:static;max-height:none;overflow:visible}}
+.compose{position:sticky;top:0;max-height:100vh;overflow:auto;min-width:0;--px:16px;padding:0 var(--px) 20px;border-right:1px solid var(--line);margin-right:-1px}      /* 左右两个窗格都画分隔线、叠在一起：哪边长都连到底 */
+.tester{border-left:1px solid var(--line)}
+@media (max-width:1000px){.compose{position:static;max-height:none;overflow:visible;border-right:0;margin-right:0}.tester{border-left:0;border-top:1px solid var(--line)}}
+.bench .seg{border-radius:6px}
+.bench .seg button{border-radius:4px}
+/* 窗格顶上的工具条：一样高 */
+.bench{--bar-h:44px}
+@media (max-width:560px){.compose{--px:8px}}      /* 手机上表格本来就挤：窗格左右留白减半 */
 .compose .sec-row{border-top:1px solid var(--ink);padding-top:14px;margin-bottom:0}
 /* 字符类别旁的魔法棒：一键调整大小和基线 */
-.tbtn.wand{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink);text-decoration:none}
-.tbtn.wand .wand-lab{text-decoration:underline;text-decoration-color:var(--faint);text-underline-offset:4px}
-.tbtn.wand:hover .wand-lab{text-decoration-color:currentColor}
+.tbtn.wand{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 9px 0 7px;border:1px solid transparent;border-radius:4px;font-size:12px;color:var(--ink);text-decoration:none}
+.tbtn.wand:hover{border-color:var(--line)}
 .tbtn.wand svg{width:15px;height:15px;flex:none}
 .tbtn.wand:disabled{opacity:1;cursor:progress}
 /* 调整中：魔法棒换成转圈，文字显示进度；完成后短暂显示绿色对勾 */
@@ -160,7 +167,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .tbtn.wand .wand-lab{font-variant-numeric:tabular-nums}
 @keyframes wandspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.tbtn.wand[aria-busy="true"] .spin{animation-duration:2.4s}}
-.compose .sec-row.wand-row{border-top:0;padding-top:0;justify-content:space-between;align-items:center;margin-top:-2px}
+.compose .sec-row.wand-row{border-top:0;padding-top:8px;justify-content:space-between;align-items:center;margin:0 -9px 0 0}
 .compose .sec-row.sub{border-top:0;margin-top:22px;padding-top:0;margin-bottom:6px}
 .wb-act{display:flex;gap:14px;flex-wrap:wrap}
 .wbanner{margin:10px 0 4px;padding:10px 12px;border-radius:3px;background:var(--sheet);border:1px solid var(--accent);font-size:12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
@@ -238,7 +245,16 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 
 /* ---------- tester ---------- */
 .tester{min-width:0}
-.weight-bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px 28px;padding:12px 0;border-top:1px solid var(--ink);position:relative}
+.weight-bar{display:flex;align-items:stretch;gap:12px;min-height:var(--bar-h);margin:0 calc(0px - var(--px));padding:0 var(--px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;background:var(--sheet)}
+.weight-bar .w-row{align-items:stretch;flex:1 1 auto;flex-basis:auto}
+.weight-bar #vWeightLab{align-items:stretch}
+.weight-bar #vWeightLab>span:first-child,.weight-bar #vWcontLab{align-self:center}
+.weight-bar #vWeight{border:0;padding:0;background:none;border-radius:0;gap:10px;margin-bottom:-1px}
+.weight-bar #vWeight button{border-radius:0;padding:13px 1px 10px;border-bottom:2px solid transparent;background:none;color:var(--muted)}
+.weight-bar #vWeight button:hover{color:var(--ink)}
+.weight-bar #vWeight button[aria-checked="true"]{background:none;color:var(--ink);border-bottom-color:var(--ink)}
+.weight-bar .busy{position:static;transform:none;padding:0;align-self:center;margin-left:auto;flex:none}
+#vWNote{margin-top:10px}
 /* 页签的下划线要压在分隔线上：整排往下挪 1px，而不是让按钮超出容器（那样会出现 1px 的垂直滚动） */
 .sample-tabs{display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;min-width:0;margin-bottom:-1px}
 .sample-tabs::-webkit-scrollbar{display:none}
@@ -263,13 +279,12 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .ctl output{display:inline-block;font-family:var(--mono);font-size:11.5px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;width:4ch}
 .ctl #vSizeOut{width:5ch}
 .ctl #vLhOut{width:12ch}
-.busy{position:absolute;right:0;top:-1px;transform:translateY(-100%);padding-bottom:12px;font-size:11px;color:var(--muted);pointer-events:none;font-family:var(--mono)}
+.busy{font-size:11px;color:var(--muted);pointer-events:none;font-family:var(--mono)}
 .sample-box{display:grid;gap:6px}
 textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);border:1px solid var(--ink);border-radius:3px;padding:12px 14px;font-family:var(--ui);font-size:14px;line-height:1.7}
-.sheet{--pad:clamp(22px,4.6vw,68px);--pad-y:clamp(16px,2.2vw,28px);background:var(--sheet);border:1px solid var(--line);padding:var(--pad-y) var(--pad) var(--pad);min-width:0;display:grid;gap:14px}
+.sheet{--pad:clamp(22px,4.6vw,68px);background:var(--sheet);padding:0 var(--pad) var(--pad);min-width:0;display:grid;gap:14px}
 /* 校样的工具条：贴着白纸顶边通栏，一行。左边示例页签（放不下时横向滚动），右边字号、行高、「显示」；长文往下滚时停在窗口顶上 */
-.sheet{border-top-color:var(--ink)}      /* 和左栏字重那条黑线对齐 */
-.sheet-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;line-height:1.4;font-family:var(--ui);margin:calc(0px - var(--pad-y)) calc(0px - var(--pad)) calc(var(--pad) - 14px);padding:0 10px 0 16px;background:var(--sheet);border-bottom:1px solid var(--line)}
+.sheet-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;line-height:1.4;font-family:var(--ui);min-height:var(--bar-h);margin:0 calc(0px - var(--pad)) calc(var(--pad) - 14px);padding:0 10px 0 16px;background:var(--sheet);border-bottom:1px solid var(--line)}
 .sheet-bar .sample-tabs{flex:1 1 auto;align-self:stretch;gap:12px;margin-bottom:-1px}
 .sheet-bar .sample-tabs button{padding-top:13px;padding-bottom:10px}
 .sheet-bar .sample-tabs .tab-add{padding-top:10px;padding-bottom:8px}
@@ -301,7 +316,7 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .num output.unit::before{content:"· ";white-space:pre}
 body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* 窄屏：页签单独一行在上，数字框和「显示」在下 */
-@media (max-width:620px){.sheet-bar{flex-wrap:wrap;padding:0 8px 4px 12px;gap:0 8px}.sheet-bar .sample-tabs{flex-basis:100%;border-bottom:1px solid var(--line);margin:0 -8px 4px -12px;padding:0 8px 0 12px}.bar-ctrl{flex:1}.bar-sep{margin-left:auto}}
+@media (max-width:620px){.sheet-bar{flex-wrap:wrap;padding:0 8px 4px 12px;gap:0 8px}.sheet-bar .sample-tabs{flex-basis:100%;border-bottom:1px solid var(--line);margin:0 -8px 4px -12px;padding:0 0 0 12px}.bar-ctrl{flex:1}.bar-sep{margin-left:auto}}
 .sheet>div{min-width:0}
 /* 文字四周的留白一样宽：横排时去掉第一行上面、最后一行下面的半行距（行高多出来的部分），让上下留白量到字面，和左右一致 */
 .sheet:not(.vertical) .proof-text{margin-bottom:calc((1 - var(--lh,1.8)) * var(--fs,40px) / 2)}
@@ -351,7 +366,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .view-pop .tog:hover{background:var(--bg)}
 .view-pop .tog::before{content:"";display:inline-block;width:12px;margin-right:8px}
 .view-pop .tog[aria-pressed="true"]::before{content:"✓";width:12px;height:auto;border-radius:0;background:none;color:var(--accent);vertical-align:0}
-.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);padding-top:10px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);padding:0 16px 14px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:8px;height:8px;border-radius:2px;background:var(--c)}
 /* 缺字：只加波浪下划线。一级（合成字体里的其他字体代替）黄色，二级（落到系统字体）红色 */
@@ -363,12 +378,12 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .miss-tip.lv2{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
 
 /* ---------- metrics & advanced ---------- */
-.panel{margin-top:28px;display:grid;gap:14px;min-width:0}
-.spec-wrap{background:var(--sheet);border:1px solid var(--line);min-width:0}
+.panel{display:grid;min-width:0;border-top:1px solid var(--line)}
+.spec-wrap{min-width:0}
 /* 参考图的「显示」放在白色区域右上角，和校样纸面上的一样 */
 .spec-wrap{position:relative}
 /* 参考图的工具条：和校样的工具条一样贴着顶边通栏。每个开关前面是那一组参考线的样子（颜色、虚实），兼作图例 */
-.spec-bar{display:flex;flex-wrap:wrap;align-items:center;gap:2px;min-height:42px;padding:5px 10px 5px 16px;border-bottom:1px solid var(--line);line-height:1.4;font-family:var(--ui)}
+.spec-bar{display:flex;flex-wrap:wrap;align-items:center;gap:2px;min-height:var(--bar-h);padding:5px 10px 5px 16px;border-bottom:1px solid var(--line);line-height:1.4;font-family:var(--ui)}
 .bar-lab{font-size:12px;color:var(--muted);margin-right:8px}
 .sg-tog{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 9px;border:1px solid transparent;border-radius:4px;background:none;font-size:12px;color:var(--faint)}
 .sg-tog:hover{border-color:var(--line);color:var(--ink)}
@@ -389,7 +404,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .match input{width:64px}
 .match select{font-size:12px}
 
-.typo{border-top:1px solid var(--ink);margin-top:28px;min-width:0}
+.typo{border-top:1px solid var(--line);margin:22px calc(0px - var(--px)) 0;padding:0 var(--px);min-width:0}
 .typo>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 0}
 .typo>summary::-webkit-details-marker{display:none}
 .typo>summary::before{content:"";flex:none;width:7px;height:7px;border-right:1.5px solid var(--muted);border-bottom:1.5px solid var(--muted);transform:rotate(-45deg);transition:transform .15s}
