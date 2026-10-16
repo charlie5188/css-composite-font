@@ -28,7 +28,7 @@ def plan(latin_size=108, shift=-2, latin=True):
 def work(tmp_path):
     src = tmp_path / 'src'; src.mkdir()
     for f in os.listdir(FIX):
-        if f.endswith('.ttf'): shutil.copy(os.path.join(FIX, f), src / f)
+        if f.endswith(('.ttf', '.otf')): shutil.copy(os.path.join(FIX, f), src / f)
     w = tmp_path / 'w'; w.mkdir()
     return str(src) + '/', str(w) + '/'
 
@@ -40,6 +40,7 @@ def run(work, jobs, **opts):
     res = json.loads(B.run_all(json.dumps(jobs), json.dumps(o), lambda n, label: None))
     assert 'error' not in res, res
     z = zipfile.ZipFile(w + 'out.zip')
+    run.readme = z.read('README.txt').decode() if 'README.txt' in z.namelist() else ''
     return res, {n: TTFont(io.BytesIO(z.read(n))) for n in z.namelist() if n.endswith(('.ttf', '.otf'))}, z.namelist()
 
 
@@ -169,3 +170,64 @@ def test_bitmap_only_font_is_rejected(work):
     o = {'family': 'x', 'woff2': False, 'otf': False, 'lic': ['', ''], 'extra': [], 'src': src, 'work': w}
     res = json.loads(B.run_all(json.dumps([job(base='nooutline.ttf')]), json.dumps(o), lambda n, l: None))
     assert res.get('error') in ('outline', 'read')
+
+
+# ---- 字形上限：泛 CJK 字体（NotoSansCJKjp-Subset.otf 是 Noto Sans CJK JP 截取的几十个字，带各地区的字形变体和几个罕用汉字）----
+CJK = 'NotoSansCJKjp-Subset.otf'
+RARE_CPS = (0x2000B, 0x20B9F, 0x2A6B2, 0xF900, 0xF901, 0xFA30)
+TRIM = {'otLang': 'JAN ', 'notes': {'langs': 'dropped {langs}', 'rare': 'dropped {n} rare', 'names': {'KOR': 'Korean'}, 'sep': ', '}}
+
+
+def glyph_for(font, text, lang):
+    buf = io.BytesIO(); font.save(buf)
+    f = hb.Font(hb.Face(buf.getvalue())); b = hb.Buffer(); b.add_str(text); b.guess_segment_properties(); b.language = lang
+    hb.shape(f, b, {})
+    return font.getGlyphOrder()[b.glyph_infos[0].codepoint]
+
+
+@pytest.fixture
+def limit(monkeypatch):
+    return lambda n: monkeypatch.setattr(B, 'MAX_GLYPHS', n)
+
+
+def test_glyph_limit_untouched_when_it_fits(work):
+    res, fonts, _ = run(work, [job(base=CJK)], **TRIM)
+    f = fonts['CFTest-Regular.ttf']
+    assert 'trimmed' not in res and 'dropped' not in run.readme
+    assert glyph_for(f, '直', 'ja') != glyph_for(f, '直', 'zh-Hans')      # 各地区的写法都在
+
+
+def test_glyph_limit_drops_other_regions_first(work, limit):
+    _, fonts, _ = run(work, [job(base=CJK)], **TRIM)
+    limit(fonts['CFTest-Regular.ttf']['maxp'].numGlyphs - 1)
+    res, fonts, _ = run(work, [job(base=CJK)], **TRIM)
+    f = fonts['CFTest-Regular.ttf']
+    assert res['trimmed'] == {'langs': ['KOR', 'ZHH', 'ZHS', 'ZHT'], 'rare': 0}
+    assert f['maxp'].numGlyphs <= B.MAX_GLYPHS
+    ref = TTFont(os.path.join(FIX, CJK))
+    assert glyph_for(f, '直', 'ja') == glyph_for(ref, '直', 'ja')          # 目标语言的写法不变
+    assert glyph_for(f, '直', 'zh-Hans') == glyph_for(f, '直', 'ja')       # 简体的变体去掉了
+    assert all(c in f.getBestCmap() for c in RARE_CPS)                   # 罕用汉字还在
+    assert 'dropped Korean, ZHH, ZHS, ZHT' in run.readme
+
+
+def test_glyph_limit_then_drops_rare_ideographs(work, limit):
+    limit(10 ** 6)
+    _, fonts, _ = run(work, [job(base=CJK)], **TRIM)
+    limit(fonts['CFTest-Regular.ttf']['maxp'].numGlyphs - 1)
+    _, fonts, _ = run(work, [job(base=CJK)], **TRIM)      # 只去掉其他地区的变体时的字形数
+    limit(fonts['CFTest-Regular.ttf']['maxp'].numGlyphs - 1)
+    res, fonts, _ = run(work, [job(base=CJK)], **TRIM)
+    cmap = fonts['CFTest-Regular.ttf'].getBestCmap()
+    assert res['trimmed']['rare'] == len(RARE_CPS)
+    assert not any(c in cmap for c in RARE_CPS)
+    assert all(ord(c) in cmap for c in '直日本語あア、') and ord('A') in cmap      # 常用汉字、假名、标点、西文都在
+    assert 'dropped 6 rare' in run.readme
+
+
+def test_glyph_limit_error_when_still_too_many(work, limit):
+    limit(40)
+    src, w = work
+    o = {'family': 'x', 'woff2': False, 'otf': False, 'lic': ['', ''], 'extra': [], 'src': src, 'work': w, **TRIM}
+    res = json.loads(B.run_all(json.dumps([job(base=CJK)]), json.dumps(o), lambda n, l: None))
+    assert res.get('error') == 'glyphs'

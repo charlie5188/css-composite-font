@@ -336,6 +336,11 @@ export function renderFontTab() {
     ${fxLimits()}`;
   renderFxRun(stale);
 }
+/* 字形超过上限、删减了字形变体或罕用汉字时的说明（和 README 里写的一样） */
+export function fxTrimText(t) {
+  const names = OT_LANG_NAMES();
+  return T('fxTrimHead') + (t.langs?.length ? T('fxTrimLangs', { langs: t.langs.map(x => names[x] || x).join(T('joiner')) }) : '') + (t.rare ? T('fxTrimRare', { n: t.rare }) : '');
+}
 export function renderFxRun(stale) {
   const tb = $('#exToggle');      // 对话框关着也看得到：顶栏「导出」按钮的底边是进度条
   tb.classList.toggle('running', fx.running); tb.style.setProperty('--pct', (fx.pct * 100).toFixed(1) + '%');
@@ -347,6 +352,7 @@ export function renderFxRun(stale) {
     const r = fx.result;
     el.innerHTML = `<p>${esc(T('fxDone', { s }))}${stale ? ` <span class="fx-stale">${esc(T('fxStale'))}</span>` : ''}</p>
       <div class="fx-files">${r.files.map(([n, b]) => `<span>${esc(n)}</span><span>${fmtMB(b)} MB</span>`).join('')}</div>
+      ${r.trimmed ? `<p class="fx-note-trim">${esc(fxTrimText(r.trimmed))}</p>` : ''}
       <p><button type="button" class="btn primary" id="fxSave">${esc(T('fxDownload', { mb: fmtMB(r.zip.size) }))}</button></p>`;
   }
 }
@@ -370,6 +376,9 @@ export function fxStop(err) {
   fx.running = false; fx.t1 = performance.now(); clearInterval(fx.tick);
   fx.err = err || ''; renderFontTab();
 }
+/* 语言 → OpenType 语言标签（字体里各地区字形变体按它切换） */
+export const otLang = l => /^ja/.test(l) ? 'JAN ' : /^ko/.test(l) ? 'KOR ' : /^zh-(Hant-)?(HK|MO)/.test(l) ? 'ZHH ' : /^zh-(Hant|TW)/.test(l) ? 'ZHT ' : /^zh/.test(l) ? 'ZHS ' : null;
+export const OT_LANG_NAMES = () => Object.fromEntries(T('fxLangNames').split(',').map(x => x.split('=')));
 export async function fxRun() {
   const pl = fxPlan();
   if (!pl.jobs.length || pl.block.size || pl.rfn || pl.loading || pl.needLocal || (pl.unknown && !fx.agree)) return;
@@ -399,7 +408,9 @@ export async function fxRun() {
     });
     const open = [...pl.srcs.values()].every(s => ['ofl', 'apache', 'ufl'].includes(s.lic));
     const opts = { family: pl.fam, woff2: state.fx.woff2, otf: state.fx.otf, lic: open ? LIC_OFL : LIC_PRIVATE,
-      extra: [[open ? 'OFL.txt' : 'LICENSES.txt', fxLicenseText(pl, open)], ['README.txt', fxReadme(pl)]] };
+      extra: [[open ? 'OFL.txt' : 'LICENSES.txt', fxLicenseText(pl, open)], ['README.txt', fxReadme(pl)]],
+      otLang: otLang(state.scope || state.typo.lang),      // 字形超过上限时只留这个语言的字形变体
+      notes: { head: T('fxTrimHead'), langs: T('fxTrimLangs'), rare: T('fxTrimRare'), names: OT_LANG_NAMES(), sep: T('joiner') } };
     if (!fx.worker) {
       const url = URL.createObjectURL(new Blob(['(' + bakeWorker.toString() + ')()'], { type: 'text/javascript' }));
       fx.worker = new Worker(url);
@@ -421,13 +432,13 @@ export async function fxRun() {
         jobs, opts, files: send }, transfer);
     });
     need.forEach(s => fx.sent.add(s.file));
-    fx.result = { files: done.files, zip: new Blob([done.zip], { type: 'application/zip' }), name: (pl.fam.replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '') || 'composite-font') + '.zip', ms: performance.now() - t0 };
+    fx.result = { files: done.files, trimmed: done.trimmed, zip: new Blob([done.zip], { type: 'application/zip' }), name: (pl.fam.replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '') || 'composite-font') + '.zip', ms: performance.now() - t0 };
     fx.running = false; fx.t1 = performance.now(); clearInterval(fx.tick);
     if (!$('#exDlg').open) $('#exToggle').classList.add('ready');      // 做好的时候对话框关着：按钮上亮一个点
     renderFontTab();
   } catch (e) {
     if (!fx.running) return;      // 用户停止了
-    const msg = e.code === 'cff' || e.code === 'outline' || e.code === 'read' ? T('fxErr_' + e.code, { name: e.name || '' })
+    const msg = e.code === 'cff' || e.code === 'outline' || e.code === 'read' || e.code === 'glyphs' ? T('fxErr_' + e.code, { name: e.name || '' })
       : e.code === 'ghLimit' ? T('fxErr_ghLimit') : e.code === 'net' ? T('fxErr_net') : T('fxErrRun', { msg: String(e.message || e).slice(-300) });
     fxStop(msg);
   }
@@ -531,7 +542,7 @@ export function bakeWorker() {
       if (res.error) { postMessage({ t: 'error', error: res.error, name: res.name, msg: res.msg }); return; }
       const zip = py.FS.readFile('/w/out.zip').slice().buffer;
       py.FS.unlink('/w/out.zip');
-      postMessage({ t: 'done', zip, files: res.files }, [zip]);
+      postMessage({ t: 'done', zip, files: res.files, trimmed: res.trimmed }, [zip]);
     } catch (e) {
       postMessage({ t: 'error', error: e.code || 'internal', msg: String((e && e.message) || e).slice(-600) });
     }

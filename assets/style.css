@@ -602,6 +602,7 @@ button.wl small{font-family:var(--ui);font-size:11px;margin-left:5px;opacity:.75
 .fx-bar{height:4px;border-radius:2px;background:var(--rule);overflow:hidden}
 .fx-bar i{display:block;height:100%;background:var(--accent);transition:width .3s}
 .fx-stale{color:var(--caution)}
+.fx-note-trim{font-size:12.5px;color:var(--caution)!important;background:var(--caution-bg);padding:7px 10px;border-radius:3px}
 .fx-files{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;font-family:var(--mono);font-size:12px;color:var(--ink-2)}
 .fx-files span:nth-child(even){text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
 .fx-files span:nth-child(odd){overflow-wrap:anywhere}

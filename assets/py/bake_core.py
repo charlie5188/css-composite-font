@@ -11,6 +11,9 @@ from fontTools.merge import Merger, Options as MergeOptions
 from fontTools.ttLib.scaleUpem import scale_upem
 from fontTools.varLib import instancer
 
+MAX_GLYPHS = 65535      # 一个字体最多这么多字形（glyph ID 是 16 位）；测试里改小
+RARE = ((0x20000, 0x10FFFF), (0xF900, 0xFAFF), (0x2F800, 0x2FA1F))      # 罕用汉字：扩展 B 以后（第 2、3 平面）和兼容汉字
+
 STYLE = {100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black'}
 
 class BakeError(Exception):
@@ -145,8 +148,21 @@ def align_scripts(fonts):
 def in_ranges(rs, cp):
     return any(a <= cp <= b for a, b in rs)
 
-def bake(plan, srcs, family, weight, italic, lic, work):
-    """plan：规则表（第一条是汉字基础字体）；srcs：和 plan 同序、已截到字重的源字体路径。返回 (TTFont, PostScript 名)"""
+def keep_langs(f, keep):
+    """只留默认语言和 keep 里的语言（OpenType 语言标签）：其他地区的字形变体（locl）就不会被子集化留下来。
+    返回去掉的语言标签"""
+    dropped = set()
+    for tag in ('GSUB', 'GPOS'):
+        if tag not in f or not f[tag].table.ScriptList: continue
+        for sr in f[tag].table.ScriptList.ScriptRecord:
+            recs = sr.Script.LangSysRecord
+            dropped.update(l.LangSysTag for l in recs if l.LangSysTag not in keep)
+            sr.Script.LangSysRecord = [l for l in recs if l.LangSysTag in keep]; sr.Script.LangSysCount = len(sr.Script.LangSysRecord)
+    return sorted(t.strip() for t in dropped)
+
+def bake(plan, srcs, family, weight, italic, lic, work, lang=None, trimmed=None):
+    """plan：规则表（第一条是汉字基础字体）；srcs：和 plan 同序、已截到字重的源字体路径；lang：目标语言的 OpenType 标签（例如 'JAN '）。
+    字形超过 MAX_GLYPHS 时从汉字基础字体里删减，删了什么记进 trimmed（dict）。返回 (TTFont, PostScript 名)"""
     cmaps = [TTFont(p, lazy=True).getBestCmap() for p in srcs]
     U = TTFont(srcs[0], lazy=True)['head'].unitsPerEm      # 以汉字基础字体的 em 为准
     owners = [o for r in plan for o in r['owners']]
@@ -164,15 +180,22 @@ def bake(plan, srcs, family, weight, italic, lic, work):
             if (i == 0 or in_ranges(plan[i]['range'] or [], cp)) and cp in cmaps[i]:
                 seg.setdefault((i, shift_of(cp)), []).append(cp); break
     top = TTFont(srcs[0], lazy=True)['OS/2'].sTypoAscender
-    parts = []
-    for (i, s), cps in sorted(seg.items()):
+    def sub_part(i, cps, level):
+        """子集化。level 0 照原样；1 只留目标语言的字形变体；2 再去掉罕用汉字（只用在汉字基础字体上）"""
         f = TTFont(srcs[i])
+        if level >= 1: trimmed_langs.update(keep_langs(f, {lang} if lang else set()))
+        if level >= 2:
+            rare = [c for c in cps if any(a <= c <= b for a, b in RARE)]
+            trimmed_rare.update(rare); rs = set(rare); cps = [c for c in cps if c not in rs]
         o = subset.Options()
         o.layout_features = ['*']; o.layout_scripts = ['*']
         o.name_IDs = ['*']; o.name_languages = ['*']; o.name_legacy = True
         o.notdef_outline = True; o.glyph_names = True; o.hinting = False; o.legacy_kern = True
         o.drop_tables += ['STAT', 'DSIG', 'meta', 'MVAR', 'HVAR', 'VVAR', 'BASE', 'JSTF', 'COLR', 'CPAL', 'SVG ', 'sbix', 'CBDT', 'CBLC', 'EBDT', 'EBLC', 'EBSC']      # 彩色、位图字形合并不了，只留轮廓
         sub = subset.Subsetter(o); sub.populate(unicodes=cps); sub.subset(f)
+        return f
+    def make_part(i, s, f):
+        """子集化以后：转成 TrueType 曲线、按大小缩放、按基线平移、补竖排度量"""
         if 'glyf' not in f: cff_to_glyf(f)      # 只转这个部件用到的字形：比整个字体转换快得多
         src_upem = f['head'].unitsPerEm
         k = plan[i]['size'] / 100 * U / src_upem
@@ -204,7 +227,24 @@ def bake(plan, srcs, family, weight, italic, lic, work):
             vm = f['vmtx']
             for gn, (ah, tsb) in list(vm.metrics.items()):
                 if glyf[gn].numberOfContours: vm.metrics[gn] = (ah, tsb - dy)
-        parts.append((os.path.join(work, 'part%d_%s.ttf' % (i, s)), f))
+        return f
+    # 先做其他字体的部件，再做汉字基础字体的：加起来超过字形上限时，汉字基础字体按 level 逐步删减（重新子集化）
+    trimmed_langs, trimmed_rare = set(), set()
+    built = {k: sub_part(k[0], cps, 0) for k, cps in seg.items() if k[0] != 0}
+    other = sum(len(f.getGlyphOrder()) for f in built.values())
+    base_keys = [k for k in seg if k[0] == 0]
+    for level in range(3):
+        trimmed_langs.clear(); trimmed_rare.clear()
+        base = {k: sub_part(0, seg[k], level) for k in base_keys}
+        if other + sum(len(f.getGlyphOrder()) for f in base.values()) <= MAX_GLYPHS: break
+    else:
+        raise BakeError('glyphs', '')
+    built.update(base)
+    built = {k: make_part(*k, f) for k, f in built.items()}
+    if trimmed is not None:
+        if trimmed_langs: trimmed.setdefault('langs', set()).update(trimmed_langs)
+        if trimmed_rare: trimmed.setdefault('rare', set()).update(trimmed_rare)
+    parts = [(os.path.join(work, 'part%d_%s.ttf' % k), built[k]) for k in sorted(built)]
     align_scripts([f for _, f in parts])
     for p, f in parts: f.save(p)
     parts = [p for p, _ in parts]
@@ -252,6 +292,14 @@ def bake(plan, srcs, family, weight, italic, lic, work):
     font['head'].fontRevision = 1.0
     return font, ps
 
+def trim_note(trimmed, notes):
+    """删减了什么：按界面语言的模板写成一段说明。notes：{'head': 原因, 'langs': '…{langs}…', 'rare': '…{n}…', 'names': {'KOR': '韩文', …}, 'sep': '、'}"""
+    out, names = [], notes.get('names') or {}
+    if trimmed.get('langs') and notes.get('langs'):
+        out.append(notes['langs'].replace('{langs}', notes.get('sep', ', ').join(names.get(t, t) for t in sorted(trimmed['langs']))))
+    if trimmed.get('rare') and notes.get('rare'): out.append(notes['rare'].replace('{n}', str(len(trimmed['rare']))))
+    return notes.get('head', '') + ''.join(out) if out else ''
+
 def run_all(jobs_json, opts_json, progress):
     try:
         jobs = json.loads(jobs_json); opts = json.loads(opts_json)
@@ -259,7 +307,7 @@ def run_all(jobs_json, opts_json, progress):
         for s in {s['file']: s for j in jobs for s in j['srcs'] if s}.values():
             check_source(SRC + s['file'], s['name'], s.get('ps'))
         key = lambda s: (s['file'], s.get('ps'), s.get('weight'), json.dumps(s.get('fvs'), sort_keys=True))
-        inst, made = {}, 0
+        inst, made, trimmed = {}, 0, {}
         zb = open(WORK + 'out.zip', 'wb'); z = zipfile.ZipFile(zb, 'w', zipfile.ZIP_DEFLATED)
         out = []
         for n, job in enumerate(jobs):
@@ -271,7 +319,7 @@ def run_all(jobs_json, opts_json, progress):
                     made += 1
                     inst[k] = instance_file(SRC + s['file'], s.get('weight'), s.get('fvs'), WORK + 'inst%d.ttf' % made, s.get('ps'))
                 srcs.append(inst[k])
-            font, ps = bake(job['plan'], srcs, opts['family'], job['weight'], job['italic'], opts['lic'], WORK)
+            font, ps = bake(job['plan'], srcs, opts['family'], job['weight'], job['italic'], opts['lic'], WORK, opts.get('otLang'), trimmed)
             b = io.BytesIO(); font.save(b); data = b.getvalue()
             z.writestr(ps + '.ttf', data); out.append([ps + '.ttf', len(data)])
             if opts.get('woff2'):
@@ -289,9 +337,12 @@ def run_all(jobs_json, opts_json, progress):
                     if inst[k].startswith(WORK): os.remove(inst[k])
                     del inst[k]
         progress(-1, '')
-        for name, text in opts['extra']: z.writestr(name, text)
+        note = trim_note(trimmed, opts.get('notes') or {})
+        for name, text in opts['extra']: z.writestr(name, text + ('\n\n' + note if note and name == 'README.txt' else ''))
         z.close(); zb.close()
-        return json.dumps({'files': out})
+        res = {'files': out}
+        if trimmed: res['trimmed'] = {'langs': sorted(trimmed.get('langs', [])), 'rare': len(trimmed.get('rare', []))}
+        return json.dumps(res)
     except BakeError as e:
         return json.dumps({'error': e.code, 'name': e.name})
     except Exception as e:
