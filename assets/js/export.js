@@ -225,6 +225,10 @@ function renderWRange() {
 let gzTok = 0;
 function renderExport() {
   ensureExportSources();
+  const fm = exTab === 'font', cont = state.wmode === 'cont';
+  $('#exWeightsField').hidden = cont && !fm;      // 字体文件按档位生成：连续字重时也显示字重的选择
+  $('#exContField').hidden = !cont || fm;
+  if (fm) { renderFontTab(); return; }
   const { css, count, files: fl } = buildCss();
   const js = buildJs();
   const kb = s => (new Blob([s]).size / 1024).toFixed(1);

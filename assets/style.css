@@ -491,6 +491,37 @@ button.wl small{font-family:var(--ui);font-size:11px;margin-left:5px;opacity:.75
 .tabs button:hover{color:var(--ink)}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
 .ex-bar{padding:0 0 12px}
+/* 导出 · 字体文件：用到的字体（许可）→ 输出 → 进度和结果 */
+.ex-fields.font-mode .css-only,.ex-fields:not(.font-mode) .font-only{display:none}
+.fx{display:grid;gap:22px;padding:6px 0 20px;max-width:76ch}
+.fx p{margin:0;line-height:1.7;color:var(--ink-2)}
+.fx-intro{font-size:14px}
+.fx-sec{display:grid;gap:10px}
+.fx-h{margin:0;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.fx-src{border-top:1px solid var(--line)}
+.fx-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:3px 16px;align-items:baseline;padding:10px 0;border-bottom:1px solid var(--line)}
+.fx-name{font-weight:600;overflow-wrap:anywhere}
+.fx-meta,.fx-note{grid-column:1/-1;font-size:12px;line-height:1.55;color:var(--muted)}
+.fx-note.no{color:var(--warn)}
+.fx-lic{font-family:var(--mono);font-size:11px;white-space:nowrap;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.fx-lic.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
+.fx-lic.warn{color:var(--caution);background:var(--caution-bg);border-color:transparent}
+.fx-lic.no{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+.fx-styles{font-size:12.5px;color:var(--muted)}
+.fx-chk{display:flex;gap:8px;align-items:baseline;font-size:13px;line-height:1.55;cursor:pointer}
+.fx-chk input{flex:none;margin:0;transform:translateY(2px)}
+.fx-agree{padding:9px 12px;border-radius:3px;background:var(--caution-bg);color:var(--caution)}
+.fx-block{display:grid;gap:6px;padding:10px 12px;border-radius:3px;background:var(--caution-bg)}
+.fx-block p,.fx-err{color:var(--caution);font-size:13px}
+.fx-err{color:var(--warn)}
+.fx-run{display:grid;gap:10px;padding-top:14px;border-top:1px solid var(--line)}
+.fx-bar{height:4px;border-radius:2px;background:var(--rule);overflow:hidden}
+.fx-bar i{display:block;height:100%;background:var(--accent);transition:width .3s}
+.fx-stale{color:var(--caution)}
+.fx-files{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 16px;font-family:var(--mono);font-size:12px;color:var(--ink-2)}
+.fx-files span:nth-child(even){text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.fx-files span:nth-child(odd){overflow-wrap:anywhere}
+@media (prefers-reduced-motion:reduce){.fx-bar i{transition:none}}
 .code{background:var(--code-bg);color:var(--code-ink);border-radius:4px;overflow:hidden}
 .code-meta{font-family:var(--mono);font-size:11.5px;color:var(--code-cm);padding:11px 20px;border-bottom:1px solid color-mix(in srgb,var(--code-ink) 12%,transparent)}
 .code pre{max-height:min(560px,70vh);overflow:auto;margin:0;padding:18px 20px;font-family:var(--mono);font-size:12.5px;line-height:1.65;white-space:pre;tab-size:2}

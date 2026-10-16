@@ -8,14 +8,15 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=ef9952a9">
-<script src="assets/js/i18n.js?v=ef494a38" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=c88bb14e">
+<script src="assets/js/i18n.js?v=2bfa9c0f" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
 <script src="assets/js/core.js?v=d3c565ae" defer></script>
-<script src="assets/js/render.js?v=5ff78e58" defer></script>
-<script src="assets/js/export.js?v=1b1135a4" defer></script>
-<script src="assets/js/ui.js?v=e2c5fe23" defer></script>
+<script src="assets/js/render.js?v=266d18f0" defer></script>
+<script src="assets/js/bake.js?v=2eafb33e" defer></script>
+<script src="assets/js/export.js?v=2da0ff6b" defer></script>
+<script src="assets/js/ui.js?v=d789e64f" defer></script>
 </head>
 <body>
 <div class="app">
@@ -134,17 +135,17 @@
     </section>
   </div>
 
-  <section class="export" data-ta="aria-label:export">
+  <section class="export" id="export" data-ta="aria-label:export">
     <div class="ex-side">
     <h2 data-t="exportTitle"></h2>
     <div class="ex-fields">
-      <div class="field"><span class="lab-i"><label for="exName" data-t="exName"></label><button type="button" class="info" data-info="nameInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><input id="exName" type="text" spellcheck="false"></div>
-      <div class="field" id="exContField" hidden><span class="lab-i"><span class="flabel" data-t="exWRange"></span><button type="button" class="info" data-info="wrangeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><div class="wrange"><input type="number" id="exWLo" min="100" max="900" step="1" data-ta="aria-label:wrLo"><span class="wr-dash" aria-hidden="true">–</span><input type="number" id="exWHi" min="100" max="900" step="1" data-ta="aria-label:wrHi"><div class="chips wr-chips" id="exWPresets" role="group" data-ta="aria-label:exWRange"></div></div><p class="wr-note" id="exWNote" data-t="wrFaux" hidden></p></div>
+      <div class="field"><span class="lab-i"><label for="exName"><span class="css-only" data-t="exName"></span><span class="font-only" data-t="fxNameLabel"></span></label><button type="button" class="info" data-info="nameInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><input id="exName" type="text" spellcheck="false"></div>
+      <div class="field css-only" id="exContField" hidden><span class="lab-i"><span class="flabel" data-t="exWRange"></span><button type="button" class="info" data-info="wrangeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><div class="wrange"><input type="number" id="exWLo" min="100" max="900" step="1" data-ta="aria-label:wrLo"><span class="wr-dash" aria-hidden="true">–</span><input type="number" id="exWHi" min="100" max="900" step="1" data-ta="aria-label:wrHi"><div class="chips wr-chips" id="exWPresets" role="group" data-ta="aria-label:exWRange"></div></div><p class="wr-note" id="exWNote" data-t="wrFaux" hidden></p></div>
       <div class="field" id="exWeightsField"><span class="lab-i"><span class="flabel" data-t="exWeights"></span><button type="button" class="info" data-info="weightsInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><div class="chips" id="exWeights" role="group" data-ta="aria-label:exWeights"></div><p class="w-hint warn" id="exWHint" hidden></p></div>
-      <div class="field" id="exBaseField"><span class="lab-i"><label for="exBase" data-t="exBase"></label><button type="button" class="info" data-info="baseInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exBase"><option value="link" data-t="exBaseLink"></option><option value="expand" data-t="exBaseExpand"></option></select></div>
-      <div class="field"><span class="lab-i"><label for="exGeneric" data-t="exGeneric"></label><button type="button" class="info" data-info="genericInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exGeneric"><option value="auto" data-t="auto"></option><option value="serif">serif</option><option value="sans-serif">sans-serif</option></select></div>
-      <div class="field"><span class="lab-i"><label for="exLang" data-t="exLang"></label><button type="button" class="info" data-info="scopeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exLang"></select></div>
-      <p class="ex-warn" id="exLangWarn" hidden></p>
+      <div class="field css-only" id="exBaseField"><span class="lab-i"><label for="exBase" data-t="exBase"></label><button type="button" class="info" data-info="baseInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exBase"><option value="link" data-t="exBaseLink"></option><option value="expand" data-t="exBaseExpand"></option></select></div>
+      <div class="field css-only"><span class="lab-i"><label for="exGeneric" data-t="exGeneric"></label><button type="button" class="info" data-info="genericInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exGeneric"><option value="auto" data-t="auto"></option><option value="serif">serif</option><option value="sans-serif">sans-serif</option></select></div>
+      <div class="field css-only"><span class="lab-i"><label for="exLang" data-t="exLang"></label><button type="button" class="info" data-info="scopeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exLang"></select></div>
+      <p class="ex-warn css-only" id="exLangWarn" hidden></p>
       <div class="field"><span class="lab-i"><label for="exItalic" data-t="exItalic"></label><button type="button" class="info" data-info="italicInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exItalic"><option value="1" data-t="exItalicOn"></option><option value="0" data-t="exItalicOff"></option></select></div>
     </div>
     </div>
@@ -153,14 +154,17 @@
     <div class="tabs ex-tabs" role="tablist" data-ta="aria-label:exportAria">
       <button role="tab" type="button" id="tabCss" aria-selected="true" aria-controls="paneCode">CSS</button>
       <button role="tab" type="button" id="tabJs" aria-selected="false" aria-controls="paneCode" data-t="tabJs"></button>
+      <button role="tab" type="button" id="tabFont" aria-selected="false" aria-controls="paneFont" data-t="tabFont"></button>
       <button role="tab" type="button" id="tabNotes" aria-selected="false" aria-controls="paneNotes" data-t="tabNotes"></button>
     </div>
-    <div class="ex-actions"><button class="btn" id="dlBtn" type="button" data-t="download" hidden></button><button class="btn primary" id="copyBtn" type="button" data-t="copy"></button></div>
+    <div class="ex-actions"><button class="btn" id="dlBtn" type="button" data-t="download" hidden></button><button class="btn primary" id="copyBtn" type="button" data-t="copy"></button><button class="btn primary" id="fontBtn" type="button" hidden></button></div>
     </div>
     <div id="paneCode" role="tabpanel">
       <div class="ex-bar" id="exBar" hidden><span class="hint" id="exNote"></span></div>
       <div class="code"><div class="code-meta" id="exStats"></div><pre id="codeOut"></pre></div>
     </div>
+    <!-- 字体文件：把合成字体做成 TTF / WOFF2（assets/js/bake.js） -->
+    <div id="paneFont" role="tabpanel" hidden><div class="fx" id="fontPane" aria-live="polite"></div></div>
     <div id="paneNotes" role="tabpanel" hidden>
       <div class="notes" data-ui="zh">
         <h3>匹配规则</h3>
@@ -187,6 +191,9 @@
         <p>「适用语言」的繁体中文分成台湾和香港两种。导出时用 <code>:is(:lang(…))</code> 把常见写法都包进去：台湾版匹配 <code>zh-Hant</code>、<code>zh-TW</code>，香港版匹配 <code>zh-HK</code>、<code>zh-Hant-HK</code> 和澳门的写法。原因是 <code>:lang(zh-Hant)</code> 匹配不到 <code>lang="zh-TW"</code>：浏览器不会从地区推出文字。简体中文同样会加上 <code>zh-CN</code>、<code>zh-SG</code>。</p>
         <p>两地的写法和大陆不同：标点在字身正中（大陆、日本靠左下），字形也按各自的标准。工具会量全角标点的位置，并按字族名判断字形的地区：和校样的语言不一致时在类别表里提示，和适用语言不一致时在导出区提示。思源、Noto CJK 这类一个文件含多个地区字形的字体会按 lang 切换，所以测量时也带上语言。</p>
         <p>类别表里有一行「注音符号」，也负责声调号 ˊ ˇ ˋ ˙：它们原本属于西文的码位，不归过来就会用西文字体显示。法语等的重音字母（é、à）是另外的码位，不受影响；需要的话可以在齿轮里把声调号改回半角西文。</p>
+        <h3>字体文件</h3>
+        <p>「字体文件」页签把合成字体做成真正的字体（TTF，可选 WOFF2），给 Figma、Keynote、Word 这类不支持合成字体的软件用。做法和导出的 CSS 一一对应：每条规则的字体只取它负责的字，按大小缩放、按基线上下平移，再合并成一个字体；行高度量用汉字基础字体的。生成在浏览器里进行（Pyodide + fontTools），字体不会上传到任何服务器。</p>
+        <p>源字体：Google Fonts 的字体从 google/fonts 仓库下载完整文件，网页接口给的切片去掉了大部分 OpenType 特性；上传的字体直接使用。目前不支持本机安装的字体、CFF 轮廓的 OTF 和字体集合（TTC）。只有 OFL、Apache 等允许修改的许可可以直接合并，许可不明的字体要确认有权修改；苹果的系统字体不能合并。字体微调（hinting）会去掉，只影响 Windows 上的小字号。浏览器会在中西文之间自动加 1/8 em 的间距，其他软件不会。</p>
         <h3>为什么不用 font-size-adjust</h3>
         <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支持双值语法）也能统一字号，但它对元素里的每个字体都生效：把西文调到目标大写高的同时，汉字字体也会按它自带的西文度量被缩放。它也不能按字符类别分配字体，解决不了引号归属。更关键的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同时出现时，<code>size-adjust</code> 不再起作用。所以使用复合字体的元素上不要再写 <code>font-size-adjust</code>。校样的「对照其他做法」里可以切换到这个做法比较效果。</p>
         <h3>CSS 原生 CJK 排版属性</h3>
@@ -233,6 +240,9 @@
         <p>「適用語言」的繁體中文分成台灣和香港兩種。匯出時用 <code>:is(:lang(…))</code> 把常見寫法都包進去：台灣版比對 <code>zh-Hant</code>、<code>zh-TW</code>，香港版比對 <code>zh-HK</code>、<code>zh-Hant-HK</code> 和澳門的寫法。原因是 <code>:lang(zh-Hant)</code> 比對不到 <code>lang="zh-TW"</code>：瀏覽器不會從地區推出文字。簡體中文同樣會加上 <code>zh-CN</code>、<code>zh-SG</code>。</p>
         <p>兩地的寫法和中國大陸不同：標點居中（大陸、日本靠左下），字形也依各自的標準。工具會量全形標點的位置，並依字族名判斷字形的地區：和校樣的語言不一致時在類別表裡提示，和適用語言不一致時在匯出區提示。思源、Noto CJK 這類一個檔案含多個地區字形的字型會依 lang 切換，所以測量時也帶上語言。</p>
         <p>類別表裡有一行「注音符號」，也負責聲調號 ˊ ˇ ˋ ˙：它們原本屬於西文的碼位，不歸過來就會用西文字型顯示。法語等的重音字母（é、à）是另外的碼位，不受影響；需要的話可以在齒輪裡把聲調號改回半形西文。</p>
+        <h3>字型檔案</h3>
+        <p>「字型檔案」頁籤把複合字型做成真正的字型（TTF，可選 WOFF2），給 Figma、Keynote、Word 這類不支援複合字型的軟體用。做法和匯出的 CSS 一一對應：每條規則的字型只取它負責的字，按大小縮放、按基線上下平移，再合併成一個字型；行高度量用漢字基礎字型的。產生在瀏覽器裡進行（Pyodide + fontTools），字型不會上傳到任何伺服器。</p>
+        <p>來源字型：Google Fonts 的字型從 google/fonts 倉庫下載完整檔案，網頁介面給的切片去掉了大部分 OpenType 特性；上傳的字型直接使用。目前不支援本機安裝的字型、CFF 輪廓的 OTF 和字型集合（TTC）。只有 OFL、Apache 等允許修改的授權可以直接合併，授權不明的字型要確認有權修改；蘋果的系統字型不能合併。字型微調（hinting）會去掉，只影響 Windows 上的小字號。瀏覽器會在中西文之間自動加 1/8 em 的間距，其他軟體不會。</p>
         <h3>為什麼不用 font-size-adjust</h3>
         <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支援雙值語法）也能統一字號，但它對元素裡的每個字型都生效：把西文調到目標大寫高的同時，漢字字型也會按它自帶的西文度量被縮放。它也不能按字元類別分配字型，解決不了引號歸屬。更關鍵的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同時出現時，<code>size-adjust</code> 不再起作用。所以使用複合字型的元素上不要再寫 <code>font-size-adjust</code>。校樣的「對照其他做法」裡可以切換到這個做法比較效果。</p>
         <h3>CSS 原生 CJK 排版屬性</h3>
@@ -279,6 +289,9 @@
         <p>「対象の言語」の繁体字中国語は、台湾と香港の 2 つに分かれています。書き出しでは <code>:is(:lang(…))</code> でよく使われる書き方をまとめて指定します。台湾版は <code>zh-Hant</code>・<code>zh-TW</code>、香港版は <code>zh-HK</code>・<code>zh-Hant-HK</code> とマカオの書き方に一致します。<code>:lang(zh-Hant)</code> は <code>lang="zh-TW"</code> に一致しないためです（ブラウザは地域から文字体系を推測しません）。簡体字も同様に <code>zh-CN</code>・<code>zh-SG</code> を加えます。</p>
         <p>台湾と香港では句読点を字面の中央に置き（中国大陸・日本は左下寄り）、字形もそれぞれの規範に従います。ツールは全角約物の位置を測り、ファミリー名から字形の地域を判断します。校正刷りの言語と一致しないときは文字クラスの表で、対象の言語と一致しないときは書き出し欄で知らせます。源ノ角ゴシックや Noto CJK のように 1 つのファイルに複数地域の字形を持つフォントは lang で切り替わるので、測るときも言語を指定しています。</p>
         <p>文字クラスの表には「注音符号」の行があり、声調記号 ˊ ˇ ˋ ˙ も受け持ちます。もとは欧文の範囲にあり、移さないと欧文フォントで表示されるためです。フランス語などのアクセント付き文字（é・à）は別の符号位置なので影響しません。必要なら歯車から声調記号を半角欧文に戻せます。</p>
+        <h3>フォントファイル</h3>
+        <p>「フォントファイル」タブでは、合成フォントを本物のフォント（TTF、WOFF2 も可）にします。Figma、Keynote、Word など合成フォントに対応していないアプリで使うためのものです。書き出す CSS と同じ規則で、各フォントから担当する文字だけを取り出し、サイズとベースラインを調整してから 1 つのフォントにまとめます。行の高さは漢字のベースフォントに合わせます。処理はブラウザの中で行い（Pyodide + fontTools）、フォントがサーバーに送られることはありません。</p>
+        <p>元のフォント：Google Fonts のフォントは google/fonts リポジトリから完全なファイルをダウンロードします。Web 用の配信ではほとんどの OpenType 機能が削られているためです。アップロードしたフォントはそのまま使います。このコンピュータにインストールされたフォント、CFF アウトラインの OTF、フォントコレクション（TTC）にはまだ対応していません。合成できるのは OFL や Apache など改変を許可するライセンスのフォントで、ライセンス不明のフォントは権利の確認が必要です。Apple のシステムフォントは合成できません。ヒンティングは削除されます（影響は Windows の小さいサイズだけです）。和欧間の 1/8 em のアキはブラウザが自動で入れるもので、ほかのアプリでは入りません。</p>
         <h3>font-size-adjust を使わない理由</h3>
         <p><code>font-size-adjust</code>（2 値構文は Chrome 127、Firefox 92、Safari 17 が対応）でもサイズをそろえられますが、要素内のすべてのフォントに効きます。欧文を目標のキャップハイトに合わせると、漢字フォントも付属欧文のメトリクスに応じて拡大縮小されます。文字クラスごとにフォントを割り当てることもできないため、引用符の問題も解決しません。さらに MDN によれば、<code>@font-face</code> の <code>size-adjust</code> と併用すると <code>size-adjust</code> が効かなくなります。合成フォントを使う要素には <code>font-size-adjust</code> を指定しないでください。校正刷りの「他の方法と比較」で違いを確認できます。</p>
         <h3>CSS ネイティブの CJK 組版プロパティ</h3>

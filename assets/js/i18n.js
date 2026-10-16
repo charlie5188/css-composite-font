@@ -11,6 +11,9 @@ const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } ca
 /* ================= 界面文字 ================= */
 const I18N = {
   zh: {
+    fxBlockSrc: '有字体不能用来生成，原因见上面。',
+    fxEstNoDl: '预计约 {min} 分钟。', fxNameLabel: '字体名称',
+    tabFont: '字体文件', fxIntro: '把这个合成字体做成字体文件。装进电脑后，在 Figma、Keynote、Word 等不支持合成字体的软件里也能用。每个字重、正斜体各一个文件，打包成 zip 下载。', fxSources: '用到的字体', fxKindGoogle: 'Google Fonts', fxKindFile: '上传的文件', fxKindLocal: '本机字体', fxLicNo: '不能使用', fxLicReading: '正在读取…', fxLicUnknown: '许可不明', fxUsedFor: '用于{list}', fxStaticNote: '这是单一字重的字体，其他字重也会用这个文件的字形', fxOut: '输出', fxOutLine: '字体名称「{fam}」，共 {n} 个文件。名称、字重、斜体在导出设置里修改。', fxNoItal: '这个合成字体里没有斜体字体，只生成正体。', fxWoff2: '同时生成 WOFF2（网页用）', fxEst: '预计约 {min} 分钟；第一次使用还要下载约 {mb} MB。', fxAgree: '我确认有权修改并合并上面「许可不明」的字体', fxNoWeights: '在导出设置里至少选一个字重。', fxRfn: '字体名称里不能有「{rfn}」：{src} 的许可证保留了这个名称。请在导出设置里改名。', fxGen: '生成字体文件', fxStop: '停止', fxElapsed: '已用 {s} 秒', fxDone: '已生成，用时 {s} 秒。', fxStale: '设置已经改过，重新生成才会更新。', fxDownload: '下载 zip（{mb} MB）', fxStPrep: '准备中…', fxStFetch: '下载 {name}（{got} / {total} MB）', fxStRuntime: '准备 Python 运行环境（第一次约 15 MB）…', fxStBrotli: '准备 WOFF2 压缩…', fxStBake: '生成 {name}（{i} / {n}）', fxStZip: '打包…', fxErrRun: '生成失败：{msg}', fxErr_gfNone: '在 google/fonts 仓库里找不到 {name} 的字体文件。', fxErr_ghLimit: 'GitHub 暂时限制了请求次数（每小时 60 次），请过一会儿再试。', fxErr_net: '下载失败，请检查网络后重试。', fxErr_noFile: '{name} 没有字体文件：请在「选择字体…」里重新上传。', fxErr_local: '{name} 是本机安装的字体，暂不支持生成字体文件。请改用上传的字体文件。', fxErr_ttc: '{name} 是字体集合（TTC/OTC），暂不支持。', fxErr_cff: '{name} 是 CFF 轮廓（OTF），暂不支持。如果有 TTF 版本，请改用 TTF。', fxErr_apple: '{name} 是苹果的系统字体，许可不允许修改或合并。', fxErr_outline: '{name} 没有 TrueType 轮廓（可能是位图或彩色字体），不能合并。', fxErr_read: '读不懂 {name} 这个字体文件。', fxEmbedded: '嵌入在这里的页面不能下载外部文件，所以没法在这里生成字体文件。到 GitHub Pages 版去生成，当前的设置会一起带过去；上传的字体文件要在那边重新上传。', fxOpenPages: '在 GitHub Pages 版打开', fxImported: '已载入带过来的设置', fxLicUserOk: '（许可不明，生成者确认有权修改和合并）', fxRmHead: '{fam}：由 CSS Composite Font 生成的合成字体', fxRmFiles: '文件：', fxRmParts: '组成（以第一个文件为例）：', fxRmShift: '基线 {v}%', fxRmNotes: '安装：双击 .ttf 文件。每个字重一个文件；斜体只有西文是斜的，汉字假名保持正体。\n浏览器会自动在中西文之间加 1/8 em 的间距（text-autospace），Figma、Keynote 等软件不会。', fxRmMade: '生成于 {date} · {url}',
     eaWNone: '{font} 没有比例宽和全角的字形，选了也不会变。',
     addCustomRow: '添加例外字符',
     featTitle: '字体特性', featScope: '用哪个字形、行高怎么算。所有字重通用',
@@ -85,7 +88,7 @@ const I18N = {
     tNotReady: '字体还没加载完，稍后再试',
    
     tCopied: '已复制', tCopyFail: '无法写入剪贴板，已选中代码，请按 ⌘C / Ctrl+C', tSaved: '已保存预设「{n}」，只保存在这个浏览器里', tSavedFile: '。字体文件不会被保存，下次需要重新上传', tDeleted: '已删除预设',
-    export: '导出', exportTitle: '导出 CSS', exName: 'font-family 名称', exGeneric: '通用回退', auto: '自动', tabJs: 'JS', tabNotes: '原理与限制', copy: '复制代码', download: '下载文件', exportAria: '导出内容',
+    export: '导出', exportTitle: '导出', exName: 'font-family 名称', exGeneric: '通用回退', auto: '自动', tabJs: 'JS', tabNotes: '原理与限制', copy: '复制代码', download: '下载文件', exportAria: '导出内容',
     stats: '{n} 条 @font-face · {kb} KB', statsJs: ' · 另需一段 JS', statsCss: ' · 纯 CSS',
     noteFiles: '部署时把 {files} 放到 CSS 同级目录', joiner: '、', noteJs: '有基线偏移时才需要。放在页面末尾即可', noteNoJs: '',
     jsNone: '/* 所有类别的基线偏移都是 0，不需要 JS。 */',
@@ -108,6 +111,9 @@ const I18N = {
     pkChecking: '正在检测…', pkGoogleOk: '已找到 · {n} 个分片', pkLocalOk: '已在这台电脑上找到', pkFileOk: '字体文件可用', pkLocalStill: '。仍可使用，导出后在装有该字体的电脑上生效', regForms: '字形是{got}的写法，和校样的语言「{lang}」不一致。', reg_sc: '简体中文', reg_tw: '台湾', reg_hk: '香港', reg_jp: '日文', reg_kr: '韩文', regPunctCorner: '这个字体的标点靠左下（大陆、日本的写法），校样的语言「{lang}」的标点应该居中。', regPunctCenter: '这个字体的标点居中（台湾、香港的写法），校样的语言「{lang}」的标点应该靠左下。', pkPunctCenter: '标点居中（台湾、香港的写法）', pkPunctCorner: '标点靠左下（大陆、日本的写法）', covHK: '香港字', gBopoTop: '注音字面 上', gBopoBot: '注音字面 下', sgBopo: '注音', exRegWarn: '字体和适用语言「{lang}」不一致：{list}。', exRegForms: '汉字字体 {font} 是{got}的字形', exRegPunctCorner: '{font} 的标点靠左下（应该居中）', exRegPunctCenter: '{font} 的标点居中（应该靠左下）', gpHintBopo: '关闭 = 改由半角西文显示。单独写出的 ˊ ˇ ˋ ˙ 在西文里几乎只出现在语言学、国际音标里；法语、汉语拼音等的带调字母（é、ǎ、ü）是另外的码位，一直归半角西文，不受这个开关影响。', covPinyin: '汉语拼音', pkUse: '使用这个字体',
   },
   ja: {
+    fxBlockSrc: '使えないフォントがあります。理由は上をご覧ください。',
+    fxEstNoDl: '約 {min} 分かかる見込みです。', fxNameLabel: 'フォント名',
+    tabFont: 'フォントファイル', fxIntro: 'この合成フォントをフォントファイルにします。インストールすれば、Figma、Keynote、Word など合成フォントに対応していないアプリでも使えます。ウェイト・正体／イタリックごとに 1 ファイルずつ、zip でダウンロードします。', fxSources: '使用するフォント', fxKindGoogle: 'Google Fonts', fxKindFile: 'アップロードしたファイル', fxKindLocal: 'このコンピュータのフォント', fxLicNo: '使用できません', fxLicReading: '読み込み中…', fxLicUnknown: 'ライセンス不明', fxUsedFor: '{list}に使用', fxStaticNote: '単一ウェイトのフォントです。ほかのウェイトにもこのファイルの字形が使われます', fxOut: '出力', fxOutLine: 'フォント名「{fam}」、{n} ファイル。名前・ウェイト・イタリックは書き出しの設定で変更できます。', fxNoItal: 'この合成フォントにはイタリックのフォントがないため、正体だけを作ります。', fxWoff2: 'WOFF2 も作る（Web 用）', fxEst: '約 {min} 分かかる見込みです。初回は約 {mb} MB のダウンロードが必要です。', fxAgree: '上の「ライセンス不明」のフォントを改変・合成する権利があることを確認しました', fxNoWeights: '書き出しの設定でウェイトを 1 つ以上選んでください。', fxRfn: 'フォント名に「{rfn}」は使えません。{src} のライセンスがこの名前を予約しています。書き出しの設定で名前を変えてください。', fxGen: 'フォントファイルを作る', fxStop: '中止', fxElapsed: '{s} 秒経過', fxDone: '完成しました（{s} 秒）。', fxStale: '設定が変わっています。作り直すと反映されます。', fxDownload: 'zip をダウンロード（{mb} MB）', fxStPrep: '準備中…', fxStFetch: '{name} をダウンロード中（{got} / {total} MB）', fxStRuntime: 'Python の実行環境を準備中（初回は約 15 MB）…', fxStBrotli: 'WOFF2 の圧縮を準備中…', fxStBake: '{name} を作成中（{i} / {n}）', fxStZip: 'まとめています…', fxErrRun: '作成に失敗しました：{msg}', fxErr_gfNone: 'google/fonts リポジトリに {name} のフォントファイルが見つかりません。', fxErr_ghLimit: 'GitHub のリクエスト回数の上限（1 時間 60 回）に達しました。しばらくしてからお試しください。', fxErr_net: 'ダウンロードに失敗しました。ネットワークを確認して、もう一度お試しください。', fxErr_noFile: '{name} のフォントファイルがありません。「フォントを選択…」でもう一度アップロードしてください。', fxErr_local: '{name} はこのコンピュータにインストールされたフォントのため、まだ対応していません。フォントファイルをアップロードしてください。', fxErr_ttc: '{name} はフォントコレクション（TTC/OTC）のため、まだ対応していません。', fxErr_cff: '{name} は CFF アウトライン（OTF）のため、まだ対応していません。TTF 版があれば TTF を使ってください。', fxErr_apple: '{name} は Apple のシステムフォントです。ライセンス上、改変や合成はできません。', fxErr_outline: '{name} には TrueType のアウトラインがありません（ビットマップやカラーフォントかもしれません）。合成できません。', fxErr_read: '{name} を読み込めませんでした。', fxEmbedded: '埋め込まれたこのページは外部のファイルをダウンロードできないため、ここではフォントファイルを作れません。GitHub Pages 版で作成してください。今の設定もそのまま引き継がれます。アップロードしたフォントは、そちらでもう一度アップロードしてください。', fxOpenPages: 'GitHub Pages 版で開く', fxImported: '引き継いだ設定を読み込みました', fxLicUserOk: '（ライセンス不明。改変・合成の権利があることを作成者が確認）', fxRmHead: '{fam}：CSS Composite Font で作った合成フォント', fxRmFiles: 'ファイル：', fxRmParts: '構成（最初のファイルの例）：', fxRmShift: 'ベースライン {v}%', fxRmNotes: 'インストール：.ttf ファイルをダブルクリックします。ウェイトごとに 1 ファイルです。イタリックは欧文だけが斜体で、漢字・かなは正体のままです。\nブラウザは和欧間に 1/8 em のアキを自動で入れます（text-autospace）が、Figma や Keynote などのアプリでは入りません。', fxRmMade: '{date} 作成 · {url}',
     eaWNone: '{font} にはプロポーショナルと全角の字形がなく、選んでも変わりません。',
     addCustomRow: '例外文字を追加',
     featTitle: 'フォントの機能', featScope: 'どの字形を使うか、行の高さの計算。全ウェイト共通',
@@ -182,7 +188,7 @@ const I18N = {
     tNotReady: 'フォントの読み込みが終わっていません。少し待ってからもう一度試してください',
    
     tCopied: 'コピーしました', tCopyFail: 'クリップボードに書き込めませんでした。コードを選択したので ⌘C / Ctrl+C を押してください', tSaved: 'プリセット「{n}」を保存しました（このブラウザにのみ保存）', tSavedFile: '。フォントファイルは保存されないため、次回はもう一度読み込んでください', tDeleted: 'プリセットを削除しました',
-    export: '書き出し', exportTitle: 'CSS を書き出す', exName: 'font-family 名', exGeneric: '総称ファミリー', auto: '自動', tabJs: 'JS', tabNotes: '仕組みと制限', copy: 'コードをコピー', download: 'ファイルを保存', exportAria: '書き出す内容',
+    export: '書き出し', exportTitle: '書き出し', exName: 'font-family 名', exGeneric: '総称ファミリー', auto: '自動', tabJs: 'JS', tabNotes: '仕組みと制限', copy: 'コードをコピー', download: 'ファイルを保存', exportAria: '書き出す内容',
     stats: '@font-face {n} 件・{kb} KB', statsJs: '・JS も必要', statsCss: '・CSS のみ',
     noteFiles: 'デプロイ時に {files} を CSS と同じ階層に置いてください', joiner: '、', noteJs: 'ベースラインシフトがあるときだけ必要です。ページの末尾に置いてください', noteNoJs: '',
     jsNone: '/* すべてのクラスのベースラインシフトが 0 なので、JS は不要です。 */',
@@ -206,6 +212,9 @@ const I18N = {
   },
   /* 繁體中文（台灣）：先用 OpenCC（s2twp）從簡體轉換，再逐條改成台灣用語（字型、預設集、進階、直排、直立……） */
   tw: {
+    fxBlockSrc: '有字型不能用來產生，原因見上面。',
+    fxEstNoDl: '預計約 {min} 分鐘。', fxNameLabel: '字型名稱',
+    tabFont: '字型檔案', fxIntro: '把這個複合字型做成字型檔案。裝進電腦後，在 Figma、Keynote、Word 等不支援複合字型的軟體裡也能用。每個字重、正斜體各一個檔案，打包成 zip 下載。', fxSources: '用到的字型', fxKindGoogle: 'Google Fonts', fxKindFile: '上傳的檔案', fxKindLocal: '本機字型', fxLicNo: '不能使用', fxLicReading: '正在讀取…', fxLicUnknown: '授權不明', fxUsedFor: '用於{list}', fxStaticNote: '這是單一字重的字型，其他字重也會用這個檔案的字形', fxOut: '輸出', fxOutLine: '字型名稱「{fam}」，共 {n} 個檔案。名稱、字重、斜體在匯出設定裡修改。', fxNoItal: '這個複合字型裡沒有斜體字型，只產生正體。', fxWoff2: '同時產生 WOFF2（網頁用）', fxEst: '預計約 {min} 分鐘；第一次使用還要下載約 {mb} MB。', fxAgree: '我確認有權修改並合併上面「授權不明」的字型', fxNoWeights: '在匯出設定裡至少選一個字重。', fxRfn: '字型名稱裡不能有「{rfn}」：{src} 的授權保留了這個名稱。請在匯出設定裡改名。', fxGen: '產生字型檔案', fxStop: '停止', fxElapsed: '已用 {s} 秒', fxDone: '已產生，用時 {s} 秒。', fxStale: '設定已經改過，重新產生才會更新。', fxDownload: '下載 zip（{mb} MB）', fxStPrep: '準備中…', fxStFetch: '下載 {name}（{got} / {total} MB）', fxStRuntime: '準備 Python 執行環境（第一次約 15 MB）…', fxStBrotli: '準備 WOFF2 壓縮…', fxStBake: '產生 {name}（{i} / {n}）', fxStZip: '打包…', fxErrRun: '產生失敗：{msg}', fxErr_gfNone: '在 google/fonts 倉庫裡找不到 {name} 的字型檔案。', fxErr_ghLimit: 'GitHub 暫時限制了請求次數（每小時 60 次），請過一會兒再試。', fxErr_net: '下載失敗，請檢查網路後重試。', fxErr_noFile: '{name} 沒有字型檔案：請在「選擇字型…」裡重新上傳。', fxErr_local: '{name} 是本機安裝的字型，暫不支援產生字型檔案。請改用上傳的字型檔案。', fxErr_ttc: '{name} 是字型集合（TTC/OTC），暫不支援。', fxErr_cff: '{name} 是 CFF 輪廓（OTF），暫不支援。如果有 TTF 版本，請改用 TTF。', fxErr_apple: '{name} 是蘋果的系統字型，授權不允許修改或合併。', fxErr_outline: '{name} 沒有 TrueType 輪廓（可能是點陣或彩色字型），不能合併。', fxErr_read: '讀不懂 {name} 這個字型檔案。', fxEmbedded: '嵌入在這裡的頁面不能下載外部檔案，所以沒法在這裡產生字型檔案。到 GitHub Pages 版去產生，目前的設定會一起帶過去；上傳的字型檔案要在那邊重新上傳。', fxOpenPages: '在 GitHub Pages 版開啟', fxImported: '已載入帶過來的設定', fxLicUserOk: '（授權不明，產生者確認有權修改和合併）', fxRmHead: '{fam}：由 CSS Composite Font 產生的複合字型', fxRmFiles: '檔案：', fxRmParts: '組成（以第一個檔案為例）：', fxRmShift: '基線 {v}%', fxRmNotes: '安裝：雙擊 .ttf 檔案。每個字重一個檔案；斜體只有西文是斜的，漢字保持正體。\n瀏覽器會自動在中西文之間加 1/8 em 的間距（text-autospace），Figma、Keynote 等軟體不會。', fxRmMade: '產生於 {date} · {url}',
     eaWNone: '{font} 沒有比例寬和全形的字形，選了也不會變。',
     addCustomRow: '新增例外字元',
     featTitle: '字型特性', featScope: '用哪個字形、行高怎麼算。所有字重通用',
@@ -279,7 +288,7 @@ const I18N = {
    
     refNote: '<b>怎麼調</b>：西文看起來比漢字小，就把「半形西文」的大小調大；大寫字母（例如 IBM）比漢字還顯眼，就調小。西文看起來偏低，把它的基線往正數調；偏高就往負數調。拿不準時點「字元類別」旁的「自動調整大小和基線」，再以正文裡看著順眼為準。', tNotReady: '字型還沒載入完，稍後再試',
     tCopied: '已複製', tCopyFail: '無法寫入剪貼簿，已選中程式碼，請按 ⌘C / Ctrl+C',
-    tSaved: '已儲存預設集「{n}」，只儲存在這個瀏覽器裡', tSavedFile: '。字型檔案不會被儲存，下次需要重新上傳', tDeleted: '已刪除預設集', export: '匯出', exportTitle: '匯出 CSS', exName: 'font-family 名稱',
+    tSaved: '已儲存預設集「{n}」，只儲存在這個瀏覽器裡', tSavedFile: '。字型檔案不會被儲存，下次需要重新上傳', tDeleted: '已刪除預設集', export: '匯出', exportTitle: '匯出', exName: 'font-family 名稱',
     exGeneric: '通用後備', auto: '自動', tabJs: 'JS', tabNotes: '原理與限制', copy: '複製程式碼', download: '下載檔案', exportAria: '匯出內容', stats: '{n} 條 @font-face · {kb} KB',
     statsJs: ' · 另需一段 JS', statsCss: ' · 純 CSS', noteFiles: '部署時把 {files} 放到和 CSS 同一個資料夾', joiner: '、', noteJs: '有基線偏移時才需要。放在頁面末尾即可', noteNoJs: '',
     jsNone: '/* 所有類別的基線偏移都是 0，不需要 JS。 */',

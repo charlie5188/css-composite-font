@@ -317,13 +317,16 @@ function initToolbar() {
     if (state.scope) state.typo.lang = state.scope;
     syncToolbar(); renderEditor(); renderPreview(); drawSpecimen(); renderExport(); saveState();
   });
-  const tabs = { tabCss: 'css', tabJs: 'js', tabNotes: 'notes' };
+  const tabs = { tabCss: 'css', tabJs: 'js', tabFont: 'font', tabNotes: 'notes' };
   for (const [id, key] of Object.entries(tabs)) $('#' + id).addEventListener('click', () => {
     exTab = key;
+    const code = key === 'css' || key === 'js';
     for (const other of Object.keys(tabs)) $('#' + other).setAttribute('aria-selected', other === id);
-    $('#paneCode').hidden = key === 'notes'; $('#paneNotes').hidden = key !== 'notes';
-    $('#copyBtn').hidden = key === 'notes';
-    $('#dlBtn').hidden = key === 'notes' || !canDownload;
+    $('#paneCode').hidden = !code; $('#paneNotes').hidden = key !== 'notes'; $('#paneFont').hidden = key !== 'font';
+    $('#copyBtn').hidden = !code;
+    $('#dlBtn').hidden = !code || !canDownload;
+    $('#fontBtn').hidden = key !== 'font';
+    $('.ex-fields').classList.toggle('font-mode', key === 'font');      // 字体文件用不到的设置（只影响 CSS 的）先藏起来
     if (key !== 'notes') renderExport();
   });
   /* 独立网页里可以直接下载；在 artifact 等嵌入框架里浏览器会拦截下载，所以只显示「复制」 */
@@ -1011,7 +1014,7 @@ function initReset() {
 }
 function init() {
   refreshCustomRanges();
-  initToolbar(); initPresets(); initPicker(); initReset();
+  initToolbar(); initPresets(); initPicker(); initReset(); initFontTab();
   applyUI();
   rebuildNow();
   new ResizeObserver(debounce(drawSpecimen, 100)).observe($('#spec'));
