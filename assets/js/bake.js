@@ -258,19 +258,23 @@ function fxPlan() {
 /* 预计用时：实测 Pyodide 里每 MB 源字体约 2 秒（Noto Sans JP 9.6 MB 一个字重约 20 秒）；CFF 轮廓要转换，按两倍算 */
 function fxEstimate(pl) {
   let sec = 0, mb = 0;
-  for (const j of pl.jobs) sec += 3 + j.srcs.reduce((a, s) => { const x = s && pl.srcs.get(s.key); return a + (x ? (x.size || 0) / 1e6 * (x.cff ? 4 : 2) : 0); }, 0);
+  for (const j of pl.jobs) {
+    const mb = j.srcs.reduce((a, s) => { const x = s && pl.srcs.get(s.key); return a + (x ? (x.size || 0) / 1e6 : 0); }, 0);
+    sec += 3 + j.srcs.reduce((a, s) => { const x = s && pl.srcs.get(s.key); return a + (x ? (x.size || 0) / 1e6 * (x.cff ? 4 : 2) : 0); }, 0) + (state.fx.otf ? mb * 2 : 0);
+  }
   for (const s of pl.srcs.values()) if (s.kind === 'google' && !fx.sent.has(s.file)) mb += (s.size || 0) / 1e6;      // 已经交给 Worker 的不用再下载
-  return { n: pl.jobs.length * (state.fx.woff2 ? 2 : 1), min: Math.max(1, Math.round(sec / 60)), mb: Math.round(mb + (fx.worker ? 0 : BK.runtimeMB)) };
+  return { n: pl.jobs.length * (1 + state.fx.woff2 + state.fx.otf), min: Math.max(1, Math.round(sec / 60)), mb: Math.round(mb + (fx.worker ? 0 : BK.runtimeMB)) };
 }
 
 /* ---------- 字体文件：左边的设置、右边的面板 ---------- */
 const fx = { worker: null, sent: new Set(), running: false, agree: false, stage: '', pct: 0, t0: 0, tick: null, result: null, err: '', sig: '' };
-const fxSig = pl => JSON.stringify([pl.fam, state.fx.woff2, pl.jobs.map(j => [j.W, j.italic, j.srcs.map(s => s && [s.key, s.weight, s.fvs]), j.plan.map(p => [p.size, p.range && p.range.length])]), state.classes, state.custom]);
+const fxSig = pl => JSON.stringify([pl.fam, state.fx.woff2, state.fx.otf, pl.jobs.map(j => [j.W, j.italic, j.srcs.map(s => s && [s.key, s.weight, s.fvs]), j.plan.map(p => [p.size, p.range && p.range.length])]), state.classes, state.custom]);
 const fmtMB = n => (n / 1e6).toFixed(n < 1e7 ? 1 : 0);
 function renderFontFields() {
   $('#fxWeights').innerHTML = WEIGHTS.map(w => `<button type="button" data-w="${w}" aria-pressed="${state.fx.weights.includes(w)}" title="${esc(wTip(w))}"${wTag(w) ? ' class="wl"' : ''}>${w}${wTag(w)}</button>`).join('');
   $('#fxItalic').checked = state.fx.italic;
   $('#fxWoff2').checked = state.fx.woff2;
+  $('#fxOtf').checked = state.fx.otf;
 }
 const fxLimits = () => `<div class="fx-sec fx-limits"><h3 class="fx-h">${esc(T('fxLimitsTitle'))}</h3><ul>${T('fxLimits').split('\n').map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
 function renderFontTab() {
@@ -385,7 +389,7 @@ async function fxRun() {
       };
     });
     const open = [...pl.srcs.values()].every(s => ['ofl', 'apache', 'ufl'].includes(s.lic));
-    const opts = { family: pl.fam, woff2: state.fx.woff2, lic: open ? LIC_OFL : LIC_PRIVATE,
+    const opts = { family: pl.fam, woff2: state.fx.woff2, otf: state.fx.otf, lic: open ? LIC_OFL : LIC_PRIVATE,
       extra: [[open ? 'OFL.txt' : 'LICENSES.txt', fxLicenseText(pl, open)], ['README.txt', fxReadme(pl)]] };
     if (!fx.worker) {
       const url = URL.createObjectURL(new Blob(['(' + bakeWorker.toString() + ')()'], { type: 'text/javascript' }));
@@ -398,6 +402,7 @@ async function fxRun() {
       fx.worker.onmessage = ({ data: m }) => {
         if (m.t === 'stage') say(T(m.k === 'brotli' ? 'fxStBrotli' : 'fxStRuntime'), 0.15);
         else if (m.t === 'job') say(T('fxStBake', { name: m.label, i: m.n + 1, n }), 0.15 + 0.8 * m.n / n);
+        else if (m.t === 'otf') say(T('fxStOtf', { name: m.label, i: m.n + 1, n }), 0.15 + 0.8 * (m.n + 0.5) / n);
         else if (m.t === 'zip') say(T('fxStZip'), 0.97);
         else if (m.t === 'done') resolve(m);
         else if (m.t === 'error') reject(Object.assign(new Error(m.msg || m.error), { code: m.error, name: m.name }));
@@ -478,6 +483,7 @@ function initFontTab() {
   });
   $('#fxItalic').addEventListener('change', e => { state.fx.italic = e.target.checked; renderFontTab(); saveState(); });
   $('#fxWoff2').addEventListener('change', e => { state.fx.woff2 = e.target.checked; renderFontTab(); saveState(); });
+  $('#fxOtf').addEventListener('change', e => { state.fx.otf = e.target.checked; renderFontTab(); saveState(); });
   $('#fontPane').addEventListener('change', e => { if (e.target.id === 'fxAgree') { fx.agree = e.target.checked; renderFontTab(); } });
   $('#fontPane').addEventListener('click', e => {
     const id = e.target.closest('button')?.id;
@@ -508,7 +514,7 @@ function bakeWorker() {
       if (!brotli && (m.opts.woff2 || Object.keys(m.files).some(n => /\.woff2$/i.test(n)))) { postMessage({ t: 'stage', k: 'brotli' }); await py.loadPackage(m.cfg.brotli); brotli = true; }
       for (const [name, buf] of Object.entries(m.files)) py.FS.writeFile('/src/' + name, new Uint8Array(buf));
       const run = py.globals.get('run_all');
-      const res = JSON.parse(run(JSON.stringify(m.jobs), JSON.stringify(m.opts), (n, label) => postMessage({ t: n < 0 ? 'zip' : 'job', n, label })));
+      const res = JSON.parse(run(JSON.stringify(m.jobs), JSON.stringify(m.opts), (n, label) => postMessage({ t: n < 0 ? 'zip' : n % 1 ? 'otf' : 'job', n: Math.floor(n), label })));
       run.destroy();
       if (res.error) { postMessage({ t: 'error', error: res.error, name: res.name, msg: res.msg }); return; }
       const zip = py.FS.readFile('/w/out.zip').slice().buffer;
@@ -534,6 +540,38 @@ STYLE = {100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Med
 class BakeError(Exception):
     def __init__(self, code, name=''):
         super().__init__(code); self.code = code; self.name = name
+
+def to_otf(font):
+    """TrueType（二次曲线）转成 CFF（三次曲线）的 OTF：二次曲线能精确写成三次曲线，只有控制点取整的误差（不到 1/1000 em）。
+    竖排原点：TrueType 由上边距和字形顶边算出，CFF 要写进 VORG 表"""
+    import collections
+    from fontTools.pens.t2CharStringPen import T2CharStringPen
+    from fontTools.fontBuilder import FontBuilder
+    order, gs, hm, glyf = font.getGlyphOrder(), font.getGlyphSet(), font['hmtx'], font['glyf']
+    cs, vorg = {}, {}
+    for gn in order:
+        pen = T2CharStringPen(hm[gn][0], gs)
+        gs[gn].draw(pen)
+        cs[gn] = pen.getCharString()
+        if 'vmtx' in font and glyf[gn].numberOfContours: vorg[gn] = font['vmtx'][gn][1] + glyf[gn].yMax
+    n, post = font['name'], font['post']
+    ascii_ = lambda x: x if x and all(ord(c) < 128 for c in x) else n.getDebugName(6)      # CFF 里的名字只能是 ASCII，中日文名字留在 name 表里
+    info = {'FullName': ascii_(n.getDebugName(4)), 'FamilyName': ascii_(n.getDebugName(1)), 'Weight': ascii_(n.getDebugName(2)),
+            'Notice': ''.join(c for c in (n.getDebugName(0) or '') if ord(c) < 128)[:500],
+            'ItalicAngle': post.italicAngle, 'UnderlinePosition': post.underlinePosition, 'UnderlineThickness': post.underlineThickness}
+    fb = FontBuilder(font=font); fb.isTTF = False      # 从 font 推断成了 TrueType，改成 CFF
+    for t in ('glyf', 'loca', 'fpgm', 'prep', 'cvt ', 'gasp'):
+        if t in font: del font[t]
+    fb.setupCFF(n.getDebugName(6), info, cs, {})
+    m = newTable('maxp'); m.tableVersion = 0x00005000; m.numGlyphs = len(order); font['maxp'] = m
+    post.formatType = 3.0
+    if vorg:
+        v = newTable('VORG'); v.majorVersion, v.minorVersion = 1, 0
+        v.defaultVertOriginY = collections.Counter(vorg.values()).most_common(1)[0][0]
+        v.VOriginRecords = {g: y for g, y in vorg.items() if y != v.defaultVertOriginY}
+        v.numVertOriginYMetrics = len(v.VOriginRecords)
+        font['VORG'] = v
+    font.sfntVersion = 'OTTO'
 
 def is_ttc(path):
     with open(path, 'rb') as fh: return fh.read(4) == b'ttcf'
@@ -763,6 +801,11 @@ def run_all(jobs_json, opts_json, progress):
             if opts.get('woff2'):
                 font.flavor = 'woff2'; b = io.BytesIO(); font.save(b); data = b.getvalue()
                 z.writestr(ps + '.woff2', data); out.append([ps + '.woff2', len(data)])
+            if opts.get('otf'):      # 印刷用：最后转成 CFF 曲线，这个字体对象之后不再用
+                progress(n + 0.5, job['label'])
+                font.flavor = None; to_otf(font)
+                b = io.BytesIO(); font.save(b); data = b.getvalue()
+                z.writestr(ps + '.otf', data); out.append([ps + '.otf', len(data)])
             del font
             rest = {key(s) for j in jobs[n + 1:] for s in j['srcs'] if s}      # 后面用不到的截取结果：删掉，省内存
             for k in list(inst):
