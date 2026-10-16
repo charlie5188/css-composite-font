@@ -58,10 +58,10 @@ For each character the browser checks the rules from the last one backwards. The
 
 ## Run locally
 
-There is no build step. Open `index.html` in a browser, or run:
+There is no build step, but the scripts are ES modules, which browsers do not load from `file://`. Serve the folder and open http://127.0.0.1:8765/ :
 
 ```sh
-python3 -m http.server
+python3 tools/serve.py
 ```
 
 ## Files
@@ -80,7 +80,9 @@ assets/js/export.js   CSS and baseline-script generation
 assets/js/bake.js     Font-file export (TTF / OTF / WOFF2) in a Pyodide worker
 assets/py/            fontTools wheel served to the worker
 assets/js/ui.js       Interaction, preset cards, font picker, start-up
+assets/js/refresh.js  refresh(): after a setting changes, re-render the named parts in a fixed order and save
 tools/rehash.py       Updates the ?v= hashes and the module import map in index.html after editing assets
+tools/serve.py        Local static server for preview and tests
 tools/bake.py         Command-line font baking with the same code as the page (job.json + source fonts)
 tests/py/             Font baking tests (pytest, small OFL fixture fonts in tests/fixtures)
 tests/e2e/            Page tests (Playwright): CSS output snapshots per preset, UI, vertical layout, font-file export
@@ -137,7 +139,7 @@ InDesign / Illustrator の「合成フォント」のように、漢字・かな
 - `local()` はフルネームか PostScript 名で照合します。Safari はシステムにプリインストールされたフォントしか使わせません。インストール済みフォントの一覧には Local Font Access API（Chrome / Edge）が必要です。
 - 同じ `font-family` の規則はすべて同じ書き方で `font-weight` を宣言する必要があります（Chrome は `700` と `400 700` を別のグループとして扱います）。そのためウェイトごとに規則を 1 組ずつ書き出します。
 - `@font-face` 内の `font-variation-settings`（細かい太さと固定した軸の値）は Chrome 140+、Firefox 62+ が対応。Safari は無視し、段階の太さとフォントの既定の軸の値で表示します。
-- ビルド不要。`index.html` をブラウザで開くだけで動きます。
+- ビルド不要。ファイルを置くだけの静的サイトで動きます（ES モジュールなので、手元では `python3 tools/serve.py` で配信して開きます）。
 
 ---
 
@@ -179,7 +181,7 @@ InDesign / Illustrator の「合成フォント」のように、漢字・かな
 - `local()` 按字体的完整名或 PostScript 名匹配。Safari 只允许网页使用系统预装字体。读取本机字体列表需要 Local Font Access API（Chrome / Edge）。
 - 同一个 `font-family` 里的所有规则必须用同样的写法声明 `font-weight`（Chrome 会把 `700` 和 `400 700` 当成两组），所以每个字重各写一组规则。
 - `@font-face` 里的 `font-variation-settings`（细调的粗细、固定的轴值）Chrome 140+、Firefox 62+ 支持；Safari 会忽略，按那一档的粗细和字体默认的轴值显示。
-- 没有构建步骤，直接用浏览器打开 `index.html` 即可。
+- 没有构建步骤，放在任何静态服务器上就能用（脚本是 ES 模块，本地要用 `python3 tools/serve.py` 起服务器再打开，不能直接双击 `index.html`）。
 
 ## License
 

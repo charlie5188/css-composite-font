@@ -1,3 +1,4 @@
+import { refresh } from './refresh.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, inRanges, rebuildClassRanges } from './unicode.js';
 import { BASE_W, ENGINE, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, WORD_RE, autoLocal, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, ownSize, presetDirty, presetSnap, rebuild, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, userPresets, vfAxis, vfCache } from './core.js';
@@ -155,7 +156,7 @@ $('#grpPop').addEventListener('click', e => {
 export function setPreviewWeight(W) {
   if (W === state.view.weight) return;
   state.view.weight = W;
-  syncToolbar(); renderEditor(); rebuild(); saveState();
+  refresh('toolbar', 'editor', 'fonts');
 }
 
 /* ================= 交互：校样、度量、导出 ================= */
@@ -173,7 +174,7 @@ export function initToolbar() {
     const c = customAt(k);
     if (c) { v().sample = k; v().text = c.text; if (c.lang) state.typo.lang = c.lang; }
     else { v().sample = k; v().text = SAMPLES[k].text; state.typo.lang = SAMPLES[k].lang; }
-    syncToolbar(); renderEditor(); renderPreview(); renderExport(); rebuild(); saveState();      // 语言变了：注音那一行、地区检查跟着变
+    refresh('toolbar', 'editor', 'preview', 'export', 'fonts');      // 语言变了：注音那一行、地区检查跟着变
   };
   $('#sampleTabs').addEventListener('click', e => {
     if (e.target.closest('[data-act="addcustom"]')) {
@@ -209,7 +210,7 @@ export function initToolbar() {
   const setNum = (k, x) => {
     const n = NUM[k], r = Math.min(n.max, Math.max(n.min, +(+x).toFixed(n.dp)));
     if (r === v()[k]) return;
-    v()[k] = r; syncToolbar(); renderPreview(); saveState();
+    v()[k] = r; refresh('toolbar', 'preview');
   };
   for (const [k, n] of Object.entries(NUM)) {
     const el = $(n.el);
@@ -240,10 +241,10 @@ export function initToolbar() {
     const b = e.target.closest('[data-sg]'); if (!b) return;
     const k = b.dataset.sg;
     (v().specShow ||= {})[k] = !specShown()[k];
-    syncToolbar(); drawSpecimen(); saveState();
+    refresh('toolbar', 'specimen');
   });
   for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vRules', 'rules'], ['vMiss', 'miss'], ['vItalic', 'italic']])
-    $('#' + id).addEventListener('click', () => { v()[key] = !v()[key]; syncToolbar(); renderPreview(); renderExport(); saveState(); });
+    $('#' + id).addEventListener('click', () => { v()[key] = !v()[key]; refresh('toolbar', 'preview', 'export'); });
   $('#vWeight').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) setPreviewWeight(+b.dataset.w); });
   /* 连续模式：滑块直接改校样的粗细（所有分段的规则都已建好）；表格编辑最接近的那一档 */
   $('#vWcont').addEventListener('input', e => {
@@ -260,30 +261,30 @@ export function initToolbar() {
   $('#sample').addEventListener('input', e => {
     v().text = e.target.value;
     const m = /^c(\d+)$/.exec(v().sample); if (m && v().customs[+m[1]]) v().customs[+m[1]].text = e.target.value;
-    renderPreview(); saveState(); reloadForText();
+    refresh('preview'); reloadForText();
   });
   for (const box of ['#typoRows', '#featRows']) {      // 排版页签、字体页签里的字体特性：同一套卡片和下拉
   $(box).addEventListener('click', e => {
     const b = e.target.closest('[data-typo]'); if (!b) return;
     state.typo[b.dataset.typo] = b.dataset.v;
-    renderTypoStatus(); renderPreview(); renderExport(); saveState();
+    refresh('typoStatus', 'preview', 'export');
   });
   $(box).addEventListener('change', e => {
-    if (e.target.id === 'exLm') { state.lineMetrics = e.target.value; renderTypoStatus(); rebuild(); renderExport(); saveState(); return; }
+    if (e.target.id === 'exLm') { state.lineMetrics = e.target.value; refresh('typoStatus', 'fonts', 'export'); return; }
     const t = TYPO.find(x => 'ty-' + x.key === e.target.id); if (!t) return;
     state.typo[t.key] = e.target.value;
-    renderTypoStatus(); renderPreview(); renderExport(); saveState();
+    refresh('typoStatus', 'preview', 'export');
   });
   }
 
   $('#autoAdj').addEventListener('click', autoAdjust);
 
-  $('#exName').addEventListener('input', e => { state.name = e.target.value; renderExport(); saveState(); });
+  $('#exName').addEventListener('input', e => { state.name = e.target.value; refresh('export'); });
   const setWeights = ws => {
     state.weights = [...new Set(ws)].sort((a, c) => a - c);
     const prevW = state.view.weight;
     if (!state.weights.includes(prevW)) state.view.weight = state.weights.includes(BASE_W) ? BASE_W : state.weights[0];
-    syncToolbar(); renderExport(); saveState();
+    refresh('toolbar', 'export');
     if (state.view.weight !== prevW) { renderEditor(); rebuild(); }
   };
   $('#exWeights').addEventListener('click', e => {
@@ -298,7 +299,7 @@ export function initToolbar() {
     const b = e.target.closest('[data-m]'); if (!b || b.dataset.m === state.wmode) return;
     state.wmode = b.dataset.m;
     if (state.wmode === 'cont') { state.weights = [...WEIGHTS]; v().wcont = Math.min(state.wrange[1], Math.max(state.wrange[0], v().weight)); }
-    syncToolbar(); renderEditor(); rebuild(); renderExport(); saveState();
+    refresh('toolbar', 'editor', 'fonts', 'export');
   });
   /* 连续模式的导出范围：校样的滑块也只走这个范围 */
   const setWRange = (lo, hi) => {
@@ -309,19 +310,19 @@ export function initToolbar() {
     $('#exWLo').value = lo; $('#exWHi').value = hi;
     v().wcont = Math.min(hi, Math.max(lo, v().wcont));
     v().weight = Math.min(900, Math.max(100, Math.round(v().wcont / 100) * 100));
-    syncToolbar(); renderEditor(); rebuild(); renderExport(); saveState();
+    refresh('toolbar', 'editor', 'fonts', 'export');
   };
   $('#exWPresets').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b) setWRange(...b.dataset.r.split(',').map(Number)); });
   for (const id of ['exWLo', 'exWHi']) $('#' + id).addEventListener('change', () => setWRange(parseFloat($('#exWLo').value), parseFloat($('#exWHi').value)));
-  $('#exBase').addEventListener('change', e => { state.baseMode = e.target.value; renderExport(); saveState(); });
+  $('#exBase').addEventListener('change', e => { state.baseMode = e.target.value; refresh('export'); });
   /* 斜体：导出时另写一组 font-style: italic 的规则；校样的「斜体」开关用来看效果 */
-  $('#exItalic').addEventListener('change', e => { state.italic = e.target.value === '1'; renderEditor(); rebuild(); renderExport(); saveState(); });
-  $('#exGeneric').addEventListener('change', e => { state.generic = e.target.value; renderPreview(); renderExport(); saveState(); });
+  $('#exItalic').addEventListener('change', e => { state.italic = e.target.value === '1'; refresh('editor', 'fonts', 'export'); });
+  $('#exGeneric').addEventListener('change', e => { state.generic = e.target.value; refresh('preview', 'export'); });
   /* 选了语言时校样也按这个语言排（字形地区差异、禁则），不限语言时校样沿用示例文字的语言 */
   $('#exLang').addEventListener('change', e => {
     state.scope = e.target.value;
     if (state.scope) state.typo.lang = state.scope;
-    syncToolbar(); renderEditor(); renderPreview(); drawSpecimen(); renderExport(); saveState();
+    refresh('toolbar', 'editor', 'preview', 'specimen', 'export');
   });
   const tabs = { tabCss: 'css', tabJs: 'js' };
   for (const [id, key] of Object.entries(tabs)) $('#' + id).addEventListener('click', () => {
@@ -472,7 +473,7 @@ export function applyPreset(id) {
   }
   normalizeState();
   state.presetBase = presetSnap();
-  refreshCustomRanges(); syncToolbar(); renderEditor(); renderPreview(); renderPresetCards(); rebuild(); saveState();
+  refresh('ranges', 'toolbar', 'editor', 'preview', 'presets', 'fonts');
 }
 /* 自动调整西文大小：以汉字字体自带的西文为基准，取「按大写高对齐」和「按 x 高对齐」的几何平均，大写高不超过自带西文的 103%；
    汉字字体没有自带西文时，让大写高占字面的 83%。返回要乘的倍数，量不到时为 null */
@@ -542,7 +543,7 @@ export function savePresetAs(n) {
   const snap = JSON.parse(JSON.stringify(state)); delete snap.view; delete snap.presetBase;
   userPresets[n] = snap; lsSet(LS_PRESETS, userPresets);
   state.preset = 'user:' + n; state.presetBase = presetSnap();
-  renderPresetCards(); saveState();
+  refresh('presets');
   toast(T('tSaved', { n }) + (hasFileFont() ? T('tSavedFile') : ''));
 }
 /* 改过设定后换预设：先问要不要存下来 */
@@ -569,7 +570,7 @@ export function initPresets() {
       armed = null;
       delete userPresets[n]; lsSet(LS_PRESETS, userPresets);
       if (state.preset === 'user:' + n) state.preset = '';
-      renderPresetCards(); saveState(); toast(T('tDeleted'));
+      refresh('presets'); toast(T('tDeleted'));
       return;
     }
     const c = e.target.closest('[data-preset]');
@@ -937,7 +938,7 @@ export function initPicker() {
       delete ov.weight;
       o.vary = { ...(o.vary || {}), ...cleanVary(c) };
       picker.close();
-      changed({ fonts: true }); renderExport(); saveState();
+      changed({ fonts: true }); refresh('export');
       return;
     }
     if (pickW) delete state.wOver[pickW]?.[key]?.font;
@@ -952,7 +953,7 @@ export function initPicker() {
         if (v && v !== el.placeholder) state.weightNames[k] = v; else delete state.weightNames[k];
       }
       picker.close();
-      changed({ fonts: true }); renderExport(); saveState();
+      changed({ fonts: true }); refresh('export');
       return;
     }
     o.follow = null;     // 选了字体就改为独立字体，大小和基线保留各自的设定
@@ -993,19 +994,19 @@ export function toast(t) { const el = $('#toast'); el.textContent = t; el.classL
 export function resetAll() {
   setState(stateFromPreset(PRESETS.find(p => p.id === defaultPresetId())));
   normalizeState();
-  refreshCustomRanges(); syncToolbar(); renderTypoRows(); renderEditor(); renderPreview(); renderPresetCards(); rebuild(); saveState();
+  refresh('ranges', 'toolbar', 'typoRows', 'editor', 'preview', 'presets', 'fonts');
   toast(T('tReset'));
 }
 export function initReset() {
   $('#typoReset').addEventListener('click', () => {
     for (const t of TYPO) if (!t.attr && !isFontTypo(t)) state.typo[t.key] = typoDef(t);
-    renderTypoRows(); renderPreview(); renderExport(); saveState();
+    refresh('typoRows', 'preview', 'export');
   });
   $('#featReset').addEventListener('click', () => {
     for (const t of TYPO) if (isFontTypo(t)) state.typo[t.key] = typoDef(t);
     const lmWas = state.lineMetrics; state.lineMetrics = 'han';
     if (lmWas !== 'han') rebuild();
-    renderTypoRows(); renderPreview(); renderExport(); saveState();
+    refresh('typoRows', 'preview', 'export');
   });
   let armedT = null;
   $('#resetAll').addEventListener('click', e => {

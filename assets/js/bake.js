@@ -1,10 +1,11 @@
+import { refresh } from './refresh.js';
 import { $, T, esc, lsGet } from './i18n.js';
 import { EFF } from './unicode.js';
 import { GF_AXES } from './gfmeta.js';
-import { G, WEIGHTS, axisOf, buildPlan, customRanges, files, fontKey, fontLabel, normalizeState, rebuild, refreshCustomRanges, saveState, setState, settingOf, state, validState } from './core.js';
-import { renderEditor, renderPreview, syncToolbar, wTag, wTip } from './render.js';
+import { G, WEIGHTS, axisOf, buildPlan, customRanges, files, fontKey, fontLabel, normalizeState, setState, settingOf, state, validState } from './core.js';
+import { wTag, wTip } from './render.js';
 import { cssFamilyName, exKind, ownerName, setExKind } from './export.js';
-import { renderPresetCards, toast } from './ui.js';
+import { toast } from './ui.js';
 /* ================= 导出 · 字体文件 =================
    把合成字体做成真正的字体文件（TTF，可选 WOFF2）：每个字重、正斜体各一个，打包成 zip。
    做法和导出的 CSS 一一对应：同一张规则表（buildPlan），每条规则的字体只取它负责的字，按 size-adjust 缩放、
@@ -475,7 +476,7 @@ export async function importCfg() {
     const s = JSON.parse(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text());
     if (!validState(s)) return;
     setState(s);
-    normalizeState(); refreshCustomRanges(); syncToolbar(); renderEditor(); renderPreview(); renderPresetCards(); rebuild(); saveState();
+    normalizeState(); refresh('ranges', 'toolbar', 'editor', 'preview', 'presets', 'fonts');
     toast(T('fxImported'));
     setExKind('font');
     $('#export').scrollIntoView({ block: 'start' });
@@ -486,11 +487,11 @@ export function initFontTab() {
     const b = e.target.closest('[data-w]'); if (!b) return;
     const w = +b.dataset.w, ws = state.fx.weights;
     state.fx.weights = ws.includes(w) ? ws.filter(x => x !== w) : [...ws, w].sort((x, y) => x - y);
-    renderFontFields(); renderFontTab(); saveState();
+    refresh('fxFields', 'fx');
   });
-  $('#fxItalic').addEventListener('change', e => { state.fx.italic = e.target.checked; renderFontTab(); saveState(); });
-  $('#fxWoff2').addEventListener('change', e => { state.fx.woff2 = e.target.checked; renderFontTab(); saveState(); });
-  $('#fxOtf').addEventListener('change', e => { state.fx.otf = e.target.checked; renderFontTab(); saveState(); });
+  $('#fxItalic').addEventListener('change', e => { state.fx.italic = e.target.checked; refresh('fx'); });
+  $('#fxWoff2').addEventListener('change', e => { state.fx.woff2 = e.target.checked; refresh('fx'); });
+  $('#fxOtf').addEventListener('change', e => { state.fx.otf = e.target.checked; refresh('fx'); });
   $('#fontPane').addEventListener('change', e => { if (e.target.id === 'fxAgree') { fx.agree = e.target.checked; renderFontTab(); } });
   $('#fontPane').addEventListener('click', e => {
     const id = e.target.closest('button')?.id;
