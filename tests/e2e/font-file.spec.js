@@ -3,7 +3,7 @@ const { test, expect } = require('@playwright/test');
 const { execFileSync } = require('child_process');
 const { open, pick, showExport } = require('./helpers');
 
-test('生成 ゴシック × Jost 400 的 TTF 和 OTF', async ({ page }, info) => {
+test('生成 ゴシック × Jost 400 的 TTF 和 OTF @net', async ({ page }, info) => {
   test.setTimeout(300_000);
   await open(page);
   await pick(page, 'gothic-jp');

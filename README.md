@@ -91,11 +91,12 @@ tests/e2e/            Page tests (Playwright): CSS output snapshots per preset, 
 ## Tests
 
 ```
-pip install -r tests/requirements.txt && python3 -m pytest tests/py
-npm ci && npx playwright test                 # uses the installed Chrome locally
-npx playwright test --update-snapshots        # after an intended change to the exported CSS
-node tools/check-i18n.mjs                     # same keys and placeholders in every language
+npm run setup      # once: npm ci, Playwright's Chromium, .venv with the Python test dependencies
+npm run verify     # hashes and i18n checks, Python tests, browser tests (what CI runs)
+npx playwright test tests/e2e/css-output.spec.js --update-snapshots   # after an intended change to the exported CSS
 ```
+
+Working on the code (with or without a coding agent): see [AGENTS.md](AGENTS.md).
 
 GitHub Actions runs both on every push (`.github/workflows/test.yml`). The font-file test downloads Pyodide and source fonts, so it needs network access.
 

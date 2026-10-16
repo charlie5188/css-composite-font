@@ -3,10 +3,14 @@
   "private": true,
   "description": "Tests and checks for the CSS Composite Font tool. The site itself has no build step.",
   "scripts": {
+    "setup": "npm ci && npx playwright install chromium && python3 -m venv .venv && .venv/bin/pip install -q -r tests/requirements.txt",
+    "rehash": "python3 tools/rehash.py .",
+    "check": "python3 tools/rehash.py . --check && node tools/check-i18n.mjs",
     "test": "playwright test",
+    "test:offline": "playwright test --grep-invert @net",
     "test:live": "playwright test -c playwright.live.config.js",
-    "test:py": "python3 -m pytest tests/py",
-    "check": "node tools/check-i18n.mjs"
+    "test:py": "sh -c 'if [ -x .venv/bin/python ]; then exec .venv/bin/python -m pytest tests/py; else exec python3 -m pytest tests/py; fi'",
+    "verify": "npm run check && npm run test:py && npm test"
   },
   "devDependencies": {
     "@playwright/test": "1.48.2"
