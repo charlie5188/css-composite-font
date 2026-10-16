@@ -75,8 +75,9 @@ assets/js/gfmeta.js   Google Fonts axes and italics (bundled from fonts.google.c
 assets/js/core.js     Font loading, presets, state, weight mapping, live preview
 assets/js/render.js   Class table, proof and metrics
 assets/js/export.js   CSS and baseline-script generation
+assets/js/bake.js     Font-file export (TTF / OTF / WOFF2) in a Pyodide worker
+assets/py/            fontTools wheel served to the worker
 assets/js/ui.js       Interaction, preset cards, font picker, start-up
-tools/single.py       Builds the single-file version (everything inlined)
 tools/rehash.py       Updates the ?v= cache hashes in index.html after editing assets
 ```
 
