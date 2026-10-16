@@ -4,6 +4,7 @@
   "description": "Tests and checks for the CSS Composite Font tool. The site itself has no build step.",
   "scripts": {
     "test": "playwright test",
+    "test:live": "playwright test -c playwright.live.config.js",
     "test:py": "python3 -m pytest tests/py",
     "check": "node tools/check-i18n.mjs"
   },

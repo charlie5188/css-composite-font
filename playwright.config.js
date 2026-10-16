@@ -10,7 +10,7 @@ module.exports = defineConfig({
   reporter: process.env.CI ? 'github' : 'list',
   snapshotPathTemplate: 'tests/e2e/snapshots/{arg}{ext}',
   use: {
-    baseURL: 'http://127.0.0.1:8765',
+    baseURL: 'http://127.0.0.1:8765/',
     locale: 'zh-CN',
     viewport: { width: 1400, height: 1000 },
     channel: process.env.CI ? undefined : 'chrome',
