@@ -546,11 +546,11 @@ export function tabFade() {
 export function renderLangOptions() {
   $('#exLang').innerHTML = `<option value="">${esc(T('anyLang'))}</option>` + TYPO.find(t => t.key === 'lang').values.map(([v, d]) => `<option value="${v}">${esc(tr(d))}</option>`).join('');
 }
-/* 左窗格的「字体 / 排版」页签 */
+/* 左窗格的「预设 / 字体 / 排版」页签。第一次打开时在预设页签 */
 export function syncLeftTab() {
-  const k = state.view.ltab === 'typo' ? 'typo' : 'fonts';
+  const k = ['fonts', 'typo'].includes(state.view.ltab) ? state.view.ltab : 'presets';
   document.querySelectorAll('.pane-bar [data-ltab]').forEach(b => b.setAttribute('aria-selected', b.dataset.ltab === k));
-  $('#paneFonts').hidden = k !== 'fonts'; $('#paneTypo').hidden = k !== 'typo';
+  $('#panePresets').hidden = k !== 'presets'; $('#paneFonts').hidden = k !== 'fonts'; $('#paneTypo').hidden = k !== 'typo';
 }
 export function syncToolbar() {
   const v = state.view;
@@ -643,14 +643,14 @@ export function drawSpecimen() {
   /* 画出来的字：汉字总在；假名 あ、注音 ㄅ、西文 Hxg（连在一起，按字体本身的字距）、数字 0 按显示设定 */
   const show = ['国', ...(sh.kana ? ['あ'] : []), ...(sh.bopo ? ['ㄅ'] : []), ...(sh.latin ? ['Hxg'] : []), ...(sh.digit ? ['0'] : [])];
   const GAP = 0.2;      // 各组之间的距离（字号的倍数）
-  /* 字号先按宽度定（最大 140px），画布高度再跟着字号走：窄屏上不会留出大片空白 */
-  let fs = 140;
+  /* 字号先按宽度定（最大 88px），画布高度再跟着字号走：参考图固定在校样栏底部，不能太高 */
+  let fs = 88;
   ctx.font = `${fw} ${fs}px ${fam}`;
   const span = show.reduce((s, ch) => s + ctx.measureText(ch).width, 0) + fs * GAP * (show.length - 1);
   if (span > plotR - 24) fs = Math.floor(fs * (plotR - 24) / span);
   const nLines = 3 + (sh.latin ? 3 : 0) + (sh.digit ? 2 : 0) + (sh.kana ? 2 : 0) + (sh.bopo ? 2 : 0);
   const LT = 9;      // 参考线的标签最高排到这里
-  const H = Math.round(Math.min(300, Math.max(140, fs * 1.75, nLines * 13 + 16 + LT - 7)));
+  const H = Math.round(Math.min(200, Math.max(110, fs * 1.6, nLines * 13 + 16 + LT - 7)));
   const dpr = window.devicePixelRatio || 1;
   cv.style.height = H + 'px';
   cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);

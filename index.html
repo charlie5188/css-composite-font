@@ -8,69 +8,74 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=b44710b8">
+<link rel="stylesheet" href="assets/style.css?v=045fb674">
 <!-- 模块的缓存版本号：模块之间互相 import 时不带 ?v=，靠 import map 换成带版本号的地址（tools/rehash.py 生成） -->
 <script type="importmap">{
  "imports": {
-  "./assets/js/bake.js": "./assets/js/bake.js?v=cfb3ce51",
-  "./assets/js/core.js": "./assets/js/core.js?v=c9ecc6b0",
-  "./assets/js/export.js": "./assets/js/export.js?v=a07f4a2f",
+  "./assets/js/bake.js": "./assets/js/bake.js?v=5d65813f",
+  "./assets/js/core.js": "./assets/js/core.js?v=fcccf05f",
+  "./assets/js/export.js": "./assets/js/export.js?v=6ff88406",
   "./assets/js/gfmeta.js": "./assets/js/gfmeta.js?v=9a213e0f",
   "./assets/js/i18n.js": "./assets/js/i18n.js?v=7e4dac47",
-  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=e1f479e1",
-  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=8e076bad",
-  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=78f22c4c",
+  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=cc07a214",
+  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=80953b92",
+  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=73d98840",
   "./assets/js/main.js": "./assets/js/main.js?v=77ec7ac1",
   "./assets/js/refresh.js": "./assets/js/refresh.js?v=4dffc5b8",
-  "./assets/js/render.js": "./assets/js/render.js?v=f29c001f",
-  "./assets/js/ui.js": "./assets/js/ui.js?v=fcf49f8c",
+  "./assets/js/render.js": "./assets/js/render.js?v=4ff83703",
+  "./assets/js/ui.js": "./assets/js/ui.js?v=4f870781",
   "./assets/js/unicode.js": "./assets/js/unicode.js?v=f50d2344"
  }
 }</script>
 <script type="module" src="assets/js/main.js?v=77ec7ac1"></script>
 </head>
 <body>
-<div class="app">
+<!-- 整个页面固定一屏、本身不滚动：顶栏 + 工作区（编辑 | 校样），每一栏自己滚动。窄屏时一次显示一栏，底部页签切换。导出和说明是对话框 -->
+<div class="app" data-mview="edit">
   <header class="topbar">
-    <span class="brand">Composite Font</span>
+    <h1 class="brand" data-t="title">纯 CSS 复合字体</h1>
     <div class="top-right">
-      <a class="gh" href="https://github.com/charlie5188/css-composite-font" target="_blank" rel="noopener" data-ta="aria-label:ghAria">GitHub <span aria-hidden="true">↗</span></a>
+      <button type="button" class="top-link" id="aboutBtn" aria-haspopup="dialog" aria-controls="aboutDlg" data-t="aboutTitle"></button>
       <div class="seg" role="radiogroup" aria-label="界面语言 / 介面語言 / 表示言語" id="uiSeg">
-        <button type="button" role="radio" data-ui-lang="zh" aria-checked="true">简体</button>
-        <button type="button" role="radio" data-ui-lang="tw" aria-checked="false">繁體</button>
-        <button type="button" role="radio" data-ui-lang="ja" aria-checked="false">日本語</button>
+        <button type="button" role="radio" data-ui-lang="zh" aria-checked="true" aria-label="简体"><span class="l-long">简体</span><span class="l-short" aria-hidden="true">简</span></button>
+        <button type="button" role="radio" data-ui-lang="tw" aria-checked="false" aria-label="繁體"><span class="l-long">繁體</span><span class="l-short" aria-hidden="true">繁</span></button>
+        <button type="button" role="radio" data-ui-lang="ja" aria-checked="false" aria-label="日本語"><span class="l-long">日本語</span><span class="l-short" aria-hidden="true">日</span></button>
+      </div>
+      <button type="button" class="btn ex-toggle" id="exToggle" aria-haspopup="dialog" aria-controls="exDlg"><span data-t="exportTitle"></span></button>
+      <!-- 「⋯」菜单：不常用的操作。重置会改动所有设置（字体、排版、校样），所以放在全局的顶栏里，而不是某个页签里 -->
+      <button type="button" class="top-more" id="moreBtn" popovertarget="moreMenu" aria-haspopup="menu" data-ta="aria-label:moreAria;title:moreAria"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.2" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.8" cy="8" r="1.3"/></svg></button>
+      <div class="more-menu" id="moreMenu" popover role="menu">
+        <button type="button" class="mm-item mm-about" role="menuitem" id="aboutItem" data-t="aboutTitle"></button>
+        <a class="mm-item" role="menuitem" href="https://github.com/charlie5188/css-composite-font" target="_blank" rel="noopener" data-ta="aria-label:ghAria">GitHub <span aria-hidden="true">↗</span></a>
+        <hr>
+        <button type="button" class="mm-item danger" role="menuitem" id="resetAll" data-t="resetAll"></button>
+        <p class="mm-note" data-t="resetNote"></p>
       </div>
     </div>
   </header>
 
-  <section class="hero">
-    <h1 data-t="title">纯 CSS 复合字体</h1>
-    <div class="hero-side">
-      <p class="lede" data-t="lede"></p>
-    </div>
-  </section>
   <div class="warn" id="sizeAdjustWarn" data-th="warnSizeAdjust" hidden></div>
 
-  <section class="presets" aria-labelledby="presetsLabel">
-    <div class="sec-row"><h2 class="label lab-i" id="presetsLabel"><span data-t="preset"></span><button type="button" class="info" data-info="presetInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2>
-      <div class="preset-acts">
-        <button type="button" class="tbtn" id="savePresetBtn"><span aria-hidden="true">+ </span><span data-t="presetSaveAs"></span></button>
-        <div class="save-form" id="saveRow" hidden>
-          <input id="presetName" type="text" spellcheck="false" data-ta="placeholder:presetName;aria-label:presetName">
-          <button class="btn primary" id="presetSave" type="button" data-t="save"></button><button class="tbtn" id="presetCancel" type="button" data-t="cancel"></button>
-        </div>
-      </div>
-    </div>
-    <div class="pgrid" id="presetCards"></div>
-  </section>
-
-  <div class="bench">
+  <main class="bench">
     <section class="compose" id="editor" data-ta="aria-label:classes">
-      <!-- 左窗格顶上是「字体 / 排版」两个页签：字体页签里的设定分字重（第一行选字重），排版页签里的不分字重 -->
+      <!-- 左窗格顶上是「预设 / 字体 / 排版」三个页签：字体页签里的设定分字重（第一行选字重），排版页签里的不分字重 -->
       <div class="pane-bar" role="tablist">
+        <button type="button" role="tab" id="ltabPresets" data-ltab="presets" aria-controls="panePresets" aria-selected="false" data-t="preset"></button>
         <button type="button" role="tab" id="ltabFonts" data-ltab="fonts" aria-controls="paneFonts" aria-selected="true" data-t="tabFonts"></button>
         <button type="button" role="tab" id="ltabTypo" data-ltab="typo" aria-controls="paneTypo" aria-selected="false"><span data-t="typoTitle"></span><span class="ltab-n" id="typoCount"></span></button>
         <span class="busy" id="busy" aria-live="polite"></span>
+      </div>
+      <div class="pane-sec presets" id="panePresets" role="tabpanel" aria-labelledby="ltabPresets" hidden>
+        <div class="sec-row preset-head"><h2 class="label lab-i" id="presetsLabel"><span data-t="preset"></span><button type="button" class="info" data-info="presetInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2>
+          <div class="preset-acts">
+            <button type="button" class="tbtn" id="savePresetBtn"><span aria-hidden="true">+ </span><span data-t="presetSaveAs"></span></button>
+            <div class="save-form" id="saveRow" hidden>
+              <input id="presetName" type="text" spellcheck="false" data-ta="placeholder:presetName;aria-label:presetName">
+              <button class="btn primary" id="presetSave" type="button" data-t="save"></button><button class="tbtn" id="presetCancel" type="button" data-t="cancel"></button>
+            </div>
+          </div>
+        </div>
+        <div class="pgrid" id="presetCards"></div>
       </div>
       <div class="pane-sec" id="paneFonts" role="tabpanel" aria-labelledby="ltabFonts">
       <div class="weight-bar">
@@ -100,34 +105,37 @@
     </section>
 
     <section class="tester" data-ta="aria-label:proof">
-      <div class="sheet" id="sheet">
-        <!-- 校样的工具条：示例页签、字号、行高、显示方式都只管这张纸，所以放在纸面顶上，一行。
-             字号、行高是紧凑的数字框（像 Figma 的属性框）：直接输入、↑↓ 键，或者左右拖动前面的图标 -->
-        <div class="sheet-bar">
-          <div class="sample-tabs" id="sampleTabs" role="tablist" data-ta="aria-label:sample"></div>
-          <div class="bar-ctrl">
-          <label class="nf" for="vSize" data-ta="title:fontSize"><span class="nf-ic" data-scrub="size" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M1.2 13 4.6 3.5 8 13M2.4 9.8h4.4M9.4 13l2.4-6.4 2.4 6.4M10.2 11h3.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></span><input type="number" id="vSize" min="12" max="160" step="1" inputmode="numeric" data-ta="aria-label:fontSize"><span class="unit">px</span></label>
-          <label class="nf" for="vLh" data-ta="title:lineHeight"><span class="nf-ic" data-scrub="lh" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M7 3.5h8M7 8h8M7 12.5h8M3 2.5v11M1.4 4.2 3 2.5l1.6 1.7M1.4 11.8 3 13.5l1.6-1.7" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><input type="number" id="vLh" min="1" max="2.6" step="0.05" inputmode="decimal" data-ta="aria-label:lineHeight"><output class="unit" id="vLhOut" for="vLh"></output></label>
-          <span class="bar-sep" aria-hidden="true"></span>
-          <button class="tog view-btn" type="button" id="viewBtn" popovertarget="viewPop" aria-haspopup="true"><svg class="vb-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.4 8S3.8 3.6 8 3.6 14.6 8 14.6 8 12.2 12.4 8 12.4 1.4 8 1.4 8Z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.2"/></svg><span data-t="viewMenu"></span></button>
-          <div class="view-pop" id="viewPop" popover role="group" data-ta="aria-label:viewMenu">
-            <button class="tog" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
-            <button class="tog" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
-            <button class="tog" type="button" id="vRules" aria-pressed="false" data-t="vRules"></button>
-            <button class="tog" type="button" id="vMiss" aria-pressed="false" data-t="vMiss"></button>
-            <button class="tog" type="button" id="vItalic" aria-pressed="false" data-t="vItalic"></button>
+      <!-- 校样在上面自己滚动；参考图固定在这一栏的底部，一直看得到 -->
+      <div class="proof-scroll">
+        <div class="sheet" id="sheet">
+          <!-- 校样的工具条：示例页签、字号、行高、显示方式都只管这张纸，所以放在纸面顶上，一行。
+               字号、行高是紧凑的数字框（像 Figma 的属性框）：直接输入、↑↓ 键，或者左右拖动前面的图标 -->
+          <div class="sheet-bar">
+            <div class="sample-tabs" id="sampleTabs" role="tablist" data-ta="aria-label:sample"></div>
+            <div class="bar-ctrl">
+            <label class="nf" for="vSize" data-ta="title:fontSize"><span class="nf-ic" data-scrub="size" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M1.2 13 4.6 3.5 8 13M2.4 9.8h4.4M9.4 13l2.4-6.4 2.4 6.4M10.2 11h3.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></span><input type="number" id="vSize" min="12" max="160" step="1" inputmode="numeric" data-ta="aria-label:fontSize"><span class="unit">px</span></label>
+            <label class="nf" for="vLh" data-ta="title:lineHeight"><span class="nf-ic" data-scrub="lh" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M7 3.5h8M7 8h8M7 12.5h8M3 2.5v11M1.4 4.2 3 2.5l1.6 1.7M1.4 11.8 3 13.5l1.6-1.7" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><input type="number" id="vLh" min="1" max="2.6" step="0.05" inputmode="decimal" data-ta="aria-label:lineHeight"><output class="unit" id="vLhOut" for="vLh"></output></label>
+            <span class="bar-sep" aria-hidden="true"></span>
+            <button class="tog view-btn" type="button" id="viewBtn" popovertarget="viewPop" aria-haspopup="true"><svg class="vb-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.4 8S3.8 3.6 8 3.6 14.6 8 14.6 8 12.2 12.4 8 12.4 1.4 8 1.4 8Z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.2"/></svg><span data-t="viewMenu"></span></button>
+            <div class="view-pop" id="viewPop" popover role="group" data-ta="aria-label:viewMenu">
+              <button class="tog" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
+              <button class="tog" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
+              <button class="tog" type="button" id="vRules" aria-pressed="false" data-t="vRules"></button>
+              <button class="tog" type="button" id="vMiss" aria-pressed="false" data-t="vMiss"></button>
+              <button class="tog" type="button" id="vItalic" aria-pressed="false" data-t="vItalic"></button>
+            </div>
+            </div>
           </div>
+          <div class="sample-box" id="sampleBox" hidden>
+            <label class="hint" for="sample" data-t="sampleText"></label>
+            <textarea id="sample" spellcheck="false"></textarea>
+          </div>
+          <div>
+            <div class="proof-text" id="proofText"></div>
           </div>
         </div>
-        <div class="sample-box" id="sampleBox" hidden>
-          <label class="hint" for="sample" data-t="sampleText"></label>
-          <textarea id="sample" spellcheck="false"></textarea>
-        </div>
-        <div>
-          <div class="proof-text" id="proofText"></div>
-        </div>
+        <div class="legend" id="legend" hidden></div>
       </div>
-      <div class="legend" id="legend" hidden></div>
 
       <section class="panel" data-ta="aria-label:metrics">
         <div class="spec-wrap">
@@ -144,60 +152,74 @@
       </section>
 
     </section>
-  </div>
+  </main>
 
-  <section class="export" id="export" data-kind="css" data-ta="aria-label:export">
-    <h2 class="ex-title" data-t="exportTitle"></h2>
-    <!-- 两种导出：网页用的 CSS，装进电脑的字体文件。下面左边的设置、右边的结果都属于选中的那一种 -->
-    <div class="ex-kinds" role="tablist" data-ta="aria-label:exportAria">
-      <button role="tab" type="button" id="kindCss" data-kind="css" aria-selected="true" aria-controls="exBody"><b data-t="kindCss"></b><span data-t="kindCssSub"></span></button>
-      <button role="tab" type="button" id="kindFont" data-kind="font" aria-selected="false" aria-controls="exBody"><b data-t="kindFont"></b><span data-t="kindFontSub"></span></button>
-    </div>
-    <div class="ex-body" id="exBody" role="tabpanel">
-    <div class="ex-side">
-    <div class="ex-fields">
-      <div class="field"><span class="lab-i"><label for="exName"><span class="kind-css" data-t="exName"></span><span class="kind-font" data-t="fxNameLabel"></span></label><button type="button" class="info" data-info="nameInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><input id="exName" type="text" spellcheck="false"></div>
-      <div class="ex-fields kind-css">
-      <div class="field" id="exContField" hidden><span class="lab-i"><span class="flabel" data-t="exWRange"></span><button type="button" class="info" data-info="wrangeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><div class="wrange"><input type="number" id="exWLo" min="100" max="900" step="1" data-ta="aria-label:wrLo"><span class="wr-dash" aria-hidden="true">–</span><input type="number" id="exWHi" min="100" max="900" step="1" data-ta="aria-label:wrHi"><div class="chips wr-chips" id="exWPresets" role="group" data-ta="aria-label:exWRange"></div></div><p class="wr-note" id="exWNote" data-t="wrFaux" hidden></p></div>
-      <div class="field" id="exWeightsField"><span class="lab-i"><span class="flabel" data-t="exWeights"></span><button type="button" class="info" data-info="weightsInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><div class="chips" id="exWeights" role="group" data-ta="aria-label:exWeights"></div><p class="w-hint warn" id="exWHint" hidden></p></div>
-      <div class="field" id="exBaseField"><span class="lab-i"><label for="exBase" data-t="exBase"></label><button type="button" class="info" data-info="baseInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exBase"><option value="link" data-t="exBaseLink"></option><option value="expand" data-t="exBaseExpand"></option></select></div>
-      <div class="field"><span class="lab-i"><label for="exGeneric" data-t="exGeneric"></label><button type="button" class="info" data-info="genericInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exGeneric"><option value="auto" data-t="auto"></option><option value="serif">serif</option><option value="sans-serif">sans-serif</option></select></div>
-      <div class="field"><span class="lab-i"><label for="exLang" data-t="exLang"></label><button type="button" class="info" data-info="scopeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exLang"></select></div>
-      <p class="ex-warn" id="exLangWarn" hidden></p>
-      <div class="field"><span class="lab-i"><label for="exItalic" data-t="exItalic"></label><button type="button" class="info" data-info="italicInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exItalic"><option value="1" data-t="exItalicOn"></option><option value="0" data-t="exItalicOff"></option></select></div>
+  <!-- 窄屏：一次显示一栏，用底部的页签切换 -->
+  <nav class="mtabs" id="mTabs" role="tablist" data-ta="aria-label:mTabsAria">
+    <button type="button" role="tab" data-mv="edit" aria-selected="true" data-t="mEdit"></button>
+    <button type="button" role="tab" data-mv="preview" aria-selected="false" data-t="mPreview"></button>
+  </nav>
+</div>
+
+<!-- 导出：从顶栏打开的对话框，和「原理与限制」同一个样子。左边是种类和设置，右边是结果 -->
+<dialog id="exDlg" class="side-dlg" aria-labelledby="exTitle">
+  <section class="dlg-grid export" id="export" data-kind="css">
+    <div class="dlg-side ex-side">
+      <h2 class="ex-title" id="exTitle" data-t="exportTitle"></h2>
+      <!-- 两种导出：网页用的 CSS，装进电脑的字体文件。下面的设置和右边的结果都属于选中的那一种 -->
+      <div class="ex-kinds" role="tablist" aria-orientation="vertical" data-ta="aria-label:exportAria">
+        <button role="tab" type="button" id="kindCss" data-kind="css" aria-selected="true" aria-controls="exBody"><b data-t="kindCss"></b><span data-t="kindCssSub"></span></button>
+        <button role="tab" type="button" id="kindFont" data-kind="font" aria-selected="false" aria-controls="exBody"><b data-t="kindFont"></b><span data-t="kindFontSub"></span></button>
       </div>
-      <!-- 字体文件自己的字重和斜体：生成很慢，不跟网页导出的 9 个字重绑在一起 -->
-      <div class="ex-fields kind-font">
-      <div class="field" id="fxWeightsField"><span class="lab-i"><span class="flabel" data-t="fxWeightsLabel"></span></span><div class="chips" id="fxWeights" role="group" data-ta="aria-label:fxWeightsLabel"></div><p class="hint" data-t="fxWeightsHint"></p></div>
-      <div class="field"><span class="flabel" data-t="fxStyleLabel"></span><label class="fx-chk"><input type="checkbox" id="fxItalic"> <span data-t="fxItalicOpt"></span></label></div>
-      <div class="field"><span class="flabel" data-t="fxFormatLabel"></span><label class="fx-chk"><input type="checkbox" checked disabled> <span data-t="fxTtf"></span></label><label class="fx-chk"><input type="checkbox" id="fxWoff2"> <span data-t="fxWoff2"></span></label><span class="fx-opt"><label class="fx-chk"><input type="checkbox" id="fxOtf"> <span data-t="fxOtf"></span></label><button type="button" class="info" data-info="otfInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span></div>
+      <div class="ex-fields">
+        <div class="field"><span class="lab-i"><label for="exName"><span class="kind-css" data-t="exName"></span><span class="kind-font" data-t="fxNameLabel"></span></label><button type="button" class="info" data-info="nameInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><input id="exName" type="text" spellcheck="false"></div>
+        <div class="ex-fields kind-css">
+        <div class="field" id="exContField" hidden><span class="lab-i"><span class="flabel" data-t="exWRange"></span><button type="button" class="info" data-info="wrangeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><div class="wrange"><input type="number" id="exWLo" min="100" max="900" step="1" data-ta="aria-label:wrLo"><span class="wr-dash" aria-hidden="true">–</span><input type="number" id="exWHi" min="100" max="900" step="1" data-ta="aria-label:wrHi"><div class="chips wr-chips" id="exWPresets" role="group" data-ta="aria-label:exWRange"></div></div><p class="wr-note" id="exWNote" data-t="wrFaux" hidden></p></div>
+        <div class="field" id="exWeightsField"><span class="lab-i"><span class="flabel" data-t="exWeights"></span><button type="button" class="info" data-info="weightsInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><div class="chips" id="exWeights" role="group" data-ta="aria-label:exWeights"></div><p class="w-hint warn" id="exWHint" hidden></p></div>
+        <div class="field" id="exBaseField"><span class="lab-i"><label for="exBase" data-t="exBase"></label><button type="button" class="info" data-info="baseInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exBase"><option value="link" data-t="exBaseLink"></option><option value="expand" data-t="exBaseExpand"></option></select></div>
+        <div class="field"><span class="lab-i"><label for="exGeneric" data-t="exGeneric"></label><button type="button" class="info" data-info="genericInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exGeneric"><option value="auto" data-t="auto"></option><option value="serif">serif</option><option value="sans-serif">sans-serif</option></select></div>
+        <div class="field"><span class="lab-i"><label for="exLang" data-t="exLang"></label><button type="button" class="info" data-info="scopeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exLang"></select></div>
+        <p class="ex-warn" id="exLangWarn" hidden></p>
+        <div class="field"><span class="lab-i"><label for="exItalic" data-t="exItalic"></label><button type="button" class="info" data-info="italicInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exItalic"><option value="1" data-t="exItalicOn"></option><option value="0" data-t="exItalicOff"></option></select></div>
+        </div>
+        <!-- 字体文件自己的字重和斜体：生成很慢，不跟网页导出的 9 个字重绑在一起 -->
+        <div class="ex-fields kind-font">
+        <div class="field" id="fxWeightsField"><span class="lab-i"><span class="flabel" data-t="fxWeightsLabel"></span></span><div class="chips" id="fxWeights" role="group" data-ta="aria-label:fxWeightsLabel"></div><p class="hint" data-t="fxWeightsHint"></p></div>
+        <div class="field"><span class="flabel" data-t="fxStyleLabel"></span><label class="fx-chk"><input type="checkbox" id="fxItalic"> <span data-t="fxItalicOpt"></span></label></div>
+        <div class="field"><span class="flabel" data-t="fxFormatLabel"></span><label class="fx-chk"><input type="checkbox" checked disabled> <span data-t="fxTtf"></span></label><label class="fx-chk"><input type="checkbox" id="fxWoff2"> <span data-t="fxWoff2"></span></label><span class="fx-opt"><label class="fx-chk"><input type="checkbox" id="fxOtf"> <span data-t="fxOtf"></span></label><button type="button" class="info" data-info="otfInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span></div>
+        </div>
       </div>
     </div>
+    <div class="dlg-body ex-out" id="exBody" role="tabpanel" tabindex="-1" autofocus>
+      <div class="kind-css">
+      <div class="ex-top">
+      <div class="tabs ex-tabs" role="tablist" data-ta="aria-label:codeAria">
+        <button role="tab" type="button" id="tabCss" aria-selected="true" aria-controls="paneCode">CSS</button>
+        <button role="tab" type="button" id="tabJs" aria-selected="false" aria-controls="paneCode" data-t="tabJs"></button>
+      </div>
+      <div class="ex-actions"><button class="btn" id="dlBtn" type="button" data-t="download" hidden></button><button class="btn primary" id="copyBtn" type="button" data-t="copy"></button></div>
+      </div>
+      <div id="paneCode" role="tabpanel">
+        <div class="ex-bar" id="exBar" hidden><span class="hint" id="exNote"></span></div>
+        <div class="code"><div class="code-meta" id="exStats"></div><pre id="codeOut"></pre></div>
+      </div>
+      </div>
+      <!-- 字体文件：把合成字体做成 TTF / WOFF2（assets/js/bake.js） -->
+      <div class="kind-font"><div class="fx" id="fontPane" aria-live="polite"></div></div>
     </div>
-    <div class="ex-out">
-    <div class="kind-css">
-    <div class="ex-top">
-    <div class="tabs ex-tabs" role="tablist" data-ta="aria-label:codeAria">
-      <button role="tab" type="button" id="tabCss" aria-selected="true" aria-controls="paneCode">CSS</button>
-      <button role="tab" type="button" id="tabJs" aria-selected="false" aria-controls="paneCode" data-t="tabJs"></button>
-    </div>
-    <div class="ex-actions"><button class="btn" id="dlBtn" type="button" data-t="download" hidden></button><button class="btn primary" id="copyBtn" type="button" data-t="copy"></button></div>
-    </div>
-    <div id="paneCode" role="tabpanel">
-      <div class="ex-bar" id="exBar" hidden><span class="hint" id="exNote"></span></div>
-      <div class="code"><div class="code-meta" id="exStats"></div><pre id="codeOut"></pre></div>
-    </div>
-    </div>
-    <!-- 字体文件：把合成字体做成 TTF / WOFF2（assets/js/bake.js） -->
-    <div class="kind-font"><div class="fx" id="fontPane" aria-live="polite"></div></div>
-    </div>
-    </div>
+    <button type="button" class="x-btn dlg-x" id="exClose" data-ta="aria-label:closeAria">×</button>
   </section>
+</dialog>
 
-  <!-- 原理与限制：整个工具的说明，不只是导出。左边是目录 -->
-  <section class="about" id="about" data-ta="aria-label:aboutTitle">
-    <div class="about-side"><h2 class="ex-title" data-t="aboutTitle"></h2><nav class="about-toc" id="aboutToc" data-ta="aria-label:aboutToc"></nav></div>
-    <div class="about-body">
+<!-- 原理与限制：整个工具的说明，从顶栏打开。左边是简介和目录，右边是说明 -->
+<dialog id="aboutDlg" class="side-dlg" aria-labelledby="aboutTitle">
+  <div class="dlg-grid about" id="about">
+    <div class="dlg-side about-side">
+      <h2 class="ex-title" id="aboutTitle" data-t="aboutTitle"></h2>
+      <p class="lede" data-t="lede"></p>
+      <nav class="about-toc" id="aboutToc" data-ta="aria-label:aboutToc"></nav>
+    </div>
+    <div class="dlg-body about-body" tabindex="-1" autofocus>
       <div class="notes" data-ui="zh">
         <h3>匹配规则</h3>
         <p>同一个 font-family 下可以写多条 <code>@font-face</code>。浏览器为每个字符从最后一条往前找，选第一条 <code>unicode-range</code> 包含它、且字体里真有这个字形的规则。所以基础字体（汉字）写在最前，不限范围，负责兜底；半角西文、半角数字等类别写在后面接管各自的范围；例外字符写在最后，优先级最高。</p>
@@ -345,15 +367,15 @@
         </table></div>
         <p>出典：<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/text-autospace" target="_blank" rel="noopener">MDN text-autospace</a>、<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/text-spacing-trim" target="_blank" rel="noopener">text-spacing-trim</a>、<a href="https://developer.mozilla.org/en-US/docs/Web/CSS/font-size-adjust" target="_blank" rel="noopener">font-size-adjust</a>、<a href="https://github.com/mdn/browser-compat-data" target="_blank" rel="noopener">MDN browser-compat-data</a>、<a href="https://developer.chrome.com/blog/css-i18n-features" target="_blank" rel="noopener">Chrome：CSS の新しい国際化機能</a>。</p>
       </div>
+      <footer class="foot">
+        <span data-t="footSupport"></span>
+        <span class="mono">@font-face · unicode-range · size-adjust</span>
+        <a class="gh" href="https://github.com/charlie5188/css-composite-font" target="_blank" rel="noopener" data-ta="aria-label:ghAria">GitHub <span aria-hidden="true">↗</span></a>
+      </footer>
     </div>
-  </section>
-
-  <footer class="foot">
-    <span data-t="footSupport"></span>
-    <span class="mono">@font-face · unicode-range · size-adjust</span>
-    <button type="button" class="tbtn" id="resetAll" data-t="resetAll"></button>
-  </footer>
-</div>
+    <button type="button" class="x-btn dlg-x" id="aboutClose" data-ta="aria-label:closeAria">×</button>
+  </div>
+</dialog>
 
 <div class="miss-tip" id="missTip" role="tooltip" hidden></div>
 <dialog id="leaveDlg" aria-labelledby="leaveTitle">

@@ -1,12 +1,13 @@
 // 字体文件导出的完整流程：下载 Pyodide、源字体，在 Worker 里生成，下载 zip。要联网，大约一分钟
 const { test, expect } = require('@playwright/test');
 const { execFileSync } = require('child_process');
-const { open, pick } = require('./helpers');
+const { open, pick, showExport } = require('./helpers');
 
 test('生成 ゴシック × Jost 400 的 TTF 和 OTF', async ({ page }, info) => {
   test.setTimeout(300_000);
   await open(page);
   await pick(page, 'gothic-jp');
+  await showExport(page);
   await page.click('#kindFont');
   // 只留 400，不要斜体，加上 OTF
   for (const w of [700]) await page.click(`#fxWeights [data-w="${w}"]`);

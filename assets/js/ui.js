@@ -4,7 +4,7 @@ import { CLASSES, CLS, inRanges, rebuildClassRanges } from './unicode.js';
 import { BASE_W, ENGINE, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, WORD_RE, autoLocal, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, ownSize, presetDirty, presetSnap, rebuild, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, userPresets, vfAxis, vfCache } from './core.js';
 import { PUNCT_CENTER, REGION_OF_LANG, drawSpecimen, lastMeasure, lastRef, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
-import { cssFamilyName, exTab, lastExport, renderExport, setExKind, setExTab } from './export.js';
+import { cssFamilyName, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
 /* ================= 交互：字符类别表 ================= */
 export function targetOf(row) { return row.dataset.id ? { type: 'class', id: row.dataset.id } : { type: 'custom', i: +row.dataset.ci }; }
 export const keyOf = t => t.type === 'class' ? t.id : '#' + t.i;
@@ -119,6 +119,9 @@ export let infoBtn = null;
 document.addEventListener('click', e => {
   const b = e.target.closest('.info'); if (!b) return;
   infoBtn = b; $('#infoPop').dataset.key = b.dataset.info;
+  /* 模态对话框打开时，对话框外面的元素都点不到（inert）：说明弹层要放进按钮所在的对话框里 */
+  const host = b.closest('dialog') || document.body, pop = $('#infoPop');
+  if (pop.parentNode !== host) host.append(pop);
 }, true);
 $('#infoPop').addEventListener('toggle', e => {
   if (e.newState !== 'open') return;
@@ -331,6 +334,9 @@ export function initToolbar() {
     renderExport();
   });
   $('.ex-kinds').addEventListener('click', e => { const b = e.target.closest('[data-kind]'); if (b) { setExKind(b.dataset.kind); saveState(); } });
+  $('#exToggle').addEventListener('click', showExport);
+  $('#exClose').addEventListener('click', () => $('#exDlg').close());
+  $('#mTabs').addEventListener('click', e => { const b = e.target.closest('[data-mv]'); if (b) { v().mview = b.dataset.mv; syncPanes(); saveState(); } });
   /* 独立网页里可以直接下载；在 artifact 等嵌入框架里浏览器会拦截下载，所以只显示「复制」 */
   const canDownload = window.top === window.self;
   $('#dlBtn').hidden = !canDownload;
@@ -427,36 +433,22 @@ export function presetCard({ id, name, tag, cls, script, user, active }) {
       <span class="ptag" title="${esc(tag)}">${esc(tag)}</span>
       <span class="pname">${esc(name)}</span>
       ${miss ? `<span class="pmiss">${esc(T('presetMissing'))}</span>` : ''}
-    </button>${user ? `<button type="button" class="pdel" data-del="${esc(id.slice(5))}" aria-label="${esc(T('presetDelete'))} ${esc(name)}">×</button>` : ''}</div>`;
+    </button>${user ? `<button type="button" class="pdel" data-del="${esc(id.slice(5))}" aria-label="${esc(T('presetDelete'))} ${esc(name)}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M6.3 4.5V2.8h3.4v1.7M4 4.5l.7 8.7c.04.5.45.8.95.8h4.7c.5 0 .9-.3.95-.8L12 4.5M6.6 7v4.4M9.4 7v4.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : ''}</div>`;
 }
-/* 预设按界面语言排：收起时第一排先放这个语言的预设，其他语言的排在后面 */
+/* 内置预设按界面语言排：这个语言的预设在前，其他语言的排在后面 */
 export const PRESET_ORDER = {
   zh: ['serif-sc', 'sans-sc', 'mincho-jp', 'gothic-jp', 'ming-tw', 'hei-tw', 'antigochi', 'hei-hk', 'mac', 'mac-tw', 'mac-jp'],
   tw: ['ming-tw', 'hei-tw', 'hei-hk', 'mac-tw', 'serif-sc', 'sans-sc', 'mincho-jp', 'gothic-jp', 'antigochi', 'mac', 'mac-jp'],
   ja: ['mincho-jp', 'gothic-jp', 'antigochi', 'mac-jp', 'serif-sc', 'sans-sc', 'ming-tw', 'hei-tw', 'hei-hk', 'mac', 'mac-tw'],
 };
 export const orderedPresets = () => { const o = PRESET_ORDER[UI] || PRESET_ORDER.zh, at = id => (i => i < 0 ? 99 : i)(o.indexOf(id)); return [...PRESETS].sort((a, b) => at(a.id) - at(b.id)); };
+/* 「我的预设」排在最前面，后面是内置的 */
 export function renderPresetCards() {
-  const cards = orderedPresets().map(p => presetCard({ id: p.id, name: tr(p.name), tag: tr(p.tag), cls: freshClasses(p), script: p.region === 'hk' ? 'tc' : p.region, active: state.preset === p.id }));
+  const cards = [];
   for (const [n, snap] of Object.entries(userPresets)) if (snap?.classes?.han)
     cards.push(presetCard({ id: 'user:' + n, name: n, tag: T('presetMine'), cls: snap.classes, script: scriptOfLang(snap.typo?.lang), user: true, active: state.preset === 'user:' + n }));
-  /* 最后一格是展开 / 收起按钮，和卡片一样大 */
-  $('#presetCards').innerHTML = cards.join('') + `<button type="button" class="pmore" id="presetMore" aria-expanded="false" aria-controls="presetCards" hidden><i class="chev" aria-hidden="true"></i><span></span></button>`;
-  fitPresets();
-}
-/* 收起时只留第一排：网格放得下几列就显示几张，其余在「全部预设」里。
-   正在用的预设排在后面时，占第一排的最后一格，收起时也看得到当前选的是哪个 */
-export function fitPresets() {
-  const grid = $('#presetCards'), cards = [...grid.querySelectorAll('.pcard-wrap')], open = !!state.view.presetsOpen;
-  const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length || 1;
-  const btn = $('#presetMore'), fits = cards.length <= cols;
-  /* 收起时一排里留出最后一格给展开按钮；正在用的预设排在后面时，占展开按钮前面那一格 */
-  const room = cols - 1, act = cards.findIndex(c => c.querySelector('.pcard[aria-pressed="true"]'));
-  const show = i => i < room - (act >= room ? 1 : 0) || i === act;
-  cards.forEach((c, i) => { c.hidden = !fits && !open && !show(i); });
-  btn.hidden = fits;
-  btn.setAttribute('aria-expanded', open);
-  btn.lastElementChild.textContent = open ? T('presetLess') : T('presetAll', { n: cards.length });
+  for (const p of orderedPresets()) cards.push(presetCard({ id: p.id, name: tr(p.name), tag: tr(p.tag), cls: freshClasses(p), script: p.region === 'hk' ? 'tc' : p.region, active: state.preset === p.id }));
+  $('#presetCards').innerHTML = cards.join('');
 }
 export const renderPresetCardsSoon = debounce(renderPresetCards, 120);
 export const hasFileFont = () => [...CLASSES.map(c => state.classes[c.id].font), ...state.custom.map(c => c.font)].some(f => f && f.kind === 'file');
@@ -591,9 +583,6 @@ export function initPresets() {
   $('#leaveSave').addEventListener('click', leaveSave);
   $('#leaveName').addEventListener('keydown', e => { if (e.key === 'Enter') leaveSave(); });
   $('#savePresetBtn').addEventListener('click', openSave);
-  $('#presetCards').addEventListener('click', e => { if (e.target.closest('#presetMore')) { state.view.presetsOpen = !state.view.presetsOpen; fitPresets(); saveState(); } });
-  let lastW = 0;      // 宽度变了才重新算列数（隐藏卡片只改变高度）
-  new ResizeObserver(([e]) => { const w = Math.round(e.contentRect.width); if (w !== lastW) { lastW = w; fitPresets(); } }).observe($('#presetCards'));
   $('#presetCancel').addEventListener('click', closeSave);
   $('#presetSave').addEventListener('click', doSave);
   $('#presetName').addEventListener('keydown', e => { if (e.key === 'Enter') doSave(); if (e.key === 'Escape') closeSave(); });
@@ -987,6 +976,12 @@ $('#uiSeg').addEventListener('click', e => {
 });
 
 /* ================= 其他 ================= */
+/* 窄屏：一次只显示一栏（编辑 / 校样），用底部页签切换 */
+export function syncPanes() {
+  const mv = state.view.mview === 'preview' ? 'preview' : 'edit';
+  $('.app').dataset.mview = mv;
+  document.querySelectorAll('#mTabs [data-mv]').forEach(b => b.setAttribute('aria-selected', b.dataset.mv === mv));
+}
 export let toastT;
 export function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
 
@@ -1017,6 +1012,7 @@ export function initReset() {
       return;
     }
     clearTimeout(armedT); b.classList.remove('armed'); b.textContent = T('resetAll');
+    $('#moreMenu').hidePopover();
     resetAll();
   });
 }
@@ -1024,7 +1020,17 @@ export function init() {
   refreshCustomRanges();
   initToolbar(); initPresets(); initPicker(); initReset(); initFontTab();
   $('#aboutToc').addEventListener('click', e => { const a = e.target.closest('a'); if (!a) return; e.preventDefault(); document.getElementById(a.hash.slice(1))?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); });
-  setExKind(state.view.exKind, false);
+  setExKind(state.view.exKind, false); syncPanes();
+  $('#aboutBtn').addEventListener('click', () => $('#aboutDlg').showModal());
+  $('#aboutItem').addEventListener('click', () => { $('#moreMenu').hidePopover(); $('#aboutDlg').showModal(); });
+  $('#aboutClose').addEventListener('click', () => $('#aboutDlg').close());
+  /* 「⋯」菜单：右边和按钮对齐，挂在按钮下面 */
+  $('#moreMenu').addEventListener('toggle', e => {
+    if (e.newState !== 'open') return;
+    const r = $('#moreBtn').getBoundingClientRect(), pop = e.currentTarget;
+    pop.style.top = r.bottom + 6 + 'px'; pop.style.left = Math.max(8, r.right - pop.offsetWidth) + 'px';
+  });
+  for (const d of ['#aboutDlg', '#exDlg']) $(d).addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });      // 点对话框外面（背景）关闭
   applyUI();
   rebuildNow();
   new ResizeObserver(debounce(drawSpecimen, 100)).observe($('#spec'));

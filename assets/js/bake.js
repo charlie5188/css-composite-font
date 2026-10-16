@@ -4,7 +4,7 @@ import { EFF } from './unicode.js';
 import { GF_AXES } from './gfmeta.js';
 import { G, WEIGHTS, axisOf, buildPlan, customRanges, files, fontKey, fontLabel, normalizeState, setState, settingOf, state, validState } from './core.js';
 import { wTag, wTip } from './render.js';
-import { cssFamilyName, exKind, ownerName, setExKind } from './export.js';
+import { cssFamilyName, exKind, ownerName, setExKind, showExport } from './export.js';
 import { toast } from './ui.js';
 /* ================= 导出 · 字体文件 =================
    把合成字体做成真正的字体文件（TTF，可选 WOFF2）：每个字重、正斜体各一个，打包成 zip。
@@ -338,6 +338,8 @@ export function renderFontTab() {
   renderFxRun(stale);
 }
 export function renderFxRun(stale) {
+  const tb = $('#exToggle');      // 对话框关着也看得到：顶栏「导出」按钮的底边是进度条
+  tb.classList.toggle('running', fx.running); tb.style.setProperty('--pct', (fx.pct * 100).toFixed(1) + '%');
   const el = $('#fxRun'); if (!el) return;
   const s = fx.t0 ? Math.round(((fx.running ? performance.now() : fx.t1) - fx.t0) / 1000) : 0;
   if (fx.running) el.innerHTML = `<p>${esc(fx.stage)}</p><div class="fx-bar"><i style="width:${(fx.pct * 100).toFixed(1)}%"></i></div><p class="hint">${esc(T('fxElapsed', { s }))}</p>`;
@@ -422,6 +424,7 @@ export async function fxRun() {
     need.forEach(s => fx.sent.add(s.file));
     fx.result = { files: done.files, zip: new Blob([done.zip], { type: 'application/zip' }), name: (pl.fam.replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '') || 'composite-font') + '.zip', ms: performance.now() - t0 };
     fx.running = false; fx.t1 = performance.now(); clearInterval(fx.tick);
+    if (!$('#exDlg').open) $('#exToggle').classList.add('ready');      // 做好的时候对话框关着：按钮上亮一个点
     renderFontTab();
   } catch (e) {
     if (!fx.running) return;      // 用户停止了
@@ -478,8 +481,7 @@ export async function importCfg() {
     setState(s);
     normalizeState(); refresh('ranges', 'toolbar', 'editor', 'preview', 'presets', 'fonts');
     toast(T('fxImported'));
-    setExKind('font');
-    $('#export').scrollIntoView({ block: 'start' });
+    setExKind('font'); showExport();
   } catch (e) { /* 链接坏了：照常打开 */ }
 }
 export function initFontTab() {

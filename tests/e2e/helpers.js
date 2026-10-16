@@ -5,4 +5,8 @@ async function open(page) {
   await page.waitForFunction(() => document.querySelectorAll('.pcard[data-preset]').length > 5);
 }
 const pick = (page, id) => page.evaluate(id => document.querySelector(`.pcard[data-preset="${id}"]`).click(), id);
-module.exports = { open, pick };
+// 打开导出对话框
+async function showExport(page) {
+  if (!await page.evaluate(() => document.querySelector('#exDlg').open)) await page.click('#exToggle');
+}
+module.exports = { open, pick, showExport };

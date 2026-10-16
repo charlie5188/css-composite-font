@@ -1,7 +1,7 @@
 // 每个预设导出的 CSS 和 JS 跟快照比较。Google Fonts 的文件地址会变，比较前换成占位符。
 // 预设或导出逻辑有意改动时，用 npx playwright test --update-snapshots 更新快照
 const { test, expect } = require('@playwright/test');
-const { open, pick } = require('./helpers');
+const { open, pick, showExport } = require('./helpers');
 
 const norm = s => s.replace(/url\([^)]*\)/g, 'url(…)');
 /* 字体和行高度量是陆续加载、测量的，输出会更新几次：等它连续 1.5 秒不变再比较 */
@@ -21,6 +21,7 @@ test('每个预设的 CSS / JS 输出不变', async ({ page }) => {
   await open(page);
   const ids = await page.evaluate(() => [...document.querySelectorAll('.pcard[data-preset]')].map(b => b.dataset.preset).filter(id => !id.startsWith('mac') && !id.startsWith('user:')));      // macOS 预设依赖本机字体，CI 上没有
   expect(ids.length).toBeGreaterThan(5);
+  await showExport(page);
   for (const id of ids) {
     await pick(page, id);
     await page.click('#kindCss'); await page.click('#tabCss');

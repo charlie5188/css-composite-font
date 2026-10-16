@@ -211,6 +211,11 @@ export function setExKind(k, render = true) {
   document.querySelectorAll('.ex-kinds [data-kind]').forEach(b => b.setAttribute('aria-selected', b.dataset.kind === exKind));
   if (render) renderExport();
 }
+/* 导出对话框：从顶栏的「导出」打开。打开时去掉「字体文件做好了」的提示点 */
+export function showExport() {
+  const d = $('#exDlg'); if (!d.open) d.showModal();
+  $('#exToggle').classList.remove('ready');
+}
 export function ensureExportSources() {
   for (const g of exportGroups()) for (const p of [...g.plan, ...(g.iplan || [])]) {
     const f = p.font;

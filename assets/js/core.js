@@ -605,6 +605,7 @@ export function normalizeState() {
     state.v = 10;
   }
   delete state.view.compare; delete state.view.cmp;      // 「对照其他做法」已删除
+  delete state.view.presetsOpen;                                   // 预设移进左栏的页签以后，不再收起成一排
   if (state.view.miss === undefined) state.view.miss = true;         // 「标出缺字」默认打开
   delete state.metric;                                              // 度量对齐的「按 … 对齐到 …%」已删除
   state.weights = Array.isArray(state.weights) && state.weights.length ? [...new Set(state.weights)].sort((a, b) => a - b) : [state.weight || 400];

@@ -1,5 +1,6 @@
-/* Layout: a type-foundry specimen page. Hero title set in the live composite font, a gallery of preset
-   cards that render in their own fonts (one row, expandable), then the bench (composition list | type tester), then export. */
+/* Layout: a one-screen tool. A top bar (title set in the live composite font), then the bench filling the rest of the
+   window: editor (presets | fonts | typography) | type tester. The page itself never scrolls; each pane scrolls on its own.
+   Below 1000px one pane at a time, switched by tabs at the bottom. Export and About are side-bar dialogs. */
 :root{
   --bg:#F4F4F2;
   --sheet:#FFFFFF;
@@ -54,7 +55,8 @@ button{cursor:pointer}
 .hint{color:var(--muted);font-size:12px}
 .label{margin:0;font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 
-.app{margin:0 auto;padding-inline:clamp(16px,3.2vw,40px);padding-block:0 64px}      /* 不限最大宽度：这个工具很需要宽度 */
+.app{height:100vh;height:100dvh;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;overflow:hidden}      /* 整页固定一屏：各栏自己滚动 */
+.topbar{grid-row:1}.app>.warn{grid-row:2}.bench{grid-row:3}.mtabs{grid-row:4}      /* 提示条隐藏时，工作区也要留在占满剩余空间的那一行 */
 /* 滚动条：细、圆角、跟着主题变色（Chrome 121+ / Firefox 用标准属性，Safari 用 ::-webkit-scrollbar） */
 *{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--ink) 22%,transparent) transparent}
 .code pre{scrollbar-color:color-mix(in srgb,var(--code-ink) 28%,transparent) transparent}
@@ -67,6 +69,8 @@ button{cursor:pointer}
 /* ---------- controls ---------- */
 select,input[type=text],input[type=number],input:not([type]){background:var(--sheet);border:1px solid var(--line);border-radius:3px;padding:6px 8px;min-width:0}
 select:hover,input[type=text]:hover,input[type=number]:hover{border-color:var(--faint)}
+/* 下拉框：不用浏览器自带的箭头（太贴右边），换成自己画的，离右边框 10px。灰色在深浅两种主题下都看得清 */
+select{-webkit-appearance:none;appearance:none;padding-right:30px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.6 6 7.6 9 4.6' fill='none' stroke='%23888884' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:12px 12px;text-overflow:ellipsis}
 input[type=number]{font-family:var(--mono);font-variant-numeric:tabular-nums}
 .btn{border:1px solid var(--ink);background:transparent;border-radius:999px;padding:6px 16px;font-size:13px;white-space:nowrap}
 .btn:hover{background:var(--ink);color:var(--sheet)}
@@ -94,34 +98,44 @@ input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;bac
 input[type=range]:hover::-webkit-slider-thumb,input[type=range]:active::-webkit-slider-thumb{background:var(--accent)}
 input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-thumb{background:var(--accent)}
 
-/* ---------- top bar & hero ---------- */
-.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;padding-block:16px;border-bottom:1px solid var(--ink)}
-.brand{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
-.top-right{display:flex;align-items:center;gap:18px}
+/* ---------- top bar ---------- */
+/* 标题用正在调的复合字体排：改了设定马上看得到 */
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:52px;padding:0 16px;border-bottom:1px solid var(--ink);background:var(--bg)}
+.brand{margin:0;min-width:0;font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-size:21px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-right{display:flex;align-items:center;gap:18px;flex:none}
+.top-link{border:0;background:none;padding:4px 0;font-size:13px;color:var(--ink-2)}
+.top-link:hover{color:var(--ink);text-decoration:underline;text-underline-offset:4px;text-decoration-color:var(--faint)}
+.ex-toggle{padding:5px 16px}
+/* 字体文件在后台生成时：按钮底边是进度条；生成好了、对话框关着时，右上角一个小点 */
+/* 「⋯」菜单 */
+.top-more{display:grid;place-items:center;width:32px;height:32px;margin-left:-8px;border:0;border-radius:4px;background:none;color:var(--ink-2)}
+.top-more:hover,.top-more:has(+ .more-menu:popover-open){background:var(--rule);color:var(--ink)}
+.top-more svg{width:16px;height:16px;fill:currentColor}
+.more-menu{position:fixed;inset:auto;margin:0;width:min(260px,calc(100vw - 24px));padding:6px;border:1px solid var(--ink);border-radius:4px;background:var(--sheet);color:var(--ink);box-shadow:0 8px 24px rgba(0,0,0,.12)}
+.more-menu hr{border:0;border-top:1px solid var(--rule);margin:6px 0}
+.mm-item{display:flex;align-items:center;gap:6px;width:100%;padding:8px 10px;border:0;border-radius:3px;background:none;font-size:13px;text-align:left;color:var(--ink);text-decoration:none}
+.mm-item:hover{background:var(--rule)}
+.mm-item.danger{color:var(--warn)}
+.mm-item.danger.armed{background:var(--warn);color:#fff}
+.mm-note{margin:2px 10px 6px;font-size:11.5px;line-height:1.55;color:var(--muted)}
+.ex-toggle{position:relative;overflow:hidden}
+.ex-toggle.running::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:var(--pct,0%);background:var(--accent);transition:width .3s}
+.ex-toggle.ready{overflow:visible}
+.ex-toggle.ready::before{content:"";position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
 .gh{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-decoration:none;padding-bottom:1px;border-bottom:1px solid var(--faint)}
 .gh:hover{color:var(--accent);border-bottom-color:var(--accent)}
-.hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,340px);gap:24px 48px;align-items:end;padding-block:clamp(40px,7vw,88px) clamp(32px,5vw,56px)}
-.hero h1{margin:0;font-family:var(--cf),var(--generic);font-weight:400;font-size:clamp(46px,7.6vw,112px);line-height:1.04;letter-spacing:-.005em;text-wrap:balance}
-.hero-side{display:grid;gap:14px;padding-bottom:.6em}
-.hero-side p{margin:0}
-.lede{font-size:15px;line-height:1.65;color:var(--ink-2)}
-@media (max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}}
-.warn{background:var(--warn);color:#fff;padding:8px 12px;border-radius:3px;font-size:13px;margin-bottom:16px}
+.lede{margin:0;font-size:14px;line-height:1.7;color:var(--ink-2)}
+.warn{background:var(--warn);color:#fff;padding:8px 16px;font-size:13px}
 .warn code{font-family:var(--mono)}
 
-/* ---------- presets ---------- */
-.presets{border-top:1px solid var(--line);padding-top:14px}
+/* ---------- presets（左栏的第一个页签）---------- */
+.presets{padding-top:4px}
+.compose .sec-row.preset-head{border-top:0;align-items:center;margin-bottom:12px}
 .sec-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap}
-/* 预设陈列：收起时只显示一排（放得下几张就显示几张），「全部预设」展开成多排，和 Google Docs 的模板陈列一样 */
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
 .pcard-wrap{position:relative;display:grid;grid-template-columns:minmax(0,1fr)}      /* 卡片宽度只由外层网格决定，不被里面的字样撑开 */
 .pcard-wrap[hidden]{display:none}
 .preset-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px}
-.pmore{display:grid;place-content:center;justify-items:center;gap:8px;min-height:100%;padding:14px;border:1px dashed var(--faint);border-radius:4px;background:none;color:var(--muted);font-size:12.5px}
-.pmore[hidden]{display:none}
-.pmore:hover{border-color:var(--ink);color:var(--ink)}
-.pmore .chev{width:9px;height:9px;border:solid currentColor;border-width:0 1.75px 1.75px 0;transform:rotate(45deg);transition:transform .15s}
-.pmore[aria-expanded="true"] .chev{transform:translateY(4px) rotate(225deg)}
 .pcard{display:grid;gap:6px;align-content:start;min-width:0;container-type:inline-size;text-align:left;padding:14px 14px 13px;border:1px solid var(--line);background:var(--sheet);border-radius:4px;color:inherit}
 .pcard:hover{border-color:var(--faint)}
 .pcard[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
@@ -131,23 +145,37 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .ptag{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .pname{font-size:14px;font-weight:600;line-height:1.3}
 .pmiss{font-size:11.5px;line-height:1.4;color:var(--warn)}
-.pdel{position:absolute;top:8px;right:8px;border:0;background:none;color:var(--faint);font-size:16px;line-height:1;padding:4px 6px;border-radius:3px}
-.pdel:hover,.pdel.armed{color:var(--warn)}
-.pdel.armed{font-size:11px}
+.pdel{position:absolute;top:6px;right:6px;display:grid;place-items:center;min-width:26px;height:26px;border:0;background:none;color:var(--faint);font-size:11px;line-height:1;padding:0 4px;border-radius:4px}
+.pdel svg{width:15px;height:15px}
+.pdel:hover,.pdel.armed{color:var(--warn);background:color-mix(in srgb,var(--warn) 8%,transparent)}
+.pdel.armed{padding:0 8px}
 .save-form{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
 .save-form[hidden]{display:none}
 .save-form input{width:180px}
 @media (max-width:480px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}.pspec{font-size:min(36px,27cqi);height:46px;line-height:46px}}
 
 /* ---------- bench ---------- */
-/* 整个工作区是一张白纸：左窗格编辑、右窗格校样和参考图，中间一条细线。
-   两个窗格顶上各有一条一样高的工具条，底线连成一条；所有控件都用同一套扁平样子 */
-.bench{display:grid;grid-template-columns:minmax(400px,540px) minmax(0,1fr);align-items:start;margin-top:40px;background:var(--sheet);border:1px solid var(--line);border-top-color:var(--ink)}
-@media (max-width:1000px){.bench{grid-template-columns:minmax(0,1fr)}}
-/* 整个工作区最高一屏：左右两个窗格各自在里面滚动，不用一边滚页面一边滚窗格 */
-.compose{max-height:calc(100vh - 2px);overflow:auto;min-width:0;--px:16px;padding:0 var(--px) 20px;border-right:1px solid var(--line);margin-right:-1px}      /* 左右两个窗格都画分隔线、叠在一起：哪边长都连到底 */
-.tester{border-left:1px solid var(--line);max-height:calc(100vh - 2px);overflow:auto}
-@media (max-width:1000px){.compose{max-height:none;overflow:visible;border-right:0;margin-right:0}.tester{border-left:0;border-top:1px solid var(--line);max-height:none;overflow:visible}}
+/* 工作区占满顶栏下面的空间：左窗格编辑、右窗格校样和参考图，中间细线隔开。
+   每个窗格顶上一条一样高的工具条，底线连成一条；所有控件都用同一套扁平样子 */
+.bench{position:relative;display:grid;grid-template-columns:minmax(400px,520px) minmax(0,1fr);min-height:0;background:var(--sheet)}
+.bench>*{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain}      /* 每栏自己滚动，滚到底也不带动别的 */
+.compose{--px:16px;padding:0 var(--px) 20px;border-right:1px solid var(--line)}
+/* 窄屏：一次只显示一栏，底部页签切换 */
+.mtabs{display:none}
+@media (max-width:1000px){
+  .bench{grid-template-columns:minmax(0,1fr)}
+  .bench>.compose,.bench>.tester{display:none}
+  .app[data-mview="edit"] .bench>.compose{display:block}
+  .app[data-mview="preview"] .bench>.tester{display:flex}
+  .compose{border-right:0}
+  .mtabs{display:flex;border-top:1px solid var(--ink);background:var(--bg);padding-bottom:env(safe-area-inset-bottom,0px)}
+  .mtabs button{flex:1;border:0;background:none;padding:12px 0 13px;font-size:13px;color:var(--muted);border-top:2px solid transparent;margin-top:-1px}
+  .mtabs button[aria-selected="true"]{color:var(--ink);font-weight:600;border-top-color:var(--ink)}
+}
+.l-short{display:none}
+@media (max-width:640px){.topbar{gap:10px;padding:0 12px}.top-right{gap:12px}.brand{font-size:18px}}
+.mm-about{display:none}
+@media (max-width:480px){.l-long{display:none}.l-short{display:inline}.ex-toggle{padding:5px 12px}.top-right{gap:10px}.brand{font-size:18px}#aboutBtn{display:none}.mm-about{display:flex}}      /* 手机：语言只写一个字，给标题留地方 */
 .bench .seg{border-radius:6px}
 .bench .seg button{border-radius:4px}
 /* 窗格顶上的工具条：一样高 */
@@ -188,13 +216,13 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .show-colors .dot{display:inline-block}
 .ct-font{display:flex;align-items:center;gap:6px;min-width:0}
 .wnum{flex:none;width:64px;font-family:var(--mono);font-size:11.5px;padding:4px 4px 4px 6px}
-.wsel{flex:none;width:auto;max-width:76px;font-family:var(--mono);font-size:11.5px;padding:4px 2px}
-.fsel{flex:1;min-width:0;width:100%;font-size:12.5px;padding:5px 4px;border-color:transparent;background:transparent;text-overflow:ellipsis}
+.wsel{flex:none;width:auto;max-width:88px;font-family:var(--mono);font-size:11.5px;padding:4px 20px 4px 4px;background-position:right 5px center}
+.fsel{flex:1;min-width:0;width:100%;font-size:12.5px;padding:5px 20px 5px 4px;border-color:transparent;background-color:transparent;background-position:right 4px center}      /* 只换底色：background 简写会把箭头图也清掉 */
 .fsel.follow{color:var(--muted)}
 .ct-row .num{width:100%;text-align:right;font-family:var(--mono);font-size:12.5px;padding:5px 4px 4px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent}
 .ct-row .num:hover{border-bottom-color:var(--faint)}
 .ct-row .num:focus{border-bottom-color:var(--ink);outline:none;background:var(--sheet)}
-.fsel:hover,.fsel:focus{border-color:var(--line);background:var(--sheet)}
+.fsel:hover,.fsel:focus{border-color:var(--line);background-color:var(--sheet)}
 .num.own{color:var(--ink);font-weight:500}
 .num::placeholder{color:var(--faint);opacity:1}
 .num.wov{color:var(--accent)}
@@ -335,7 +363,12 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .proof-text{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:var(--fst,normal);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0}
 /* 行线：每一行的行框（高 = 字号 × 行高）。某一行被撑高时，下面的字就会和线错开 */
 .sheet.rules .proof-text{background-image:linear-gradient(to bottom,var(--ruled) 1px,transparent 1px);background-size:100% calc(1em * var(--lh,1.8));box-shadow:inset 0 -1px var(--ruled)}
-.sheet.vertical .proof-text{writing-mode:vertical-rl;width:100%;height:min(62vh,560px);overflow-x:auto;overflow-y:hidden}
+/* 竖排：校样占满参考图上面的整块高度，列多了横向滚动；窗口太矮时最少 240px，整栏再竖向滚动 */
+.sheet.vertical .proof-text{writing-mode:vertical-rl;width:100%;height:100%;min-height:240px;overflow-x:auto;overflow-y:hidden}
+.proof-scroll:has(>.sheet.vertical){display:flex;flex-direction:column}
+.proof-scroll>.sheet.vertical{flex:1 1 auto;display:flex;flex-direction:column}
+.sheet.vertical>.sheet-bar,.sheet.vertical>.sample-box,.proof-scroll>.legend{flex:none}
+.sheet.vertical>div:last-child{flex:1 1 0;min-height:240px;display:grid}
 .sheet.rules.vertical .proof-text{background-image:linear-gradient(to left,var(--ruled) 1px,transparent 1px);background-size:calc(1em * var(--lh,1.8)) 100%;background-position:right top;background-attachment:local;box-shadow:none}
 .r{position:relative;inset-block-start:calc(var(--sh,0) * -1em)}
 /* 类别着色（Highlight API）：底色 + 下划线；竖排时下划线自动在字的右侧 */
@@ -370,7 +403,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .view-pop .tog:hover{background:var(--bg)}
 .view-pop .tog::before{content:"";display:inline-block;width:12px;margin-right:8px}
 .view-pop .tog[aria-pressed="true"]::before{content:"✓";width:12px;height:auto;border-radius:0;background:none;color:var(--accent);vertical-align:0}
-.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);padding:0 16px 14px}
+.legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;font-size:12px;color:var(--muted);padding:0 16px 14px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:8px;height:8px;border-radius:2px;background:var(--c)}
 /* 缺字：只加波浪下划线。一级（合成字体里的其他字体代替）黄色，二级（落到系统字体）红色 */
@@ -382,12 +415,15 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .miss-tip.lv2{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
 
 /* ---------- metrics & advanced ---------- */
-.panel{display:grid;min-width:0;border-top:1px solid var(--line)}
+/* 校样栏：上面校样自己滚动，下面参考图固定 */
+.tester{display:flex;flex-direction:column;overflow:hidden}      /* 窄屏上不显示这一栏时，由 .bench>.tester 的规则隐藏 */
+.proof-scroll{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain}
+.panel{flex:none;display:grid;min-width:0;border-top:1px solid var(--line)}
 .spec-wrap{min-width:0}
 /* 参考图的「显示」放在白色区域右上角，和校样纸面上的一样 */
 .spec-wrap{position:relative}
 /* 参考图的工具条：和校样的工具条一样贴着顶边通栏。每个开关前面是那一组参考线的样子（颜色、虚实），兼作图例 */
-.spec-bar{display:flex;flex-wrap:wrap;align-items:center;gap:2px;min-height:var(--bar-h);padding:5px 10px 5px 16px;border-bottom:1px solid var(--line);line-height:1.4;font-family:var(--ui)}
+.spec-bar{display:flex;flex-wrap:wrap;align-items:center;gap:2px;min-height:40px;padding:4px 10px 4px 16px;border-bottom:1px solid var(--line);line-height:1.4;font-family:var(--ui)}
 .bar-lab{font-size:12px;color:var(--muted);margin-right:8px}
 .sg-tog{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 9px;border:1px solid transparent;border-radius:4px;background:none;font-size:12px;color:var(--faint)}
 .sg-tog:hover{border-color:var(--line);color:var(--ink)}
@@ -396,7 +432,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .sg-tog.dash .sg-line{border-top-style:dashed}
 .sg-tog[aria-pressed="true"] .sg-line{border-top-color:var(--c)}
 @media (max-width:560px){.spec-bar{padding-left:8px}.spec-bar .bar-lab{display:none}.sg-tog{padding:0 7px;gap:6px}}
-#spec{display:block;width:100%;height:240px}
+#spec{display:block;width:100%;height:160px}
 /* 改过设定后换预设的确认框 */
 #leaveDlg{width:min(460px,calc(100vw - 32px))}
 .leave{display:grid;gap:14px;padding:22px 24px 20px}
@@ -460,31 +496,42 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 @media (max-width:700px){.typo-row{grid-template-columns:minmax(0,1fr)}}
 
 /* ---------- export ---------- */
-/* 导出：左列设定，右列结果。列宽和上面的编辑区一致 */
-.export{margin-top:72px;border-top:1px solid var(--ink);padding-top:22px;min-width:0}
-/* 导出：标题 → 种类（网页 CSS / 字体文件）→ 这一种的设置 | 结果 */
-.ex-title{margin:0 0 18px;font-size:clamp(26px,3vw,36px);font-weight:500;letter-spacing:-.015em;line-height:1.1}
-.ex-kinds{display:flex;gap:clamp(20px,4vw,44px);border-bottom:1px solid var(--line);margin-bottom:26px;overflow-x:auto}
-.ex-kinds [role="tab"]{display:grid;gap:3px;text-align:left;border:0;background:none;padding:6px 0 12px;border-bottom:2px solid transparent;margin-bottom:-1px;color:var(--muted)}
-.ex-kinds [role="tab"] b{font-size:16px;font-weight:600}
-.ex-kinds [role="tab"] span{font-size:12px}
-.ex-kinds [role="tab"]:hover{color:var(--ink-2)}
-.ex-kinds [role="tab"][aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+/* 侧栏对话框（导出、原理与限制）：左边窄栏是标题和设置 / 目录，右边是内容；两边各自滚动。窄屏时占满屏幕，整个一起滚 */
+.side-dlg{width:min(1200px,calc(100vw - 32px));height:calc(100dvh - 48px);max-height:none;overflow:hidden}
+.dlg-grid{position:relative;height:100%;display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr)}
+.dlg-side{min-width:0;overflow:auto;display:grid;align-content:start;gap:16px;padding:26px 24px;border-right:1px solid var(--line);background:var(--bg);overscroll-behavior:contain}
+.dlg-side .ex-title{margin:0}
+.dlg-body{min-width:0;overflow:auto;padding:26px clamp(20px,4vw,48px) 32px;overscroll-behavior:contain}
+.dlg-body:focus{outline:none}      /* 打开时焦点在内容上：可以直接用键盘滚动 */
+.dlg-x{position:absolute;top:10px;right:10px;z-index:7}
+@media (max-width:760px){.side-dlg{width:100vw;height:100dvh;max-width:none;border:0;border-radius:0}.dlg-grid{display:block;overflow:auto}.dlg-side,.dlg-body{overflow:visible}.dlg-side{border-right:0;border-bottom:1px solid var(--line);padding-right:52px}.dlg-x{position:fixed}}
+.ex-title{margin:0 0 18px;font-size:clamp(22px,2.4vw,28px);font-weight:500;letter-spacing:-.015em;line-height:1.15}
+.x-btn{display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:4px;background:none;font-size:20px;line-height:1;color:var(--muted)}
+.x-btn:hover{background:var(--rule);color:var(--ink)}
+/* 导出的两种：左栏里上下两张卡片，选中的描黑边（和预设卡片一样） */
+.ex-kinds{display:grid;gap:8px}
+.ex-kinds [role="tab"]{display:grid;gap:3px;text-align:left;padding:11px 14px 12px;border:1px solid var(--line);border-radius:4px;background:var(--sheet);color:var(--muted)}
+.ex-kinds [role="tab"] b{font-size:15px;font-weight:600}
+.ex-kinds [role="tab"] span{font-size:12px;line-height:1.5}
+.ex-kinds [role="tab"]:hover{border-color:var(--faint);color:var(--ink-2)}
+.ex-kinds [role="tab"][aria-selected="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);color:var(--ink)}
 .ex-kinds [role="tab"][aria-selected="true"] span{color:var(--muted)}
 .export[data-kind="css"] .kind-font,.export[data-kind="font"] .kind-css{display:none}
-.ex-body{display:grid;grid-template-columns:minmax(380px,500px) minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:start}
-@media (max-width:1000px){.ex-body{grid-template-columns:minmax(0,1fr);gap:28px}}
-.ex-side,.ex-out{min-width:0}
-/* 原理与限制：左边标题和目录（跟着滚动），右边说明 */
-.about{margin-top:72px;border-top:1px solid var(--ink);padding-top:22px;display:grid;grid-template-columns:minmax(380px,500px) minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:start}
-.about-side{position:sticky;top:16px;min-width:0}
-.about-toc{display:grid;gap:2px;margin-top:4px}
+.ex-side .ex-fields{padding-top:16px;border-top:1px solid var(--line)}
+.ex-side .ex-fields .ex-fields{padding-top:0;border-top:0}
+/* CSS / JS 页签和「复制」：长代码往下滚时停在顶上 */
+/* 粘性定位从滚动容器的内边距以内算起：右边内容区顶上不留内边距，改由页签条自己留，滚动时上面才不会露出一条代码 */
+.dlg-body.ex-out{padding-top:0}
+.ex-out .ex-top{position:sticky;top:0;z-index:5;padding:12px 40px 0 0;background:var(--sheet)}      /* 右上角留给关闭按钮 */
+.ex-out .kind-font{padding-top:20px}
+.ex-out .code pre{max-height:none}
+/* 原理与限制：左栏是标题、简介和目录 */
+.about-toc{display:grid;gap:2px;margin-top:4px;padding-top:12px;border-top:1px solid var(--line)}
 .about-toc a{font-size:13px;line-height:1.5;color:var(--muted);text-decoration:none;padding:3px 0}
 .about-toc a:hover{color:var(--ink)}
-.about-body{min-width:0}
 .about-body .notes{padding-top:0}
 .about-body .notes>h3:first-child{margin-top:0}
-@media (max-width:1000px){.about{grid-template-columns:minmax(0,1fr);gap:20px}.about-side{position:static}.about-toc{display:flex;flex-wrap:wrap;gap:4px 14px}}
+@media (max-width:760px){.about-toc{display:flex;flex-wrap:wrap;gap:4px 14px}}
 .ex-fields{display:grid;gap:18px}
 .ex-fields .field>input[type=text],.ex-fields .field>select{width:100%}
 .ex-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 20px;border-bottom:1px solid var(--line);margin-bottom:14px}
@@ -567,11 +614,8 @@ button.wl small{font-family:var(--ui);font-size:11px;margin-left:5px;opacity:.75
 .sup-table th{font-weight:500;font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:.06em}
 .sup-table td.v{font-family:var(--mono);font-size:12px;white-space:nowrap;font-variant-numeric:tabular-nums}
 
-.foot{margin-top:56px;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;font-size:12px;color:var(--muted)}
+.foot{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 24px;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--muted);max-width:76ch}
 .foot .mono{font-size:11px}
-.foot .tbtn{font-size:12px;color:var(--muted);padding:0}
-.foot .tbtn:hover{color:var(--ink)}
-.foot .tbtn.armed{color:var(--warn)}
 .gp-foot{display:flex;justify-content:flex-end;padding:6px 0 4px;border-top:1px solid var(--rule);margin-top:4px}
 .gp-foot .tbtn{font-size:12px}
 

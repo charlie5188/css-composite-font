@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { open, pick } = require('./helpers');
+const { open, pick, showExport } = require('./helpers');
 
 test('页面加载、切换预设、切语言都没有脚本错误', async ({ page }) => {
   const errors = [];
@@ -9,13 +9,16 @@ test('页面加载、切换预设、切语言都没有脚本错误', async ({ pa
   await open(page);
   for (const id of ['gothic-jp', 'antigochi', 'serif-sc']) { await pick(page, id); await page.waitForTimeout(300); }
   await page.click('[data-ui-lang="ja"]'); await page.click('[data-ui-lang="tw"]'); await page.click('[data-ui-lang="zh"]');
+  await showExport(page);
   await page.click('#kindFont'); await page.click('#kindCss'); await page.click('#tabJs');
   await page.waitForTimeout(500);
   expect(errors).toEqual([]);
 });
 
-test('导出：切换网页 / 字体文件，左边的设置跟着换', async ({ page }) => {
+test('导出：切换网页 / 字体文件，左栏的设置跟着换', async ({ page }) => {
   await open(page);
+  await expect(page.locator('#export')).toBeHidden();
+  await showExport(page);
   await page.click('#kindCss');
   await expect(page.locator('#exBaseField')).toBeVisible();
   await expect(page.locator('#fxWeightsField')).toBeHidden();
@@ -29,12 +32,52 @@ test('导出：切换网页 / 字体文件，左边的设置跟着换', async ({
   await expect(page.locator('#fxOtf')).not.toBeChecked();
 });
 
-test('原理与限制：目录和语言切换', async ({ page }) => {
+test('原理与限制：对话框、目录和语言切换', async ({ page }) => {
   await open(page);
   expect(await page.locator('#aboutToc a').count()).toBeGreaterThan(5);
   await page.click('[data-ui-lang="ja"]');
   await expect(page.locator('#export .ex-title')).toHaveText('書き出し');
+  await expect(page.locator('#aboutToc a').first()).toBeHidden();
+  await page.click('#aboutBtn');
   await expect(page.locator('#aboutToc a').first()).toBeVisible();
+  await expect(page.locator('#aboutToc a').first()).toHaveText('照合の規則');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#aboutDlg')).toBeHidden();
+});
+
+test('整页固定一屏：页面本身不滚动，各栏自己滚动', async ({ page }) => {
+  await open(page);
+  const m = await page.evaluate(() => {
+    const box = s => document.querySelector(s).getBoundingClientRect();
+    return { doc: document.scrollingElement.scrollHeight, win: innerHeight, panes: ['#editor', '.proof-scroll'].map(s => getComputedStyle(document.querySelector(s)).overflowY), specGap: box('.tester').bottom - box('.panel').bottom };
+  });
+  expect(m.doc).toBeLessThanOrEqual(m.win);
+  expect(m.panes).toEqual(['auto', 'auto']);
+  expect(Math.abs(m.specGap)).toBeLessThan(1);      // 参考图贴在校样栏底部
+});
+
+test('导出对话框：打开、关闭、点背景关闭', async ({ page }) => {
+  await open(page);
+  await page.click('#exToggle');
+  await expect(page.locator('#copyBtn')).toBeVisible();
+  await page.click('#exClose');
+  await expect(page.locator('#exDlg')).toBeHidden();
+  await page.click('#exToggle');
+  await page.mouse.click(5, 5);      // 对话框外面
+  await expect(page.locator('#exDlg')).toBeHidden();
+});
+
+test('窄屏：底部页签一次显示一栏', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page);
+  await expect(page.locator('#mTabs')).toBeVisible();
+  await expect(page.locator('#editor')).toBeVisible();
+  await expect(page.locator('.tester')).toBeHidden();
+  await page.click('#mTabs [data-mv="preview"]');
+  await expect(page.locator('.tester')).toBeVisible();
+  await expect(page.locator('#editor')).toBeHidden();
+  await page.click('#exToggle');
+  await expect(page.locator('#copyBtn')).toBeVisible();
 });
 
 test('竖排：换列的地方不加中西间距的 margin', async ({ page }) => {
