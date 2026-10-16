@@ -325,8 +325,7 @@ export function renderFontTab() {
   const sig = fxSig(pl), res = fx.result, stale = res && fx.sig !== sig;
   const ready = !fx.running && pl.jobs.length && !block.length && !pl.loading && !pl.needLocal && (!pl.unknown || fx.agree);
   const summary = !pl.jobs.length ? '' : pl.needLocal ? T('fxSummaryLocal', est) : pl.loading ? T('fxSummaryWait', est) : T(est.mb ? 'fxSummary' : 'fxSummaryNoDl', est);
-  box.innerHTML = `<p class="fx-intro">${esc(T('fxIntro'))}</p>
-    <div class="fx-sec"><h3 class="fx-h">${esc(T('fxSources'))}</h3>${localAsk}<div class="fx-src">${rows.join('') || `<p class="hint">…</p>`}</div>
+  box.innerHTML = `<div class="fx-sec"><h3 class="fx-h">${esc(T('fxSources'))}</h3>${localAsk}<div class="fx-src">${rows.join('') || `<p class="hint">…</p>`}</div>
       ${pl.unknown ? `<div class="fx-agree">${localWarn}<label class="fx-chk"><input type="checkbox" id="fxAgree"${fx.agree ? ' checked' : ''}> ${esc(T('fxAgree'))}</label></div>` : ''}</div>
     ${block.length ? `<div class="fx-block">${block.map(b => `<p>${esc(b)}</p>`).join('')}</div>` : ''}
     <div class="fx-go">

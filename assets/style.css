@@ -596,7 +596,7 @@ button.wl small{font-family:var(--ui);font-size:11px;margin-left:5px;opacity:.75
 .fx-run{display:grid;gap:10px;padding-top:14px;border-top:1px solid var(--line)}
 .fx-go{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
 .fx-sum{font-size:12.5px;line-height:1.6;color:var(--ink-2);min-width:0}
-.fx-limits{padding-top:16px;border-top:1px solid var(--line)}
+.fx-limits{margin-top:32px;padding-top:16px;border-top:1px solid var(--line)}      /* 不那么重要：和上面拉开距离 */
 .fx-limits ul{margin:0;padding-left:1.2em;display:grid;gap:5px}
 .fx-limits li{font-size:12.5px;line-height:1.65;color:var(--ink-2)}
 .fx-bar{height:4px;border-radius:2px;background:var(--rule);overflow:hidden}
