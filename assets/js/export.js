@@ -1,8 +1,12 @@
-'use strict';
+import { $, T, debounce, esc, tr } from './i18n.js';
+import { CLASSES, CLS, EFF, hex } from './unicode.js';
+import { LM, TYPO, WEIGHTS, buildPlan, buildSegments, customRanges, ensureLineMetrics, expandPlan, fontKey, fontLabel, fvsOf, gfSpec, italFallback, italOf, kindLabel, lmKey, lmOn, localSrc, overridesFor, resolveCls, resolveCustom, source, sources, state, stepSpan, typoMergedAway, typoValue, vfAxes, vfAxisNow } from './core.js';
+import { guessGeneric, renderLangWarn } from './render.js';
+import { renderFontFields, renderFontTab } from './bake.js';
 /* ================= 导出 ================= */
-const ownerName = o => o[0] === '#' ? T('customName', { c: (state.custom[+o.slice(1)]?.chars || '').slice(0, 16) }) : tr(CLS[o].name);
-const fmtRangeShort = ([a, b]) => a === b ? `U+${a.toString(16).toUpperCase()}` : `U+${a.toString(16).toUpperCase()}-${b.toString(16).toUpperCase()}`;
-function wrapRanges(list, indent) {
+export const ownerName = o => o[0] === '#' ? T('customName', { c: (state.custom[+o.slice(1)]?.chars || '').slice(0, 16) }) : tr(CLS[o].name);
+export const fmtRangeShort = ([a, b]) => a === b ? `U+${a.toString(16).toUpperCase()}` : `U+${a.toString(16).toUpperCase()}-${b.toString(16).toUpperCase()}`;
+export function wrapRanges(list, indent) {
   const parts = list.map(fmtRangeShort), lines = []; let cur = '';
   for (const p of parts) {
     if (cur && (cur.length + p.length + 2) > 76) { lines.push(cur + ','); cur = p; } else cur = cur ? cur + ', ' + p : p;
@@ -10,7 +14,7 @@ function wrapRanges(list, indent) {
   if (cur) lines.push(cur);
   return lines.join('\n' + indent);
 }
-function srcFor(x) {
+export function srcFor(x) {
   const f = x.p.font;
   if (f.kind === 'local') return localSrc(f);
   if (f.kind === 'file' || f.kind === 'path') {
@@ -20,11 +24,11 @@ function srcFor(x) {
   }
   return x.face.src.replace(/'/g, '"');
 }
-function cssFamilyName() { return (state.name || '').trim().replace(/["\\]/g, '') || 'My Composite'; }
+export function cssFamilyName() { return (state.name || '').trim().replace(/["\\]/g, '') || 'My Composite'; }
 /* 汉字基础字体能直接 @import Google 的 CSS：没有细调粗细、没有固定的轴值；导出斜体时它自己也没有斜体（汉字字体一般都没有） */
-const canLinkBase = plan => plan[0].font?.kind === 'google' && plan[0].size === 100 && !(plan[0].font.weight % 100) && !plan[0].fvs && !(state.italic && italOf(plan[0].font));
+export const canLinkBase = plan => plan[0].font?.kind === 'google' && plan[0].size === 100 && !(plan[0].font.weight % 100) && !plan[0].fvs && !(state.italic && italOf(plan[0].font));
 /* 导出的分组：分档模式每个字重一组（font-weight: 700）；连续模式每个分段一组（font-weight: 551 650） */
-function exportGroups() {
+export function exportGroups() {
   if (state.wmode === 'cont') {
     let segs = buildSegments();
     if (state.baseMode === 'link' && segs.every(sg => canLinkBase(sg.plan))) segs = buildSegments(false, true);
@@ -32,7 +36,7 @@ function exportGroups() {
   }
   return [...state.weights].sort((a, b) => a - b).map(W => ({ W, desc: String(W), plan: buildPlan(W), iplan: state.italic ? italFallback(buildPlan(W, false, true)) : null, cont: false }));
 }
-function buildCss() {
+export function buildCss() {
   const plan = buildPlan(), groups = exportGroups(), cont = state.wmode === 'cont';
   if (lmOn()) for (const g of groups) { const f = g.plan[0].font; if (f && !LM.has(lmKey(f))) ensureLineMetrics(f).then(() => renderExportSoon()); }      // 还没测过的汉字字体：测完再刷新
   const fam = cssFamilyName(), generic = state.generic !== 'auto' ? state.generic : guessGeneric();
@@ -110,14 +114,14 @@ function buildCss() {
    页面常写 zh-CN、zh-TW、zh-HK，而 :lang(zh-Hans) 匹配不到它们（浏览器不会从地区推出文字），所以把常见写法都列进去。
    :lang() 里直接写列表 Chrome 还不支持，用 :is() 把几个 :lang() 合起来。
    台湾版也认不带地区的 zh-Hant；它同样会匹配 zh-Hant-HK，所以排除掉，留给香港版 */
-const LANG_ALIASES = { 'zh-Hans': ['zh-Hans', 'zh-CN', 'zh-SG'], 'zh-Hant-TW': ['zh-Hant', 'zh-TW'], 'zh-Hant-HK': ['zh-Hant-HK', 'zh-HK', 'zh-Hant-MO', 'zh-MO'] };
-function scopeSel() {
+export const LANG_ALIASES = { 'zh-Hans': ['zh-Hans', 'zh-CN', 'zh-SG'], 'zh-Hant-TW': ['zh-Hant', 'zh-TW'], 'zh-Hant-HK': ['zh-Hant-HK', 'zh-HK', 'zh-Hant-MO', 'zh-MO'] };
+export function scopeSel() {
   const s = state.scope, al = LANG_ALIASES[s];
   if (!s) return '.composite';
   if (!al) return `.composite:lang(${s})`;
   return `.composite:is(${al.map(l => `:lang(${l})`).join(', ')})` + (s === 'zh-Hant-TW' ? ':not(:lang(zh-Hant-HK), :lang(zh-Hant-MO))' : '');
 }
-function shiftTable() {
+export function shiftTable() {
   let segs = [];
   for (const c of CLASSES) { const s = resolveCls(c.id).shift; if (s) segs.push(...EFF[c.id].map(([a, b]) => [a, b, s / 100])); }
   state.custom.forEach((cu, i) => {
@@ -141,7 +145,7 @@ function shiftTable() {
   return merged;
 }
 /* 导出的 JS：@font-face 没有基线描述符，需要偏移的字符包进 span 相对移动。没有偏移时返回 null */
-function buildJs() {
+export function buildJs() {
   const segs = shiftTable();
   if (!segs.length) return null;
   const rows = segs.map(([a, b, v]) => `[0x${hex(a)}, 0x${hex(b)}, ${+v.toFixed(4)}]`);
@@ -188,7 +192,7 @@ ${table.join(',\n')}
   document.querySelectorAll(SELECTOR).forEach(apply);
 })();`;
 }
-function highlight(code, lang) {
+export function highlight(code, lang) {
   let h = esc(code);
   h = h.replace(/\/\*[\s\S]*?\*\//g, m => `<span class="cm">${m}</span>`);
   if (lang === 'css') {
@@ -197,27 +201,28 @@ function highlight(code, lang) {
   }
   return h;
 }
-let exKind = 'css', exTab = 'css', lastExport = '';      // exKind：网页（CSS）/ 字体文件；exTab：CSS / JS 代码
+export let exKind = 'css', exTab = 'css', lastExport = '';
+export function setExTab(k) { exTab = k; }      // exKind：网页（CSS）/ 字体文件；exTab：CSS / JS 代码
 /* 切换导出的种类：下面的设置和结果整块换成这一种 */
-function setExKind(k) {
+export function setExKind(k, render = true) {
   exKind = k === 'font' ? 'font' : 'css';
   state.view.exKind = exKind;
   $('#export').dataset.kind = exKind;
   document.querySelectorAll('.ex-kinds [data-kind]').forEach(b => b.setAttribute('aria-selected', b.dataset.kind === exKind));
-  renderExport();
+  if (render) renderExport();
 }
-function ensureExportSources() {
+export function ensureExportSources() {
   for (const g of exportGroups()) for (const p of [...g.plan, ...(g.iplan || [])]) {
     const f = p.font;
     if (f && (f.kind === 'google' || f.kind === 'local')) source(f);
   }
 }
-async function gzipSize(text) {
+export async function gzipSize(text) {
   if (typeof CompressionStream === 'undefined') return null;
   try { return (await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'))).blob()).size; } catch (e) { return null; }
 }
 /* 连续模式的导出范围：两个数字，加上按用到的可变字体算出的「全部 / 最大 / 共同」 */
-function renderWRange() {
+export function renderWRange() {
   const [a, b] = state.wrange;
   for (const [id, x] of [['exWLo', a], ['exWHi', b]]) if (document.activeElement !== $('#' + id)) $('#' + id).value = x;
   const ax = vfAxes(), list = ax.map(([n, r]) => `${n} ${r[0]}–${r[1]}`).join(T('joiner'));
@@ -230,8 +235,8 @@ function renderWRange() {
   $('#exWNote').hidden = b >= 600;      // 范围里没有粗体时，Chrome 会给 700 等描边模拟加粗
   $('#exWPresets').innerHTML = opts.map(([k, r]) => `<button type="button" data-r="${r}" aria-pressed="${same(r, state.wrange)}" title="${esc(T(k + 'Tip', { list }))}">${esc(T(k))} ${r[0]}–${r[1]}</button>`).join('');
 }
-let gzTok = 0;
-function renderExport() {
+export let gzTok = 0;
+export function renderExport() {
   ensureExportSources();
   if (exKind === 'font') { renderFontFields(); renderFontTab(); return; }
   const { css, count, files: fl } = buildCss();
@@ -262,4 +267,4 @@ function renderExport() {
   $('#copyBtn').disabled = !lastExport;
   $('#exBar').hidden = !$('#exNote').textContent;
 }
-const renderExportSoon = debounce(() => renderExport(), 150);
+export const renderExportSoon = debounce(() => renderExport(), 150);

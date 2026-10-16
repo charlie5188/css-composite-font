@@ -1,19 +1,24 @@
-'use strict';
+import { $, T, UI, debounce, lsGet, lsSet, root, sleep, tr } from './i18n.js';
+import { CLASSES, EFF, classOf, fmtRanges, inRanges, intersect, parseChars, parseRanges, rebuildClassRanges, union } from './unicode.js';
+import { AXIS_NAMES, GF_AXES, GF_ITALIC } from './gfmeta.js';
+import { checkMissSoon, drawSpecimen, refreshVAutospace, renderChipsStatus, renderEditor } from './render.js';
+import { renderExport, renderExportSoon } from './export.js';
+import { renderPresetCardsSoon } from './ui.js';
 /* ================= 字体来源 ================= */
-const G = (family, weight = 400) => ({ kind: 'google', family, weight });
-const L = (name, alt = []) => ({ kind: 'local', name, alt });
+export const G = (family, weight = 400) => ({ kind: 'google', family, weight });
+export const L = (name, alt = []) => ({ kind: 'local', name, alt });
 /* Google Fonts 的字体对象：ital = 斜体文件，xa = 文件里要保留的其他轴（粗细以外，例如 opsz、wdth），vf = 整个粗细轴 */
-function fontKey(f) {
+export function fontKey(f) {
   if (!f) return 'none';
   if (f.kind === 'google') return `g:${f.family}@${f.vf ? 'vf' : f.weight}${f.ital ? 'i' : ''}${f.xa?.length ? '+' + f.xa.join(',') : ''}`;
   return f.kind === 'local' ? `l:${f.name}` : f.kind === 'path' ? `p:${f.path}` : `f:${f.fileId}`;
 }
-const sameFont = (a, b) => fontKey(a) === fontKey(b);
-const fontLabel = f => !f ? T('unset') : f.kind === 'google' ? `${f.family}${f.ital ? ' Italic' : ''} ${f.vf ? 'VF' : sources.get(fontKey(f))?.actualWeight || f.weight}` : (f.kind === 'local' ? f.name : f.kind === 'path' ? f.path : f.fileName) + (f.axis ? ` ${f.weight || 400}` : '');
-const kindLabel = f => !f ? '' : f.kind === 'google' ? T('kindGoogle') : f.kind === 'local' ? T('kindLocal') : T('kindFile');
-const localSrc = f => [...new Set([f.name, ...(f.alt || [])])].map(n => `local("${n.replace(/["\\]/g, '\\$&')}")`).join(', ');
+export const sameFont = (a, b) => fontKey(a) === fontKey(b);
+export const fontLabel = f => !f ? T('unset') : f.kind === 'google' ? `${f.family}${f.ital ? ' Italic' : ''} ${f.vf ? 'VF' : sources.get(fontKey(f))?.actualWeight || f.weight}` : (f.kind === 'local' ? f.name : f.kind === 'path' ? f.path : f.fileName) + (f.axis ? ` ${f.weight || 400}` : '');
+export const kindLabel = f => !f ? '' : f.kind === 'google' ? T('kindGoogle') : f.kind === 'local' ? T('kindLocal') : T('kindFile');
+export const localSrc = f => [...new Set([f.name, ...(f.alt || [])])].map(n => `local("${n.replace(/["\\]/g, '\\$&')}")`).join(', ');
 
-const LOCAL_COMMON = [
+export const LOCAL_COMMON = [
   ['PingFang SC Regular', 'PingFangSC-Regular', 'macOS'], ['PingFang TC Regular', 'PingFangTC-Regular', 'macOS'],
   ['Hiragino Sans GB W3', 'HiraginoSansGB-W3', 'macOS'], ['Hiragino Sans W3', 'HiraginoSans-W3', 'macOS'],
   ['Hiragino Mincho ProN W3', 'HiraMinProN-W3', 'macOS'], ['Songti SC Regular', 'STSongti-SC-Regular', 'macOS'],
@@ -27,18 +32,18 @@ const LOCAL_COMMON = [
   ['Malgun Gothic', 'MalgunGothic', 'Windows'], ['Segoe UI', 'SegoeUI', 'Windows'], ['Cambria', 'Cambria', 'Windows'], ['Calibri', 'Calibri', 'Windows'],
   ['Georgia', 'Georgia', ''], ['Times New Roman', 'TimesNewRomanPSMT', ''], ['Arial', 'ArialMT', ''],
 ];
-const localAlt = new Map(LOCAL_COMMON.map(([n, ps]) => [n, ps]));
-const GF_LIST = ['Noto Sans SC', 'Noto Serif SC', 'Noto Sans TC', 'Noto Serif TC', 'Noto Sans HK', 'Noto Sans JP', 'Noto Serif JP', 'Noto Sans KR', 'Noto Serif KR',
+export const localAlt = new Map(LOCAL_COMMON.map(([n, ps]) => [n, ps]));
+export const GF_LIST = ['Noto Sans SC', 'Noto Serif SC', 'Noto Sans TC', 'Noto Serif TC', 'Noto Sans HK', 'Noto Sans JP', 'Noto Serif JP', 'Noto Sans KR', 'Noto Serif KR',
   'LXGW WenKai TC', 'Shippori Mincho', 'Zen Old Mincho', 'Zen Kaku Gothic New', 'Zen Maru Gothic', 'BIZ UDPGothic', 'BIZ UDPMincho', 'M PLUS 2', 'Klee One',
   'ZCOOL XiaoWei', 'Ma Shan Zheng', 'Inter', 'IBM Plex Sans', 'IBM Plex Serif', 'Source Sans 3', 'Source Serif 4', 'EB Garamond', 'Cormorant Garamond',
   'Libre Caslon Text', 'Libre Baskerville', 'Crimson Pro', 'Lora', 'Newsreader', 'Literata', 'Spectral', 'Fraunces', 'Playfair Display', 'DM Sans',
   'Work Sans', 'Manrope', 'Instrument Sans', 'Instrument Serif', 'Roboto', 'Roboto Serif', 'Lato', 'Open Sans', 'Montserrat', 'Jost', 'JetBrains Mono', 'IBM Plex Mono'];
 
-const files = new Map();          // fileId -> {name, buffer}
-const sources = new Map();        // fontKey -> {status, faces, family, error, promise}
-let srcSeq = 0;
+export const files = new Map();          // fileId -> {name, buffer}
+export const sources = new Map();        // fontKey -> {status, faces, family, error, promise}
+export let srcSeq = 0;
 
-function source(f, { retry = false } = {}) {
+export function source(f, { retry = false } = {}) {
   const key = fontKey(f);
   let s = sources.get(key);
   if (s && retry && s.status === 'error' && f.kind !== 'file') { sources.delete(key); s = null; }
@@ -49,8 +54,8 @@ function source(f, { retry = false } = {}) {
   }
   return s;
 }
-class SrcError extends Error { constructor(key, params) { super(key); this.key = key; this.params = params; } }
-async function loadSource(s) {
+export class SrcError extends Error { constructor(key, params) { super(key); this.key = key; this.params = params; } }
+export async function loadSource(s) {
   const f = s.font;
   try {
     if (!f) throw new SrcError('errUnset');
@@ -93,10 +98,10 @@ async function loadSource(s) {
   }
   onSourcesChanged();
 }
-const srcError = s => T(s.errKey || 'errLoad', s.errParams);
+export const srcError = s => T(s.errKey || 'errLoad', s.errParams);
 /* css2 的轴写法，例如「ital,opsz,wght@1,8..144,400」：小写的注册轴在前、大写的自定义轴在后，各自按字母排序。
    没写进来的轴，Google 会固定在默认值并从文件里去掉 */
-function gfSpec(f, wght) {
+export function gfSpec(f, wght) {
   const parts = [['wght', String(wght)]];
   if (f.ital) parts.push(['ital', '1']);
   for (const t of f.xa || []) { const a = axisOf(f, t); if (a) parts.push([t, `${a[1]}..${a[2]}`]); }
@@ -104,7 +109,7 @@ function gfSpec(f, wght) {
   parts.sort(([a], [b]) => lower(a) !== lower(b) ? (lower(a) ? -1 : 1) : a < b ? -1 : 1);
   return parts.map(x => x[0]).join(',') + '@' + parts.map(x => x[1]).join(',');
 }
-async function fetchGoogleCss(family, spec) {
+export async function fetchGoogleCss(family, spec) {
   const fam = encodeURIComponent(family.trim()).replace(/%20/g, '+'), sp = String(spec).includes('@') ? spec : `wght@${spec}`;
   const urls = [`https://fonts.googleapis.com/css2?family=${fam}:${sp}&display=swap`];
   if (sp === 'wght@400') urls.push(`https://fonts.googleapis.com/css2?family=${fam}&display=swap`);
@@ -116,14 +121,14 @@ async function fetchGoogleCss(family, spec) {
   throw new SrcError('errGoogle', { family, weight });
 }
 /* ================= 可变字体 ================= */
-const clampW = (w, axis) => Math.min(axis[1], Math.max(axis[0], Math.round(w)));
+export const clampW = (w, axis) => Math.min(axis[1], Math.max(axis[0], Math.round(w)));
 /* Google Fonts 只在请求的范围落在字体的 wght 轴内时才返回 200：先试 100..900，不行再逐点试出上下界。结果存在浏览器里 */
-const LS_VF = 'composite-font:vf';
-const vfCache = lsGet(LS_VF) || {}, vfPending = new Map();
-const gfOk = (family, spec) => fetchGoogleCss(family, spec).then(() => true, () => false);
+export const LS_VF = 'composite-font:vf';
+export const vfCache = lsGet(LS_VF) || {}, vfPending = new Map();
+export const gfOk = (family, spec) => fetchGoogleCss(family, spec).then(() => true, () => false);
 /* 内置元数据里有的字体族直接用它的 wght 轴，不用在线检测 */
-const seedVf = family => { const a = axisOf({ kind: 'google', family }, 'wght'); vfCache[family] = a ? [a[1], a[2]] : 0; };
-function vfAxis(family) {
+export const seedVf = family => { const a = axisOf({ kind: 'google', family }, 'wght'); vfCache[family] = a ? [a[1], a[2]] : 0; };
+export function vfAxis(family) {
   if (!(family in vfCache) && GF_AXES[family]) seedVf(family);
   if (family in vfCache) return Promise.resolve(vfCache[family] || null);
   if (!vfPending.has(family)) vfPending.set(family, (async () => {
@@ -146,7 +151,7 @@ function vfAxis(family) {
   return vfPending.get(family);
 }
 /* 同步查询：已知时返回 [min, max] 或 null；未知时返回 undefined 并在后台检测 */
-function vfAxisNow(f) {
+export function vfAxisNow(f) {
   if (!f) return null;
   if (f.kind !== 'google') return f.axis || null;
   if (!(f.family in vfCache) && GF_AXES[f.family]) seedVf(f.family);
@@ -157,20 +162,20 @@ function vfAxisNow(f) {
 /* 规则里的 font-weight 永远是这一档（保持一致，复合字体才不会出错）；实际粗细不同时，用 font-variation-settings 细调 */
 /* ================= 其他可变轴、斜体 ================= */
 /* 字体的可变轴：[[标签, 最小, 最大, 默认], …]。Google Fonts 查内置的元数据，字体文件和本机字体读 fvar 表 */
-const gfAxesMemo = new Map();
-function axesOf(f) {
+export const gfAxesMemo = new Map();
+export function axesOf(f) {
   if (!f) return [];
   if (f.kind !== 'google') return f.axes || (f.axis ? [['wght', f.axis[0], f.axis[1], 400]] : []);
   if (!gfAxesMemo.has(f.family)) gfAxesMemo.set(f.family, (GF_AXES[f.family] || '').split(',').filter(Boolean).map(a => { const [t, ...n] = a.split(' '); return [t, ...n.map(Number)]; }));
   return gfAxesMemo.get(f.family);
 }
-const axisOf = (f, tag) => axesOf(f).find(a => a[0] === tag);
-const extraAxes = f => axesOf(f).filter(a => !(a[0] === 'wght' && a[2] > 10) && a[0] !== 'ital');     // 粗细和斜体另有专门的设定
-const AX_LABEL = { wdth: { zh: '宽度', ja: '幅', tw: '寬度' }, opsz: { zh: '光学尺寸', ja: 'オプティカルサイズ', tw: '光學尺寸' }, slnt: { zh: '倾斜', ja: '傾き', tw: '傾斜' }, GRAD: { zh: '笔画粗细', ja: 'グレード', tw: '筆畫粗細' } };
-const axisLabel = t => AX_LABEL[t] ? tr(AX_LABEL[t]) : AXIS_NAMES[t] || t;
+export const axisOf = (f, tag) => axesOf(f).find(a => a[0] === tag);
+export const extraAxes = f => axesOf(f).filter(a => !(a[0] === 'wght' && a[2] > 10) && a[0] !== 'ital');     // 粗细和斜体另有专门的设定
+export const AX_LABEL = { wdth: { zh: '宽度', ja: '幅', tw: '寬度' }, opsz: { zh: '光学尺寸', ja: 'オプティカルサイズ', tw: '光學尺寸' }, slnt: { zh: '倾斜', ja: '傾き', tw: '傾斜' }, GRAD: { zh: '笔画粗细', ja: 'グレード', tw: '筆畫粗細' } };
+export const axisLabel = t => AX_LABEL[t] ? tr(AX_LABEL[t]) : AXIS_NAMES[t] || t;
 /* 斜体时用的字体。Google Fonts 和上传的斜体文件用真正的斜体；有 slnt / ital 轴的可变字体倾斜过去；
    本机字体按名称找「… Italic」。都没有时返回 null：这个类别在斜体里保持正体 */
-function italOf(f) {
+export function italOf(f) {
   if (!f) return null;
   if (f.kind === 'google' && f.ital) return f;
   if (f.kind === 'google' && GF_ITALIC.has(f.family)) return { ...f, ital: 1 };
@@ -182,8 +187,8 @@ function italOf(f) {
   if (it && it[2] >= 1) return { ...f, slant: 'ital' };
   return null;
 }
-const italNames = new Map();       // 本机字体名 → 斜体的名称；null = 没有，undefined = 检测中
-function italicLocal(f) {
+export const italNames = new Map();       // 本机字体名 → 斜体的名称；null = 没有，undefined = 检测中
+export function italicLocal(f) {
   if (italNames.has(f.name)) return italNames.get(f.name);
   italNames.set(f.name, undefined);
   const cands = [];
@@ -200,7 +205,7 @@ function italicLocal(f) {
 }
 /* 字体 + 这个类别的轴设定 → 实际写进规则的字体、固定的轴值（font-variation-settings）。
    vary：{ 标签: 数值 | 'auto' }，'auto' 只用于 opsz（跟随字号） */
-function finalFont(f, vary, ital = false) {
+export function finalFont(f, vary, ital = false) {
   if (!f) return { font: f, fvs: null, up: false };
   let up = false;
   if (ital) { const it = italOf(f); if (it) f = it; else up = true; }
@@ -217,23 +222,23 @@ function finalFont(f, vary, ital = false) {
   return { font: f, fvs: Object.keys(fvs).length ? fvs : null, up };
 }
 /* 实际加载的字体（带上要保留的轴）：查加载状态时用它，不用类别上原始的字体 */
-const usedFont = r => finalFont(r.font, r.vary).font;
-const fvsKey = fvs => fvs ? Object.entries(fvs).sort().map(([t, v]) => `${t}=${v}`).join(',') : '';
+export const usedFont = r => finalFont(r.font, r.vary).font;
+export const fvsKey = fvs => fvs ? Object.entries(fvs).sort().map(([t, v]) => `${t}=${v}`).join(',') : '';
 /* 规则里的 font-variation-settings：细调的粗细（连续字重时不写）+ 固定的轴值 */
-function fvsOf(p, W, cont) {
+export function fvsOf(p, W, cont) {
   const parts = [], wv = cont ? null : wghtFor(p.font, W);
   if (wv) parts.push(`"wght" ${wv}`);
   for (const [t, v] of Object.entries(p.fvs || {}).sort()) parts.push(`"${t}" ${v}`);
   return parts.join(', ');
 }
-function wghtFor(f, W) {
+export function wghtFor(f, W) {
   if (!f) return null;
   const w = f.kind === 'google' ? sources.get(fontKey(f))?.wght : f.axis ? (f.weight || 400) : null;
   return w && w !== W ? w : null;
 }
 /* 上传的字体里的可变轴（fvar 表）：[[标签, 最小, 最大, 默认], …]。ttf / otf 直接读；woff 的表用 zlib 压缩，解压后读；
    woff2 用 brotli 压缩，浏览器解不开，只能看到有没有 fvar：这时按 wght 100–900 处理，其他轴读不出来（unknown） */
-function readFvar(v, off) {
+export function readFvar(v, off) {
   const axesOff = v.getUint16(off + 4), count = v.getUint16(off + 8), size = v.getUint16(off + 10), out = [];
   for (let a = 0; a < count; a++) {
     const q = off + axesOff + a * size, fx = o => Math.round(v.getInt32(q + o) / 655.36) / 100;
@@ -241,7 +246,7 @@ function readFvar(v, off) {
   }
   return out;
 }
-async function fileAxes(buf) {
+export async function fileAxes(buf) {
   try {
     const v = new DataView(buf);
     let sig = v.getUint32(0), base = 0;
@@ -282,7 +287,7 @@ async function fileAxes(buf) {
   return null;
 }
 /* 把读到的轴记到字体对象上：wght 轴另外记成 axis（粗细的范围） */
-function setFontAxes(f, fa, W) {
+export function setFontAxes(f, fa, W) {
   delete f.axis; delete f.axes; delete f.axesUnknown;
   if (!fa) return f;
   f.axes = fa.axes; if (fa.unknown) f.axesUnknown = true;
@@ -290,8 +295,8 @@ function setFontAxes(f, fa, W) {
   if (w) { f.axis = [w[1], w[2]]; f.weight = clampW(W || f.weight || 400, f.axis); }
   return f;
 }
-function weightChain(w) { const out = [w]; for (let x = w; x !== 400;) { x += x > 400 ? -100 : 100; out.push(x); } return out; }
-function cssViaLink(url) {
+export function weightChain(w) { const out = [w]; for (let x = w; x !== 400;) { x += x > 400 ? -100 : 100; out.push(x); } return out; }
+export function cssViaLink(url) {
   return new Promise((res, rej) => {
     const l = document.createElement('link');
     l.rel = 'stylesheet'; l.crossOrigin = 'anonymous'; l.href = url; l.media = 'print';
@@ -300,7 +305,7 @@ function cssViaLink(url) {
     document.head.append(l);
   });
 }
-function parseFontFaceCss(css) {
+export function parseFontFaceCss(css) {
   const faces = [], re = /@font-face\s*{([^}]*)}/g; let m;
   while ((m = re.exec(css))) {
     const src = /src:\s*([^;]+);?/.exec(m[1]);
@@ -311,7 +316,7 @@ function parseFontFaceCss(css) {
 }
 
 /* ================= 示例、属性、预设 ================= */
-const SAMPLES = {
+export const SAMPLES = {
   /* 正文示例按真实的中日文写：西文是日常文章里自然会出现的品牌、产品、缩写和单位（iPhone、5G、UI、km）。
      特意放进几种挤在一起的写法：「2026年，增长了12.5%（GMV…）」「人工智能（AI）」「她说：“……”」，
      日文对应「前年比12.5%増（…約1,200店）」「人工知能（AI）」「「……（予想の1.5倍）……」と話す」 */
@@ -368,16 +373,16 @@ Hànyǔ Pīnyīn · nǚ lǜ lüè · Běijīng` },
 
 /* CSS 原生排版属性。sup：各浏览器开始支持的版本（MDN browser-compat-data，2026-10） */
 /* 高级排版属性的示意图卡片：段落用横条、汉字用小方块画，虚线是版心边缘。选中时跟着变成黑色 */
-const tSvg = body => `<svg class="tt-svg" viewBox="0 0 48 30" aria-hidden="true">${body}</svg>`;
-const tBars = rows => rows.map(([x, w, y]) => `<rect x="${x}" y="${y}" width="${w}" height="3" rx=".6"/>`).join('');
-const tEdge = (...xs) => xs.map(x => `<path d="M${x} 1v28" class="tt-edge"/>`).join('');
+export const tSvg = body => `<svg class="tt-svg" viewBox="0 0 48 30" aria-hidden="true">${body}</svg>`;
+export const tBars = rows => rows.map(([x, w, y]) => `<rect x="${x}" y="${y}" width="${w}" height="3" rx=".6"/>`).join('');
+export const tEdge = (...xs) => xs.map(x => `<path d="M${x} 1v28" class="tt-edge"/>`).join('');
 /* text-justify：一行「汉字 汉字 word 汉字 汉字」，多出来的 8 个单位分给哪些空隙 */
-const tJust = gaps => {
+export const tJust = gaps => {
   const w = [4, 4, 10, 4, 4]; let x = 4, out = '';
   w.forEach((ww, i) => { out += ww === 10 ? `<rect x="${x}" y="9.5" width="10" height="2.5" rx=".6"/>` : `<rect x="${x}" y="8" width="4" height="4" rx=".4"/>`; x += ww + (gaps[i] ?? 0); });
   return out + `<rect x="4" y="18" width="4" height="4" rx=".4"/><rect x="9" y="18" width="4" height="4" rx=".4"/>` + tEdge(3, 45);      // 左右两条都是版心边缘
 };
-const TILE_SVG = {
+export const TILE_SVG = {
   wrap: { wrap: tBars([[4, 40, 4], [4, 40, 11], [4, 40, 18], [4, 5, 25]]), pretty: tBars([[4, 40, 4], [4, 40, 11], [4, 31, 18], [4, 14, 25]]), balance: tBars([[4, 34, 4], [4, 34, 11], [4, 34, 18], [4, 31, 25]]) },
   align: { justify: tBars([[4, 40, 4], [4, 40, 11], [4, 40, 18], [4, 22, 25]]), start: tBars([[4, 36, 4], [4, 40, 11], [4, 31, 18], [4, 22, 25]]), center: tBars([[8, 32, 4], [4, 40, 11], [10, 28, 18], [13, 22, 25]]) },
   hang: {
@@ -387,10 +392,10 @@ const TILE_SVG = {
   },
 };
 TILE_SVG.justify = { auto: tJust([3, 4, 4, 3]), 'inter-character': tJust([3, 4, 4, 3]), 'inter-word': tJust([1, 6, 6, 1]), none: tJust([1, 2, 2, 1]) };
-const tSvgTile = key => v => `<span class="tt-s tt-pic" aria-hidden="true">${tSvg(TILE_SVG[key][v])}</span>`;
+export const tSvgTile = key => v => `<span class="tt-s tt-pic" aria-hidden="true">${tSvg(TILE_SVG[key][v])}</span>`;
 /* 换行、标点挤压：用当前的合成字体，在窄框里真的排一段，左边的线是版心边缘 */
-const tBox = (prop, text, lang, cls = '') => v => `<span class="tt-s tt-box${cls}"${lang ? ` lang="${lang}"` : ''} style="${prop}:${v}" aria-hidden="true">${text}</span>`;
-const TYPO = [
+export const tBox = (prop, text, lang, cls = '') => v => `<span class="tt-s tt-box${cls}"${lang ? ` lang="${lang}"` : ''} style="${prop}:${v}" aria-hidden="true">${text}</span>`;
+export const TYPO = [
   { key: 'lang', label: { zh: '语言', ja: '言語', tw: '語言' }, prop: 'lang', attr: true, def: 'zh-Hans',
     values: [['zh-Hans', { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文' }], ['zh-Hant-TW', { zh: '繁體中文（台灣）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）' }], ['zh-Hant-HK', { zh: '繁體中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）' }], ['ja', { zh: '日本語', ja: '日本語', tw: '日本語' }], ['ko', { zh: '한국어', ja: '韓国語', tw: '한국어' }], ['en', { zh: 'English', ja: '英語', tw: 'English' }]],
     note: { zh: 'HTML 的 lang 属性，不是 CSS。它决定字形的地区变体、禁则规则，word-break: auto-phrase 也依赖它。', ja: 'HTML の lang 属性で、CSS ではありません。字形の地域差や禁則を決め、word-break: auto-phrase もこれに依存します。', tw: 'HTML 的 lang 屬性，不是 CSS。它決定字形的地區變體、禁則規則，word-break: auto-phrase 也依賴它。' } },
@@ -452,38 +457,38 @@ const TYPO = [
 ];
 /* 几行合成一条 CSS 属性：数字样式 + 斜线零 → font-variant-numeric；字形标准 + 宽度 → font-variant-east-asian */
 /* grp: 'font' 的几行是字体的事（用哪个字形），放在「字体」页签；其余是排版的事，放在「排版」页签 */
-const isFontTypo = t => t.grp === 'font';
-const TYPO_MERGE = { 'font-variant-numeric': ['num', 'zero'], 'font-variant-east-asian': ['eaVar', 'eaWidth'] };
-const typoValue = t => TYPO_MERGE[t.prop] ? TYPO_MERGE[t.prop].map(k => state.typo[k]).filter(v => v && v !== 'normal').join(' ') || 'normal' : state.typo[t.key];
-const typoMergedAway = t => TYPO_MERGE[t.prop] && TYPO_MERGE[t.prop][0] !== t.key;      // 合并到前一行，导出时不单独写
+export const isFontTypo = t => t.grp === 'font';
+export const TYPO_MERGE = { 'font-variant-numeric': ['num', 'zero'], 'font-variant-east-asian': ['eaVar', 'eaWidth'] };
+export const typoValue = t => TYPO_MERGE[t.prop] ? TYPO_MERGE[t.prop].map(k => state.typo[k]).filter(v => v && v !== 'normal').join(' ') || 'normal' : state.typo[t.key];
+export const typoMergedAway = t => TYPO_MERGE[t.prop] && TYPO_MERGE[t.prop][0] !== t.key;      // 合并到前一行，导出时不单独写
 /* 东亚字形的值和 OpenType 特性的对应：检查字体有没有这些字形时用 */
-const EA_FEAT = { jis78: 'jp78', jis83: 'jp83', jis90: 'jp90', jis04: 'jp04', simplified: 'smpl', traditional: 'trad', 'full-width': 'fwid', 'proportional-width': 'pwid' };
+export const EA_FEAT = { jis78: 'jp78', jis83: 'jp83', jis90: 'jp90', jis04: 'jp04', simplified: 'smpl', traditional: 'trad', 'full-width': 'fwid', 'proportional-width': 'pwid' };
 /* 工具的默认值以正文为前提：两端对齐、禁则 strict、标点悬挂。段落换行不用 pretty：Safari 的 pretty 会把每行排短，还会让标点悬挂失效。
    def 是工具的默认值，init 是 CSS 的初始值：导出时只省略等于 init 的值 */
-const typoDef = (t, lang = state?.typo?.lang) => t.defJa && /^ja/.test(lang || '') ? t.defJa : t.def;
-const typoDefaults = lang => Object.fromEntries(TYPO.map(t => [t.key, typoDef(t, lang)]));
-const TYPO_DEFAULTS = typoDefaults('zh-Hans');
-const ENGINE = (() => {
+export const typoDef = (t, lang = state?.typo?.lang) => t.defJa && /^ja/.test(lang || '') ? t.defJa : t.def;
+export const typoDefaults = lang => Object.fromEntries(TYPO.map(t => [t.key, typoDef(t, lang)]));
+export const TYPO_DEFAULTS = typoDefaults('zh-Hans');
+export const ENGINE = (() => {
   const ua = navigator.userAgent; let m;
   if ((m = ua.match(/Firefox\/(\d+)/))) return { id: 'firefox', name: 'Firefox', v: m[1] };
   if ((m = ua.match(/(?:Chrome|Chromium)\/(\d+)/))) return { id: 'chrome', name: /Edg\//.test(ua) ? 'Edge' : 'Chrome', v: m[1] };
   if ((m = ua.match(/Version\/([\d.]+).*Safari/))) return { id: 'safari', name: 'Safari', v: m[1] };
   return { id: '', name: '', v: '' };
 })();
-const typoSupported = (t, v) => t.attr || CSS.supports(t.prop, v);
+export const typoSupported = (t, v) => t.attr || CSS.supports(t.prop, v);
 /* 数字样式（高级排版属性里的「数字样式」「斜线零」，合成一条 font-variant-numeric）。
    下面是各个值对应的 OpenType 特性：检查显示数字的字体有没有这些特性时用 */
-const NUM_FEAT = { 'lining-nums': 'lnum', 'oldstyle-nums': 'onum', 'proportional-nums': 'pnum', 'tabular-nums': 'tnum', 'slashed-zero': 'zero' };
-const NUM_TAGS = Object.values(NUM_FEAT);
-const NUM_LABEL = { lnum: { zh: '等高数字', ja: 'ライニング数字', tw: '等高數字' }, onum: { zh: '旧式数字', ja: 'オールドスタイル数字', tw: '舊式數字' }, pnum: { zh: '比例数字', ja: 'プロポーショナル数字', tw: '比例數字' }, tnum: { zh: '等宽数字', ja: '等幅数字', tw: '等寬數字' }, zero: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零' } };
-const numValue = () => typoValue(TYPO.find(t => t.key === 'num'));
-const numTags = () => numValue().split(' ').map(v => NUM_FEAT[v]).filter(Boolean);
-const numLabel = t => tr(NUM_LABEL[t]);
+export const NUM_FEAT = { 'lining-nums': 'lnum', 'oldstyle-nums': 'onum', 'proportional-nums': 'pnum', 'tabular-nums': 'tnum', 'slashed-zero': 'zero' };
+export const NUM_TAGS = Object.values(NUM_FEAT);
+export const NUM_LABEL = { lnum: { zh: '等高数字', ja: 'ライニング数字', tw: '等高數字' }, onum: { zh: '旧式数字', ja: 'オールドスタイル数字', tw: '舊式數字' }, pnum: { zh: '比例数字', ja: 'プロポーショナル数字', tw: '比例數字' }, tnum: { zh: '等宽数字', ja: '等幅数字', tw: '等寬數字' }, zero: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零' } };
+export const numValue = () => typoValue(TYPO.find(t => t.key === 'num'));
+export const numTags = () => numValue().split(' ').map(v => NUM_FEAT[v]).filter(Boolean);
+export const numLabel = t => tr(NUM_LABEL[t]);
 
 /* 预设的西文大小和基线都是「自动调整大小和基线」在 100–900 各字重量出来的结果（2026-10，Chrome 155、macOS）：
    latinSize 是 400 的大小，latinW 是和 400 相差 0.5 以上的字重自己的大小，
    latinShift 是基线（大写中线和汉字字面中线相差 2% em 以上时才有，导出时需要 JS）。 */
-const PRESETS = [
+export const PRESETS = [
   { id: 'serif-sc', region: 'sc', name: { zh: '宋体 × Garamond', ja: '宋体 × Garamond', tw: '宋體 × Garamond' }, tag: { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文' }, han: G('Noto Serif SC'), latin: G('EB Garamond'), latinSize: 115, latinW: { 100: 114, 200: 114, 300: 114.5, 500: 115.5, 600: 116, 700: 116.5, 800: 117, 900: 117.5 }, sample: 'zh' },
   { id: 'sans-sc', region: 'sc', name: { zh: '黑体 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter' }, tag: { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文' }, han: G('Noto Sans SC'), latin: G('Inter'), latinSize: 100, latinW: { 100: 98, 200: 98.5, 300: 99, 500: 101, 600: 101.5, 700: 102, 800: 102.5, 900: 103.5 }, sample: 'zh' },
   { id: 'mincho-jp', region: 'jp', name: { zh: '明朝 × Cormorant', ja: '明朝 × Cormorant', tw: '明朝 × Cormorant' }, tag: { zh: '日文', ja: '日本語', tw: '日文' }, han: G('Shippori Mincho'), latin: G('Cormorant Garamond', 500), latinSize: 120, latinW: { 500: 120.5, 600: 121, 700: 121.5, 800: 122, 900: 122 }, sample: 'ja' },
@@ -503,7 +508,7 @@ const PRESETS = [
 
 /* ================= 状态 ================= */
 /* size / shift 为 null 表示继承：跟随别的类别时继承它的值，独立字体时为 100% / 0 */
-function freshClasses(p) {
+export function freshClasses(p) {
   const c = {};
   for (const k of CLASSES) c[k.id] = { follow: k.follow || null, font: null, size: null, shift: null };
   c.han.font = p.han;
@@ -512,7 +517,7 @@ function freshClasses(p) {
   for (const [id, o] of Object.entries(p.classes || {})) Object.assign(c[id], { follow: null }, o);
   return c;
 }
-function stateFromPreset(p, prev) {
+export function stateFromPreset(p, prev) {
   return {
     v: 10,
     preset: p.id,
@@ -536,20 +541,22 @@ function stateFromPreset(p, prev) {
   };
 }
 
-const LS_STATE = 'composite-font:state:v1', LS_PRESETS = 'composite-font:presets:v1';
-let userPresets = lsGet(LS_PRESETS) || {};
+export const LS_STATE = 'composite-font:state:v1', LS_PRESETS = 'composite-font:presets:v1';
+export let userPresets = lsGet(LS_PRESETS) || {};
 /* 新增的类别（例如注音）在 normalizeState 里补上，这里只检查原有的几个 */
-function validState(s) {
+export function validState(s) {
   return s && s.classes && ['han', 'latin', 'kana', 'punct'].every(id => s.classes[id] && 'size' in s.classes[id]) && s.classes.han.font && Array.isArray(s.custom) && s.view;
 }
 /* 第一次打开时按界面语言选预设：日文 → 明朝 × Cormorant，繁中 → 明體 × Garamond，简中 → 宋体 × Garamond */
-const defaultPresetId = () => UI === 'ja' ? 'mincho-jp' : UI === 'tw' ? 'ming-tw' : 'serif-sc';
-let state = validState(lsGet(LS_STATE)) ? lsGet(LS_STATE) : stateFromPreset(PRESETS.find(p => p.id === defaultPresetId()));
+export const defaultPresetId = () => UI === 'ja' ? 'mincho-jp' : UI === 'tw' ? 'ming-tw' : 'serif-sc';
+/* 当前的全部设定。别的文件不能直接给 state 赋值（模块导入的变量只读），整个换掉时用 setState */
+export let state = null;
+export function setState(s) { state = s; }
 /* 预设有没有被改过：和套用（或保存）预设那一刻的设定比较。校样的文字、字号等（view）不算 */
-const PRESET_SKIP = new Set(['view', 'preset', 'presetBase', 'v', 'fx']);
-function presetSnap() { return JSON.stringify(state, function (k, v) { return this === state && PRESET_SKIP.has(k) ? undefined : v; }); }
-const presetDirty = () => state.presetBase ? presetSnap() !== state.presetBase : state.preset === '';
-function normalizeState() {
+export const PRESET_SKIP = new Set(['view', 'preset', 'presetBase', 'v', 'fx']);
+export function presetSnap() { return JSON.stringify(state, function (k, v) { return this === state && PRESET_SKIP.has(k) ? undefined : v; }); }
+export const presetDirty = () => state.presetBase ? presetSnap() !== state.presetBase : state.preset === '';
+export function normalizeState() {
   if (!(state.v >= 2)) {    // 旧版本里「跟随」连大小、基线一起跟随，迁移为继承
     for (const o of [...Object.values(state.classes), ...state.custom]) if (o.follow) { o.size = null; o.shift = null; }
     state.v = 2;
@@ -640,21 +647,25 @@ function normalizeState() {
   if (state.presetBase === undefined && state.preset) state.presetBase = presetSnap();      // 旧的保存数据：以现在为准
   rebuildClassRanges();
 }
-normalizeState();
-const saveState = debounce(() => lsSet(LS_STATE, state), 400);
+/* 读出上次的设定（没有就用默认预设）。用到别的模块（字符类别等），所以不在加载时执行，由 main.js 在所有模块就绪后调用 */
+export function initState() {
+  state = validState(lsGet(LS_STATE)) ? lsGet(LS_STATE) : stateFromPreset(PRESETS.find(p => p.id === defaultPresetId()));
+  normalizeState();
+}
+export const saveState = debounce(() => lsSet(LS_STATE, state), 400);
 
 /* ================= 字重：工具里设定的字体对应 400，其他字重自动换算 ================= */
-const BASE_W = 400;
-const WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
-const WEIGHT_WORDS = { 100: ['Thin', 'UltraLight', 'Hairline'], 200: ['ExtraLight', 'UltraLight'], 300: ['Light'], 400: ['Regular'], 500: ['Medium'], 600: ['Semibold', 'SemiBold', 'DemiBold'], 700: ['Bold'], 800: ['ExtraBold', 'Heavy'], 900: ['Black', 'Heavy'] };
-const ALL_WORDS = [...new Set(Object.values(WEIGHT_WORDS).flat())].sort((a, b) => b.length - a.length);
-const WORD_RE = new RegExp(`([ _-])(${ALL_WORDS.join('|')})$`, 'i');
-function weightOrder(W) {          // 先目标字重，再按距离向两侧找，靠近 400 的一侧优先
+export const BASE_W = 400;
+export const WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
+export const WEIGHT_WORDS = { 100: ['Thin', 'UltraLight', 'Hairline'], 200: ['ExtraLight', 'UltraLight'], 300: ['Light'], 400: ['Regular'], 500: ['Medium'], 600: ['Semibold', 'SemiBold', 'DemiBold'], 700: ['Bold'], 800: ['ExtraBold', 'Heavy'], 900: ['Black', 'Heavy'] };
+export const ALL_WORDS = [...new Set(Object.values(WEIGHT_WORDS).flat())].sort((a, b) => b.length - a.length);
+export const WORD_RE = new RegExp(`([ _-])(${ALL_WORDS.join('|')})$`, 'i');
+export function weightOrder(W) {          // 先目标字重，再按距离向两侧找，靠近 400 的一侧优先
   const out = [W], dir = W > BASE_W ? -1 : 1;
   for (let d = 100; d <= 800; d += 100) for (const x of [W + dir * d, W - dir * d]) if (x >= 100 && x <= 900 && x !== BASE_W && !out.includes(x)) out.push(x);
   return out;
 }
-function nameAtWeight(name, wt) {
+export function nameAtWeight(name, wt) {
   const hw = name.match(/^(.*\bW)(\d)$/);          // Hiragino：W3 → W6
   if (hw) { const n = +hw[2] + (wt - BASE_W) / 100; return n >= 0 && n <= 9 ? [hw[1] + n] : []; }
   const m = name.match(WORD_RE);
@@ -662,13 +673,13 @@ function nameAtWeight(name, wt) {
   const sep = m ? m[1] : (/\s/.test(name) || !/[a-z][A-Z]|-/.test(name) ? ' ' : '-');
   return WEIGHT_WORDS[wt].map(w => stem + sep + w);
 }
-const existsCache = new Map();
-function localExists(name) {
+export const existsCache = new Map();
+export function localExists(name) {
   if (!existsCache.has(name)) existsCache.set(name, new FontFace('__cf_probe', `local("${name.replace(/["\\]/g, '\\$&')}")`).load().then(() => true, () => false));
   return existsCache.get(name);
 }
-const autoNames = new Map();       // 「字体|字重」→ {name, status}
-function autoLocal(f, W) {
+export const autoNames = new Map();       // 「字体|字重」→ {name, status}
+export function autoLocal(f, W) {
   const k = fontKey(f) + '|' + W;
   let a = autoNames.get(k);
   if (!a) {
@@ -683,12 +694,12 @@ function autoLocal(f, W) {
   }
   return a;
 }
-function guessPath(file, W) {
+export function guessPath(file, W) {
   const m = file.match(/^(.*?)(\.[a-z0-9]+)$/i), stem = m ? m[1] : file, ext = m ? m[2] : '';
   const mm = stem.match(WORD_RE);
   return (mm ? stem.slice(0, -mm[0].length) + mm[1] : stem + '-') + WEIGHT_WORDS[W][0] + ext;
 }
-function fontAtWeight(f, W, live = false) {
+export function fontAtWeight(f, W, live = false) {
   if (!f || W === BASE_W) return f;
   if (f.kind === 'google') return G(f.family, Math.min(900, Math.max(100, f.weight + (W - BASE_W))));
   if (f.axis) return { ...f, weight: clampW((f.weight || 400) + (W - BASE_W), f.axis) };     // 可变的本机字体 / 文件：同一个字体，换粗细
@@ -697,19 +708,19 @@ function fontAtWeight(f, W, live = false) {
   if (f.kind === 'file') return live ? f : { kind: 'path', path: manual || guessPath(f.fileName, W), ...(f.italic ? { italPath: guessPath(f.italic.fileName, W) } : {}) };
   return f;
 }
-const weightNamesChanged = debounce(() => { renderEditor(); renderExport(); if (state.view.weight !== BASE_W) rebuild(); }, 60);
+export const weightNamesChanged = debounce(() => { renderEditor(); renderExport(); if (state.view.weight !== BASE_W) rebuild(); }, 60);
 
 /* ================= 解析：类别 → 实际字体/大小/基线 ================= */
-function rootOf(id, depth = 0) { const c = state.classes[id]; return c.follow && depth < 4 ? rootOf(c.follow, depth + 1) : id; }
+export function rootOf(id, depth = 0) { const c = state.classes[id]; return c.follow && depth < 4 ? rootOf(c.follow, depth + 1) : id; }
 /* 某个字重下的实际设定。「跟随」只跟随字体；大小、基线没有单独设定时继承所跟随的类别。
    400 用类别本身的设定；其他字重的字体按差值换算，再叠加该字重的单独调整（wOver） */
-function ownFontAt(o, ov, W, live) {
+export function ownFontAt(o, ov, W, live) {
   let font = o.font;
   if (font && W !== BASE_W && ov?.font) return ov.font;      // 这个字重单独换成了另一个字体
   if (font && W !== BASE_W) font = ov?.weight && (font.kind === 'google' || font.axis) ? (font.kind === 'google' ? G(font.family, ov.weight) : { ...font, weight: ov.weight }) : fontAtWeight(font, W, live);
   return font;
 }
-function resolveObj(key, o, W = BASE_W, live = false, depth = 0) {
+export function resolveObj(key, o, W = BASE_W, live = false, depth = 0) {
   const ov = W !== BASE_W ? state.wOver[W]?.[key] : null;
   if (o.follow && depth < 4) {
     const p = resolveCls(o.follow, W, live, depth + 1);
@@ -717,18 +728,18 @@ function resolveObj(key, o, W = BASE_W, live = false, depth = 0) {
   }
   return { font: ownFontAt(o, ov, W, live), size: ov?.size ?? o.size ?? 100, shift: o.shift ?? 0, vary: o.vary || null };
 }
-function resolveCls(id, W = BASE_W, live = false, depth = 0) { return resolveObj(id, state.classes[id], W, live, depth); }
-const resolveCustom = (cu, W = BASE_W, live = false) => resolveObj('#' + state.custom.indexOf(cu), cu, W, live);
-const objByKey = key => key[0] === '#' ? state.custom[+key.slice(1)] : state.classes[key];
+export function resolveCls(id, W = BASE_W, live = false, depth = 0) { return resolveObj(id, state.classes[id], W, live, depth); }
+export const resolveCustom = (cu, W = BASE_W, live = false) => resolveObj('#' + state.custom.indexOf(cu), cu, W, live);
+export const objByKey = key => key[0] === '#' ? state.custom[+key.slice(1)] : state.classes[key];
 /* 表格里灰色显示的继承值 */
-function inheritedSize(key, W) {
+export function inheritedSize(key, W) {
   const o = objByKey(key);
   if (W !== BASE_W && o.size != null) return o.size;
   return o.follow ? resolveCls(o.follow, W, true).size : 100;
 }
-const inheritedShift = key => { const o = objByKey(key); return o.follow ? resolveCls(o.follow).shift : 0; };
-const ownSize = (key, W) => W === BASE_W ? objByKey(key).size : state.wOver[W]?.[key]?.size;
-function setSizeAt(key, W, v) {
+export const inheritedShift = key => { const o = objByKey(key); return o.follow ? resolveCls(o.follow).shift : 0; };
+export const ownSize = (key, W) => W === BASE_W ? objByKey(key).size : state.wOver[W]?.[key]?.size;
+export function setSizeAt(key, W, v) {
   if (W === BASE_W) { objByKey(key).size = v; return; }
   if (v != null) { ((state.wOver[W] ||= {})[key] ||= {}).size = v; return; }
   const ov = state.wOver[W]?.[key]; if (!ov) return;      // 恢复继承：顺手删掉空的条目
@@ -736,23 +747,23 @@ function setSizeAt(key, W, v) {
   if (!Object.keys(ov).length) delete state.wOver[W][key];
   if (!Object.keys(state.wOver[W]).length) delete state.wOver[W];
 }
-let customRanges = [];
-const refreshCustomRanges = () => { customRanges = state.custom.map(cu => parseChars(cu.chars)); };
+export let customRanges = [];
+export const refreshCustomRanges = () => { customRanges = state.custom.map(cu => parseChars(cu.chars)); };
 
-function ownerOf(cp) {
+export function ownerOf(cp) {
   for (let i = state.custom.length - 1; i >= 0; i--) if (customRanges[i]?.length && inRanges(customRanges[i], cp)) return '#' + i;
   return classOf(cp) || 'other';
 }
-function settingOf(owner) {
+export function settingOf(owner) {
   if (owner === 'other') return resolveCls('han');
   if (owner[0] === '#') return resolveCustom(state.custom[+owner.slice(1)]);
   return resolveCls(owner);
 }
-const anyShift = () => CLASSES.some(c => resolveCls(c.id).shift) || state.custom.some(cu => resolveCustom(cu).shift);
+export const anyShift = () => CLASSES.some(c => resolveCls(c.id).shift) || state.custom.some(cu => resolveCustom(cu).shift);
 
 /* 生成规则表：基础字体在最前（不限范围），类别按 (字体, 大小, 轴值) 合并，例外在最后。
    ital：斜体那一组的规则（有斜体的类别换成斜体字体，没有的用正体，up = 保持正体） */
-function buildPlan(W = BASE_W, live = false, ital = false) {
+export function buildPlan(W = BASE_W, live = false, ital = false) {
   const fin = r => ({ ...finalFont(r.font, r.vary, ital), size: r.size });
   const base = fin(resolveCls('han', W, live));
   const plan = [{ ...base, range: null, owners: ['han'] }];
@@ -781,7 +792,7 @@ function buildPlan(W = BASE_W, live = false, ital = false) {
    可变字体每段都用同一个可变字体文件，段内可以任意粗细；静态字体每段用最接近的那一档。
    相邻两段所有类别都一样时合并：全是可变字体、大小也不随字重变化时，最后只剩一段。
    只导出 state.wrange 里的粗细：页面用到范围以外的值时，浏览器按最接近的一段显示 */
-function contFont(f) {
+export function contFont(f) {
   if (!f) return f;
   if (f.kind === 'google') {
     if (Array.isArray(vfAxisNow(f))) return { ...f, weight: 400, vf: true };
@@ -791,11 +802,11 @@ function contFont(f) {
   return f.axis ? { ...f, weight: undefined, cont: true } : f;
 }
 /* 这一档在连续模式里负责的粗细（和导出范围取交集）；不在范围里时为 null */
-function stepSpan(W) {
+export function stepSpan(W) {
   const [a, b] = state.wrange, lo = Math.max(a, W === 100 ? 100 : W - 49), hi = Math.min(b, W === 900 ? 900 : W + 50);
   return lo <= hi ? [lo, hi] : null;
 }
-function buildSegments(live = false, skipBase = false) {      // skipBase：汉字基础字体用 @import 引用时，不参与分段
+export function buildSegments(live = false, skipBase = false) {      // skipBase：汉字基础字体用 @import 引用时，不参与分段
   const segs = [];
   for (const W of WEIGHTS) {
     const span = stepSpan(W);
@@ -810,7 +821,7 @@ function buildSegments(live = false, skipBase = false) {      // skipBase：汉�
   return segs;
 }
 /* 用到的可变字体和各自的粗细范围：导出范围的「最大 / 共同」按钮由这些算出 */
-function vfAxes() {
+export function vfAxes() {
   const m = new Map();
   for (const W of WEIGHTS) for (const p of buildPlan(W)) {
     const f = p.font, axis = vfAxisNow(f);
@@ -818,7 +829,7 @@ function vfAxes() {
   }
   return [...m];
 }
-function expandPlan(plan, live) {
+export function expandPlan(plan, live) {
   const out = [];
   for (const p of plan) {
     const s = sources.get(fontKey(p.font));
@@ -838,11 +849,11 @@ function expandPlan(plan, live) {
 }
 
 /* ================= 实时预览用的字体 ================= */
-let gen = 0, liveFaces = [], liveFamily = '';
-function loadText() {
+export let gen = 0, liveFaces = [], liveFamily = '';
+export function loadText() {
   return (state.view.text.slice(0, 2500) + '国Hxg' + CLASSES.map(c => c.sample).join('') + state.custom.map(c => c.chars).join(''));
 }
-async function rebuildNow() {
+export async function rebuildNow() {
   const my = ++gen, W = state.view.weight, cont = state.wmode === 'cont';
   /* 分档：只建当前这一档的规则；连续：建所有分段的规则，校样的粗细由滑块决定 */
   const segs = cont ? buildSegments(true) : [{ lo: W, hi: W, plan: buildPlan(W, true), iplan: state.italic ? buildPlan(W, true, true) : null }];
@@ -884,15 +895,15 @@ async function rebuildNow() {
   renderExport();
   checkMissSoon();
 }
-const rebuild = debounce(rebuildNow, 70);
+export const rebuild = debounce(rebuildNow, 70);
 /* ================= 行高度量 =================
    合成字体的行高（line-height: normal）和基线在行框里的位置，取自负责空格的那条规则，也就是半角西文，而且是 size-adjust 放大之后的。
    给基础字体以外的规则写上汉字基础字体的 ascent / descent / line gap，合成字体排起来就和汉字字体一样。
    覆盖值还会再乘以 size-adjust，所以要先除掉。同一个 Google 字族各字重的度量相同，按字族记一次 */
-const LM = new Map();
-const lmKey = f => f.kind === 'google' ? 'g:' + f.family : fontKey(f);
-const lmOn = () => state.lineMetrics !== 'off';
-async function ensureLineMetrics(f) {
+export const LM = new Map();
+export const lmKey = f => f.kind === 'google' ? 'g:' + f.family : fontKey(f);
+export const lmOn = () => state.lineMetrics !== 'off';
+export async function ensureLineMetrics(f) {
   if (!f) return null;
   const key = lmKey(f);
   if (LM.has(key)) return LM.get(key);
@@ -914,19 +925,19 @@ async function ensureLineMetrics(f) {
   return lm;
 }
 /* 一条非基础规则要写的覆盖值；base 是这一组的汉字基础字体规则（它自己的大小也算进去） */
-function overridesFor(p, base) {
+export function overridesFor(p, base) {
   const lm = lmOn() && p.range && base?.font && LM.get(lmKey(base.font));
   if (!lm) return null;
   const k = (base.size || 100) / p.size, f = x => `${+(x * 100 * k).toFixed(2)}%`;
   return { ascent: f(lm.a), descent: f(lm.d), lineGap: f(lm.g) };
 }
 /* 斜体文件加载失败（例如 Google 上这个粗细没有斜体）时，这一条改用正体 */
-function italFallback(pl) {
+export function italFallback(pl) {
   return pl.map(p => p.font?.kind === 'google' && p.font.ital && sources.get(fontKey(p.font))?.status === 'error'
     ? { ...p, font: (({ ital, ...rest }) => rest)(p.font), up: true } : p);
 }
-function onSourcesChanged() {
+export function onSourcesChanged() {
   if (!$('#editor').contains(document.activeElement)) renderEditor(); else renderChipsStatus();
   renderExportSoon(); renderPresetCardsSoon(); checkMissSoon();
 }
-function setBusy(t) { $('#busy').textContent = t; }
+export function setBusy(t) { $('#busy').textContent = t; }

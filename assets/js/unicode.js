@@ -1,7 +1,7 @@
-'use strict';
+import { state } from './core.js';
 /* ================= Unicode ranges ================= */
-const hex = n => n.toString(16).toUpperCase().padStart(4, '0');
-function norm(list) {
+export const hex = n => n.toString(16).toUpperCase().padStart(4, '0');
+export function norm(list) {
   const a = list.filter(r => Number.isFinite(r[0]) && Number.isFinite(r[1]) && r[0] <= r[1] && r[1] <= 0x10FFFF)
     .map(r => [r[0], r[1]]).sort((x, y) => x[0] - y[0]);
   const out = [];
@@ -11,7 +11,7 @@ function norm(list) {
   }
   return out;
 }
-function parseRanges(str) {
+export function parseRanges(str) {
   const out = [];
   for (let t of String(str).split(/[\s,]+/)) {
     t = t.trim().replace(/^u\+/i, '');
@@ -22,8 +22,8 @@ function parseRanges(str) {
   }
   return norm(out);
 }
-const union = (a, b) => norm([...a, ...b]);
-function subtract(a, b) {
+export const union = (a, b) => norm([...a, ...b]);
+export function subtract(a, b) {
   const out = [];
   for (const [lo0, hi] of a) {
     let lo = lo0;
@@ -32,7 +32,7 @@ function subtract(a, b) {
   }
   return out;
 }
-function intersect(a, b) {
+export function intersect(a, b) {
   const out = []; let i = 0, j = 0;
   while (i < a.length && j < b.length) {
     const lo = Math.max(a[i][0], b[j][0]), hi = Math.min(a[i][1], b[j][1]);
@@ -41,15 +41,15 @@ function intersect(a, b) {
   }
   return out;
 }
-function inRanges(list, cp) {
+export function inRanges(list, cp) {
   let lo = 0, hi = list.length - 1;
   while (lo <= hi) { const m = (lo + hi) >> 1; if (cp < list[m][0]) hi = m - 1; else if (cp > list[m][1]) lo = m + 1; else return true; }
   return false;
 }
-const fmtRange = ([a, b]) => a === b ? `U+${hex(a)}` : `U+${hex(a)}-${hex(b)}`;
-const fmtRanges = list => list.map(fmtRange).join(', ');
+export const fmtRange = ([a, b]) => a === b ? `U+${hex(a)}` : `U+${hex(a)}-${hex(b)}`;
+export const fmtRanges = list => list.map(fmtRange).join(', ');
 /* 字符输入：既可以直接写字符，也可以写 U+2018-201D */
-function parseChars(input) {
+export function parseChars(input) {
   const out = [];
   const rest = String(input).replace(/U\+[0-9A-F?]{1,6}(?:-(?:U\+)?[0-9A-F]{1,6})?/gi, m => { out.push(...parseRanges(m)); return ' '; });
   for (const ch of rest) { if (/[\s,]/.test(ch)) continue; const cp = ch.codePointAt(0); out.push([cp, cp]); }
@@ -57,7 +57,7 @@ function parseChars(input) {
 }
 
 /* ================= 字符类别（对应 InDesign 复合字体的行） ================= */
-const CLASSES = [
+export const CLASSES = [
   { id: 'han', name: { zh: '汉字', ja: '漢字', tw: '漢字' }, note: { zh: '基础字体', ja: 'ベースフォント', tw: '基礎字型' }, desc: { zh: '基础字体。负责 CJK 统一汉字及扩展区，也兜底所有未归类的字符（如谚文、emoji）。', ja: 'ベースフォント。CJK 統合漢字と拡張領域を受け持ち、分類外の文字（ハングル、絵文字など）もここで表示します。', tw: '基礎字型。負責 CJK 統一漢字及擴充區，也接手所有未歸類的字元（如韓文字母、emoji）。' }, sample: '永国字體',
     ranges: '2E80-2FDF, 2FF0-2FFF, 3005-3007, 3021-3029, 3038-303B, 31C0-31EF, 3400-4DBF, 4E00-9FFF, F900-FAFF, 20000-2FA1F, 30000-323AF' },
   { id: 'latin', name: { zh: '半角西文', ja: '半角欧文', tw: '半形西文' }, desc: { zh: '拉丁、希腊、西里尔字母，以及半角标点、货币符号等。', ja: 'ラテン・ギリシャ・キリル文字と、半角の約物や通貨記号など。', tw: '拉丁、希臘、西里爾字母，以及半形標點、貨幣符號等。' }, sample: 'Aa Gg Rr',
@@ -75,9 +75,9 @@ const CLASSES = [
   { id: 'shared', name: { zh: '中西共用标点', ja: '和欧共通の約物', tw: '中西共用標點' }, note: { zh: '引号 破折号 省略号 间隔号', ja: '引用符・ダッシュ・リーダー・中点', tw: '引號 破折號 刪節號 間隔號' }, desc: { zh: '引号 “ ” ‘ ’、破折号 —、省略号 …、间隔号 ·。中西文共用这些码位，可用齿轮逐组决定归属。', ja: '引用符 “ ” ‘ ’、ダッシュ —、リーダー …、中点 ·。和文と欧文で同じ符号位置を使うため、歯車からグループごとに振り分けられます。', tw: '引號 “ ” ‘ ’、破折號 —、刪節號 …、間隔號 ·。中西文共用這些碼位，可用齒輪逐組決定歸屬。' }, sample: '“‘—…·', follow: 'han',
     ranges: '00B7, 2014-2015, 2018-2019, 201C-201D, 2025-2026, 2E3A-2E3B' },
 ].map(c => ({ ...c, r: parseRanges(c.ranges) }));
-const CLS = Object.fromEntries(CLASSES.map(c => [c.id, c]));
+export const CLS = Object.fromEntries(CLASSES.map(c => [c.id, c]));
 /* 可以单独改由半角西文显示的字符组（类别行旁的齿轮）。西文字体通常没有的字形（全角英数、※ 等）不列入 */
-const GROUPS = {
+export const GROUPS = {
   symbol: [
     { id: 'arrows', name: { zh: '箭头', ja: '矢印', tw: '箭頭' }, sample: '→⇒↑', ranges: '2190-21FF' },
     { id: 'math', name: { zh: '数学符号', ja: '数学記号', tw: '數學符號' }, sample: '≠≦∑', ranges: '2200-22FF' },
@@ -98,11 +98,11 @@ const GROUPS = {
   ],
 };
 for (const gs of Object.values(GROUPS)) for (const g of gs) g.r = parseRanges(g.ranges);
-const isMoved = (cls, g) => !!state.moved?.[cls + '.' + g.id];
+export const isMoved = (cls, g) => !!state.moved?.[cls + '.' + g.id];
 /* 各类别实际负责的范围：默认范围减去被移走的组，移走的组并入半角西文 */
-const EFF = {};
-let CLASS_TABLE = [];
-function rebuildClassRanges() {
+export const EFF = {};
+export let CLASS_TABLE = [];
+export function rebuildClassRanges() {
   let moved = [];
   for (const c of CLASSES) {
     let r = c.r;
@@ -112,7 +112,7 @@ function rebuildClassRanges() {
   EFF.latin = union(EFF.latin, moved);
   CLASS_TABLE = CLASSES.flatMap(c => EFF[c.id].map(([a, b]) => [a, b, c.id])).sort((x, y) => x[0] - y[0]);
 }
-function classOf(cp) {
+export function classOf(cp) {
   let lo = 0, hi = CLASS_TABLE.length - 1;
   while (lo <= hi) { const m = (lo + hi) >> 1, r = CLASS_TABLE[m]; if (cp < r[0]) hi = m - 1; else if (cp > r[1]) lo = m + 1; else return r[2]; }
   return null;

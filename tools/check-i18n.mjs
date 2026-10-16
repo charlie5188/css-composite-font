@@ -1,9 +1,8 @@
 // 检查界面文字：三种语言的键一致、占位符 {x} 一致，代码和 HTML 里用到的键都有。CI 里运行：node tools/check-i18n.mjs
 import fs from 'node:fs';
 import vm from 'node:vm';
-const ctx = { I18N: {} };
-for (const l of ['zh', 'ja', 'tw']) vm.runInNewContext(fs.readFileSync(`assets/js/i18n/${l}.js`, 'utf8'), ctx);
-const { zh, ja, tw } = ctx.I18N, errors = [];
+const load = l => vm.runInNewContext('(' + fs.readFileSync(`assets/js/i18n/${l}.js`, 'utf8').replace(/^[\s\S]*?export default /, '').replace(/;\s*$/, '') + ')');
+const [zh, ja, tw] = ['zh', 'ja', 'tw'].map(load), errors = [];
 const holes = s => [...s.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort().join(',');
 for (const [name, d] of [['ja', ja], ['tw', tw]]) {
   for (const k of Object.keys(zh)) if (!(k in d)) errors.push(`${name} 缺少 ${k}`);

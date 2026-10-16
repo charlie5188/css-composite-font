@@ -1,16 +1,19 @@
-'use strict';
+import { $, T, UI, debounce, esc, root, tr } from './i18n.js';
+import { CLASSES, CLS, GROUPS, classOf, fmtRanges, inRanges, isMoved } from './unicode.js';
+import { BASE_W, EA_FEAT, NUM_FEAT, NUM_TAGS, SAMPLES, TYPO, WEIGHTS, anyShift, axisLabel, axisOf, finalFont, fontAtWeight, fontKey, fontLabel, inheritedShift, inheritedSize, liveFamily, numLabel, numTags, objByKey, ownFontAt, ownSize, ownerOf, resolveCls, resolveCustom, settingOf, sources, srcError, state, typoValue, usedFont, vfAxisNow } from './core.js';
+import { loadBlank, missingIn, renderTypoStatus } from './ui.js';
 /* ================= 渲染：字符类别表（对应 InDesign 的复合字体对话框） ================= */
-const GLYPH = { han: '永', latin: 'Ag', digit: '01', kana: 'あ', bopo: 'ㄅ', punct: '」、', symbol: '※', shared: '“…' };
-const visibleClasses = () => CLASSES;
-const shortName = f => !f ? '' : f.kind === 'google' ? f.family : f.kind === 'local' ? f.name : f.kind === 'path' ? f.path : f.fileName;
-const keyName = key => key[0] === '#' ? T('customName', { c: state.custom[+key.slice(1)]?.chars || '…' }) : tr(CLS[key].name);
+export const GLYPH = { han: '永', latin: 'Ag', digit: '01', kana: 'あ', bopo: 'ㄅ', punct: '」、', symbol: '※', shared: '“…' };
+export const visibleClasses = () => CLASSES;
+export const shortName = f => !f ? '' : f.kind === 'google' ? f.family : f.kind === 'local' ? f.name : f.kind === 'path' ? f.path : f.fileName;
+export const keyName = key => key[0] === '#' ? T('customName', { c: state.custom[+key.slice(1)]?.chars || '…' }) : tr(CLS[key].name);
 /* 这个类别在某个字重下有没有单独设定的粗细 / 字体名 / 文件 */
-function hasWeightOverride(key, W) {
+export function hasWeightOverride(key, W) {
   if (W === BASE_W) return false;
   const o = objByKey(key);
   return !!state.wOver[W]?.[key]?.weight || !!state.wOver[W]?.[key]?.font || (!!o?.font && (fontKey(o.font) + '|' + W) in state.weightNames);
 }
-function fontCell(key, o, isHan, allowLatin) {
+export function fontCell(key, o, isHan, allowLatin) {
   const W = state.view.weight, ov = W !== BASE_W ? state.wOver[W]?.[key] : null;
   const opts = [];
   if (!isHan) {
@@ -51,7 +54,7 @@ function fontCell(key, o, isHan, allowLatin) {
   }
   return html;
 }
-function numCell(field, key) {
+export function numCell(field, key) {
   const W = state.view.weight, o = objByKey(key);
   const own = field === 'size' ? ownSize(key, W) : o.shift;
   const inh = field === 'size' ? inheritedSize(key, W) : inheritedShift(key);
@@ -60,13 +63,13 @@ function numCell(field, key) {
     aria-label="${esc(T(field === 'size' ? 'sizeAria' : 'shiftAria', { c: keyName(key) }))}">`;
 }
 /* 调过的可变轴：写在这一行下面，例如「宽度 80 · 光学尺寸 跟随字号」 */
-function axRow(key, o) {
+export function axRow(key, o) {
   if (o.follow || !o.vary) return '';
   const W = state.view.weight, f = ownFontAt(o, W !== BASE_W ? state.wOver[W]?.[key] : null, W, true);
   const list = Object.entries(o.vary).filter(([t]) => axisOf(f, t));
   return list.length ? `<span class="ct-ax">${list.map(([t, v]) => `<span>${esc(axisLabel(t))} <b>${esc(v === 'auto' ? T('axOpszAuto') : String(v))}</b></span>`).join('')}</span>` : '';
 }
-function errRow(key, o) {
+export function errRow(key, o) {
   if (o.follow || !o.font) return '';
   const W = state.view.weight, f = ownFontAt(o, W !== BASE_W ? state.wOver[W]?.[key] : null, W, true);
   const s = sources.get(fontKey(finalFont(f, o.vary).font));
@@ -76,10 +79,10 @@ function errRow(key, o) {
   return '';
 }
 /* ================= 地区检查：字形和标点位置是不是当前语言的写法 ================= */
-const REGION_OF_LANG = { 'zh-Hans': 'sc', 'zh-Hant-TW': 'tw', 'zh-Hant-HK': 'hk', ja: 'jp', ko: 'kr' };
-const PUNCT_CENTER = { sc: false, jp: false, tw: true, hk: true };      // 大陆、日本的标点靠左下，台湾、香港居中
+export const REGION_OF_LANG = { 'zh-Hans': 'sc', 'zh-Hant-TW': 'tw', 'zh-Hant-HK': 'hk', ja: 'jp', ko: 'kr' };
+export const PUNCT_CENTER = { sc: false, jp: false, tw: true, hk: true };      // 大陆、日本的标点靠左下，台湾、香港居中
 /* 字形的地区只能看字族名：Google 的 SC / TC / HK / JP / KR 后缀和常见系统字体的名字 */
-function formsOf(f) {
+export function formsOf(f) {
   const n = f?.family || f?.name || '';
   if (/\b(SC|GB)\b|YaHei|PingFang SC|Songti SC|STSong|SimSun|STHeiti/.test(n)) return 'sc';
   if (/\bTC\b|PingFang TC|JhengHei|Songti TC|LiHei|BiauKai|MingLiU/.test(n)) return 'tw';
@@ -89,9 +92,9 @@ function formsOf(f) {
   return null;
 }
 /* 标点位置要量：「，」的墨迹重心在字身里的位置。一个文件含多个地区字形的字体（思源、Noto CJK）会按 lang 切换，所以带上语言量 */
-const punctMemo = new Map();      // 「字体|语言」→ 'center' | 'corner' | null；undefined = 测量中
-const regionChanged = debounce(() => { renderEditor(); renderLangWarn(); }, 80);
-function punctPos(s, lang) {
+export const punctMemo = new Map();      // 「字体|语言」→ 'center' | 'corner' | null；undefined = 测量中
+export const regionChanged = debounce(() => { renderEditor(); renderLangWarn(); }, 80);
+export function punctPos(s, lang) {
   const k = s.family + '|' + lang;
   if (punctMemo.has(k)) return punctMemo.get(k);
   punctMemo.set(k, undefined);
@@ -110,8 +113,8 @@ function punctPos(s, lang) {
   return undefined;
 }
 /* 某个语言下，汉字字体的字形、全角标点字体的标点位置对不对 */
-const langName = lang => tr(TYPO.find(t => t.key === 'lang').values.find(([v]) => v === lang)?.[1]) || lang;
-function regionCheck(lang) {
+export const langName = lang => tr(TYPO.find(t => t.key === 'lang').values.find(([v]) => v === lang)?.[1]) || lang;
+export function regionCheck(lang) {
   const want = REGION_OF_LANG[lang], out = {};
   if (!want) return out;
   const W = state.view.weight, han = resolveCls('han', W, true), pu = resolveCls('punct', W, true);
@@ -124,7 +127,7 @@ function regionCheck(lang) {
   return out;
 }
 /* 类别表：按校样的语言检查（汉字那一行看字形，全角标点那一行看标点位置） */
-function regionRow(key) {
+export function regionRow(key) {
   if (key !== 'han' && key !== 'punct') return '';
   const lang = state.typo.lang, c = regionCheck(lang);
   if (key === 'han' && c.forms) return `<span class="ct-note">${esc(T('regForms', { got: T('reg_' + c.forms.got), lang: langName(lang) }))}</span>`;
@@ -132,14 +135,14 @@ function regionRow(key) {
   return '';
 }
 /* 导出区：按适用语言检查，写在「适用语言」下面 */
-function renderLangWarn() {
+export function renderLangWarn() {
   const el = $('#exLangWarn'), lang = state.scope, c = lang ? regionCheck(lang) : {}, list = [];
   if (c.forms) list.push(T('exRegForms', { font: shortName(c.forms.font), got: T('reg_' + c.forms.got) }));
   if (c.punct) list.push(T(c.punct.pos === 'center' ? 'exRegPunctCenter' : 'exRegPunctCorner', { font: shortName(c.punct.font) }));
   el.hidden = !list.length;
   if (list.length) el.textContent = T('exRegWarn', { lang: langName(lang), list: list.join(T('joiner')) });
 }
-function renderEditor() {
+export function renderEditor() {
   const W = state.view.weight, banner = $('#wBanner');
   banner.hidden = W === BASE_W;
   const wAdj = W !== BASE_W && (Object.keys(state.wOver[W] || {}).some(k => Object.keys(state.wOver[W][k]).length) || Object.keys(state.weightNames).some(k => k.endsWith('|' + W)));
@@ -174,8 +177,8 @@ function renderEditor() {
    所以直排时 span 自己不加间距，边界上该加的 1/8 em 改用 margin 补上（汉字假名和字母数字之间才加）。
    和浏览器自己的中西间距一样，换列的地方（列首、列尾）不加：排好以后量一下边界两边的字在不在同一列。
    去掉一处 margin 可能让后面换列的位置变了，所以再量一遍；去掉过的不再加回，免得来回跳 */
-const IDEO_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Bopomofo}]/u, ALNUM_RE = /[\p{L}\p{N}]/u;
-function vAutospace(pt) {
+export const IDEO_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Bopomofo}]/u, ALNUM_RE = /[\p{L}\p{N}]/u;
+export function vAutospace(pt) {
   const kind = ch => !ch ? 0 : IDEO_RE.test(ch) ? 1 : ALNUM_RE.test(ch) ? 2 : 0;
   const gap = (a, b) => !!(kind(a) && kind(b) && kind(a) !== kind(b));
   const nodes = [...pt.childNodes], first = n => [...(n?.textContent || '')][0], last = n => [...(n?.textContent || '')].pop();
@@ -211,12 +214,12 @@ function vAutospace(pt) {
   }
 }
 /* 换列的位置会随字体加载、校样高度变化：重新量一遍 */
-function refreshVAutospace() {
+export function refreshVAutospace() {
   const pt = $('#proofText');
   if (state.view.vertical && state.typo.autospace !== 'no-autospace' && pt.firstElementChild) vAutospace(pt);
 }
 /* 齿轮弹出的分组开关：打开 = 留在本类别，关闭 = 改由半角西文显示 */
-function renderGroups() {
+export function renderGroups() {
   const pop = $('#grpPop'), id = pop.dataset.cls; if (!id || !GROUPS[id]) return;
   const name = tr(CLS[id].name);
   pop.innerHTML = `<div class="gp-head"><b>${esc(T('gpHead', { c: name }))}</b><span class="hint">${esc(T(id === 'shared' ? 'gpHintShared' : id === 'bopo' ? 'gpHintBopo' : 'gpHintSymbol', { c: name }))}</span></div>` +
@@ -228,8 +231,8 @@ function renderGroups() {
 /* ================= 数字样式 =================
    在这个字体里有没有效果：每个特性单独加上画一遍 0–9，和不加时逐像素比较。一样 = 字体没有这个特性，或者本来就是这样
    （例如默认就是等高数字时，选「等高」不会有变化）。Google Fonts 的网页字体删掉了大部分特性，onum、zero 都没有 */
-let numSeq = 0;
-function digitFx() {
+export let numSeq = 0;
+export function digitFx() {
   const f = usedFont(resolveCls('digit', state.view.weight, true)), s = f && sources.get(fontKey(f));
   if (s?.status !== 'ok') return { f, fx: null, checking: false };
   const fx = numFx(f);
@@ -237,8 +240,8 @@ function digitFx() {
 }
 /* 字体有没有某些 OpenType 特性：每个特性单独加上把 text 画一遍，和不加时逐像素比较（一样 = 没有效果）。
    extra(ctx, 基准字族名) 可以顺便量别的东西。结果按「字体 + 文字」缓存，测完调用 done */
-const featCache = new Map();
-function featFx(f, text, tags, done, extra) {
+export const featCache = new Map();
+export function featFx(f, text, tags, done, extra) {
   const s = f && sources.get(fontKey(f));
   if (s?.status !== 'ok') return null;
   const key = fontKey(f) + '|' + text, c = featCache.get(key);
@@ -274,16 +277,16 @@ function featFx(f, text, tags, done, extra) {
   return null;
 }
 /* 数字：默认的数字也量出来——0 的高度更接近 x 高 = 旧式；1 和 0 一样宽 = 等宽 */
-function numFx(f) {
+export function numFx(f) {
   return featFx(f, '0123456789', NUM_TAGS, renderNumHint, ctx => {
     const m = ch => ctx.measureText(ch), a0 = m('0').actualBoundingBoxAscent;
     return { def: { fig: a0 < (m('x').actualBoundingBoxAscent + m('H').actualBoundingBoxAscent) / 2 ? 'onum' : 'lnum', spc: Math.abs(m('1').width - m('0').width) < 0.5 ? 'tnum' : 'pnum' } };
   });
 }
 /* 没有变化的原因：默认就是这样（'default'），或者字体里没有（'none'） */
-const numWhy = (fx, t) => fx[t] ? '' : t === fx.def.fig || t === fx.def.spc ? 'default' : 'none';
+export const numWhy = (fx, t) => fx[t] ? '' : t === fx.def.fig || t === fx.def.spc ? 'default' : 'none';
 /* 高级排版属性「数字样式」下面：显示数字的字体默认是哪种数字，选了的样式在这个字体里有没有 */
-function renderNumHint() {
+export function renderNumHint() {
   const el = $('#numHint'); if (!el) return;
   const { f, fx } = digitFx();
   el.hidden = !fx;
@@ -300,8 +303,8 @@ function renderNumHint() {
   el.classList.toggle('warn', !!none.length);
 }
 /* 字形标准、假名标点宽度的卡片：这个字体里没有效果的选项淡一些；字形标准一个都没有时在下面说明 */
-const EA_SAMPLE = { eaVar: '辻葛飴鴎国', eaWidth: 'イリ「ア」ﾃｽ' };
-function renderEaMarks() {
+export const EA_SAMPLE = { eaVar: '辻葛飴鴎国', eaWidth: 'イリ「ア」ﾃｽ' };
+export function renderEaMarks() {
   const W = state.view.weight, fonts = { eaVar: usedFont(resolveCls('han', W, true)), eaWidth: usedFont(resolveCls('kana', W, true)) };
   const fx = {};
   for (const k of ['eaVar', 'eaWidth']) {
@@ -328,14 +331,14 @@ function renderEaMarks() {
   if (none) el.textContent = T('eaNone', { font: shortName(fonts.eaVar) }) + (fonts.eaVar.kind === 'google' ? T('eaGoogle') : '');
 }
 /* 改了某一格后，只更新其他格的继承值，不重绘表格（保持输入焦点） */
-function refreshInherited() {
+export function refreshInherited() {
   const W = state.view.weight;
   document.querySelectorAll('#editor .ct-row[data-id], #editor .ct-row[data-ci]').forEach(row => {
     const key = row.dataset.id || '#' + row.dataset.ci;
     row.querySelectorAll('.num').forEach(inp => { inp.placeholder = inp.dataset.field === 'size' ? inheritedSize(key, W) : inheritedShift(key); });
   });
 }
-function renderChipsStatus() {
+export function renderChipsStatus() {
   document.querySelectorAll('.status[data-key]').forEach(el => {
     const s = sources.get(el.dataset.key);
     el.className = 'status ' + (s ? s.status : 'loading');
@@ -344,7 +347,7 @@ function renderChipsStatus() {
 }
 
 /* ================= 渲染：校样 ================= */
-function renderPreview() {
+export function renderPreview() {
   const v = state.view, pt = $('#proofText');
   $('#sheet').classList.toggle('vertical', v.vertical);
   $('#sheet').classList.toggle('rules', !!v.rules);
@@ -402,9 +405,9 @@ function renderPreview() {
    校样里每个字按「本类别的字体 → （例外字符所在类别的字体）→ 汉字基础字体」检查，第一个有这个字的字体就是实际显示它的字体。
    不是本类别的字体 = 一级（合成字体里的其他字体代替）；都没有 = 二级（落到系统字体）。
    空白、组合附加符号、格式字符本来就没有宽度，不检查 */
-let missTok = 0, missMap = null;
-const MISS_SKIP = /[\s\p{M}\p{Cf}]/u;
-async function checkMiss() {
+export let missTok = 0, missMap = null;
+export const MISS_SKIP = /[\s\p{M}\p{Cf}]/u;
+export async function checkMiss() {
   const tok = ++missTok;
   if (!state.view.miss) { missMap = null; paintMiss(); return; }
   const W = state.view.weight, base = resolveCls('han', W, true);
@@ -435,7 +438,7 @@ async function checkMiss() {
   paintMiss();
 }
 /* 鼠标停在标了波浪线的字上：在字旁边弹出说明 */
-function missTipAt(x, y) {
+export function missTipAt(x, y) {
   const tip = $('#missTip');
   const hide = () => { tip.hidden = true; };
   if (!missMap?.size) return hide();
@@ -460,9 +463,9 @@ function missTipAt(x, y) {
   }
   hide();
 }
-const checkMissSoon = debounce(checkMiss, 120);
+export const checkMissSoon = debounce(checkMiss, 120);
 /* 用 Highlight API 标出缺字，不改 DOM（竖排也不会乱） */
-function paintMiss() {
+export function paintMiss() {
   if (!HL_OK) return;
   const sets = [null, new Highlight(), new Highlight()];
   sets[1].priority = sets[2].priority = 1;      // 盖在类别着色上面
@@ -480,9 +483,9 @@ function paintMiss() {
   }
   CSS.highlights.set('cf-miss1', sets[1]); CSS.highlights.set('cf-miss2', sets[2]);
 }
-const HL_OK = typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight === 'function';
-const HL_KEYS = ['latin', 'digit', 'kana', 'bopo', 'punct', 'symbol', 'shared', 'custom'];
-function paintClasses(el, on) {
+export const HL_OK = typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight === 'function';
+export const HL_KEYS = ['latin', 'digit', 'kana', 'bopo', 'punct', 'symbol', 'shared', 'custom'];
+export function paintClasses(el, on) {
   if (!HL_OK) return;
   HL_KEYS.forEach(k => CSS.highlights.delete('cf-' + k));
   if (!on) return;
@@ -504,12 +507,12 @@ function paintClasses(el, on) {
   }
   for (const k of HL_KEYS) CSS.highlights.set('cf-' + k, sets[k]);
 }
-function guessGeneric() {
+export function guessGeneric() {
   const l = fontLabel(resolveCls('han').font);
   return /serif|mincho|song|ming|明朝|宋|明|kai|楷|garamond|times/i.test(l) && !/sans/i.test(l) ? 'serif' : 'sans-serif';
 }
 /* 连续字重下不生效的设定：可变字体相对档位单独设定的粗细（设定本身保留，切回分档就恢复） */
-function contIgnored() {
+export function contIgnored() {
   const out = [];
   const check = (key, o, label) => {
     if (!o || o.follow || !o.font || !Array.isArray(vfAxisNow(o.font))) return;
@@ -523,9 +526,9 @@ function contIgnored() {
   return out;
 }
 /* 示例页签按界面语言排：简中界面先简体，繁中界面先台湾、香港，日文界面先日文 */
-const SAMPLE_ORDER = { zh: ['zh', 'tw', 'hk', 'ja'], tw: ['tw', 'hk', 'zh', 'ja'], ja: ['ja', 'zh', 'tw', 'hk'] };
-const orderedSamples = () => { const first = SAMPLE_ORDER[UI] || SAMPLE_ORDER.zh; return [...first, ...Object.keys(SAMPLES).filter(k => !first.includes(k))]; };
-function renderSampleTabs() {
+export const SAMPLE_ORDER = { zh: ['zh', 'tw', 'hk', 'ja'], tw: ['tw', 'hk', 'zh', 'ja'], ja: ['ja', 'zh', 'tw', 'hk'] };
+export const orderedSamples = () => { const first = SAMPLE_ORDER[UI] || SAMPLE_ORDER.zh; return [...first, ...Object.keys(SAMPLES).filter(k => !first.includes(k))]; };
+export function renderSampleTabs() {
   const v = state.view, cur = v.sample, cs = v.customs || [];
   const name = i => T('customSample') + (cs.length > 1 ? ' ' + (i + 1) : '');
   $('#sampleTabs').innerHTML = orderedSamples().map(k => [k, SAMPLES[k]]).map(([k, s]) => `<button type="button" role="tab" data-sample="${k}" aria-selected="${cur === k}">${esc(tr(s.label))}</button>`).join('') +
@@ -535,21 +538,21 @@ function renderSampleTabs() {
   tabFade();
 }
 /* 页签放不下时横向滚动：还有没露出来的一侧淡出，提示可以滚 */
-function tabFade() {
+export function tabFade() {
   const t = $('#sampleTabs'), max = t.scrollWidth - t.clientWidth;
   t.classList.toggle('fade-l', t.scrollLeft > 2);
   t.classList.toggle('fade-r', t.scrollLeft < max - 2);
 }
-function renderLangOptions() {
+export function renderLangOptions() {
   $('#exLang').innerHTML = `<option value="">${esc(T('anyLang'))}</option>` + TYPO.find(t => t.key === 'lang').values.map(([v, d]) => `<option value="${v}">${esc(tr(d))}</option>`).join('');
 }
 /* 左窗格的「字体 / 排版」页签 */
-function syncLeftTab() {
+export function syncLeftTab() {
   const k = state.view.ltab === 'typo' ? 'typo' : 'fonts';
   document.querySelectorAll('.pane-bar [data-ltab]').forEach(b => b.setAttribute('aria-selected', b.dataset.ltab === k));
   $('#paneFonts').hidden = k !== 'fonts'; $('#paneTypo').hidden = k !== 'typo';
 }
-function syncToolbar() {
+export function syncToolbar() {
   const v = state.view;
   syncLeftTab();
   renderSampleTabs();
@@ -591,18 +594,18 @@ function syncToolbar() {
 }
 
 /* 字重的常用名。400 = normal（正文），700 = bold（b、strong、h1–h6 的默认） */
-const W_NAMES = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
-const wTag = w => w === 400 || w === 700 ? `<small>${esc(T(w === 400 ? 'w400' : 'w700'))}</small>` : '';      // 按钮上直接写「正文」「粗体」
-const wTip = w => `${w} · ${W_NAMES[w]}` + (w === 400 ? ' — ' + T('w400Tip') : w === 700 ? ' — ' + T('w700Tip') : '');
+export const W_NAMES = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
+export const wTag = w => w === 400 || w === 700 ? `<small>${esc(T(w === 400 ? 'w400' : 'w700'))}</small>` : '';      // 按钮上直接写「正文」「粗体」
+export const wTip = w => `${w} · ${W_NAMES[w]}` + (w === 400 ? ' — ' + T('w400Tip') : w === 700 ? ' — ' + T('w700Tip') : '');
 /* 浏览器按 CSS 的字重匹配规则，从导出的字重里找最接近的（CSS Fonts 4 §5.2） */
-function matchWeight(ws, want) {
+export function matchWeight(ws, want) {
   if (ws.includes(want)) return want;
   const lo = ws.filter(w => w < want).sort((a, b) => b - a), hi = ws.filter(w => w > want).sort((a, b) => a - b);
   if (want >= 400 && want <= 500) return hi.find(w => w <= 500) ?? lo[0] ?? hi[0];
   return want < 400 ? lo[0] ?? hi[0] : hi[0] ?? lo[0];
 }
 /* 导出字重下面的提示：缺了 400 / 700 时说明正文、粗体会怎样显示 */
-function renderWHint() {
+export function renderWHint() {
   const el = $('#exWHint'), ws = state.weights, miss = [400, 700].filter(w => !ws.includes(w)), out = [];
   if (miss.includes(400)) out.push(T('wMiss400', { w: matchWeight(ws, 400) }));
   if (miss.includes(700)) { const m = matchWeight(ws, 700); out.push(T(m < 600 ? 'wMiss700Faux' : 'wMiss700', { w: m })); }
@@ -611,10 +614,10 @@ function renderWHint() {
 }
 
 /* ================= 度量 ================= */
-let lastMeasure = null, lastRef = null;
-function cssVar(n) { return getComputedStyle(root).getPropertyValue(n).trim(); }
+export let lastMeasure = null, lastRef = null;
+export function cssVar(n) { return getComputedStyle(root).getPropertyValue(n).trim(); }
 /* 汉字字体自带西文的比例：用汉字字体单独排「国」「H」「x」 */
-function measureRef() {
+export function measureRef() {
   const han = sources.get(fontKey(usedFont(resolveCls('han', state.view.weight, true))));
   if (!han || han.status !== 'ok') return null;
   const c = document.createElement('canvas').getContext('2d'), fs = 200;
@@ -629,8 +632,8 @@ function measureRef() {
 /* 度量参考图：汉字字面为基准，叠上西文（大写高、x 高）、数字（数字高）、假名（假名字面）的参考线。
    西文、数字、假名可以在「显示」里分别隐藏 */
 /* 度量参考图的显示项：菜单里的项目固定。参考线太多会看不清，所以假名默认只在日文、注音默认只在繁體中文（台灣）时勾选；手动勾过的以手动为准 */
-const specShown = () => ({ latin: true, digit: true, kana: /^ja/.test(state.typo.lang || ''), bopo: state.typo.lang === 'zh-Hant-TW', ...(state.view.specShow || {}) });
-function drawSpecimen() {
+export const specShown = () => ({ latin: true, digit: true, kana: /^ja/.test(state.typo.lang || ''), bopo: state.typo.lang === 'zh-Hant-TW', ...(state.view.specShow || {}) });
+export function drawSpecimen() {
   const cv = $('#spec'), sh = specShown();
   const W = cv.clientWidth || 600;
   const ctx = cv.getContext('2d');

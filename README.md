@@ -69,6 +69,7 @@ python3 -m http.server
 ```
 index.html            Markup
 assets/style.css      Styles
+assets/js/main.js     Entry point: loads the ES modules below, then starts the page
 assets/js/i18n.js     Helpers and language selection
 assets/js/i18n/       Interface text, one file per language (zh, ja, tw), one key per line
 assets/js/unicode.js  Unicode ranges and character classes
@@ -79,7 +80,7 @@ assets/js/export.js   CSS and baseline-script generation
 assets/js/bake.js     Font-file export (TTF / OTF / WOFF2) in a Pyodide worker
 assets/py/            fontTools wheel served to the worker
 assets/js/ui.js       Interaction, preset cards, font picker, start-up
-tools/rehash.py       Updates the ?v= cache hashes in index.html after editing assets
+tools/rehash.py       Updates the ?v= hashes and the module import map in index.html after editing assets
 tools/bake.py         Command-line font baking with the same code as the page (job.json + source fonts)
 tests/py/             Font baking tests (pytest, small OFL fixture fonts in tests/fixtures)
 tests/e2e/            Page tests (Playwright): CSS output snapshots per preset, UI, vertical layout, font-file export

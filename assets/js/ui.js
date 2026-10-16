@@ -1,10 +1,15 @@
-'use strict';
+import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
+import { CLASSES, CLS, inRanges, rebuildClassRanges } from './unicode.js';
+import { BASE_W, ENGINE, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, WORD_RE, autoLocal, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, ownSize, presetDirty, presetSnap, rebuild, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, userPresets, vfAxis, vfCache } from './core.js';
+import { PUNCT_CENTER, REGION_OF_LANG, drawSpecimen, lastMeasure, lastRef, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
+import { initFontTab } from './bake.js';
+import { cssFamilyName, exTab, lastExport, renderExport, setExKind, setExTab } from './export.js';
 /* ================= 交互：字符类别表 ================= */
-function targetOf(row) { return row.dataset.id ? { type: 'class', id: row.dataset.id } : { type: 'custom', i: +row.dataset.ci }; }
-const keyOf = t => t.type === 'class' ? t.id : '#' + t.i;
-const objOf = t => t.type === 'class' ? state.classes[t.id] : state.custom[t.i];
-const resolvedOf = t => t.type === 'class' ? resolveCls(t.id) : resolveCustom(state.custom[t.i]);
-function changed({ fonts = false, editor = true } = {}) {
+export function targetOf(row) { return row.dataset.id ? { type: 'class', id: row.dataset.id } : { type: 'custom', i: +row.dataset.ci }; }
+export const keyOf = t => t.type === 'class' ? t.id : '#' + t.i;
+export const objOf = t => t.type === 'class' ? state.classes[t.id] : state.custom[t.i];
+export const resolvedOf = t => t.type === 'class' ? resolveCls(t.id) : resolveCustom(state.custom[t.i]);
+export function changed({ fonts = false, editor = true } = {}) {
   refreshCustomRanges();
   if (editor) renderEditor(); else refreshInherited();
   renderPreview();
@@ -12,12 +17,12 @@ function changed({ fonts = false, editor = true } = {}) {
   markCustomPreset();
   saveState();
 }
-function markCustomPreset() {
+export function markCustomPreset() {
   if (state.preset && !String(state.preset).startsWith('user:')) { state.preset = ''; renderPresetCards(); }
 }
-const LIMITS = { size: [20, 300], shift: [-60, 60] };
+export const LIMITS = { size: [20, 300], shift: [-60, 60] };
 /* 写入一格：空 = 恢复继承；commit 为 false 时（还在输入）忽略超出范围的中间值 */
-function setNum(inp, commit) {
+export function setNum(inp, commit) {
   const t = targetOf(inp.closest('.ct-row')), key = keyOf(t), field = inp.dataset.field, W = state.view.weight;
   const raw = inp.value.trim();
   let v = raw === '' ? null : parseFloat(raw);
@@ -88,7 +93,7 @@ $('#editor').addEventListener('keydown', e => {
   setNum(inp, true);
 });
 /* (i) 说明：所有说明文字共用一个弹层，打开时按 data-info 填入内容 */
-const INFO = {
+export const INFO = {
   presetInfo: () => esc(T('presetInfo')),
   classInfo: () => `<p>${esc(T('inheritHint'))}</p><dl>${CLASSES.map(c => `<dt>${esc(tr(c.name))}</dt><dd>${esc(tr(c.desc))}</dd>`).join('')}</dl>`,
   customInfo: () => T('customIntro'),
@@ -100,16 +105,16 @@ const INFO = {
   baseInfo: () => T('baseInfo'), genericInfo: () => T('genericInfo'), scopeInfo: () => T('scopeInfo'),
   otfInfo: () => `<p>${esc(T('fxOtfHint'))}</p>`,
 };
-function infoHtml(key) {
+export function infoHtml(key) {
   if (key.startsWith('typo:')) { const t = TYPO.find(x => x.key === key.slice(5)); return t?.note ? esc(tr(t.note)) : ''; }
   return INFO[key] ? INFO[key]() : '';
 }
-function placePop(pop, btn) {
+export function placePop(pop, btn) {
   const r = btn?.getBoundingClientRect(); if (!r) return;
   pop.style.left = Math.max(8, Math.min(r.left - 12, innerWidth - pop.offsetWidth - 8)) + 'px';
   pop.style.top = (r.bottom + 8 + pop.offsetHeight > innerHeight ? Math.max(8, r.top - pop.offsetHeight - 8) : r.bottom + 8) + 'px';
 }
-let infoBtn = null;
+export let infoBtn = null;
 document.addEventListener('click', e => {
   const b = e.target.closest('.info'); if (!b) return;
   infoBtn = b; $('#infoPop').dataset.key = b.dataset.info;
@@ -120,7 +125,7 @@ $('#infoPop').addEventListener('toggle', e => {
   pop.innerHTML = infoHtml(pop.dataset.key || '');
   placePop(pop, infoBtn);
 });
-let gearBtn = null;
+export let gearBtn = null;
 $('#editor').addEventListener('click', e => {
   const g = e.target.closest('[data-act="groups"]');
   if (g) { gearBtn = g; $('#grpPop').dataset.cls = g.dataset.cls; }      // popovertarget 会接着打开弹层
@@ -147,15 +152,15 @@ $('#grpPop').addEventListener('click', e => {
   changed({ fonts: true });
   renderGroups();
 });
-function setPreviewWeight(W) {
+export function setPreviewWeight(W) {
   if (W === state.view.weight) return;
   state.view.weight = W;
   syncToolbar(); renderEditor(); rebuild(); saveState();
 }
 
 /* ================= 交互：校样、度量、导出 ================= */
-const SUPPORT = { sizeAdjust: typeof FontFace !== 'undefined' && 'sizeAdjust' in FontFace.prototype };
-function initToolbar() {
+export const SUPPORT = { sizeAdjust: typeof FontFace !== 'undefined' && 'sizeAdjust' in FontFace.prototype };
+export function initToolbar() {
   $('#gfWeight').innerHTML = WEIGHTS.map(w => `<option value="${w}">${w}</option>`).join('');
   $('#gfList').innerHTML = GF_LIST.map(f => `<option value="${esc(f)}"></option>`).join('');
   $('#lfList').innerHTML = LOCAL_COMMON.map(([n, , os]) => `<option value="${esc(n)}">${os}</option>`).join('');
@@ -320,7 +325,7 @@ function initToolbar() {
   });
   const tabs = { tabCss: 'css', tabJs: 'js' };
   for (const [id, key] of Object.entries(tabs)) $('#' + id).addEventListener('click', () => {
-    exTab = key;
+    setExTab(key);
     for (const other of Object.keys(tabs)) $('#' + other).setAttribute('aria-selected', other === id);
     renderExport();
   });
@@ -346,7 +351,7 @@ function initToolbar() {
     }
   });
 }
-function renderTypoRows() {
+export function renderTypoRows() {
   $('#browserName').textContent = ENGINE.name ? T('browserNow', { b: `${ENGINE.name} ${ENGINE.v}` }) : '';
   const row = t => {
     const opts = t.values.map(([v, d]) => `<option value="${esc(v)}">${esc(v)}${d ? ' · ' + esc(tr(d)) : ''}${typoSupported(t, v) ? '' : esc(T('unsupported'))}</option>`).join('');
@@ -370,8 +375,8 @@ function renderTypoRows() {
   renderTypoStatus();
 }
 /* 行高度量：写在 @font-face 的 ascent-override 等描述符里，几乎都用推荐值，所以放在高级排版属性的最后 */
-const LM_SUP = { chrome: '87', firefox: '89', safari: '—' };
-function lmRow() {
+export const LM_SUP = { chrome: '87', firefox: '89', safari: '—' };
+export function lmRow() {
   const ok = typeof FontFace !== 'undefined' && 'ascentOverride' in FontFace.prototype;
   const sup = ['chrome', 'firefox', 'safari'].map(b => `<span class="${b === ENGINE.id ? `cur ${ok ? 'ok' : 'no'}` : ''}"${b === ENGINE.id ? ` title="${esc(T(ok ? 'supOk' : 'supNo'))}"` : ''}>${{ chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' }[b]} ${LM_SUP[b]}</span>`).join('');
   return `<div class="typo-row">
@@ -380,7 +385,7 @@ function lmRow() {
       <div class="typo-sup">${sup}</div>
     </div>`;
 }
-function renderTypoStatus() {
+export function renderTypoStatus() {
   document.querySelectorAll('#typoRows [data-typo], #featRows [data-typo]').forEach(b => b.setAttribute('aria-checked', state.typo[b.dataset.typo] === b.dataset.v));
   renderNumHint(); renderEaMarks();
   const changed = TYPO.filter(t => !t.attr && state.typo[t.key] !== typoDef(t));
@@ -400,20 +405,20 @@ function renderTypoStatus() {
 }
 
 /* ================= 预设卡片：每张卡片用它自己的字体排「永」「あ／字」「Ag」 ================= */
-function presetFonts(cls) {
+export function presetFonts(cls) {
   const han = cls.han.font, lat = cls.latin.follow ? han : cls.latin.font;
   const kana = cls.kana.follow === 'latin' ? lat : cls.kana.follow ? han : cls.kana.font;
   return { han, lat, kana, size: cls.latin.size ?? 100 };
 }
-function famOf(f) {
+export function famOf(f) {
   if (!f) return 'var(--ui)';
   const s = source(f);
   return s.status === 'ok' ? `'${s.family}', var(--ui)` : 'var(--ui)';
 }
 /* 缩略字样「永 ? Ag」：中间那个字按文字写法换——简体「体」、繁体「體」、日文「あ」，一眼看出是哪种中文 */
-const SCRIPT_CHAR = { sc: '体', tc: '體', jp: 'あ' };
-const scriptOfLang = lang => /^ja/.test(lang || '') ? 'jp' : /^zh-Hant/.test(lang || '') ? 'tc' : 'sc';
-function presetCard({ id, name, tag, cls, script, user, active }) {
+export const SCRIPT_CHAR = { sc: '体', tc: '體', jp: 'あ' };
+export const scriptOfLang = lang => /^ja/.test(lang || '') ? 'jp' : /^zh-Hant/.test(lang || '') ? 'tc' : 'sc';
+export function presetCard({ id, name, tag, cls, script, user, active }) {
   const { han, lat, kana, size } = presetFonts(cls);
   const miss = [han, lat].some(f => f?.kind === 'local' && sources.get(fontKey(f))?.status === 'error');
   return `<div class="pcard-wrap"><button type="button" class="pcard" data-preset="${esc(id)}" aria-pressed="${active}">
@@ -424,13 +429,13 @@ function presetCard({ id, name, tag, cls, script, user, active }) {
     </button>${user ? `<button type="button" class="pdel" data-del="${esc(id.slice(5))}" aria-label="${esc(T('presetDelete'))} ${esc(name)}">×</button>` : ''}</div>`;
 }
 /* 预设按界面语言排：收起时第一排先放这个语言的预设，其他语言的排在后面 */
-const PRESET_ORDER = {
+export const PRESET_ORDER = {
   zh: ['serif-sc', 'sans-sc', 'mincho-jp', 'gothic-jp', 'ming-tw', 'hei-tw', 'antigochi', 'hei-hk', 'mac', 'mac-tw', 'mac-jp'],
   tw: ['ming-tw', 'hei-tw', 'hei-hk', 'mac-tw', 'serif-sc', 'sans-sc', 'mincho-jp', 'gothic-jp', 'antigochi', 'mac', 'mac-jp'],
   ja: ['mincho-jp', 'gothic-jp', 'antigochi', 'mac-jp', 'serif-sc', 'sans-sc', 'ming-tw', 'hei-tw', 'hei-hk', 'mac', 'mac-tw'],
 };
-const orderedPresets = () => { const o = PRESET_ORDER[UI] || PRESET_ORDER.zh, at = id => (i => i < 0 ? 99 : i)(o.indexOf(id)); return [...PRESETS].sort((a, b) => at(a.id) - at(b.id)); };
-function renderPresetCards() {
+export const orderedPresets = () => { const o = PRESET_ORDER[UI] || PRESET_ORDER.zh, at = id => (i => i < 0 ? 99 : i)(o.indexOf(id)); return [...PRESETS].sort((a, b) => at(a.id) - at(b.id)); };
+export function renderPresetCards() {
   const cards = orderedPresets().map(p => presetCard({ id: p.id, name: tr(p.name), tag: tr(p.tag), cls: freshClasses(p), script: p.region === 'hk' ? 'tc' : p.region, active: state.preset === p.id }));
   for (const [n, snap] of Object.entries(userPresets)) if (snap?.classes?.han)
     cards.push(presetCard({ id: 'user:' + n, name: n, tag: T('presetMine'), cls: snap.classes, script: scriptOfLang(snap.typo?.lang), user: true, active: state.preset === 'user:' + n }));
@@ -440,7 +445,7 @@ function renderPresetCards() {
 }
 /* 收起时只留第一排：网格放得下几列就显示几张，其余在「全部预设」里。
    正在用的预设排在后面时，占第一排的最后一格，收起时也看得到当前选的是哪个 */
-function fitPresets() {
+export function fitPresets() {
   const grid = $('#presetCards'), cards = [...grid.querySelectorAll('.pcard-wrap')], open = !!state.view.presetsOpen;
   const cols = getComputedStyle(grid).gridTemplateColumns.split(' ').filter(Boolean).length || 1;
   const btn = $('#presetMore'), fits = cards.length <= cols;
@@ -452,16 +457,16 @@ function fitPresets() {
   btn.setAttribute('aria-expanded', open);
   btn.lastElementChild.textContent = open ? T('presetLess') : T('presetAll', { n: cards.length });
 }
-const renderPresetCardsSoon = debounce(renderPresetCards, 120);
-const hasFileFont = () => [...CLASSES.map(c => state.classes[c.id].font), ...state.custom.map(c => c.font)].some(f => f && f.kind === 'file');
-function applyPreset(id) {
+export const renderPresetCardsSoon = debounce(renderPresetCards, 120);
+export const hasFileFont = () => [...CLASSES.map(c => state.classes[c.id].font), ...state.custom.map(c => c.font)].some(f => f && f.kind === 'file');
+export function applyPreset(id) {
   if (id.startsWith('user:')) {
     const saved = userPresets[id.slice(5)]; if (!saved) return;
-    state = { ...JSON.parse(JSON.stringify(saved)), view: state.view, preset: id };
+    setState({ ...JSON.parse(JSON.stringify(saved)), view: state.view, preset: id });
   } else {
     const p = PRESETS.find(x => x.id === id); if (!p) return;
     const keepText = !(state.view.sample in SAMPLES);
-    state = stateFromPreset(p, state);
+    setState(stateFromPreset(p, state));
     state.preset = id;
     if (!keepText) { state.view.sample = p.sample; state.view.text = SAMPLES[p.sample].text; state.typo.lang = SAMPLES[p.sample].lang; state.view.vertical = !!p.vertical; }
   }
@@ -471,7 +476,7 @@ function applyPreset(id) {
 }
 /* 自动调整西文大小：以汉字字体自带的西文为基准，取「按大写高对齐」和「按 x 高对齐」的几何平均，大写高不超过自带西文的 103%；
    汉字字体没有自带西文时，让大写高占字面的 83%。返回要乘的倍数，量不到时为 null */
-function idealScale() {
+export function idealScale() {
   if (!lastMeasure) return null;
   if (lastRef && !lastRef.none) {
     const sCap = lastRef.cap / lastMeasure.capRatio, sX = lastRef.x / lastMeasure.xRatio;
@@ -484,9 +489,9 @@ function idealScale() {
       400 写进基础设定；其他字重和 400 相差不到 0.5 的沿用 400，否则写成这个字重自己的大小。
    2. 基线：调好大小后，按 400（没导出 400 时按当前字重）量大写字母的中线和汉字字面中线的差。
       差在 2% em 以内看不出来，基线保持 0——不为了看不出的差别让导出多一段 JS */
-const SHIFT_MIN = 2;
-let autoBusy = false, autoDoneTimer = 0;
-async function autoAdjust() {
+export const SHIFT_MIN = 2;
+export let autoBusy = false, autoDoneTimer = 0;
+export async function autoAdjust() {
   if (autoBusy) return;
   const cont = state.wmode === 'cont', list = cont ? WEIGHTS.filter(W => stepSpan(W)) : [...state.weights];
   const W0 = state.view.weight, C0 = state.view.wcont, sizes = {};
@@ -533,7 +538,7 @@ async function autoAdjust() {
   toast(T('tAuto', { size, shift: sh }));
 }
 /* 把现在的设定存成自己的预设 */
-function savePresetAs(n) {
+export function savePresetAs(n) {
   const snap = JSON.parse(JSON.stringify(state)); delete snap.view; delete snap.presetBase;
   userPresets[n] = snap; lsSet(LS_PRESETS, userPresets);
   state.preset = 'user:' + n; state.presetBase = presetSnap();
@@ -541,8 +546,8 @@ function savePresetAs(n) {
   toast(T('tSaved', { n }) + (hasFileFont() ? T('tSavedFile') : ''));
 }
 /* 改过设定后换预设：先问要不要存下来 */
-let leaveTo = null;
-function askLeave(id) {
+export let leaveTo = null;
+export function askLeave(id) {
   leaveTo = id;
   const name = id.startsWith('user:') ? id.slice(5) : tr(PRESETS.find(p => p.id === id)?.name || { zh: id, ja: id, tw: id });
   $('#leaveMsg').textContent = T('leaveMsg', { name });
@@ -550,7 +555,7 @@ function askLeave(id) {
   $('#leaveDlg').showModal();
   $('#leaveName').focus();
 }
-function initPresets() {
+export function initPresets() {
   let armed = null;
   $('#presetCards').addEventListener('click', e => {
     const del = e.target.closest('.pdel');
@@ -593,16 +598,16 @@ function initPresets() {
   $('#presetName').addEventListener('keydown', e => { if (e.key === 'Enter') doSave(); if (e.key === 'Escape') closeSave(); });
 }
 /* ================= 字体选择对话框 ================= */
-let pickTarget = null, pickCand = null, pickTab = 'google';
-let pickW = null;   // 400 以外的字重、且这一行有自己的字体时：只为这个字重指定用哪个粗细 / 字体名 / 文件
-const picker = $('#picker');
-function setPickTab(tab) {
+export let pickTarget = null, pickCand = null, pickTab = 'google';
+export let pickW = null;   // 400 以外的字重、且这一行有自己的字体时：只为这个字重指定用哪个粗细 / 字体名 / 文件
+export const picker = $('#picker');
+export function setPickTab(tab) {
   pickTab = tab;
   picker.querySelectorAll('[data-src]').forEach(b => b.setAttribute('aria-selected', b.dataset.src === tab));
   picker.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== tab; });
   updateCand();
 }
-function candFromFields() {
+export function candFromFields() {
   const base = pickW ? objOf(pickTarget).font : null;
   if (pickTab === 'google') {
     const fam = $('#gfFamily').value.trim(), w = gfWeightVal();
@@ -620,8 +625,8 @@ function candFromFields() {
   return null;
 }
 /* 本机字体的轴：「列出本机字体」授权后，能读到字体文件本身 */
-const localData = new Map(), localAxes = new Map();      // 字体全名 → FontData；→ 读到的轴（undefined = 读取中）
-function localAxesOf(name) {
+export const localData = new Map(), localAxes = new Map();      // 字体全名 → FontData；→ 读到的轴（undefined = 读取中）
+export function localAxesOf(name) {
   if (localAxes.has(name)) return localAxes.get(name);
   const fd = localData.get(name);
   if (!fd) return null;
@@ -630,9 +635,9 @@ function localAxesOf(name) {
   return undefined;
 }
 /* ================= 可变轴（粗细、斜体以外）：对这个类别的所有字重生效 ================= */
-let pickVary = {};
-const axStep = (lo, hi) => hi - lo <= 2 ? 0.01 : hi - lo <= 30 ? 0.1 : 1;
-function renderAxes() {
+export let pickVary = {};
+export const axStep = (lo, hi) => hi - lo <= 2 ? 0.01 : hi - lo <= 30 ? 0.1 : 1;
+export function renderAxes() {
   const box = $('#pkAxes'), f = pickCand, ax = f ? extraAxes(f) : [];
   box.hidden = !ax.length && !f?.axesUnknown;
   if (box.hidden) return applySampleAxes();
@@ -663,13 +668,13 @@ function renderAxes() {
   applySampleAxes();
 }
 /* 收起时也看得到调了什么：「光学尺寸 跟随字号 · 宽度 80」，没调时写「4 个轴，都是默认值」 */
-function updateAxSum() {
+export function updateAxSum() {
   const el = $('#pkAxes .ax-sum'), f = pickCand; if (!el || !f) return;
   const n = extraAxes(f).length, list = Object.entries(pickVary).filter(([t]) => axisOf(f, t)).map(([t, v]) => `${axisLabel(t)} ${v === 'auto' ? T('axOpszAuto') : v}`);
   el.textContent = list.length ? list.join(' · ') : n ? T('axNone', { n }) : '';
 }
 /* 对话框里的预览：Google Fonts 加载的是保留了所有轴的文件，这里用 font-variation-settings 直接显示调过的值 */
-function applySampleAxes() {
+export function applySampleAxes() {
   const f = pickCand, parts = [];
   for (const [t, , , def] of f ? extraAxes(f) : []) {
     const v = pickVary[t];
@@ -678,10 +683,10 @@ function applySampleAxes() {
   }
   $('#pkSample').style.fontVariationSettings = parts.join(', ');
 }
-const previewFont = f => f?.kind === 'google' && extraAxes(f).length ? { ...f, xa: extraAxes(f).map(a => a[0]).sort() } : f;
-const cleanVary = f => { const o = Object.fromEntries(Object.entries(pickVary).filter(([t]) => axisOf(f, t))); return Object.keys(o).length ? o : undefined; };
+export const previewFont = f => f?.kind === 'google' && extraAxes(f).length ? { ...f, xa: extraAxes(f).map(a => a[0]).sort() } : f;
+export const cleanVary = f => { const o = Object.fromEntries(Object.entries(pickVary).filter(([t]) => axisOf(f, t))); return Object.keys(o).length ? o : undefined; };
 /* 导出斜体时：这个字体斜体用什么 */
-function renderItal() {
+export function renderItal() {
   const el = $('#pkItal'), f = pickCand;
   el.hidden = !state.italic || !f;
   if (el.hidden) return;
@@ -692,7 +697,7 @@ function renderItal() {
 }
 /* ================= 字符覆盖：这个字体有哪些字 ================= */
 /* 每个字符集抽查一组有代表性的字（简体、繁体、日本汉字各取彼此不同的字形） */
-const COV_SETS = [
+export const COV_SETS = [
   ['covLatin', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'],
   ['covPinyin', 'āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü'],      // 汉语拼音：西文字体缺这些时，拼音会一个字母一个字母地混用后面的字体
   ['covDigit', '0123456789'],
@@ -706,13 +711,13 @@ const COV_SETS = [
 ];
 /* 缺哪些字。Google Fonts 直接看各分片的 unicode-range。本机字体和字体文件：后面接一个「空白字体」
    （616 字节，所有字符都映射到宽度为 0 的空字形），这个字体没有的字会落到空白字体上，宽度量出来就是 0 */
-const BLANK_FONT = 'data:font/ttf;base64,AAEAAAAKAIAAAwAgT1MvMlQEUR0AAACsAAAAYGNtYXAAIrhhAAABDAAAADRnbHlmAAAAAAAAAUAAAAAMaGVhZF8eQOUAAAFMAAAANmhoZWEDIf87AAABhAAAACRobXR4AAAAAAAAAagAAAAIbG9jYQAGAAYAAAGwAAAABm1heHAAAwACAAABuAAAACBuYW1lBcMVaQAAAdgAAABucG9zdP+fADIAAAJIAAAAIAAEAAABkAAFAAAAAAAAAAAAAAAAAAAAAAAAADIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABOT05FAEAAIP//AyD/OAAAAyAAyAAAAAEAAAAAAAAAAAAAACAAAAAAAAEAAwAKAAAADAANAAAAAAAoAAAAAAAAAAIAAAAgAADX/wAAAAEAAOAAABD//wAAAAEAAAAAAAAAAAAAAAAAAQAAAAEAAC3z3ftfDzz1AAsD6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAgAAAAAAAAABAAADIP84AAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAABgAGAAAAAQAAAAIAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAQANgADAAEECQABAA4AAAADAAEECQACAA4ADgADAAEECQAEAA4AHAADAAEECQAGAA4AKgBDAEYAQgBsAGEAbgBrAFIAZQBnAHUAbABhAHIAQwBGAEIAbABhAG4AawBDAEYAQgBsAGEAbgBrAAAAAwAAAAAAAP+cADIAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
-let blankReady = null;
-function loadBlank() {
+export const BLANK_FONT = 'data:font/ttf;base64,AAEAAAAKAIAAAwAgT1MvMlQEUR0AAACsAAAAYGNtYXAAIrhhAAABDAAAADRnbHlmAAAAAAAAAUAAAAAMaGVhZF8eQOUAAAFMAAAANmhoZWEDIf87AAABhAAAACRobXR4AAAAAAAAAagAAAAIbG9jYQAGAAYAAAGwAAAABm1heHAAAwACAAABuAAAACBuYW1lBcMVaQAAAdgAAABucG9zdP+fADIAAAJIAAAAIAAEAAABkAAFAAAAAAAAAAAAAAAAAAAAAAAAADIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABOT05FAEAAIP//AyD/OAAAAyAAyAAAAAEAAAAAAAAAAAAAACAAAAAAAAEAAwAKAAAADAANAAAAAAAoAAAAAAAAAAIAAAAgAADX/wAAAAEAAOAAABD//wAAAAEAAAAAAAAAAAAAAAAAAQAAAAEAAC3z3ftfDzz1AAsD6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAgAAAAAAAAABAAADIP84AAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAABgAGAAAAAQAAAAIAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAQANgADAAEECQABAA4AAAADAAEECQACAA4ADgADAAEECQAEAA4AHAADAAEECQAGAA4AKgBDAEYAQgBsAGEAbgBrAFIAZQBnAHUAbABhAHIAQwBGAEIAbABhAG4AawBDAEYAQgBsAGEAbgBrAAAAAwAAAAAAAP+cADIAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
+export let blankReady = null;
+export function loadBlank() {
   blankReady ||= new FontFace('__cf_blank', `url(${BLANK_FONT})`).load().then(f => { document.fonts.add(f); return true; }, () => false);
   return blankReady;
 }
-async function missingIn(s, chars) {
+export async function missingIn(s, chars) {
   if (s.font.kind === 'google') {
     const all = s.faces.flatMap(fc => fc.range || [[0, 0x10FFFF]]).sort((a, b) => a[0] - b[0]), merged = [];
     for (const r of all) { const l = merged[merged.length - 1]; if (l && r[0] <= l[1] + 1) l[1] = Math.max(l[1], r[1]); else merged.push([...r]); }
@@ -724,8 +729,8 @@ async function missingIn(s, chars) {
   ctx.font = `32px "${s.family}", "__cf_blank"`;
   return new Set(chars.filter(c => ctx.measureText(c).width === 0));
 }
-let covTok = 0;
-async function renderCoverage(s, f) {
+export let covTok = 0;
+export async function renderCoverage(s, f) {
   const tok = ++covTok, box = $('#pkCov'), sample = $('#pkSample');
   const text = sample.dataset.text || sample.textContent;
   const sampleChars = [...new Set([...text].filter(c => c.trim() && c !== '·'))];
@@ -740,7 +745,7 @@ async function renderCoverage(s, f) {
   sample.innerHTML = [...text].map(c => miss.has(c) ? `<span class="miss">${esc(c)}</span>` : esc(c)).join('');
 }
 /* 选字体时也告诉用户：这个字体的标点是居中（台湾、香港）还是靠左下（大陆、日本）；和当前语言不一致时标黄 */
-function renderPunct(s, f) {
+export function renderPunct(s, f) {
   const el = $('#pkPunct'), lang = state.typo.lang, want = REGION_OF_LANG[lang], pos = punctPos(s, lang);
   if (pos === undefined) { el.hidden = true; setTimeout(() => { if (pickCand === f) renderPunct(s, f); }, 300); return; }
   el.hidden = !pos;
@@ -748,14 +753,14 @@ function renderPunct(s, f) {
   el.textContent = T(pos === 'center' ? 'pkPunctCenter' : 'pkPunctCorner');
   el.classList.toggle('bad', want in PUNCT_CENTER && (pos === 'center') !== PUNCT_CENTER[want]);
 }
-function resetCoverage() {
+export function resetCoverage() {
   $('#pkPunct').hidden = true;
   covTok++;
   $('#pkCov').innerHTML = '';
   const sample = $('#pkSample');
   if (sample.dataset.text) sample.textContent = sample.dataset.text;
 }
-function updateCand() {
+export function updateCand() {
   const f = candFromFields();
   pickCand = f;
   updateScope();
@@ -788,23 +793,23 @@ function updateCand() {
     }
   });
 }
-const updateCandSoon = debounce(updateCand, 700);
+export const updateCandSoon = debounce(updateCand, 700);
 /* 本机字体名去掉粗细部分（W3、Bold 等），用来判断是不是同一个字体 */
-const localStem = n => n.replace(/\bW\d$/, '').replace(WORD_RE, '').trim().toLowerCase();
+export const localStem = n => n.replace(/\bW\d$/, '').replace(WORD_RE, '').trim().toLowerCase();
 /* 选的是不是这一行原来那个字体（同一字体的其他粗细 / 名称 / 文件） */
-const sameFontAs = (c, base) => !!c && !!base && c.kind === base.kind && (c.kind === 'google' ? c.family === base.family : c.kind === 'local' ? localStem(c.name) === localStem(base.name) : c === base);
-function updateScope() {
+export const sameFontAs = (c, base) => !!c && !!base && c.kind === base.kind && (c.kind === 'google' ? c.family === base.family : c.kind === 'local' ? localStem(c.name) === localStem(base.name) : c === base);
+export function updateScope() {
   const show = !!pickW && !!pickCand && !sameFontAs(pickCand, objOf(pickTarget).font);
   $('#pkScope').hidden = !show;
 }
 /* Google Fonts 的字重：可变字体换成能填任意值的数字框（范围是它的 wght 轴），其他字体用 100–900 的菜单 */
 /* 可变字体的标签：「VF 400–800」，悬停看说明 */
-function showVfTag(axis) {
+export function showVfTag(axis) {
   const tag = $('#pkVfTag');
   tag.hidden = !axis;
   if (axis) { tag.textContent = `VF ${axis[0]}–${axis[1]}`; tag.title = T('pkVf', { a: axis[0], b: axis[1] }); }
 }
-function syncGfWeight() {
+export function syncGfWeight() {
   const fam = $('#gfFamily').value.trim(), sel = $('#gfWeight'), num = $('#gfWeightNum');
   const axis = fam && fam in vfCache ? vfCache[fam] || null : null;
   if (fam && !(fam in vfCache)) vfAxis(fam).then(() => { if ($('#gfFamily').value.trim() === fam) syncGfWeight(); });
@@ -813,13 +818,13 @@ function syncGfWeight() {
   num.hidden = !axis; sel.hidden = !!axis;
   if (axis) { num.min = axis[0]; num.max = axis[1]; num.title = T('vfTitle', { a: axis[0], b: axis[1] }); }
 }
-function gfWeightVal() {
+export function gfWeightVal() {
   const num = $('#gfWeightNum');
   if (num.hidden) return +$('#gfWeight').value;
   if (num.value.trim() === '') return 0;          // 空着 = 自动（按字重设定时）或 400
   return Math.min(+num.max || 900, Math.max(+num.min || 100, Math.round(+num.value)));
 }
-function openPicker(t) {
+export function openPicker(t) {
   pickTarget = t;
   const o = objOf(t), W = state.view.weight, key = keyOf(t);
   pickVary = { ...(o.vary || {}) };
@@ -858,7 +863,7 @@ function openPicker(t) {
   picker.showModal();
   setPickTab(pickW ? (ovf || o.font).kind : cur?.kind || 'google');
 }
-function initPicker() {
+export function initPicker() {
   picker.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => setPickTab(b.dataset.src)));
   $('#gfFamily').addEventListener('input', updateCandSoon);
   $('#gfFamily').addEventListener('change', updateCand);
@@ -960,11 +965,11 @@ function initPicker() {
 
 /* ================= 界面语言 ================= */
 /* 「原理与限制」左边的目录：当前语言那一份说明里的小标题 */
-function renderAboutToc() {
+export function renderAboutToc() {
   const body = document.querySelector(`.about-body [data-ui="${UI}"]`); if (!body) return;
   $('#aboutToc').innerHTML = [...body.querySelectorAll('h3')].map((h, i) => { h.id ||= `about-${UI}-${i}`; return `<a href="#${h.id}">${esc(h.textContent)}</a>`; }).join('');
 }
-function applyUI() {
+export function applyUI() {
   root.lang = UI === 'ja' ? 'ja' : UI === 'tw' ? 'zh-Hant-TW' : 'zh-Hans';
   document.querySelectorAll('[data-t]').forEach(el => { el.textContent = T(el.dataset.t); });
   document.querySelectorAll('[data-th]').forEach(el => { el.innerHTML = T(el.dataset.th); });
@@ -977,21 +982,21 @@ function applyUI() {
 }
 $('#uiSeg').addEventListener('click', e => {
   const b = e.target.closest('[data-ui-lang]'); if (!b || b.dataset.uiLang === UI) return;
-  UI = b.dataset.uiLang; lsSet(LS_UI, UI); applyUI();
+  setUI(b.dataset.uiLang); lsSet(LS_UI, UI); applyUI();
 });
 
 /* ================= 其他 ================= */
-let toastT;
-function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
+export let toastT;
+export function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
 
 /* 重置：点一次变成确认，3 秒内再点才执行。「我的预设」不受影响 */
-function resetAll() {
-  state = stateFromPreset(PRESETS.find(p => p.id === defaultPresetId()));
+export function resetAll() {
+  setState(stateFromPreset(PRESETS.find(p => p.id === defaultPresetId())));
   normalizeState();
   refreshCustomRanges(); syncToolbar(); renderTypoRows(); renderEditor(); renderPreview(); renderPresetCards(); rebuild(); saveState();
   toast(T('tReset'));
 }
-function initReset() {
+export function initReset() {
   $('#typoReset').addEventListener('click', () => {
     for (const t of TYPO) if (!t.attr && !isFontTypo(t)) state.typo[t.key] = typoDef(t);
     renderTypoRows(); renderPreview(); renderExport(); saveState();
@@ -1014,12 +1019,11 @@ function initReset() {
     resetAll();
   });
 }
-function init() {
+export function init() {
   refreshCustomRanges();
   initToolbar(); initPresets(); initPicker(); initReset(); initFontTab();
   $('#aboutToc').addEventListener('click', e => { const a = e.target.closest('a'); if (!a) return; e.preventDefault(); document.getElementById(a.hash.slice(1))?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); });
-  exKind = state.view.exKind === 'font' ? 'font' : 'css'; $('#export').dataset.kind = exKind;
-  document.querySelectorAll('.ex-kinds [data-kind]').forEach(b => b.setAttribute('aria-selected', b.dataset.kind === exKind));
+  setExKind(state.view.exKind, false);
   applyUI();
   rebuildNow();
   new ResizeObserver(debounce(drawSpecimen, 100)).observe($('#spec'));
@@ -1027,4 +1031,3 @@ function init() {
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => drawSpecimen());
   new MutationObserver(() => drawSpecimen()).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 }
-init();

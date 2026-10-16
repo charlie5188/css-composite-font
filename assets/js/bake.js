@@ -1,4 +1,10 @@
-'use strict';
+import { $, T, esc, lsGet } from './i18n.js';
+import { EFF } from './unicode.js';
+import { GF_AXES } from './gfmeta.js';
+import { G, WEIGHTS, axisOf, buildPlan, customRanges, files, fontKey, fontLabel, normalizeState, rebuild, refreshCustomRanges, saveState, setState, settingOf, state, validState } from './core.js';
+import { renderEditor, renderPreview, syncToolbar, wTag, wTip } from './render.js';
+import { cssFamilyName, exKind, ownerName, setExKind } from './export.js';
+import { renderPresetCards, toast } from './ui.js';
 /* ================= 导出 · 字体文件 =================
    把合成字体做成真正的字体文件（TTF，可选 WOFF2）：每个字重、正斜体各一个，打包成 zip。
    做法和导出的 CSS 一一对应：同一张规则表（buildPlan），每条规则的字体只取它负责的字，按 size-adjust 缩放、
@@ -7,7 +13,7 @@
    - Google Fonts：google/fonts 仓库里的完整文件（网页接口给的切片去掉了大部分 OpenType 特性）
    - 上传的字体：直接用文件内容
    artifact 等嵌入页面不能下载外部文件，改为打开 GitHub Pages 版，并在链接里带上当前设置 */
-const BK = {
+export const BK = {
   pyodide: 'https://cdn.jsdelivr.net/npm/pyodide@0.27.7/',
   brotli: 'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/brotli-1.1.0-cp312-cp312-pyodide_2024_0_wasm32.whl',
   wheel: 'assets/py/fonttools-4.60.2-py3-none-any.whl',      // PyPI 不允许网页跨域下载，放在仓库里由 GitHub Pages 提供
@@ -17,22 +23,22 @@ const BK = {
   api: 'https://api.github.com/repos/google/fonts/contents/',
   runtimeMB: 15,      // Pyodide + fontTools，第一次要下载的大小
 };
-const CAN_BAKE = window.top === window.self;      // 和「下载文件」按钮同一个判断：嵌入的框架里浏览器会拦截下载
-const STY = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
-const styleName = (W, ital) => ital ? (W === 400 ? 'Italic' : `${STY[W]} Italic`) : STY[W];
-const LIC_NAME = { ofl: 'OFL', apache: 'Apache 2.0', ufl: 'UFL' };
+export const CAN_BAKE = window.top === window.self;      // 和「下载文件」按钮同一个判断：嵌入的框架里浏览器会拦截下载
+export const STY = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
+export const styleName = (W, ital) => ital ? (W === 400 ? 'Italic' : `${STY[W]} Italic`) : STY[W];
+export const LIC_NAME = { ofl: 'OFL', apache: 'Apache 2.0', ufl: 'UFL' };
 /* 写进字体和 zip 的许可说明用英文：字体的元数据、许可文件一般都是英文 */
-const LIC_OFL = ['This Font Software is licensed under the SIL Open Font License, Version 1.1.', 'https://openfontlicense.org'];
-const LIC_PRIVATE = ['Contains fonts used under their own licenses. Private use only; do not redistribute.', ''];
-const LIC_HEAD_OPEN = 'This font combines the fonts listed below. All of them are under the SIL Open Font License 1.1 or a compatible open license, and this font is licensed under the SIL Open Font License 1.1. Their copyright notices and license texts follow.';
-const LIC_HEAD_PRIVATE = 'This font combines the fonts listed below. Some of them are not under an open license; whoever made this font confirmed they have the right to modify and combine them. Do not redistribute this font.';
+export const LIC_OFL = ['This Font Software is licensed under the SIL Open Font License, Version 1.1.', 'https://openfontlicense.org'];
+export const LIC_PRIVATE = ['Contains fonts used under their own licenses. Private use only; do not redistribute.', ''];
+export const LIC_HEAD_OPEN = 'This font combines the fonts listed below. All of them are under the SIL Open Font License 1.1 or a compatible open license, and this font is licensed under the SIL Open Font License 1.1. Their copyright notices and license texts follow.';
+export const LIC_HEAD_PRIVATE = 'This font combines the fonts listed below. Some of them are not under an open license; whoever made this font confirmed they have the right to modify and combine them. Do not redistribute this font.';
 
 /* ---------- Google Fonts 的源文件：google/fonts 仓库里的完整文件 ----------
    先按仓库的命名规则直接猜文件名（可变字体：字体族去空格[轴,…].ttf，轴名按 ASCII 排序；静态字体：字体族去空格-Regular.ttf 等），
    用 HEAD 请求确认存在；猜不到才用 GitHub API 列目录。API 每个 IP 每小时只能用 60 次，公司网络里很多人共用一个出口，很快会用完 */
-const gfDirs = new Map();      // 字体族 -> { st: 'loading' | 'ok' | 'err', lic, slug, names: [[文件名, 大小]], text, rfn }
-const gfUrl = (lic, slug, name) => BK.raw + lic + '/' + slug + '/' + encodeURIComponent(name);
-async function gfGuess(family, slug) {
+export const gfDirs = new Map();      // 字体族 -> { st: 'loading' | 'ok' | 'err', lic, slug, names: [[文件名, 大小]], text, rfn }
+export const gfUrl = (lic, slug, name) => BK.raw + lic + '/' + slug + '/' + encodeURIComponent(name);
+export async function gfGuess(family, slug) {
   let lic = null, text = '';
   for (const [l, f] of [['ofl', 'OFL.txt'], ['apache', 'LICENSE.txt'], ['ufl', 'UFL.txt'], ['ufl', 'LICENCE.txt']]) {
     const r = await fetch(gfUrl(l, slug, f));
@@ -46,7 +52,7 @@ async function gfGuess(family, slug) {
   if (!names.length) names = (await Promise.all(Object.entries(STY).flatMap(([w, st]) => [`${stem}-${st}.ttf`, `${stem}-${+w === 400 ? '' : st}Italic.ttf`]).map(head))).filter(Boolean);
   return names.length ? { lic, names, text } : null;
 }
-async function gfList(slug) {
+export async function gfList(slug) {
   for (const lic of ['ofl', 'apache', 'ufl']) {
     const r = await fetch(BK.api + lic + '/' + slug);
     if (r.status === 404) continue;
@@ -56,7 +62,7 @@ async function gfList(slug) {
   }
   throw Object.assign(new Error('gf'), { code: 'gfNone' });
 }
-function gfInfo(family) {
+export function gfInfo(family) {
   let g = gfDirs.get(family);
   if (g) return g;
   g = { st: 'loading' };
@@ -73,7 +79,7 @@ function gfInfo(family) {
   return g;
 }
 /* 选文件：可变字体优先（正体 / Italic 各一个）；静态字体取最接近的一档，和 CSS 的字重匹配一样 400 以上往粗找 */
-function gfPick(names, weight, ital) {
+export function gfPick(names, weight, ital) {
   const fonts = names.filter(([n]) => /\.(ttf|otf)$/i.test(n));
   const vf = fonts.find(([n]) => n.includes('[') && n.includes('Italic') === ital);
   if (vf) return { name: vf[0], size: vf[1], vf: true };
@@ -88,7 +94,7 @@ function gfPick(names, weight, ital) {
   return { name: have[0][1][0], size: have[0][1][1], vf: false };
 }
 /* OFL 的保留名称（Reserved Font Name）：新字体的名字里不能有 */
-function rfnOf(text) {
+export function rfnOf(text) {
   const out = new Set();
   for (const m of (text || '').matchAll(/Reserved Font Names?\s*((?:[“"'‘][^“”"'‘’\n]+[”"'’][\s,&]*(?:and\s*)?)+)/gi))
     for (const q of m[1].matchAll(/[“"'‘]([^“”"'‘’\n]+)[”"'’]/g)) out.add(q[1].trim());
@@ -96,15 +102,15 @@ function rfnOf(text) {
 }
 
 /* ---------- 上传的字体、本机字体：读 name / OS/2 表，判断许可和轮廓 ---------- */
-const fileMetas = new Map();      // fileId -> 结果；读取中为 null
-function fileMeta(id, fl) {
+export const fileMetas = new Map();      // fileId -> 结果；读取中为 null
+export function fileMeta(id, fl) {
   if (fileMetas.has(id)) return fileMetas.get(id);
   fileMetas.set(id, null);
   readFontMeta(fl.buffer).then(m => { fileMetas.set(id, m); if (exKind === 'font') renderFontTab(); });
   return null;
 }
 /* ps：字体集合（TTC）里要用的那一款的 PostScript 名；不给就看第一款 */
-async function readFontMeta(buf, ps) {
+export async function readFontMeta(buf, ps) {
   const m = { lic: 'unknown', rfn: [], size: buf.byteLength };
   try {
     const v = new DataView(buf), tag = x => String.fromCharCode(x >>> 24, (x >> 16) & 255, (x >> 8) & 255, x & 255);
@@ -148,7 +154,7 @@ async function readFontMeta(buf, ps) {
   } catch (e) { /* 读不懂：许可不明 */ }
   return m;
 }
-function nameRecs(d) {
+export function nameRecs(d) {
   const got = {};
   if (d) for (let i = 0, count = d.getUint16(2), so = d.getUint16(4); i < count; i++) {
     const r = 6 + i * 12, pid = d.getUint16(r), eid = d.getUint16(r + 2), lid = d.getUint16(r + 4), nid = d.getUint16(r + 6), len = d.getUint16(r + 8), off = so + d.getUint16(r + 10);
@@ -163,8 +169,8 @@ function nameRecs(d) {
   return Object.fromEntries(Object.entries(got).map(([k, x]) => [k, x.s]));
 }
 /* 本机安装的字体：用浏览器的本机字体接口（Chrome / Edge）读文件内容。第一次要用户点按钮授权 */
-const fxLocal = { st: 'idle', map: new Map(), metas: new Map() };      // st：idle 没查过 / check 查权限中 / need 要用户授权 / asking / ok / denied
-async function fxLocalLoad(ask) {
+export const fxLocal = { st: 'idle', map: new Map(), metas: new Map() };      // st：idle 没查过 / check 查权限中 / need 要用户授权 / asking / ok / denied
+export async function fxLocalLoad(ask) {
   if (!('queryLocalFonts' in window)) return;
   if (!ask) {
     fxLocal.st = 'check';
@@ -180,8 +186,8 @@ async function fxLocalLoad(ask) {
   } catch (e) { fxLocal.st = 'denied'; }
   renderFontTab();
 }
-const localFind = f => [f.name, ...(f.alt || [])].map(n => fxLocal.map.get(n)).find(Boolean) || null;
-function localMeta(fd) {
+export const localFind = f => [f.name, ...(f.alt || [])].map(n => fxLocal.map.get(n)).find(Boolean) || null;
+export function localMeta(fd) {
   const k = fd.postscriptName;
   if (fxLocal.metas.has(k)) return fxLocal.metas.get(k);
   fxLocal.metas.set(k, null);
@@ -190,7 +196,7 @@ function localMeta(fd) {
 }
 
 /* ---------- 要生成哪些文件，各用哪些源字体 ---------- */
-function fxPlan() {
+export function fxPlan() {
   const fam = cssFamilyName(), out = { fam, jobs: [], srcs: new Map(), block: new Set(), loading: false, unknown: false, needLocal: false, rfn: null };
   const use = (p, W) => {
     const f = p.font;
@@ -257,7 +263,7 @@ function fxPlan() {
   return out;
 }
 /* 预计用时：实测 Pyodide 里每 MB 源字体约 2 秒（Noto Sans JP 9.6 MB 一个字重约 20 秒）；CFF 轮廓要转换，按两倍算 */
-function fxEstimate(pl) {
+export function fxEstimate(pl) {
   let sec = 0, mb = 0;
   for (const j of pl.jobs) {
     const mb = j.srcs.reduce((a, s) => { const x = s && pl.srcs.get(s.key); return a + (x ? (x.size || 0) / 1e6 : 0); }, 0);
@@ -268,17 +274,17 @@ function fxEstimate(pl) {
 }
 
 /* ---------- 字体文件：左边的设置、右边的面板 ---------- */
-const fx = { worker: null, sent: new Set(), running: false, agree: false, stage: '', pct: 0, t0: 0, tick: null, result: null, err: '', sig: '' };
-const fxSig = pl => JSON.stringify([pl.fam, state.fx.woff2, state.fx.otf, pl.jobs.map(j => [j.W, j.italic, j.srcs.map(s => s && [s.key, s.weight, s.fvs]), j.plan.map(p => [p.size, p.range && p.range.length])]), state.classes, state.custom]);
-const fmtMB = n => (n / 1e6).toFixed(n < 1e7 ? 1 : 0);
-function renderFontFields() {
+export const fx = { worker: null, sent: new Set(), running: false, agree: false, stage: '', pct: 0, t0: 0, tick: null, result: null, err: '', sig: '' };
+export const fxSig = pl => JSON.stringify([pl.fam, state.fx.woff2, state.fx.otf, pl.jobs.map(j => [j.W, j.italic, j.srcs.map(s => s && [s.key, s.weight, s.fvs]), j.plan.map(p => [p.size, p.range && p.range.length])]), state.classes, state.custom]);
+export const fmtMB = n => (n / 1e6).toFixed(n < 1e7 ? 1 : 0);
+export function renderFontFields() {
   $('#fxWeights').innerHTML = WEIGHTS.map(w => `<button type="button" data-w="${w}" aria-pressed="${state.fx.weights.includes(w)}" title="${esc(wTip(w))}"${wTag(w) ? ' class="wl"' : ''}>${w}${wTag(w)}</button>`).join('');
   $('#fxItalic').checked = state.fx.italic;
   $('#fxWoff2').checked = state.fx.woff2;
   $('#fxOtf').checked = state.fx.otf;
 }
-const fxLimits = () => `<div class="fx-sec fx-limits"><h3 class="fx-h">${esc(T('fxLimitsTitle'))}</h3><ul>${T('fxLimits').split('\n').map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
-function renderFontTab() {
+export const fxLimits = () => `<div class="fx-sec fx-limits"><h3 class="fx-h">${esc(T('fxLimitsTitle'))}</h3><ul>${T('fxLimits').split('\n').map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
+export function renderFontTab() {
   const box = $('#fontPane');
   if (!CAN_BAKE) {
     box.innerHTML = `<p class="fx-intro">${esc(T('fxEmbedded'))}</p><p><a class="btn primary" id="fxPages" href="${esc(BK.pages)}" target="_blank" rel="noopener">${esc(T('fxOpenPages'))} ↗</a></p>${fxLimits()}`;
@@ -330,7 +336,7 @@ function renderFontTab() {
     ${fxLimits()}`;
   renderFxRun(stale);
 }
-function renderFxRun(stale) {
+export function renderFxRun(stale) {
   const el = $('#fxRun'); if (!el) return;
   const s = fx.t0 ? Math.round(((fx.running ? performance.now() : fx.t1) - fx.t0) / 1000) : 0;
   if (fx.running) el.innerHTML = `<p>${esc(fx.stage)}</p><div class="fx-bar"><i style="width:${(fx.pct * 100).toFixed(1)}%"></i></div><p class="hint">${esc(T('fxElapsed', { s }))}</p>`;
@@ -344,7 +350,7 @@ function renderFxRun(stale) {
 }
 
 /* ---------- 生成 ---------- */
-async function fxFetch(url, onProgress) {
+export async function fxFetch(url, onProgress) {
   let cache = null;
   try { cache = await caches.open('composite-font-src-v1'); const hit = await cache.match(url); if (hit) return await hit.arrayBuffer(); } catch (e) { cache = null; }
   const r = await fetch(url);
@@ -356,13 +362,13 @@ async function fxFetch(url, onProgress) {
   try { if (cache) await cache.put(url, new Response(buf.slice(0))); } catch (e) { /* 缓存满了：下次重新下载 */ }
   return buf;
 }
-function fxStop(err) {
+export function fxStop(err) {
   if (fx.worker) { fx.worker.terminate(); fx.worker = null; fx.sent.clear(); }
   fx.abort?.(); fx.abort = null;      // 正在等 Worker 的 fxRun 结束掉
   fx.running = false; fx.t1 = performance.now(); clearInterval(fx.tick);
   fx.err = err || ''; renderFontTab();
 }
-async function fxRun() {
+export async function fxRun() {
   const pl = fxPlan();
   if (!pl.jobs.length || pl.block.size || pl.rfn || pl.loading || pl.needLocal || (pl.unknown && !fx.agree)) return;
   Object.assign(fx, { running: true, err: '', result: null, pct: 0, t0: performance.now(), stage: T('fxStPrep'), sig: fxSig(pl) });
@@ -423,7 +429,7 @@ async function fxRun() {
     fxStop(msg);
   }
 }
-function fxSave() {
+export function fxSave() {
   const r = fx.result; if (!r) return;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(r.zip); a.download = r.name;
@@ -431,7 +437,7 @@ function fxSave() {
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
 /* zip 里的许可文件：全是开源字体时是 OFL.txt（附上各来源的许可全文），有许可不明的字体时是 LICENSES.txt */
-function fxLicenseText(pl, open) {
+export function fxLicenseText(pl, open) {
   const parts = [open ? LIC_HEAD_OPEN : LIC_HEAD_PRIVATE, ''];
   for (const s of pl.srcs.values()) {
     parts.push('='.repeat(72), s.name, '='.repeat(72));
@@ -441,7 +447,7 @@ function fxLicenseText(pl, open) {
   }
   return parts.join('\n');
 }
-function fxReadme(pl) {
+export function fxReadme(pl) {
   const j = pl.jobs[0];
   const lines = [T('fxRmHead', { fam: pl.fam }), '', T('fxRmFiles'), ...pl.jobs.map(x => '  ' + x.label), '', T('fxRmParts')];
   for (const p of j.plan) {
@@ -453,14 +459,14 @@ function fxReadme(pl) {
 }
 
 /* ---------- 从 artifact 带设置到 GitHub Pages：设置压缩后放在链接的 #cfg= 里 ---------- */
-const b64u = bytes => { let s = ''; for (let i = 0; i < bytes.length; i += 8192) s += String.fromCharCode(...bytes.subarray(i, i + 8192)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
-async function cfgLink() {
+export const b64u = bytes => { let s = ''; for (let i = 0; i < bytes.length; i += 8192) s += String.fromCharCode(...bytes.subarray(i, i + 8192)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
+export async function cfgLink() {
   try {
     const z = await new Response(new Blob([JSON.stringify({ ...state, view: { ...state.view, text: state.view.text.slice(0, 2500) } })]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer();
     return BK.pages + '#cfg=' + b64u(new Uint8Array(z));
   } catch (e) { return BK.pages; }
 }
-async function importCfg() {
+export async function importCfg() {
   const m = /^#cfg=([\w-]+)$/.exec(location.hash);
   if (!m) return;
   history.replaceState(null, '', location.pathname + location.search);
@@ -468,14 +474,14 @@ async function importCfg() {
     const bin = atob(m[1].replace(/-/g, '+').replace(/_/g, '/')), bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
     const s = JSON.parse(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text());
     if (!validState(s)) return;
-    state = s;
+    setState(s);
     normalizeState(); refreshCustomRanges(); syncToolbar(); renderEditor(); renderPreview(); renderPresetCards(); rebuild(); saveState();
     toast(T('fxImported'));
     setExKind('font');
     $('#export').scrollIntoView({ block: 'start' });
   } catch (e) { /* 链接坏了：照常打开 */ }
 }
-function initFontTab() {
+export function initFontTab() {
   $('#fxWeights').addEventListener('click', e => {
     const b = e.target.closest('[data-w]'); if (!b) return;
     const w = +b.dataset.w, ws = state.fx.weights;
@@ -496,7 +502,7 @@ function initFontTab() {
 }
 
 /* ---------- Worker：Pyodide + fontTools。整个函数转成字符串在 Worker 里运行，不能用外面的变量 ---------- */
-function bakeWorker() {
+export function bakeWorker() {
   let py = null, brotli = false;
   onmessage = async ({ data: m }) => {
     try {

@@ -1,6 +1,5 @@
-'use strict';
 /* 界面文字：日本語。一个键一行；三种语言的键要一致（tools/check-i18n.mjs 检查） */
-I18N.ja = {
+export default {
   fxOtf: "OTF も作る（印刷用）",
   fxOtfHint: "OTF は CFF の曲線で、アウトラインは TTF と同じです。印刷所や .otf が必要なワークフロー向けで、ファイルは 25〜36% 大きく、作成時間はおよそ倍になります。Figma、Keynote、Word などで使うなら TTF で十分です。",
   fxStOtf: "{name} を OTF に変換中（{i} / {n}）",

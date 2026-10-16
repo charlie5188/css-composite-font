@@ -1,6 +1,5 @@
-'use strict';
 /* 界面文字：简体中文。一个键一行；三种语言的键要一致（tools/check-i18n.mjs 检查） */
-I18N.zh = {
+export default {
   fxOtf: "同时生成 OTF（印刷用）",
   fxOtfHint: "OTF 用 CFF 曲线，轮廓和 TTF 相同，给印刷厂或要求 .otf 的流程用；文件大 25–36%，生成时间约多一倍。在 Figma、Keynote、Word 等软件里用 TTF 就够了。",
   fxStOtf: "转换成 OTF：{name}（{i} / {n}）",

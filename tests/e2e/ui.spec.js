@@ -1,6 +1,19 @@
 const { test, expect } = require('@playwright/test');
 const { open, pick } = require('./helpers');
 
+test('页面加载、切换预设、切语言都没有脚本错误', async ({ page }) => {
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  // 网络请求失败（试探 Google 上不存在的字重等）不算脚本错误
+  page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|net::|CORS policy/.test(m.text())) errors.push(m.text()); });
+  await open(page);
+  for (const id of ['gothic-jp', 'antigochi', 'serif-sc']) { await pick(page, id); await page.waitForTimeout(300); }
+  await page.click('[data-ui-lang="ja"]'); await page.click('[data-ui-lang="tw"]'); await page.click('[data-ui-lang="zh"]');
+  await page.click('#kindFont'); await page.click('#kindCss'); await page.click('#tabJs');
+  await page.waitForTimeout(500);
+  expect(errors).toEqual([]);
+});
+
 test('导出：切换网页 / 字体文件，左边的设置跟着换', async ({ page }) => {
   await open(page);
   await page.click('#kindCss');
