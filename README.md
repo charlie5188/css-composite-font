@@ -169,7 +169,7 @@ InDesign / Illustrator の「合成フォント」のように、漢字・かな
 - 适用语言。导出的规则可以限定在一种语言里，不同语言的复合字体可以写在同一个样式表里，各自只对自己语言的内容生效。`:lang(zh-Hant)` 匹配不到 `lang="zh-TW"`（浏览器不会从地区推出文字），所以用 `:is(:lang(…))` 把常见写法都包进去：简体中文另匹配 `zh-CN`、`zh-SG`，台湾匹配 `zh-TW` 和不带地区的 `zh-Hant`，香港匹配 `zh-HK`、`zh-Hant-HK` 和澳门的写法。
 - 台湾、香港的繁体中文：预设（Noto Serif TC / Noto Sans TC / Noto Sans HK、苹方-繁）和按各地用语写的示例文字。字体和校样的语言不符时，类别表里会提示；和适用语言不符时，导出区会提示：量全角逗号的位置（台湾、香港居中，大陆、日本靠左下；Noto CJK 这类字体会按 `lang` 切换，所以测量时也带上语言），并按字族名（SC / TC / HK / JP）判断字形的地区。选择字体时会显示标点位置，并检查香港字（粤语用字、HKSCS）的覆盖。
 - 注音符号。注音这一类负责 ㄅㄆㄇ 和声调号 ˊ ˇ ˋ ˙（声调号原本在西文的区段里，不归过来就会用西文字体显示）。带重音的西文字母（é、à）是另外的码位，仍归西文；声调号也可以在齿轮里改回西文。
-- CSS 原生 CJK 排版属性（`text-autospace`、`text-spacing-trim`、`word-break: auto-phrase`、`line-break`、`text-wrap` 等）会写进导出的规则，并注明支持的浏览器版本。默认值以正文为前提：`text-align: justify`、`line-break: strict`、`hanging-punctuation: allow-end`。不用 `text-wrap: pretty`：Safari 的 pretty 会把每行排短，还会让标点悬挂失效。
+- CSS 原生 CJK 排版属性（`text-autospace`、`text-spacing-trim`、`word-break: auto-phrase`、`line-break`、`hanging-punctuation`）会写进导出的规则，并注明支持的浏览器版本。默认值以正文为前提：`line-break: strict`、`hanging-punctuation: allow-end`。对齐（`text-align`、`text-justify`）和段落换行（`text-wrap`）属于页面版式，只在校样的「显示」菜单里调，不写进导出的 CSS；校样默认两端对齐。不用 `text-wrap: pretty`：Safari 的 pretty 会把每行排短，还会让标点悬挂失效。
 - 实时校样：示例文字（中文、日文、西文为主、漫画对白、字符表）或自己的文字，可以切换任意字重；支持竖排、类别着色（用 CSS Custom Highlight API，不改变排版）、行线、缺字标注（本类别的字体没有的字，按「由合成字体里的其他字体代替」和「落到系统字体」两级着色）、斜体，以及和普通 `font-family` 回退、`font-size-adjust` 做法的对照。
 - 设定保存在浏览器里；每一块和整个工具都可以重置。
 - 简体中文、繁体中文（台湾用语）、日本語界面，浅色和深色模式。

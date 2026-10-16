@@ -165,6 +165,8 @@ export default {
   presetDeleteConfirm: "削除する",
   presetName: "プリセット名",
   closeAria: "閉じる",
+  viewTypoNote: "揃えと段落の折り返しはページのレイアウトに属するため、プレビュー専用で、書き出す CSS には含まれません。",
+  vtDefault: "初期値（{v}）",
   mEdit: "編集",
   mPreview: "プレビュー",
   mTabsAria: "表示する列を切り替え",

@@ -1,6 +1,6 @@
 import { $, T, debounce, esc, tr } from './i18n.js';
 import { CLASSES, CLS, EFF, hex } from './unicode.js';
-import { LM, TYPO, WEIGHTS, buildPlan, buildSegments, customRanges, ensureLineMetrics, expandPlan, fontKey, fontLabel, fvsOf, gfSpec, italFallback, italOf, kindLabel, lmKey, lmOn, localSrc, overridesFor, resolveCls, resolveCustom, source, sources, state, stepSpan, typoMergedAway, typoValue, vfAxes, vfAxisNow } from './core.js';
+import { LM, TYPO, WEIGHTS, isViewTypo, buildPlan, buildSegments, customRanges, ensureLineMetrics, expandPlan, fontKey, fontLabel, fvsOf, gfSpec, italFallback, italOf, kindLabel, lmKey, lmOn, localSrc, overridesFor, resolveCls, resolveCustom, source, sources, state, stepSpan, typoMergedAway, typoValue, vfAxes, vfAxisNow } from './core.js';
 import { guessGeneric, renderLangWarn } from './render.js';
 import { renderFontFields, renderFontTab } from './bake.js';
 /* ================= 导出 ================= */
@@ -96,7 +96,7 @@ export function buildCss() {
   if (cont) out.splice(1, 0, T('cssCont', { a: state.wrange[0], b: state.wrange[1] }));
   const extra = [];
   for (const t of TYPO) {
-    if (typoMergedAway(t)) continue;      // 几行合成一条：数字样式 + 斜线零、字形标准 + 宽度
+    if (typoMergedAway(t) || isViewTypo(t)) continue;      // 几行合成一条：数字样式 + 斜线零、字形标准 + 宽度；对齐等只用于校样
     const val = typoValue(t);
     if (t.attr || !val || (!t.always && val === (t.init ?? t.def))) continue;
     const sup = t.sup ? `Chrome ${t.sup.chrome} · Firefox ${t.sup.firefox} · Safari ${t.sup.safari}` : '';

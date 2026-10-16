@@ -1,7 +1,7 @@
 import { refresh } from './refresh.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, inRanges, rebuildClassRanges } from './unicode.js';
-import { BASE_W, ENGINE, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, WORD_RE, autoLocal, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, ownSize, presetDirty, presetSnap, rebuild, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, userPresets, vfAxis, vfCache } from './core.js';
+import { BASE_W, ENGINE, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, ownSize, presetDirty, presetSnap, rebuild, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, userPresets, vfAxis, vfCache } from './core.js';
 import { PUNCT_CENTER, REGION_OF_LANG, drawSpecimen, lastMeasure, lastRef, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { cssFamilyName, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
@@ -248,6 +248,7 @@ export function initToolbar() {
   });
   for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vRules', 'rules'], ['vMiss', 'miss'], ['vItalic', 'italic']])
     $('#' + id).addEventListener('click', () => { v()[key] = !v()[key]; refresh('toolbar', 'preview', 'export'); });
+  $('#viewTypo').addEventListener('change', e => { const k = e.target.dataset.vtypo; if (k) { state.typo[k] = e.target.value; syncViewTypo(); refresh('preview'); } });
   $('#vWeight').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) setPreviewWeight(+b.dataset.w); });
   /* 连续模式：滑块直接改校样的粗细（所有分段的规则都已建好）；表格编辑最接近的那一档 */
   $('#vWcont').addEventListener('input', e => {
@@ -374,12 +375,25 @@ export function renderTypoRows() {
       <div class="typo-sup" data-key="${t.key}">${sup}</div>${t.hint ? `<p class="typo-note" id="${t.hint}" hidden></p>` : ''}
     </div>`;
   };
-  const rows = TYPO.filter(t => !t.attr);
+  const rows = TYPO.filter(t => !t.attr && !isViewTypo(t));
   $('#typoRows').innerHTML = rows.filter(t => !isFontTypo(t)).map(row).join('');
   $('#featRows').innerHTML = rows.filter(isFontTypo).map(row).join('') + lmRow();
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }
   $('#exLm').value = state.lineMetrics;
+  renderViewTypo();
   renderTypoStatus();
+}
+/* 「显示」菜单里的对齐、对齐方式、段落换行：只改校样，不导出 */
+export function renderViewTypo() {
+  const lab = (t, v, d) => d ? tr(d) : v === t.def ? T('vtDefault', { v }) : v;
+  $('#viewTypo').innerHTML = ['align', 'justify', 'wrap'].map(k => TYPO.find(t => t.key === k)).map(t => `<label class="vt-row"><span>${esc(tr(t.label))}</span><select data-vtypo="${t.key}">${
+    t.values.map(([v, d]) => `<option value="${esc(v)}"${state.typo[t.key] === v ? ' selected' : ''}>${esc(lab(t, v, d))}</option>`).join('')}</select></label>`).join('');
+  syncViewTypo();
+}
+/* 对齐方式只在两端对齐时有用 */
+export function syncViewTypo() {
+  document.querySelectorAll('#viewTypo [data-vtypo]').forEach(s => { s.value = state.typo[s.dataset.vtypo]; });
+  const j = $('#viewTypo [data-vtypo="justify"]'); if (j) j.disabled = state.typo.align !== 'justify';
 }
 /* 行高度量：写在 @font-face 的 ascent-override 等描述符里，几乎都用推荐值，所以放在高级排版属性的最后 */
 export const LM_SUP = { chrome: '87', firefox: '89', safari: '—' };
@@ -395,7 +409,7 @@ export function lmRow() {
 export function renderTypoStatus() {
   document.querySelectorAll('#typoRows [data-typo], #featRows [data-typo]').forEach(b => b.setAttribute('aria-checked', state.typo[b.dataset.typo] === b.dataset.v));
   renderNumHint(); renderEaMarks();
-  const changed = TYPO.filter(t => !t.attr && state.typo[t.key] !== typoDef(t));
+  const changed = TYPO.filter(t => !t.attr && !isViewTypo(t) && state.typo[t.key] !== typoDef(t));
   const n = changed.filter(t => !isFontTypo(t)).length, nf = changed.filter(isFontTypo).length + (state.lineMetrics === 'off' ? 1 : 0);
   $('#typoChanged').textContent = n ? T('typoChanged', { n }) : '';
   $('#typoCount').textContent = n || '';      // 页签上的小红点：改了几项
@@ -994,7 +1008,7 @@ export function resetAll() {
 }
 export function initReset() {
   $('#typoReset').addEventListener('click', () => {
-    for (const t of TYPO) if (!t.attr && !isFontTypo(t)) state.typo[t.key] = typoDef(t);
+    for (const t of TYPO) if (!t.attr && !isFontTypo(t) && !isViewTypo(t)) state.typo[t.key] = typoDef(t);
     refresh('typoRows', 'preview', 'export');
   });
   $('#featReset').addEventListener('click', () => {

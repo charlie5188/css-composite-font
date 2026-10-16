@@ -415,13 +415,14 @@ export const TYPO = [
     sup: { chrome: '58', firefox: '69', safari: '11' },
     values: [['auto', { zh: '由浏览器决定', ja: 'ブラウザに任せる', tw: '由瀏覽器決定' }], ['loose', { zh: '宽松', ja: 'ゆるい', tw: '寬鬆' }], ['normal', { zh: '标准', ja: '標準', tw: '標準' }], ['strict', { zh: '严格', ja: '厳しい', tw: '嚴格' }], ['anywhere', { zh: '任意处断行', ja: 'どこでも改行', tw: '任意處斷行' }]],
     note: { zh: '哪些字不能放在行首或行尾，例如句号、逗号不放在行首。auto 由浏览器按语言决定；strict 更严格，小写假名（っ、ゃ）和长音「ー」也不放行首，日文正文常用；loose 更宽松，适合窄栏；anywhere 在任何地方都可以断行。', ja: '行頭・行末に置けない文字の規則です（句読点を行頭に置かないなど）。auto はブラウザが言語に応じて決めます。strict はより厳しく、小書きのかな（っ・ゃ）や長音記号「ー」も行頭に置きません（日本語の本文でよく使います）。loose はゆるく、狭い段組み向けです。anywhere はどこでも改行します。', tw: '哪些字不能放在行首或行尾，例如句號、逗號不放在行首。auto 由瀏覽器按語言決定；strict 更嚴格，小寫假名（っ、ゃ）和長音「ー」也不放行首，日文內文常用；loose 更寬鬆，適合窄欄；anywhere 在任何地方都可以斷行。' } },
-  { key: 'wrap', label: { zh: '段落换行', ja: '段落の折り返し', tw: '段落換行' }, prop: 'text-wrap', def: 'wrap', init: 'wrap', tiles: true, tileHtml: tSvgTile('wrap'), tileW: 96, tileCode: true,
+  /* 段落换行、对齐、对齐方式（grp: 'view'）是页面版式，不属于字体：只用来看校样，不写进导出的 CSS，放在校样工具条的「显示」菜单里 */
+  { key: 'wrap', grp: 'view', label: { zh: '段落换行', ja: '段落の折り返し', tw: '段落換行' }, prop: 'text-wrap', def: 'wrap', init: 'wrap', tiles: true, tileHtml: tSvgTile('wrap'), tileW: 96, tileCode: true,
     sup: { chrome: 'balance 114 · pretty 117', firefox: 'balance 121', safari: 'balance 17.5 · pretty 26' },
     values: [['wrap', null], ['pretty', { zh: '避免末行孤字', ja: '最終行の孤立を避ける', tw: '避免末行孤字' }], ['balance', { zh: '各行等长（标题）', ja: '行長をそろえる（見出し）', tw: '各行等長（標題）' }]],
     note: { zh: 'Chrome 的 pretty 只调整段落最后四行。Safari 的 pretty 会重排整段：每行排得更短，两端对齐时字距被拉开，标点悬挂也会失效，所以正文默认不用。', ja: 'Chrome の pretty は段落の最後の 4 行だけを調整します。Safari の pretty は段落全体を組み直すため、行が短くなって両端揃えでは字間が空き、ぶら下がりも効かなくなります。そのため本文の初期値にはしていません。', tw: 'Chrome 的 pretty 只調整段落最後四行。Safari 的 pretty 會重排整段：每行排得更短，左右對齊時字距被拉開，標點懸掛也會失效，所以正文預設不用。' } },
-  { key: 'align', label: { zh: '对齐', ja: '揃え', tw: '對齊' }, prop: 'text-align', def: 'justify', tiles: true, tileHtml: tSvgTile('align'), tileW: 96, tileCode: true,
+  { key: 'align', grp: 'view', label: { zh: '对齐', ja: '揃え', tw: '對齊' }, prop: 'text-align', def: 'justify', tiles: true, tileHtml: tSvgTile('align'), tileW: 96, tileCode: true,
     values: [['justify', { zh: '两端对齐', ja: '両端揃え', tw: '兩端對齊' }], ['start', { zh: '齐头', ja: '行頭揃え', tw: '靠行首對齊' }], ['center', { zh: '居中', ja: '中央揃え', tw: '置中' }]] },
-  { key: 'justify', label: { zh: '对齐方式', ja: '両端揃えの方法', tw: '對齊方式' }, prop: 'text-justify', def: 'auto', tiles: true, tileHtml: tSvgTile('justify'), tileW: 96, tileCode: true,
+  { key: 'justify', grp: 'view', label: { zh: '对齐方式', ja: '両端揃えの方法', tw: '對齊方式' }, prop: 'text-justify', def: 'auto', tiles: true, tileHtml: tSvgTile('justify'), tileW: 96, tileCode: true,
     sup: { chrome: '145', firefox: '55', safari: '—' },
     values: [['auto', null], ['inter-character', { zh: '字间分配', ja: '字間で調整', tw: '字間分配' }], ['inter-word', { zh: '只在词间', ja: '語間のみ', tw: '只在詞間' }], ['none', null]],
     note: { zh: '配合 text-align: justify 使用。', ja: 'text-align: justify と組み合わせて使います。', tw: '配合 text-align: justify 使用。' } },
@@ -458,6 +459,8 @@ export const TYPO = [
 /* 几行合成一条 CSS 属性：数字样式 + 斜线零 → font-variant-numeric；字形标准 + 宽度 → font-variant-east-asian */
 /* grp: 'font' 的几行是字体的事（用哪个字形），放在「字体」页签；其余是排版的事，放在「排版」页签 */
 export const isFontTypo = t => t.grp === 'font';
+export const isViewTypo = t => t.grp === 'view';
+export const VIEW_TYPO = new Set(['wrap', 'align', 'justify']);      // 和 TYPO 里 grp: 'view' 的一致（presetSnap 在 TYPO 之前用不到它，所以直接列出）
 export const TYPO_MERGE = { 'font-variant-numeric': ['num', 'zero'], 'font-variant-east-asian': ['eaVar', 'eaWidth'] };
 export const typoValue = t => TYPO_MERGE[t.prop] ? TYPO_MERGE[t.prop].map(k => state.typo[k]).filter(v => v && v !== 'normal').join(' ') || 'normal' : state.typo[t.key];
 export const typoMergedAway = t => TYPO_MERGE[t.prop] && TYPO_MERGE[t.prop][0] !== t.key;      // 合并到前一行，导出时不单独写
@@ -519,7 +522,7 @@ export function freshClasses(p) {
 }
 export function stateFromPreset(p, prev) {
   return {
-    v: 10,
+    v: 11,
     preset: p.id,
     name: prev?.name || 'My Composite',
     weights: prev?.weights || [100, 200, 300, 400, 500, 600, 700, 800, 900],
@@ -554,7 +557,8 @@ export let state = null;
 export function setState(s) { state = s; }
 /* 预设有没有被改过：和套用（或保存）预设那一刻的设定比较。校样的文字、字号等（view）不算 */
 export const PRESET_SKIP = new Set(['view', 'preset', 'presetBase', 'v', 'fx']);
-export function presetSnap() { return JSON.stringify(state, function (k, v) { return this === state && PRESET_SKIP.has(k) ? undefined : v; }); }
+/* 只看校样用的排版设定（对齐等）不算改了预设 */
+export function presetSnap() { return JSON.stringify(state, function (k, v) { return this === state && PRESET_SKIP.has(k) || this === state.typo && VIEW_TYPO.has(k) ? undefined : v; }); }
 export const presetDirty = () => state.presetBase ? presetSnap() !== state.presetBase : state.preset === '';
 export function normalizeState() {
   if (!(state.v >= 2)) {    // 旧版本里「跟随」连大小、基线一起跟随，迁移为继承
@@ -603,6 +607,10 @@ export function normalizeState() {
   if (state.v === 9) {      // v10 起段落换行默认 wrap：Safari 的 pretty 会把每行排短，还会让标点悬挂失效。仍是旧默认值 pretty 的改回 wrap
     if (state.typo.wrap === 'pretty') state.typo.wrap = 'wrap';
     state.v = 10;
+  }
+  if (state.v === 10) {      // v11 起对齐、对齐方式、段落换行只用于校样，不算预设的一部分：从记下的预设快照里去掉，免得显示成「改过」
+    if (state.presetBase) try { const b = JSON.parse(state.presetBase); if (b.typo) for (const k of VIEW_TYPO) delete b.typo[k]; state.presetBase = JSON.stringify(b); } catch (e) { /* 坏了就不管 */ }
+    state.v = 11;
   }
   delete state.view.compare; delete state.view.cmp;      // 「对照其他做法」已删除
   delete state.view.presetsOpen;                                   // 预设移进左栏的页签以后，不再收起成一排

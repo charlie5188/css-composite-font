@@ -8,22 +8,22 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=7aac22c1">
+<link rel="stylesheet" href="assets/style.css?v=03c93742">
 <!-- 模块的缓存版本号：模块之间互相 import 时不带 ?v=，靠 import map 换成带版本号的地址（tools/rehash.py 生成） -->
 <script type="importmap">{
  "imports": {
   "./assets/js/bake.js": "./assets/js/bake.js?v=5d65813f",
-  "./assets/js/core.js": "./assets/js/core.js?v=fcccf05f",
-  "./assets/js/export.js": "./assets/js/export.js?v=6ff88406",
+  "./assets/js/core.js": "./assets/js/core.js?v=11e23971",
+  "./assets/js/export.js": "./assets/js/export.js?v=0ad91cd8",
   "./assets/js/gfmeta.js": "./assets/js/gfmeta.js?v=9a213e0f",
   "./assets/js/i18n.js": "./assets/js/i18n.js?v=7e4dac47",
-  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=cc07a214",
-  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=80953b92",
-  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=73d98840",
+  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=dc68863d",
+  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=2b0af542",
+  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=735cd1f6",
   "./assets/js/main.js": "./assets/js/main.js?v=77ec7ac1",
   "./assets/js/refresh.js": "./assets/js/refresh.js?v=4dffc5b8",
-  "./assets/js/render.js": "./assets/js/render.js?v=4ff83703",
-  "./assets/js/ui.js": "./assets/js/ui.js?v=4f870781",
+  "./assets/js/render.js": "./assets/js/render.js?v=0eaf0ed3",
+  "./assets/js/ui.js": "./assets/js/ui.js?v=7f3e854d",
   "./assets/js/unicode.js": "./assets/js/unicode.js?v=f50d2344"
  }
 }</script>
@@ -123,6 +123,9 @@
               <button class="tog" type="button" id="vRules" aria-pressed="false" data-t="vRules"></button>
               <button class="tog" type="button" id="vMiss" aria-pressed="false" data-t="vMiss"></button>
               <button class="tog" type="button" id="vItalic" aria-pressed="false" data-t="vItalic"></button>
+              <!-- 对齐等：页面版式，只改校样，不写进导出的 CSS -->
+              <div class="vt" id="viewTypo"></div>
+              <p class="vt-note" data-t="viewTypoNote"></p>
             </div>
             </div>
           </div>
@@ -251,7 +254,7 @@
         <h3>为什么不用 font-size-adjust</h3>
         <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支持双值语法）也能统一字号，但它对元素里的每个字体都生效：把西文调到目标大写高的同时，汉字字体也会按它自带的西文度量被缩放。它也不能按字符类别分配字体，解决不了引号归属。更关键的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同时出现时，<code>size-adjust</code> 不再起作用。所以使用复合字体的元素上不要再写 <code>font-size-adjust</code>。校样的「对照其他做法」里可以切换到这个做法比较效果。</p>
         <h3>CSS 原生 CJK 排版属性</h3>
-        <p>这些属性和复合字体互不冲突，可以叠加使用。下表是 2026 年 10 月 MDN 兼容性数据里各浏览器开始支持的版本。</p>
+        <p>这些属性和复合字体互不冲突，可以叠加使用。「排版」里的设定会写进导出的使用规则；对齐、对齐方式、段落换行属于页面版式，在校样的「显示」菜单里，只用于预览，不导出。下表是 2026 年 10 月 MDN 兼容性数据里各浏览器开始支持的版本。</p>
         <div class="sup-table"><table>
           <thead><tr><th>属性</th><th>作用</th><th>Chrome / Edge</th><th>Firefox</th><th>Safari</th></tr></thead>
           <tbody>
@@ -300,7 +303,7 @@
         <h3>為什麼不用 font-size-adjust</h3>
         <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支援雙值語法）也能統一字號，但它對元素裡的每個字型都生效：把西文調到目標大寫高的同時，漢字字型也會按它自帶的西文度量被縮放。它也不能按字元類別分配字型，解決不了引號歸屬。更關鍵的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同時出現時，<code>size-adjust</code> 不再起作用。所以使用複合字型的元素上不要再寫 <code>font-size-adjust</code>。校樣的「對照其他做法」裡可以切換到這個做法比較效果。</p>
         <h3>CSS 原生 CJK 排版屬性</h3>
-        <p>這些屬性和複合字型互不衝突，可以疊加使用。下表是 2026 年 10 月 MDN 相容性資料裡各瀏覽器開始支援的版本。</p>
+        <p>這些屬性和複合字型互不衝突，可以疊加使用。「排版」裡的設定會寫進匯出的使用規則；對齊、對齊方式、段落換行屬於頁面版式，在校樣的「顯示」選單裡，只用於預覽，不匯出。下表是 2026 年 10 月 MDN 相容性資料裡各瀏覽器開始支援的版本。</p>
         <div class="sup-table"><table>
           <thead><tr><th>屬性</th><th>作用</th><th>Chrome / Edge</th><th>Firefox</th><th>Safari</th></tr></thead>
           <tbody>
@@ -349,7 +352,7 @@
         <h3>font-size-adjust を使わない理由</h3>
         <p><code>font-size-adjust</code>（2 値構文は Chrome 127、Firefox 92、Safari 17 が対応）でもサイズをそろえられますが、要素内のすべてのフォントに効きます。欧文を目標のキャップハイトに合わせると、漢字フォントも付属欧文のメトリクスに応じて拡大縮小されます。文字クラスごとにフォントを割り当てることもできないため、引用符の問題も解決しません。さらに MDN によれば、<code>@font-face</code> の <code>size-adjust</code> と併用すると <code>size-adjust</code> が効かなくなります。合成フォントを使う要素には <code>font-size-adjust</code> を指定しないでください。校正刷りの「他の方法と比較」で違いを確認できます。</p>
         <h3>CSS ネイティブの CJK 組版プロパティ</h3>
-        <p>これらのプロパティは合成フォントと干渉せず、組み合わせて使えます。下の表は 2026 年 10 月時点の MDN 互換性データで、各ブラウザが対応を始めたバージョンです。</p>
+        <p>これらのプロパティは合成フォントと干渉せず、組み合わせて使えます。「組版」の設定は書き出す使用ルールに含まれます。揃え・両端揃えの方法・段落の折り返しはページのレイアウトに属するため、校正の「表示」メニューにあり、プレビュー専用で書き出しません。下の表は 2026 年 10 月時点の MDN 互換性データで、各ブラウザが対応を始めたバージョンです。</p>
         <div class="sup-table"><table>
           <thead><tr><th>プロパティ</th><th>働き</th><th>Chrome / Edge</th><th>Firefox</th><th>Safari</th></tr></thead>
           <tbody>

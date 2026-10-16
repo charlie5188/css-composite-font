@@ -165,6 +165,8 @@ export default {
   presetDeleteConfirm: "确认删除",
   presetName: "预设名称",
   closeAria: "关闭",
+  viewTypoNote: "对齐和段落换行属于页面版式，只用于预览，不写进导出的 CSS。",
+  vtDefault: "默认（{v}）",
   mEdit: "编辑",
   mPreview: "预览",
   mTabsAria: "切换显示的栏",

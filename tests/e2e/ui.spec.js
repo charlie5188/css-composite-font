@@ -99,3 +99,18 @@ test('竖排：换列的地方不加中西间距的 margin', async ({ page }) =>
   expect(bad.spans).toBeGreaterThan(3);
   expect(bad.out).toEqual([]);
 });
+
+test('对齐、段落换行只改校样，不写进导出的 CSS', async ({ page }) => {
+  await open(page);
+  await page.click('#viewBtn');
+  await page.selectOption('#viewTypo [data-vtypo="align"]', 'center');
+  await expect(page.locator('#viewTypo [data-vtypo="justify"]')).toBeDisabled();
+  await page.selectOption('#viewTypo [data-vtypo="wrap"]', 'balance');
+  expect(await page.evaluate(() => getComputedStyle(document.querySelector('#proofText')).textAlign)).toBe('center');
+  await page.keyboard.press('Escape');
+  await showExport(page);
+  const css = await page.textContent('#codeOut');
+  expect(css).not.toContain('text-align');
+  expect(css).not.toContain('text-wrap');
+  expect(css).toContain('line-break: strict');      // 排版页签里的照常导出
+});

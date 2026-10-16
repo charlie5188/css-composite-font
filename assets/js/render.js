@@ -1,7 +1,7 @@
 import { $, T, UI, debounce, esc, root, tr } from './i18n.js';
 import { CLASSES, CLS, GROUPS, classOf, fmtRanges, inRanges, isMoved } from './unicode.js';
 import { BASE_W, EA_FEAT, NUM_FEAT, NUM_TAGS, SAMPLES, TYPO, WEIGHTS, anyShift, axisLabel, axisOf, finalFont, fontAtWeight, fontKey, fontLabel, inheritedShift, inheritedSize, liveFamily, numLabel, numTags, objByKey, ownFontAt, ownSize, ownerOf, resolveCls, resolveCustom, settingOf, sources, srcError, state, typoValue, usedFont, vfAxisNow } from './core.js';
-import { loadBlank, missingIn, renderTypoStatus } from './ui.js';
+import { loadBlank, missingIn, renderTypoStatus, syncViewTypo } from './ui.js';
 /* ================= 渲染：字符类别表（对应 InDesign 的复合字体对话框） ================= */
 export const GLYPH = { han: '永', latin: 'Ag', digit: '01', kana: 'あ', bopo: 'ㄅ', punct: '」、', symbol: '※', shared: '“…' };
 export const visibleClasses = () => CLASSES;
@@ -560,6 +560,7 @@ export function syncToolbar() {
   if (document.activeElement !== $('#vLh')) $('#vLh').value = (+v.lh).toFixed(2);
   $('#vLhOut').textContent = `${+(v.size * v.lh).toFixed(1)}px`;      // 倍数在框里，实际的行距跟在后面
   $('#vVertical').setAttribute('aria-pressed', v.vertical);
+  syncViewTypo();
   $('#vColor').setAttribute('aria-pressed', v.colorize);
   $('#vItalic').setAttribute('aria-pressed', !!v.italic);
   $('#vRules').setAttribute('aria-pressed', !!v.rules);
