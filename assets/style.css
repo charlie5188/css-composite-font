@@ -531,6 +531,7 @@ button.wl small{font-family:var(--ui);font-size:11px;margin-left:5px;opacity:.75
 .fx-chk{display:flex;gap:8px;align-items:baseline;font-size:13px;line-height:1.55;cursor:pointer}
 .fx-chk input{flex:none;width:auto;margin:0;transform:translateY(2px)}
 .ex-side .fx-chk{justify-content:flex-start;font-size:13px;color:var(--ink-2)}
+.fx-opt{display:flex;align-items:center;gap:8px}
 .fx-agree{display:grid;gap:6px;padding:9px 12px;border-radius:3px;background:var(--caution-bg);color:var(--caution)}
 .fx-agree .fx-note{color:inherit;font-size:12.5px}
 .fx-local{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;padding:10px 12px;border-radius:3px;background:var(--rule)}

@@ -98,6 +98,7 @@ const INFO = {
   lmInfo: () => T('lmInfo'), wmodeInfo: () => T('wmodeInfo'), sizeInfo: () => T('sizeInfo'), shiftInfo: () => T('shiftInfo'),
   nameInfo: () => T('nameInfo'), weightsInfo: () => T('weightsInfo'), wrangeInfo: () => T('wrangeInfo'),
   baseInfo: () => T('baseInfo'), genericInfo: () => T('genericInfo'), scopeInfo: () => T('scopeInfo'),
+  otfInfo: () => `<p>${esc(T('fxOtfHint'))}</p>`,
 };
 function infoHtml(key) {
   if (key.startsWith('typo:')) { const t = TYPO.find(x => x.key === key.slice(5)); return t?.note ? esc(tr(t.note)) : ''; }
