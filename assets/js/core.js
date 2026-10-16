@@ -532,6 +532,7 @@ function stateFromPreset(p, prev) {
     custom: [],
     view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, miss: true, cmp: 'plain', weight: 400 },
     typo: prev?.typo ? { ...prev.typo } : { ...typoDefaults(SAMPLES[p.sample].lang), lang: SAMPLES[p.sample].lang },
+    fx: prev?.fx ? { ...prev.fx, weights: [...prev.fx.weights] } : undefined,      // 字体文件的设置：换预设时保留
   };
 }
 
@@ -545,7 +546,7 @@ function validState(s) {
 const defaultPresetId = () => UI === 'ja' ? 'mincho-jp' : UI === 'tw' ? 'ming-tw' : 'serif-sc';
 let state = validState(lsGet(LS_STATE)) ? lsGet(LS_STATE) : stateFromPreset(PRESETS.find(p => p.id === defaultPresetId()));
 /* 预设有没有被改过：和套用（或保存）预设那一刻的设定比较。校样的文字、字号等（view）不算 */
-const PRESET_SKIP = new Set(['view', 'preset', 'presetBase', 'v']);
+const PRESET_SKIP = new Set(['view', 'preset', 'presetBase', 'v', 'fx']);
 function presetSnap() { return JSON.stringify(state, function (k, v) { return this === state && PRESET_SKIP.has(k) ? undefined : v; }); }
 const presetDirty = () => state.presetBase ? presetSnap() !== state.presetBase : state.preset === '';
 function normalizeState() {
@@ -558,6 +559,9 @@ function normalizeState() {
     state.v = 3;
   }
   for (const c of CLASSES) state.classes[c.id] ||= { follow: c.follow || null, font: null, size: null, shift: null };     // 后来新增的类别
+  /* 导出字体文件：自己的字重（默认 400、700，生成慢，不跟网页导出的字重绑在一起）、是否生成斜体、是否另存 WOFF2 */
+  state.fx = { weights: [400, 700], italic: true, woff2: false, ...(state.fx || {}) };
+  if (!Array.isArray(state.fx.weights)) state.fx.weights = [400, 700];
   if (state.typo?.lang === 'zh-Hant') state.typo.lang = 'zh-Hant-TW';       // 「繁體中文」拆成台湾、香港
   if (state.scope === 'zh-Hant') state.scope = 'zh-Hant-TW';
   if (state.typo) delete state.typo.tcy;                                   // 纵中横已删除

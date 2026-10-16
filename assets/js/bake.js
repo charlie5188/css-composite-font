@@ -68,7 +68,7 @@ function gfInfo(family) {
       try { localStorage.setItem(ck, JSON.stringify(d)); } catch (e) { /* 存不了就下次再查 */ }
     }
     Object.assign(g, { st: 'ok', lic: d.lic, slug, names: d.names, text: d.text, rfn: rfnOf(d.text) });
-  })().catch(e => Object.assign(g, { st: 'err', err: e.code || 'net' })).finally(() => { if (exTab === 'font') renderFontTab(); });
+  })().catch(e => Object.assign(g, { st: 'err', err: e.code || 'net' })).finally(() => { if (exKind === 'font') renderFontTab(); });
   return g;
 }
 /* 选文件：可变字体优先（正体 / Italic 各一个）；静态字体取最接近的一档，和 CSS 的字重匹配一样 400 以上往粗找 */
@@ -94,53 +94,50 @@ function rfnOf(text) {
   return [...out];
 }
 
-/* ---------- 上传的字体：读 name / OS/2 表，判断许可和轮廓 ---------- */
+/* ---------- 上传的字体、本机字体：读 name / OS/2 表，判断许可和轮廓 ---------- */
 const fileMetas = new Map();      // fileId -> 结果；读取中为 null
 function fileMeta(id, fl) {
   if (fileMetas.has(id)) return fileMetas.get(id);
   fileMetas.set(id, null);
-  readFontMeta(fl.buffer).then(m => { fileMetas.set(id, m); if (exTab === 'font') renderFontTab(); });
+  readFontMeta(fl.buffer).then(m => { fileMetas.set(id, m); if (exKind === 'font') renderFontTab(); });
   return null;
 }
-async function readFontMeta(buf) {
-  const m = { lic: 'unknown', rfn: [] };
+/* ps：字体集合（TTC）里要用的那一款的 PostScript 名；不给就看第一款 */
+async function readFontMeta(buf, ps) {
+  const m = { lic: 'unknown', rfn: [], size: buf.byteLength };
   try {
     const v = new DataView(buf), tag = x => String.fromCharCode(x >>> 24, (x >> 16) & 255, (x >> 8) & 255, x & 255);
-    let sig = v.getUint32(0), base = 0;
-    const tabs = {}, tags = new Set();
-    if (sig === 0x74746366) { m.ttc = true; return m; }      // 字体集
-    if (sig === 0x774F4632) { m.woff2 = true; return m; }    // brotli 压缩，读不了表：许可不明，轮廓到生成时再检查
-    if (sig === 0x774F4646) {
-      for (let i = 0, n = v.getUint16(12); i < n; i++) {
-        const r = 44 + i * 20, t = tag(v.getUint32(r)), off = v.getUint32(r + 4), comp = v.getUint32(r + 8), orig = v.getUint32(r + 12);
-        tags.add(t);
-        if (t !== 'name' && t !== 'OS/2') continue;
-        let tb = buf.slice(off, off + comp);
-        if (comp < orig) tb = await new Response(new Blob([tb]).stream().pipeThrough(new DecompressionStream('deflate'))).arrayBuffer();
-        tabs[t] = new DataView(tb);
+    const sig = v.getUint32(0);
+    if (sig === 0x774F4632) { m.woff2 = true; return m; }      // brotli 压缩，读不了表：许可不明，轮廓到生成时再检查
+    const read = async base => {
+      const tabs = {}, tags = new Set();
+      if (v.getUint32(base) === 0x774F4646) {
+        for (let i = 0, n = v.getUint16(12); i < n; i++) {
+          const r = 44 + i * 20, t = tag(v.getUint32(r)), off = v.getUint32(r + 4), comp = v.getUint32(r + 8), orig = v.getUint32(r + 12);
+          tags.add(t);
+          if (t !== 'name' && t !== 'OS/2') continue;
+          let tb = buf.slice(off, off + comp);
+          if (comp < orig) tb = await new Response(new Blob([tb]).stream().pipeThrough(new DecompressionStream('deflate'))).arrayBuffer();
+          tabs[t] = new DataView(tb);
+        }
+      } else {
+        for (let i = 0, n = v.getUint16(base + 4); i < n; i++) {
+          const r = base + 12 + i * 16, t = tag(v.getUint32(r));
+          tags.add(t);
+          if (t === 'name' || t === 'OS/2') tabs[t] = new DataView(buf, v.getUint32(r + 8), v.getUint32(r + 12));
+        }
       }
-    } else {
-      for (let i = 0, n = v.getUint16(base + 4); i < n; i++) {
-        const r = base + 12 + i * 16, t = tag(v.getUint32(r));
-        tags.add(t);
-        if (t === 'name' || t === 'OS/2') tabs[t] = new DataView(buf, v.getUint32(r + 8), v.getUint32(r + 12));
-      }
-    }
-    m.cff = tags.has('CFF ') || tags.has('CFF2');
-    const os2 = tabs['OS/2'];
+      return { tabs, tags, names: nameRecs(tabs.name) };
+    };
+    const bases = sig === 0x74746366 ? Array.from({ length: v.getUint32(8) }, (_, i) => v.getUint32(12 + i * 4)) : [0];
+    m.ttc = sig === 0x74746366;
+    let face = null;
+    for (const b of bases) { const r = await read(b); face ||= r; if (!ps || r.names[6] === ps) { face = r; break; } }
+    m.cff = face.tags.has('CFF ') || face.tags.has('CFF2');
+    m.outline = m.cff || face.tags.has('glyf');
+    const os2 = face.tabs['OS/2'];
     if (os2 && os2.byteLength >= 62) m.vendor = String.fromCharCode(...[58, 59, 60, 61].map(k => os2.getUint8(k))).trim();
-    const d = tabs.name, got = {};
-    if (d) for (let i = 0, count = d.getUint16(2), so = d.getUint16(4); i < count; i++) {
-      const r = 6 + i * 12, pid = d.getUint16(r), eid = d.getUint16(r + 2), lid = d.getUint16(r + 4), nid = d.getUint16(r + 6), len = d.getUint16(r + 8), off = so + d.getUint16(r + 10);
-      if (![0, 13, 14].includes(nid)) continue;
-      let s = '';
-      if (pid === 0 || pid === 3) for (let k = 0; k + 1 < len; k += 2) s += String.fromCharCode(d.getUint16(off + k));
-      else if (pid === 1 && eid === 0) for (let k = 0; k < len; k++) s += String.fromCharCode(d.getUint8(off + k));
-      else continue;
-      const pref = pid === 3 && lid === 0x409 ? 2 : 1;
-      if (!got[nid] || got[nid].p < pref) got[nid] = { s, p: pref };
-    }
-    m.copyright = got[0]?.s || ''; m.license = got[13]?.s || ''; m.licenseUrl = got[14]?.s || '';
+    m.copyright = face.names[0] || ''; m.license = face.names[13] || ''; m.licenseUrl = face.names[14] || '';
     const all = [m.license, m.licenseUrl, m.copyright].join(' ');
     m.lic = /^a?appl$/i.test(m.vendor || '') || /\bApple (Inc|Computer)/.test(m.copyright) ? 'apple'      // 厂商代码有 APPL、Appl、Aapl 几种写法
       : /open font licen[cs]e|\bOFL\b|scripts\.sil\.org\/OFL|openfontlicense/i.test(all) ? 'ofl'
@@ -150,10 +147,50 @@ async function readFontMeta(buf) {
   } catch (e) { /* 读不懂：许可不明 */ }
   return m;
 }
+function nameRecs(d) {
+  const got = {};
+  if (d) for (let i = 0, count = d.getUint16(2), so = d.getUint16(4); i < count; i++) {
+    const r = 6 + i * 12, pid = d.getUint16(r), eid = d.getUint16(r + 2), lid = d.getUint16(r + 4), nid = d.getUint16(r + 6), len = d.getUint16(r + 8), off = so + d.getUint16(r + 10);
+    if (![0, 6, 13, 14].includes(nid)) continue;
+    let s = '';
+    if (pid === 0 || pid === 3) for (let k = 0; k + 1 < len; k += 2) s += String.fromCharCode(d.getUint16(off + k));
+    else if (pid === 1 && eid === 0) for (let k = 0; k < len; k++) s += String.fromCharCode(d.getUint8(off + k));
+    else continue;
+    const pref = pid === 3 && lid === 0x409 ? 2 : 1;
+    if (!got[nid] || got[nid].p < pref) got[nid] = { s, p: pref };
+  }
+  return Object.fromEntries(Object.entries(got).map(([k, x]) => [k, x.s]));
+}
+/* 本机安装的字体：用浏览器的本机字体接口（Chrome / Edge）读文件内容。第一次要用户点按钮授权 */
+const fxLocal = { st: 'idle', map: new Map(), metas: new Map() };      // st：idle 没查过 / check 查权限中 / need 要用户授权 / asking / ok / denied
+async function fxLocalLoad(ask) {
+  if (!('queryLocalFonts' in window)) return;
+  if (!ask) {
+    fxLocal.st = 'check';
+    try { if ((await navigator.permissions.query({ name: 'local-fonts' })).state !== 'granted') { fxLocal.st = 'need'; renderFontTab(); return; } }
+    catch (e) { fxLocal.st = 'need'; renderFontTab(); return; }
+  }
+  fxLocal.st = 'asking';
+  try {
+    const list = window.queryLocalFonts();      // 点按钮时同步调用：浏览器要求在用户操作里请求权限
+    if (ask) renderFontTab();
+    for (const fd of await list) { fxLocal.map.set(fd.fullName, fd); fxLocal.map.set(fd.postscriptName, fd); }
+    fxLocal.st = 'ok';
+  } catch (e) { fxLocal.st = 'denied'; }
+  renderFontTab();
+}
+const localFind = f => [f.name, ...(f.alt || [])].map(n => fxLocal.map.get(n)).find(Boolean) || null;
+function localMeta(fd) {
+  const k = fd.postscriptName;
+  if (fxLocal.metas.has(k)) return fxLocal.metas.get(k);
+  fxLocal.metas.set(k, null);
+  fd.blob().then(b => b.arrayBuffer()).then(buf => readFontMeta(buf, k)).then(m => { fxLocal.metas.set(k, m); if (exKind === 'font') renderFontTab(); });
+  return null;
+}
 
 /* ---------- 要生成哪些文件，各用哪些源字体 ---------- */
 function fxPlan() {
-  const fam = cssFamilyName(), out = { fam, jobs: [], srcs: new Map(), block: new Set(), loading: false, unknown: false, rfn: null };
+  const fam = cssFamilyName(), out = { fam, jobs: [], srcs: new Map(), block: new Set(), loading: false, unknown: false, needLocal: false, rfn: null };
   const use = (p, W) => {
     const f = p.font;
     if (!f) return null;
@@ -177,20 +214,33 @@ function fxPlan() {
         const m = fileMeta(f.fileId, fl);
         if (!m) out.loading = true;
         s = { key: 'f:' + f.fileId, kind: 'file', name: fl.name, file: 'u' + f.fileId + '_' + fl.name.replace(/[^\w.-]+/g, '_'), size: fl.buffer.byteLength, fileId: f.fileId,
-          lic: m ? m.lic : null, meta: m, rfn: m ? m.rfn : [], static: !f.axis,
-          err: m && (m.ttc ? 'ttc' : m.cff ? 'cff' : m.lic === 'apple' ? 'apple' : null) };
+          lic: m ? m.lic : null, meta: m, rfn: m ? m.rfn : [], static: !f.axis, cff: m && m.cff,
+          err: m && (m.lic === 'apple' ? 'apple' : !m.woff2 && !m.outline ? 'outline' : null) };
         if (f.axis) w = f.weight || 400;
       }
-    } else s = { key: f.kind + ':' + (f.name || f.path), kind: f.kind, name: f.name || f.path, err: f.kind === 'local' ? 'local' : 'noFile' };
+    } else if (f.kind === 'local') {
+      const fd = fxLocal.st === 'ok' ? localFind(f) : null, m = fd && localMeta(fd);
+      if (!('queryLocalFonts' in window)) s = { key: 'l:' + f.name, kind: 'local', name: f.name, err: 'localApi' };
+      else if (fxLocal.st === 'denied') s = { key: 'l:' + f.name, kind: 'local', name: f.name, err: 'localDenied' };
+      else if (fxLocal.st !== 'ok') { out.needLocal = true; s = { key: 'l:' + f.name, kind: 'local', name: f.name, needLocal: true }; }
+      else if (!fd) s = { key: 'l:' + f.name, kind: 'local', name: f.name, err: 'localMissing' };
+      else {
+        if (!m) out.loading = true;
+        s = { key: 'l:' + fd.postscriptName, kind: 'local', name: fd.fullName, file: 'l_' + fd.postscriptName.replace(/[^\w.-]+/g, '_'), ps: fd.postscriptName, fd,
+          size: m ? m.size : 0, lic: m ? m.lic : null, meta: m, rfn: m ? m.rfn : [], cff: m && m.cff,
+          err: m && (m.lic === 'apple' ? 'apple' : !m.outline ? 'outline' : null) };
+        if (f.axis) w = f.weight || 400;
+      }
+    } else s = { key: f.kind + ':' + (f.name || f.path), kind: f.kind, name: f.name || f.path, err: 'noFile' };
     const prev = out.srcs.get(s.key);
     if (prev) s = prev; else { s.owners = new Set(); s.ws = new Set(); s.pct = new Set(); out.srcs.set(s.key, s); }
     p.owners.forEach(o => s.owners.add(o)); s.ws.add(W); s.pct.add(p.size);
-    return { file: s.file, name: s.name, weight: w, fvs: p.fvs || null, key: s.key };
+    return { file: s.file, name: s.name, weight: w, fvs: p.fvs || null, key: s.key, ps: s.ps || null };
   };
   const keys = pl => pl.map(p => p.font ? fontKey(p.font) : '').join('|');
-  for (const W of WEIGHTS.filter(w => state.weights.includes(w))) {
+  for (const W of WEIGHTS.filter(w => state.fx.weights.includes(w))) {
     const up = buildPlan(W, true, false);
-    for (const ital of state.italic ? [false, true] : [false]) {
+    for (const ital of state.fx.italic ? [false, true] : [false]) {
       const plan = ital ? buildPlan(W, true, true) : up;
       if (ital && keys(plan) === keys(up)) continue;      // 没有一个类别有斜体：斜体和正体一样，不生成
       out.jobs.push({ W, italic: ital, plan, srcs: plan.map(p => use(p, W)), label: `${fam} ${styleName(W, ital)}` });
@@ -202,63 +252,72 @@ function fxPlan() {
     const hit = (s.rfn || []).find(r => fam.toLowerCase().includes(r.toLowerCase()));
     if (hit && !out.rfn) out.rfn = { rfn: hit, src: s.name };
   }
-  out.italSkipped = state.italic && !out.jobs.some(j => j.italic) && out.jobs.length > 0;
+  out.italSkipped = state.fx.italic && !out.jobs.some(j => j.italic) && out.jobs.length > 0;
   return out;
 }
-/* 预计用时：实测 Pyodide 里每 MB 源字体约 2 秒（Noto Sans JP 9.6 MB 一个字重约 20 秒） */
+/* 预计用时：实测 Pyodide 里每 MB 源字体约 2 秒（Noto Sans JP 9.6 MB 一个字重约 20 秒）；CFF 轮廓要转换，按两倍算 */
 function fxEstimate(pl) {
   let sec = 0, mb = 0;
-  for (const j of pl.jobs) sec += 3 + j.srcs.reduce((a, s) => a + (s ? (pl.srcs.get(s.key).size || 0) : 0), 0) / 1e6 * 2;
+  for (const j of pl.jobs) sec += 3 + j.srcs.reduce((a, s) => { const x = s && pl.srcs.get(s.key); return a + (x ? (x.size || 0) / 1e6 * (x.cff ? 4 : 2) : 0); }, 0);
   for (const s of pl.srcs.values()) if (s.kind === 'google' && !fx.sent.has(s.file)) mb += (s.size || 0) / 1e6;      // 已经交给 Worker 的不用再下载
-  return { min: Math.max(1, Math.round(sec / 60)), mb: Math.round(mb + (fx.worker ? 0 : BK.runtimeMB)) };
+  return { n: pl.jobs.length * (state.fx.woff2 ? 2 : 1), min: Math.max(1, Math.round(sec / 60)), mb: Math.round(mb + (fx.worker ? 0 : BK.runtimeMB)) };
 }
 
-/* ---------- 字体文件页签 ---------- */
-const fx = { worker: null, sent: new Set(), running: false, agree: false, woff2: false, stage: '', pct: 0, t0: 0, tick: null, result: null, err: '', sig: '' };
-const fxSig = pl => JSON.stringify([pl.fam, fx.woff2, pl.jobs.map(j => [j.W, j.italic, j.srcs.map(s => s && [s.key, s.weight, s.fvs]), j.plan.map(p => [p.size, p.range && p.range.length])]), state.classes, state.custom]);
+/* ---------- 字体文件：左边的设置、右边的面板 ---------- */
+const fx = { worker: null, sent: new Set(), running: false, agree: false, stage: '', pct: 0, t0: 0, tick: null, result: null, err: '', sig: '' };
+const fxSig = pl => JSON.stringify([pl.fam, state.fx.woff2, pl.jobs.map(j => [j.W, j.italic, j.srcs.map(s => s && [s.key, s.weight, s.fvs]), j.plan.map(p => [p.size, p.range && p.range.length])]), state.classes, state.custom]);
 const fmtMB = n => (n / 1e6).toFixed(n < 1e7 ? 1 : 0);
+function renderFontFields() {
+  $('#fxWeights').innerHTML = WEIGHTS.map(w => `<button type="button" data-w="${w}" aria-pressed="${state.fx.weights.includes(w)}" title="${esc(wTip(w))}"${wTag(w) ? ' class="wl"' : ''}>${w}${wTag(w)}</button>`).join('');
+  $('#fxItalic').checked = state.fx.italic;
+  $('#fxWoff2').checked = state.fx.woff2;
+}
+const fxLimits = () => `<div class="fx-sec fx-limits"><h3 class="fx-h">${esc(T('fxLimitsTitle'))}</h3><ul>${T('fxLimits').split('\n').map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
 function renderFontTab() {
-  const box = $('#fontPane'), btn = $('#fontBtn');
+  const box = $('#fontPane');
   if (!CAN_BAKE) {
-    btn.hidden = true;
-    box.innerHTML = `<p>${esc(T('fxEmbedded'))}</p><p><a class="btn primary" id="fxPages" href="${esc(BK.pages)}" target="_blank" rel="noopener">${esc(T('fxOpenPages'))} ↗</a></p>`;
+    box.innerHTML = `<p class="fx-intro">${esc(T('fxEmbedded'))}</p><p><a class="btn primary" id="fxPages" href="${esc(BK.pages)}" target="_blank" rel="noopener">${esc(T('fxOpenPages'))} ↗</a></p>${fxLimits()}`;
     cfgLink().then(u => { const a = $('#fxPages'); if (a) a.href = u; });
     return;
   }
   const pl = fxPlan(), est = fxEstimate(pl), rows = [];
+  if (pl.needLocal && fxLocal.st === 'idle') fxLocalLoad(false);      // 已经授权过的话不用再点按钮
   for (const s of pl.srcs.values()) {
     const kind = T(s.kind === 'google' ? 'fxKindGoogle' : s.kind === 'file' ? 'fxKindFile' : 'fxKindLocal');
     const lic = s.err ? `<span class="fx-lic no">${esc(T('fxLicNo'))}</span>`
+      : s.needLocal ? `<span class="fx-lic">${esc(T('fxLicLocked'))}</span>`
       : s.lic == null ? `<span class="fx-lic">${esc(T('fxLicReading'))}</span>`
       : s.lic === 'unknown' ? `<span class="fx-lic warn">${esc(T('fxLicUnknown'))}</span>`
       : `<span class="fx-lic ok">${esc(LIC_NAME[s.lic] || s.lic)}</span>`;
     const pct = [...s.pct].filter(x => x !== 100).map(x => x + '%');
     const meta = [kind, s.size ? fmtMB(s.size) + ' MB' : '', T('fxUsedFor', { list: [...s.owners].map(ownerName).join(T('joiner')) }) + (pct.length ? ' · ' + pct.join(' / ') : '')].filter(Boolean).join(' · ');
-    const note = s.err ? T('fxErr_' + s.err, { name: s.name }) : s.kind === 'file' && s.static && s.ws.size > 1 ? T('fxStaticNote') : '';
-    rows.push(`<div class="fx-row"><span class="fx-name">${esc(s.name)}</span>${lic}<span class="fx-meta">${esc(meta)}</span>${note ? `<span class="fx-note${s.err ? ' no' : ''}">${esc(note)}</span>` : ''}</div>`);
+    const notes = [];
+    if (s.err) notes.push([T('fxErr_' + s.err, { name: s.name }), 'no']);
+    else if (!s.needLocal) {
+      if (s.cff) notes.push([T('fxCffNote'), '']);
+      if (s.kind === 'file' && s.static && s.ws.size > 1) notes.push([T('fxStaticNote'), '']);
+    }
+    rows.push(`<div class="fx-row"><span class="fx-name">${esc(s.name)}</span>${lic}<span class="fx-meta">${esc(meta)}</span>${notes.map(([t, c]) => `<span class="fx-note ${c}">${esc(t)}</span>`).join('')}</div>`);
   }
-  const styles = pl.jobs.map(j => styleName(j.W, j.italic));
+  /* 本机字体的授权、系统字体的许可提醒：各说一次，不在每一行重复 */
+  const localAsk = pl.needLocal ? `<div class="fx-local"><p>${esc(T('fxLocalNeed'))}</p>${fxLocal.st === 'asking' || fxLocal.st === 'check' ? '' : `<button type="button" class="btn" id="fxLocalAsk">${esc(T('fxLocalAsk'))}</button>`}</div>` : '';
+  const localWarn = [...pl.srcs.values()].some(s => s.kind === 'local' && s.lic === 'unknown') ? `<p class="fx-note">${esc(T('fxLocalNote'))}</p>` : '';
   const block = pl.block.size ? [T('fxBlockSrc')] : [];      // 各字体的原因写在上面那一行里，这里只说一句
   if (!pl.jobs.length) block.push(T('fxNoWeights'));
   if (pl.rfn) block.push(T('fxRfn', pl.rfn));
   const sig = fxSig(pl), res = fx.result, stale = res && fx.sig !== sig;
+  const ready = !fx.running && pl.jobs.length && !block.length && !pl.loading && !pl.needLocal && (!pl.unknown || fx.agree);
+  const summary = !pl.jobs.length ? '' : pl.needLocal ? T('fxSummaryLocal', est) : pl.loading ? T('fxSummaryWait', est) : T(est.mb ? 'fxSummary' : 'fxSummaryNoDl', est);
   box.innerHTML = `<p class="fx-intro">${esc(T('fxIntro'))}</p>
-    <div class="fx-sec"><h3 class="fx-h">${esc(T('fxSources'))}</h3><div class="fx-src">${rows.join('') || `<p class="hint">…</p>`}</div></div>
-    <div class="fx-sec"><h3 class="fx-h">${esc(T('fxOut'))}</h3>
-      <p>${esc(T('fxOutLine', { fam: pl.fam, n: pl.jobs.length * (fx.woff2 ? 2 : 1) }))}${styles.length ? `<br><span class="fx-styles">${esc(styles.join(' · '))}</span>` : ''}</p>
-      ${pl.italSkipped ? `<p class="hint">${esc(T('fxNoItal'))}</p>` : ''}
-      <label class="fx-chk"><input type="checkbox" id="fxWoff2"${fx.woff2 ? ' checked' : ''}> ${esc(T('fxWoff2'))}</label>
-      ${pl.jobs.length && !pl.loading ? `<p class="hint">${esc(T(est.mb ? 'fxEst' : 'fxEstNoDl', est))}</p>` : ''}
-      ${pl.unknown ? `<label class="fx-chk fx-agree"><input type="checkbox" id="fxAgree"${fx.agree ? ' checked' : ''}> ${esc(T('fxAgree'))}</label>` : ''}
-    </div>
+    <div class="fx-sec"><h3 class="fx-h">${esc(T('fxSources'))}</h3>${localAsk}<div class="fx-src">${rows.join('') || `<p class="hint">…</p>`}</div>
+      ${pl.unknown ? `<div class="fx-agree">${localWarn}<label class="fx-chk"><input type="checkbox" id="fxAgree"${fx.agree ? ' checked' : ''}> ${esc(T('fxAgree'))}</label></div>` : ''}</div>
     ${block.length ? `<div class="fx-block">${block.map(b => `<p>${esc(b)}</p>`).join('')}</div>` : ''}
-    <div class="fx-run" id="fxRun"${fx.running || fx.err || res ? '' : ' hidden'}></div>`;
-  const ready = !fx.running && pl.jobs.length && !block.length && !pl.loading && (!pl.unknown || fx.agree);
-  btn.hidden = false;
-  btn.textContent = T(fx.running ? 'fxStop' : 'fxGen');
-  btn.classList.toggle('primary', !fx.running && !(res && !stale));      // 刚生成好时，主按钮让给「下载 zip」
-  btn.disabled = !fx.running && !ready;
-  btn.title = pl.loading ? T('fxLicReading') : '';
+    <div class="fx-go">
+      <button type="button" class="btn${fx.running || (res && !stale) ? '' : ' primary'}" id="fxGo"${fx.running || ready ? '' : ' disabled'}>${esc(T(fx.running ? 'fxStop' : 'fxGen'))}</button>
+      <span class="fx-sum">${esc(summary)}${pl.jobs.length ? `<br><span class="fx-styles">${esc(pl.jobs.map(j => styleName(j.W, j.italic)).join(' · '))}</span>` : ''}${pl.italSkipped ? `<br>${esc(T('fxNoItal'))}` : ''}</span>
+    </div>
+    <div class="fx-run" id="fxRun"${fx.running || fx.err || res ? '' : ' hidden'}></div>
+    ${fxLimits()}`;
   renderFxRun(stale);
 }
 function renderFxRun(stale) {
@@ -295,7 +354,7 @@ function fxStop(err) {
 }
 async function fxRun() {
   const pl = fxPlan();
-  if (!pl.jobs.length || pl.block.size || pl.rfn || pl.loading || (pl.unknown && !fx.agree)) return;
+  if (!pl.jobs.length || pl.block.size || pl.rfn || pl.loading || pl.needLocal || (pl.unknown && !fx.agree)) return;
   Object.assign(fx, { running: true, err: '', result: null, pct: 0, t0: performance.now(), stage: T('fxStPrep'), sig: fxSig(pl) });
   fx.tick = setInterval(() => renderFxRun(), 1000);
   renderFontTab();
@@ -306,6 +365,7 @@ async function fxRun() {
     for (const [i, s] of need.entries()) {
       let buf;
       if (s.kind === 'google') buf = await fxFetch(s.url, (got, total) => say(T('fxStFetch', { name: s.name, got: fmtMB(got), total: fmtMB(total) }), 0.15 * (i + got / total) / need.length));
+      else if (s.kind === 'local') { say(T('fxStLocal', { name: s.name }), 0.15 * i / need.length); buf = await (await s.fd.blob()).arrayBuffer(); }
       else buf = files.get(s.fileId).buffer.slice(0);
       if (!fx.running) return;
       send[s.file] = buf; transfer.push(buf);
@@ -314,13 +374,13 @@ async function fxRun() {
       const keep = j.plan.map((p, i) => i).filter(i => j.srcs[i]);      // 没有字体的规则（不会出现在 CSS 里）跳过
       return {
       weight: j.W, italic: j.italic, label: j.label,
-      srcs: keep.map(i => j.srcs[i]).map(s => ({ file: s.file, name: s.name, weight: s.weight, fvs: s.fvs })),
+      srcs: keep.map(i => j.srcs[i]).map(s => ({ file: s.file, name: s.name, weight: s.weight, fvs: s.fvs, ps: s.ps })),
       plan: keep.map(i => j.plan[i]).map(p => ({ font: { family: p.font.family || p.font.name || p.font.fileName || '', ital: !!p.font.ital }, size: p.size, range: p.range,
         owners: p.owners.map(o => ({ o, ranges: o === 'han' ? null : o[0] === '#' ? customRanges[+o.slice(1)] : EFF[o], shift: settingOf(o).shift || 0 })) })),
       };
     });
     const open = [...pl.srcs.values()].every(s => ['ofl', 'apache', 'ufl'].includes(s.lic));
-    const opts = { family: pl.fam, woff2: fx.woff2, lic: open ? LIC_OFL : LIC_PRIVATE,
+    const opts = { family: pl.fam, woff2: state.fx.woff2, lic: open ? LIC_OFL : LIC_PRIVATE,
       extra: [[open ? 'OFL.txt' : 'LICENSES.txt', fxLicenseText(pl, open)], ['README.txt', fxReadme(pl)]] };
     if (!fx.worker) {
       const url = URL.createObjectURL(new Blob(['(' + bakeWorker.toString() + ')()'], { type: 'text/javascript' }));
@@ -400,18 +460,26 @@ async function importCfg() {
     state = s;
     normalizeState(); refreshCustomRanges(); syncToolbar(); renderEditor(); renderPreview(); renderPresetCards(); rebuild(); saveState();
     toast(T('fxImported'));
-    $('#tabFont').click();
+    setExKind('font');
     $('#export').scrollIntoView({ block: 'start' });
   } catch (e) { /* 链接坏了：照常打开 */ }
 }
 function initFontTab() {
-  $('#fontBtn').addEventListener('click', () => { if (fx.running) fxStop(); else fxRun(); });
-  $('#fontPane').addEventListener('change', e => {
-    if (e.target.id === 'fxAgree') fx.agree = e.target.checked;
-    if (e.target.id === 'fxWoff2') fx.woff2 = e.target.checked;
-    renderFontTab();
+  $('#fxWeights').addEventListener('click', e => {
+    const b = e.target.closest('[data-w]'); if (!b) return;
+    const w = +b.dataset.w, ws = state.fx.weights;
+    state.fx.weights = ws.includes(w) ? ws.filter(x => x !== w) : [...ws, w].sort((x, y) => x - y);
+    renderFontFields(); renderFontTab(); saveState();
   });
-  $('#fontPane').addEventListener('click', e => { if (e.target.id === 'fxSave') fxSave(); });
+  $('#fxItalic').addEventListener('change', e => { state.fx.italic = e.target.checked; renderFontTab(); saveState(); });
+  $('#fxWoff2').addEventListener('change', e => { state.fx.woff2 = e.target.checked; renderFontTab(); saveState(); });
+  $('#fontPane').addEventListener('change', e => { if (e.target.id === 'fxAgree') { fx.agree = e.target.checked; renderFontTab(); } });
+  $('#fontPane').addEventListener('click', e => {
+    const id = e.target.closest('button')?.id;
+    if (id === 'fxGo') { if (fx.running) fxStop(); else fxRun(); }
+    else if (id === 'fxSave') fxSave();
+    else if (id === 'fxLocalAsk') fxLocalLoad(true);
+  });
   importCfg();
 }
 
@@ -450,7 +518,7 @@ function bakeWorker() {
 /* ---------- Python：烘焙的核心（和本地验证用的 bake_core.py 相同，加上批量生成和打包） ---------- */
 const BAKE_PY = String.raw`
 import os, re, io, json, copy, time, zipfile
-from fontTools.ttLib import TTFont, newTable
+from fontTools.ttLib import TTFont, TTCollection, newTable
 from fontTools import subset
 from fontTools.merge import Merger, Options as MergeOptions
 from fontTools.ttLib.scaleUpem import scale_upem
@@ -462,26 +530,70 @@ class BakeError(Exception):
     def __init__(self, code, name=''):
         super().__init__(code); self.code = code; self.name = name
 
-def check_source(path, name):
+def is_ttc(path):
+    with open(path, 'rb') as fh: return fh.read(4) == b'ttcf'
+
+def open_face(path, ps=None, lazy=False):
+    """字体集合（TTC/OTC）按 PostScript 名取其中一款，没有名字或找不到时取第一款"""
+    if not is_ttc(path): return TTFont(path, lazy=lazy)
+    for i in range(len(TTCollection(path, lazy=True).fonts)):
+        if ps and TTFont(path, fontNumber=i, lazy=True)['name'].getDebugName(6) == ps:
+            return TTFont(path, fontNumber=i, lazy=lazy)
+    return TTFont(path, fontNumber=0, lazy=lazy)
+
+def check_source(path, name, ps=None):
     try:
-        f = TTFont(path, lazy=True)
-        tags = set(f.keys())
+        tags = set(open_face(path, ps, lazy=True).keys())
     except Exception:
         raise BakeError('read', name)
-    if 'glyf' not in tags:
-        raise BakeError('cff' if ('CFF ' in tags or 'CFF2' in tags) else 'outline', name)
+    if not tags & {'glyf', 'CFF ', 'CFF2'}:
+        raise BakeError('outline', name)      # 只有位图（例如 emoji）的字体
 
-def instance_file(path, weight, fvs, out):
-    """可变字体截到这个字重（其他轴取 fvs 里的值，没有的取默认值）；静态字体原样返回"""
-    f = TTFont(path)
-    if 'fvar' not in f: return path
-    loc = {}
-    for a in f['fvar'].axes:
-        v = weight if a.axisTag == 'wght' and weight else (fvs or {}).get(a.axisTag)
-        loc[a.axisTag] = None if v is None else min(a.maxValue, max(a.minValue, v))
-    instancer.instantiateVariableFont(f, loc, inplace=True, updateFontNames=False)
+def instance_file(path, weight, fvs, out, ps=None):
+    """可变字体截到这个字重（其他轴取 fvs 里的值，没有的取默认值）；字体集合取出其中一款；普通静态字体原样返回"""
+    f = open_face(path, ps)
+    if 'fvar' in f:
+        loc = {}
+        for a in f['fvar'].axes:
+            v = weight if a.axisTag == 'wght' and weight else (fvs or {}).get(a.axisTag)
+            loc[a.axisTag] = None if v is None else min(a.maxValue, max(a.minValue, v))
+        instancer.instantiateVariableFont(f, loc, inplace=True, updateFontNames=False)
+    elif not is_ttc(path):
+        return path
     f.save(out)
     return out
+
+def cff_to_glyf(f):
+    """CFF 轮廓（三次曲线）转成 TrueType（二次曲线），误差不超过 1 个单位。
+    竖排原点：CFF 字体用 VORG 表记，TrueType 由 vmtx 的上边距和字形顶边算出，所以按 VORG 重算上边距"""
+    from fontTools.pens.cu2quPen import Cu2QuPen
+    from fontTools.pens.ttGlyphPen import TTGlyphPen
+    order, gs = f.getGlyphOrder(), f.getGlyphSet()
+    glyphs = {}
+    for gn in order:
+        pen = TTGlyphPen(gs)
+        gs[gn].draw(Cu2QuPen(pen, max_err=1.0, reverse_direction=True))
+        glyphs[gn] = pen.glyph()
+    glyf = newTable('glyf'); glyf.glyphOrder = order; glyf.glyphs = glyphs
+    vorg = f['VORG'] if 'VORG' in f else None
+    for t in ('CFF ', 'CFF2', 'VORG'):
+        if t in f: del f[t]
+    f['glyf'] = glyf; f['loca'] = newTable('loca')
+    hm = f['hmtx']
+    for gn in order:
+        g = glyphs[gn]; g.recalcBounds(glyf)
+        hm[gn] = (hm[gn][0], g.xMin if g.numberOfContours else 0)
+    if vorg is not None and 'vmtx' in f:      # 没有 VORG 时，原点本来就由上边距和字形顶边算出，不用改
+        vm = f['vmtx']
+        for gn in order:
+            g = glyphs[gn]
+            if g.numberOfContours: vm[gn] = (vm[gn][0], vorg.VOriginRecords.get(gn, vorg.defaultVertOriginY) - g.yMax)
+    maxp = newTable('maxp'); maxp.tableVersion = 0x00010000; maxp.numGlyphs = len(order)
+    for k in ('maxZones', 'maxTwilightPoints', 'maxStorage', 'maxFunctionDefs', 'maxInstructionDefs', 'maxStackElements', 'maxSizeOfInstructions', 'maxComponentElements', 'maxPoints', 'maxContours', 'maxCompositePoints', 'maxCompositeContours', 'maxComponentDepth'):
+        setattr(maxp, k, 1 if k == 'maxZones' else 0)
+    f['maxp'] = maxp
+    post = f['post']; post.formatType = 2.0; post.extraNames = []; post.mapping = {}
+    f.sfntVersion = '\x00\x01\x00\x00'
 
 def align_scripts(fonts):
     """合并前让每个部件的 GSUB / GPOS 都有所有部件出现过的书写系统和语言。
@@ -540,8 +652,9 @@ def bake(plan, srcs, family, weight, italic, lic, work):
         o.layout_features = ['*']; o.layout_scripts = ['*']
         o.name_IDs = ['*']; o.name_languages = ['*']; o.name_legacy = True
         o.notdef_outline = True; o.glyph_names = True; o.hinting = False; o.legacy_kern = True
-        o.drop_tables += ['STAT', 'DSIG', 'meta', 'MVAR', 'HVAR', 'VVAR', 'BASE', 'JSTF']
+        o.drop_tables += ['STAT', 'DSIG', 'meta', 'MVAR', 'HVAR', 'VVAR', 'BASE', 'JSTF', 'COLR', 'CPAL', 'SVG ', 'sbix', 'CBDT', 'CBLC', 'EBDT', 'EBLC', 'EBSC']      # 彩色、位图字形合并不了，只留轮廓
         sub = subset.Subsetter(o); sub.populate(unicodes=cps); sub.subset(f)
+        if 'glyf' not in f: cff_to_glyf(f)      # 只转这个部件用到的字形：比整个字体转换快得多
         src_upem = f['head'].unitsPerEm
         k = plan[i]['size'] / 100 * U / src_upem
         if abs(k - 1) > 1e-6:
@@ -623,11 +736,12 @@ def bake(plan, srcs, family, weight, italic, lic, work):
 def run_all(jobs_json, opts_json, progress):
     try:
         jobs = json.loads(jobs_json); opts = json.loads(opts_json)
+        SRC, WORK = opts.get('src', '/src/'), opts.get('work', '/w/')      # 本地测试时换成临时目录
         for s in {s['file']: s for j in jobs for s in j['srcs'] if s}.values():
-            check_source('/src/' + s['file'], s['name'])
-        key = lambda s: (s['file'], s.get('weight'), json.dumps(s.get('fvs'), sort_keys=True))
+            check_source(SRC + s['file'], s['name'], s.get('ps'))
+        key = lambda s: (s['file'], s.get('ps'), s.get('weight'), json.dumps(s.get('fvs'), sort_keys=True))
         inst, made = {}, 0
-        zb = open('/w/out.zip', 'wb'); z = zipfile.ZipFile(zb, 'w', zipfile.ZIP_DEFLATED)
+        zb = open(WORK + 'out.zip', 'wb'); z = zipfile.ZipFile(zb, 'w', zipfile.ZIP_DEFLATED)
         out = []
         for n, job in enumerate(jobs):
             progress(n, job['label'])
@@ -636,9 +750,9 @@ def run_all(jobs_json, opts_json, progress):
                 k = key(s)
                 if k not in inst:
                     made += 1
-                    inst[k] = instance_file('/src/' + s['file'], s.get('weight'), s.get('fvs'), '/w/inst%d.ttf' % made)
+                    inst[k] = instance_file(SRC + s['file'], s.get('weight'), s.get('fvs'), WORK + 'inst%d.ttf' % made, s.get('ps'))
                 srcs.append(inst[k])
-            font, ps = bake(job['plan'], srcs, opts['family'], job['weight'], job['italic'], opts['lic'], '/w')
+            font, ps = bake(job['plan'], srcs, opts['family'], job['weight'], job['italic'], opts['lic'], WORK)
             b = io.BytesIO(); font.save(b); data = b.getvalue()
             z.writestr(ps + '.ttf', data); out.append([ps + '.ttf', len(data)])
             if opts.get('woff2'):
@@ -648,7 +762,7 @@ def run_all(jobs_json, opts_json, progress):
             rest = {key(s) for j in jobs[n + 1:] for s in j['srcs'] if s}      # 后面用不到的截取结果：删掉，省内存
             for k in list(inst):
                 if k not in rest:
-                    if inst[k].startswith('/w/'): os.remove(inst[k])
+                    if inst[k].startswith(WORK): os.remove(inst[k])
                     del inst[k]
         progress(-1, '')
         for name, text in opts['extra']: z.writestr(name, text)

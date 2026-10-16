@@ -579,11 +579,11 @@ function syncToolbar() {
   $('#vWcont').min = state.wrange[0]; $('#vWcont').max = state.wrange[1];       // 滑块只走导出的范围
   $('#vWcont').value = v.wcont; $('#vWcontOut').textContent = v.wcont;
   document.querySelectorAll('#vWMode [data-m]').forEach(b => b.setAttribute('aria-checked', b.dataset.m === state.wmode));
-  $('#exContField').hidden = !cont || exTab === 'font';
+  $('#exContField').hidden = !cont;
   const ign = cont ? contIgnored() : [];
   $('#vWNote').hidden = !ign.length;
   if (ign.length) $('#vWNote').textContent = T('wContNote', { list: ign.join(T('joiner')) });
-  $('#exWeightsField').hidden = cont && exTab !== 'font';
+  $('#exWeightsField').hidden = cont;
   $('#exGeneric').value = state.generic;
   $('#exItalic').value = state.italic ? '1' : '0';
   const lm = $('#exLm'); if (lm) lm.value = state.lineMetrics;

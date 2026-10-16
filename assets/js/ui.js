@@ -317,18 +317,13 @@ function initToolbar() {
     if (state.scope) state.typo.lang = state.scope;
     syncToolbar(); renderEditor(); renderPreview(); drawSpecimen(); renderExport(); saveState();
   });
-  const tabs = { tabCss: 'css', tabJs: 'js', tabFont: 'font', tabNotes: 'notes' };
+  const tabs = { tabCss: 'css', tabJs: 'js' };
   for (const [id, key] of Object.entries(tabs)) $('#' + id).addEventListener('click', () => {
     exTab = key;
-    const code = key === 'css' || key === 'js';
     for (const other of Object.keys(tabs)) $('#' + other).setAttribute('aria-selected', other === id);
-    $('#paneCode').hidden = !code; $('#paneNotes').hidden = key !== 'notes'; $('#paneFont').hidden = key !== 'font';
-    $('#copyBtn').hidden = !code;
-    $('#dlBtn').hidden = !code || !canDownload;
-    $('#fontBtn').hidden = key !== 'font';
-    $('.ex-fields').classList.toggle('font-mode', key === 'font');      // 字体文件用不到的设置（只影响 CSS 的）先藏起来
-    if (key !== 'notes') renderExport();
+    renderExport();
   });
+  $('.ex-kinds').addEventListener('click', e => { const b = e.target.closest('[data-kind]'); if (b) { setExKind(b.dataset.kind); saveState(); } });
   /* 独立网页里可以直接下载；在 artifact 等嵌入框架里浏览器会拦截下载，所以只显示「复制」 */
   const canDownload = window.top === window.self;
   $('#dlBtn').hidden = !canDownload;
@@ -963,12 +958,18 @@ function initPicker() {
 }
 
 /* ================= 界面语言 ================= */
+/* 「原理与限制」左边的目录：当前语言那一份说明里的小标题 */
+function renderAboutToc() {
+  const body = document.querySelector(`.about-body [data-ui="${UI}"]`); if (!body) return;
+  $('#aboutToc').innerHTML = [...body.querySelectorAll('h3')].map((h, i) => { h.id ||= `about-${UI}-${i}`; return `<a href="#${h.id}">${esc(h.textContent)}</a>`; }).join('');
+}
 function applyUI() {
   root.lang = UI === 'ja' ? 'ja' : UI === 'tw' ? 'zh-Hant-TW' : 'zh-Hans';
   document.querySelectorAll('[data-t]').forEach(el => { el.textContent = T(el.dataset.t); });
   document.querySelectorAll('[data-th]').forEach(el => { el.innerHTML = T(el.dataset.th); });
   document.querySelectorAll('[data-ta]').forEach(el => el.dataset.ta.split(';').forEach(p => { const [a, k] = p.split(':'); el.setAttribute(a, T(k)); }));
   document.querySelectorAll('[data-ui]').forEach(el => { el.hidden = el.dataset.ui !== UI; });
+  renderAboutToc();
   document.querySelectorAll('#uiSeg [data-ui-lang]').forEach(b => b.setAttribute('aria-checked', b.dataset.uiLang === UI));
   renderLangOptions(); renderPresetCards(); renderTypoRows(); renderEditor();
   syncToolbar(); renderPreview(); drawSpecimen(); renderExport();
@@ -1015,6 +1016,9 @@ function initReset() {
 function init() {
   refreshCustomRanges();
   initToolbar(); initPresets(); initPicker(); initReset(); initFontTab();
+  $('#aboutToc').addEventListener('click', e => { const a = e.target.closest('a'); if (!a) return; e.preventDefault(); document.getElementById(a.hash.slice(1))?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); });
+  exKind = state.view.exKind === 'font' ? 'font' : 'css'; $('#export').dataset.kind = exKind;
+  document.querySelectorAll('.ex-kinds [data-kind]').forEach(b => b.setAttribute('aria-selected', b.dataset.kind === exKind));
   applyUI();
   rebuildNow();
   new ResizeObserver(debounce(drawSpecimen, 100)).observe($('#spec'));

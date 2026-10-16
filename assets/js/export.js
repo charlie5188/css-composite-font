@@ -197,7 +197,15 @@ function highlight(code, lang) {
   }
   return h;
 }
-let exTab = 'css', lastExport = '';
+let exKind = 'css', exTab = 'css', lastExport = '';      // exKind：网页（CSS）/ 字体文件；exTab：CSS / JS 代码
+/* 切换导出的种类：下面的设置和结果整块换成这一种 */
+function setExKind(k) {
+  exKind = k === 'font' ? 'font' : 'css';
+  state.view.exKind = exKind;
+  $('#export').dataset.kind = exKind;
+  document.querySelectorAll('.ex-kinds [data-kind]').forEach(b => b.setAttribute('aria-selected', b.dataset.kind === exKind));
+  renderExport();
+}
 function ensureExportSources() {
   for (const g of exportGroups()) for (const p of [...g.plan, ...(g.iplan || [])]) {
     const f = p.font;
@@ -225,10 +233,7 @@ function renderWRange() {
 let gzTok = 0;
 function renderExport() {
   ensureExportSources();
-  const fm = exTab === 'font', cont = state.wmode === 'cont';
-  $('#exWeightsField').hidden = cont && !fm;      // 字体文件按档位生成：连续字重时也显示字重的选择
-  $('#exContField').hidden = !cont || fm;
-  if (fm) { renderFontTab(); return; }
+  if (exKind === 'font') { renderFontFields(); renderFontTab(); return; }
   const { css, count, files: fl } = buildCss();
   const js = buildJs();
   const kb = s => (new Blob([s]).size / 1024).toFixed(1);
