@@ -522,6 +522,7 @@ button.wl small{font-family:var(--ui);font-size:11px;margin-left:5px;opacity:.75
 .fx-name{font-weight:600;overflow-wrap:anywhere}
 .fx-meta,.fx-note{grid-column:1/-1;font-size:12px;line-height:1.55;color:var(--muted)}
 .fx-note.no{color:var(--warn)}
+.fx-note.lic{color:var(--ink-2);overflow-wrap:anywhere}
 .fx-lic{font-family:var(--mono);font-size:11px;white-space:nowrap;padding:2px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
 .fx-lic.ok{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 45%,transparent)}
 .fx-lic.warn{color:var(--caution);background:var(--caution-bg);border-color:transparent}

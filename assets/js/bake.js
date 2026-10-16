@@ -139,8 +139,8 @@ async function readFontMeta(buf, ps) {
     if (os2 && os2.byteLength >= 62) m.vendor = String.fromCharCode(...[58, 59, 60, 61].map(k => os2.getUint8(k))).trim();
     m.copyright = face.names[0] || ''; m.license = face.names[13] || ''; m.licenseUrl = face.names[14] || '';
     const all = [m.license, m.licenseUrl, m.copyright].join(' ');
-    m.lic = /^a?appl$/i.test(m.vendor || '') || /\bApple (Inc|Computer)/.test(m.copyright) ? 'apple'      // 厂商代码有 APPL、Appl、Aapl 几种写法
-      : /open font licen[cs]e|\bOFL\b|scripts\.sil\.org\/OFL|openfontlicense/i.test(all) ? 'ofl'
+    /* 只认得出开源许可；其他一律算许可不明，不按厂商区别对待（系统字体、商用字体的许可大多都不允许修改），由用户确认 */
+    m.lic = /open font licen[cs]e|\bOFL\b|scripts\.sil\.org\/OFL|openfontlicense/i.test(all) ? 'ofl'
       : /apache licen[cs]e|apache\.org\/licenses/i.test(all) ? 'apache'
       : /ubuntu font licen[cs]e/i.test(all) ? 'ufl' : 'unknown';
     m.rfn = rfnOf(m.copyright + '\n' + m.license);
@@ -215,7 +215,7 @@ function fxPlan() {
         if (!m) out.loading = true;
         s = { key: 'f:' + f.fileId, kind: 'file', name: fl.name, file: 'u' + f.fileId + '_' + fl.name.replace(/[^\w.-]+/g, '_'), size: fl.buffer.byteLength, fileId: f.fileId,
           lic: m ? m.lic : null, meta: m, rfn: m ? m.rfn : [], static: !f.axis, cff: m && m.cff,
-          err: m && (m.lic === 'apple' ? 'apple' : !m.woff2 && !m.outline ? 'outline' : null) };
+          err: m && !m.woff2 && !m.outline ? 'outline' : null };
         if (f.axis) w = f.weight || 400;
       }
     } else if (f.kind === 'local') {
@@ -228,7 +228,7 @@ function fxPlan() {
         if (!m) out.loading = true;
         s = { key: 'l:' + fd.postscriptName, kind: 'local', name: fd.fullName, file: 'l_' + fd.postscriptName.replace(/[^\w.-]+/g, '_'), ps: fd.postscriptName, fd,
           size: m ? m.size : 0, lic: m ? m.lic : null, meta: m, rfn: m ? m.rfn : [], cff: m && m.cff,
-          err: m && (m.lic === 'apple' ? 'apple' : !m.outline ? 'outline' : null) };
+          err: m && !m.outline ? 'outline' : null };
         if (f.axis) w = f.weight || 400;
       }
     } else s = { key: f.kind + ':' + (f.name || f.path), kind: f.kind, name: f.name || f.path, err: 'noFile' };
@@ -294,6 +294,11 @@ function renderFontTab() {
     const notes = [];
     if (s.err) notes.push([T('fxErr_' + s.err, { name: s.name }), 'no']);
     else if (!s.needLocal) {
+      if (s.lic === 'unknown') {      // 有许可说明就摘许可说明，没有就摘版权声明
+        const cut = x => { x = (x || '').replace(/\s+/g, ' ').trim(); return x.length > 160 ? x.slice(0, 160) + '…' : x; };
+        const lt = cut(s.meta?.license), ct = cut(s.meta?.copyright);
+        notes.push([lt ? T('fxLicText', { t: lt }) : ct ? T('fxLicCopy', { t: ct }) : T('fxLicNone'), 'lic']);
+      }
       if (s.cff) notes.push([T('fxCffNote'), '']);
       if (s.kind === 'file' && s.static && s.ws.size > 1) notes.push([T('fxStaticNote'), '']);
     }

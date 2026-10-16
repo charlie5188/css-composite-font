@@ -8,13 +8,13 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=0d5e6f8e">
-<script src="assets/js/i18n.js?v=93cbca06" defer></script>
+<link rel="stylesheet" href="assets/style.css?v=ea87b33b">
+<script src="assets/js/i18n.js?v=67b5bc67" defer></script>
 <script src="assets/js/unicode.js?v=97c3474e" defer></script>
 <script src="assets/js/gfmeta.js?v=efdfbc50" defer></script>
 <script src="assets/js/core.js?v=dfb6437a" defer></script>
 <script src="assets/js/render.js?v=5ff78e58" defer></script>
-<script src="assets/js/bake.js?v=3c3def02" defer></script>
+<script src="assets/js/bake.js?v=f9eff42e" defer></script>
 <script src="assets/js/export.js?v=e8c49543" defer></script>
 <script src="assets/js/ui.js?v=66891581" defer></script>
 </head>
@@ -214,7 +214,7 @@
         <p>类别表里有一行「注音符号」，也负责声调号 ˊ ˇ ˋ ˙：它们原本属于西文的码位，不归过来就会用西文字体显示。法语等的重音字母（é、à）是另外的码位，不受影响；需要的话可以在齿轮里把声调号改回半角西文。</p>
         <h3>字体文件</h3>
         <p>「字体文件」页签把合成字体做成真正的字体（TTF，可选 WOFF2），给 Figma、Keynote、Word 这类不支持合成字体的软件用。做法和导出的 CSS 一一对应：每条规则的字体只取它负责的字，按大小缩放、按基线上下平移，再合并成一个字体；行高度量用汉字基础字体的。生成在浏览器里进行（Pyodide + fontTools），字体不会上传到任何服务器。</p>
-        <p>源字体：Google Fonts 的字体从 google/fonts 仓库下载完整文件，网页接口给的切片去掉了大部分 OpenType 特性；上传的字体直接使用；本机安装的字体通过浏览器的本机字体接口读取（Chrome、Edge，需要授权）。CFF 轮廓的 OTF 会转换成 TrueType 曲线（误差不超过 1/1000 em），字体集合（TTC）只取用到的那一款。只有 OFL、Apache 等允许修改的许可可以直接合并，许可不明的字体要确认有权修改；苹果的系统字体不能合并。字体微调（hinting）会去掉，只影响 Windows 上的小字号。浏览器会在中西文之间自动加 1/8 em 的间距，其他软件不会。</p>
+        <p>源字体：Google Fonts 的字体从 google/fonts 仓库下载完整文件，网页接口给的切片去掉了大部分 OpenType 特性；上传的字体直接使用；本机安装的字体通过浏览器的本机字体接口读取（Chrome、Edge，需要授权）。CFF 轮廓的 OTF 会转换成 TrueType 曲线（误差不超过 1/1000 em），字体集合（TTC）只取用到的那一款。只有 OFL、Apache 等允许修改的许可可以直接合并，许可不明的字体（包括系统自带和商用的字体）要先确认有权修改，生成的文件只给自己用。字体微调（hinting）会去掉，只影响 Windows 上的小字号。浏览器会在中西文之间自动加 1/8 em 的间距，其他软件不会。</p>
         <h3>为什么不用 font-size-adjust</h3>
         <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支持双值语法）也能统一字号，但它对元素里的每个字体都生效：把西文调到目标大写高的同时，汉字字体也会按它自带的西文度量被缩放。它也不能按字符类别分配字体，解决不了引号归属。更关键的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同时出现时，<code>size-adjust</code> 不再起作用。所以使用复合字体的元素上不要再写 <code>font-size-adjust</code>。校样的「对照其他做法」里可以切换到这个做法比较效果。</p>
         <h3>CSS 原生 CJK 排版属性</h3>
@@ -263,7 +263,7 @@
         <p>類別表裡有一行「注音符號」，也負責聲調號 ˊ ˇ ˋ ˙：它們原本屬於西文的碼位，不歸過來就會用西文字型顯示。法語等的重音字母（é、à）是另外的碼位，不受影響；需要的話可以在齒輪裡把聲調號改回半形西文。</p>
         <h3>字型檔案</h3>
         <p>「字型檔案」頁籤把複合字型做成真正的字型（TTF，可選 WOFF2），給 Figma、Keynote、Word 這類不支援複合字型的軟體用。做法和匯出的 CSS 一一對應：每條規則的字型只取它負責的字，按大小縮放、按基線上下平移，再合併成一個字型；行高度量用漢字基礎字型的。產生在瀏覽器裡進行（Pyodide + fontTools），字型不會上傳到任何伺服器。</p>
-        <p>來源字型：Google Fonts 的字型從 google/fonts 倉庫下載完整檔案，網頁介面給的切片去掉了大部分 OpenType 特性；上傳的字型直接使用；本機安裝的字型透過瀏覽器的本機字型介面讀取（Chrome、Edge，需要授權）。CFF 輪廓的 OTF 會轉換成 TrueType 曲線（誤差不超過 1/1000 em），字型集合（TTC）只取用到的那一款。只有 OFL、Apache 等允許修改的授權可以直接合併，授權不明的字型要確認有權修改；蘋果的系統字型不能合併。字型微調（hinting）會去掉，只影響 Windows 上的小字號。瀏覽器會在中西文之間自動加 1/8 em 的間距，其他軟體不會。</p>
+        <p>來源字型：Google Fonts 的字型從 google/fonts 倉庫下載完整檔案，網頁介面給的切片去掉了大部分 OpenType 特性；上傳的字型直接使用；本機安裝的字型透過瀏覽器的本機字型介面讀取（Chrome、Edge，需要授權）。CFF 輪廓的 OTF 會轉換成 TrueType 曲線（誤差不超過 1/1000 em），字型集合（TTC）只取用到的那一款。只有 OFL、Apache 等允許修改的授權可以直接合併，授權不明的字型（包括系統內建和商用的字型）要先確認有權修改，產生的檔案只給自己用。字型微調（hinting）會去掉，只影響 Windows 上的小字號。瀏覽器會在中西文之間自動加 1/8 em 的間距，其他軟體不會。</p>
         <h3>為什麼不用 font-size-adjust</h3>
         <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支援雙值語法）也能統一字號，但它對元素裡的每個字型都生效：把西文調到目標大寫高的同時，漢字字型也會按它自帶的西文度量被縮放。它也不能按字元類別分配字型，解決不了引號歸屬。更關鍵的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同時出現時，<code>size-adjust</code> 不再起作用。所以使用複合字型的元素上不要再寫 <code>font-size-adjust</code>。校樣的「對照其他做法」裡可以切換到這個做法比較效果。</p>
         <h3>CSS 原生 CJK 排版屬性</h3>
@@ -312,7 +312,7 @@
         <p>文字クラスの表には「注音符号」の行があり、声調記号 ˊ ˇ ˋ ˙ も受け持ちます。もとは欧文の範囲にあり、移さないと欧文フォントで表示されるためです。フランス語などのアクセント付き文字（é・à）は別の符号位置なので影響しません。必要なら歯車から声調記号を半角欧文に戻せます。</p>
         <h3>フォントファイル</h3>
         <p>「フォントファイル」タブでは、合成フォントを本物のフォント（TTF、WOFF2 も可）にします。Figma、Keynote、Word など合成フォントに対応していないアプリで使うためのものです。書き出す CSS と同じ規則で、各フォントから担当する文字だけを取り出し、サイズとベースラインを調整してから 1 つのフォントにまとめます。行の高さは漢字のベースフォントに合わせます。処理はブラウザの中で行い（Pyodide + fontTools）、フォントがサーバーに送られることはありません。</p>
-        <p>元のフォント：Google Fonts のフォントは google/fonts リポジトリから完全なファイルをダウンロードします。Web 用の配信ではほとんどの OpenType 機能が削られているためです。アップロードしたフォントはそのまま使い、このコンピュータのフォントはブラウザのローカルフォント API で読み取ります（Chrome、Edge。許可が必要です）。CFF アウトラインの OTF は TrueType の曲線に変換し（誤差は 1/1000 em 以下）、フォントコレクション（TTC）からは使われている 1 書体だけを取り出します。合成できるのは OFL や Apache など改変を許可するライセンスのフォントで、ライセンス不明のフォントは権利の確認が必要です。Apple のシステムフォントは合成できません。ヒンティングは削除されます（影響は Windows の小さいサイズだけです）。和欧間の 1/8 em のアキはブラウザが自動で入れるもので、ほかのアプリでは入りません。</p>
+        <p>元のフォント：Google Fonts のフォントは google/fonts リポジトリから完全なファイルをダウンロードします。Web 用の配信ではほとんどの OpenType 機能が削られているためです。アップロードしたフォントはそのまま使い、このコンピュータのフォントはブラウザのローカルフォント API で読み取ります（Chrome、Edge。許可が必要です）。CFF アウトラインの OTF は TrueType の曲線に変換し（誤差は 1/1000 em 以下）、フォントコレクション（TTC）からは使われている 1 書体だけを取り出します。合成できるのは OFL や Apache など改変を許可するライセンスのフォントで、ライセンス不明のフォント（OS 付属のフォントや商用フォントを含む）は、改変する権利があることを先に確認する必要があり、作ったファイルは自分だけで使います。ヒンティングは削除されます（影響は Windows の小さいサイズだけです）。和欧間の 1/8 em のアキはブラウザが自動で入れるもので、ほかのアプリでは入りません。</p>
         <h3>font-size-adjust を使わない理由</h3>
         <p><code>font-size-adjust</code>（2 値構文は Chrome 127、Firefox 92、Safari 17 が対応）でもサイズをそろえられますが、要素内のすべてのフォントに効きます。欧文を目標のキャップハイトに合わせると、漢字フォントも付属欧文のメトリクスに応じて拡大縮小されます。文字クラスごとにフォントを割り当てることもできないため、引用符の問題も解決しません。さらに MDN によれば、<code>@font-face</code> の <code>size-adjust</code> と併用すると <code>size-adjust</code> が効かなくなります。合成フォントを使う要素には <code>font-size-adjust</code> を指定しないでください。校正刷りの「他の方法と比較」で違いを確認できます。</p>
         <h3>CSS ネイティブの CJK 組版プロパティ</h3>
