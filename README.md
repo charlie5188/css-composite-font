@@ -69,7 +69,8 @@ python3 -m http.server
 ```
 index.html            Markup
 assets/style.css      Styles
-assets/js/i18n.js     Interface text (Chinese / Japanese) and helpers
+assets/js/i18n.js     Helpers and language selection
+assets/js/i18n/       Interface text, one file per language (zh, ja, tw), one key per line
 assets/js/unicode.js  Unicode ranges and character classes
 assets/js/gfmeta.js   Google Fonts axes and italics (bundled from fonts.google.com/metadata)
 assets/js/core.js     Font loading, presets, state, weight mapping, live preview
@@ -90,6 +91,7 @@ tests/e2e/            Page tests (Playwright): CSS output snapshots per preset, 
 pip install -r tests/requirements.txt && python3 -m pytest tests/py
 npm ci && npx playwright test                 # uses the installed Chrome locally
 npx playwright test --update-snapshots        # after an intended change to the exported CSS
+node tools/check-i18n.mjs                     # same keys and placeholders in every language
 ```
 
 GitHub Actions runs both on every push (`.github/workflows/test.yml`). The font-file test downloads Pyodide and source fonts, so it needs network access.

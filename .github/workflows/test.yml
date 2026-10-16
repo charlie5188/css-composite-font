@@ -17,6 +17,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: npm ci
+      - run: node tools/check-i18n.mjs
       - run: npx playwright install --with-deps chromium
       - run: npx playwright test
       - uses: actions/upload-artifact@v4
