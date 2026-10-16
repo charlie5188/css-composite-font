@@ -1,0 +1,12 @@
+{
+  "name": "css-composite-font",
+  "private": true,
+  "description": "Tests and checks for the CSS Composite Font tool. The site itself has no build step.",
+  "scripts": {
+    "test": "playwright test",
+    "test:py": "python3 -m pytest tests/py"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.48.2"
+  }
+}

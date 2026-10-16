@@ -79,7 +79,20 @@ assets/js/bake.js     Font-file export (TTF / OTF / WOFF2) in a Pyodide worker
 assets/py/            fontTools wheel served to the worker
 assets/js/ui.js       Interaction, preset cards, font picker, start-up
 tools/rehash.py       Updates the ?v= cache hashes in index.html after editing assets
+tools/bake.py         Command-line font baking with the same code as the page (job.json + source fonts)
+tests/py/             Font baking tests (pytest, small OFL fixture fonts in tests/fixtures)
+tests/e2e/            Page tests (Playwright): CSS output snapshots per preset, UI, vertical layout, font-file export
 ```
+
+## Tests
+
+```
+pip install -r tests/requirements.txt && python3 -m pytest tests/py
+npm ci && npx playwright test                 # uses the installed Chrome locally
+npx playwright test --update-snapshots        # after an intended change to the exported CSS
+```
+
+GitHub Actions runs both on every push (`.github/workflows/test.yml`). The font-file test downloads Pyodide and source fonts, so it needs network access.
 
 ---
 

@@ -1,0 +1,7089 @@
+/* 复合字体「My Composite」
+ * 汉字基础字体用 @import 直接引用 Google Fonts，排在 font-family 的第二位；
+ * 下面只定义需要覆盖它的类别：用 unicode-range 接管字符，用 size-adjust 调整大小。
+ * 同名 @font-face 中，浏览器从最后一条往前匹配。 */
+/* 斜体：每组规则另有一份 font-style: italic。有斜体的类别用斜体字体（或倾斜轴）；
+ * 没有斜体的类别（汉字、假名等）用正体文件、也声明成 italic，浏览器就不会把它们模拟倾斜。 */
+/* ascent-override / descent-override / line-gap-override：西文等规则使用汉字字体的行高度量（已除以 size-adjust），
+ * 行高和基线位置都和汉字字体一致。Chrome 87+、Firefox 89+ 支持；Safari 会忽略，按各字体自己的度量显示。 */
+@import url(…);
+
+/* ===== font-weight: 100 ===== */
+
+/* 假名 — Zen Antique 400（Google，35 个分片） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* --- 斜体 --- */
+
+/* 假名 — Zen Antique 400（Google，35 个分片）（没有斜体，保持正体） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* ===== font-weight: 200 ===== */
+
+/* 假名 — Zen Antique 400（Google，35 个分片） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* --- 斜体 --- */
+
+/* 假名 — Zen Antique 400（Google，35 个分片）（没有斜体，保持正体） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* ===== font-weight: 300 ===== */
+
+/* 假名 — Zen Antique 400（Google，35 个分片） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* --- 斜体 --- */
+
+/* 假名 — Zen Antique 400（Google，35 个分片）（没有斜体，保持正体） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* ===== font-weight: 400 ===== */
+
+/* 假名 — Zen Antique 400（Google，35 个分片） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* --- 斜体 --- */
+
+/* 假名 — Zen Antique 400（Google，35 个分片）（没有斜体，保持正体） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* ===== font-weight: 500 ===== */
+
+/* 假名 — Zen Antique 400（Google，35 个分片） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* --- 斜体 --- */
+
+/* 假名 — Zen Antique 400（Google，35 个分片）（没有斜体，保持正体） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* ===== font-weight: 600 ===== */
+
+/* 假名 — Zen Antique 400（Google，35 个分片） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* --- 斜体 --- */
+
+/* 假名 — Zen Antique 400（Google，35 个分片）（没有斜体，保持正体） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* ===== font-weight: 700 ===== */
+
+/* 假名 — Zen Antique 400（Google，35 个分片） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* --- 斜体 --- */
+
+/* 假名 — Zen Antique 400（Google，35 个分片）（没有斜体，保持正体） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* ===== font-weight: 800 ===== */
+
+/* 假名 — Zen Antique 400（Google，35 个分片） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* --- 斜体 --- */
+
+/* 假名 — Zen Antique 400（Google，35 个分片）（没有斜体，保持正体） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* ===== font-weight: 900 ===== */
+
+/* 假名 — Zen Antique 400（Google，35 个分片） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* --- 斜体 --- */
+
+/* 假名 — Zen Antique 400（Google，35 个分片）（没有斜体，保持正体） */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF66, U+FF69, U+FF87;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+31F0-31FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3094-3096, U+309F-30A0, U+30EE, U+30F7-30FA, U+30FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF95;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3090, U+30F1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF96;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF94;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7F, U+FF88;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF67, U+FF82, U+FF93;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF79, U+FF90;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6E, U+FF7E, U+FF85;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF68, U+FF6D, U+FF9C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+309C, U+FF74, U+FF91;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6C, U+FF73, U+FF75, U+FF86, U+FF8D, U+FF92;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F5, U+FF8B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7B, U+FF8E-FF8F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF81;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7A, U+FF83;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF76, U+FF9B;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF71, U+FF89, U+FF97;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF77, U+FF98-FF99;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF7C, U+FF8A;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF80;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF6F, U+FF72, U+FF78, U+FF7D, U+FF84, U+FF8C;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9D;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF70;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+FF9E-FF9F;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30F6;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3080;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+30E2;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  ascent-override: 116%;
+  descent-override: 29%;
+  line-gap-override: 0%;
+  unicode-range: U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1,
+    U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FC-30FE;
+}
+
+/* 用法：给元素加 class="composite"。
+ * 不要在这些元素上设置 font-size-adjust：它会让上面各条规则里的 size-adjust 失效。 */
+.composite {
+  font-family: "My Composite", "Zen Kaku Gothic New", sans-serif;
+  text-autospace: normal;          /* 中西间距 · Chrome 140 · Firefox 145 · Safari 18.4 */
+  text-spacing-trim: trim-start;   /* 标点挤压 · Chrome 123 · Firefox — · Safari — */
+  line-break: strict;              /* 禁则 · Chrome 58 · Firefox 69 · Safari 11 */
+  hanging-punctuation: allow-end;  /* 标点悬挂 · Chrome — · Firefox — · Safari 10 */
+  font-synthesis-style: none;      /* 没有斜体的字保持正体，不让浏览器模拟倾斜 · Chrome 97 · Firefox 111 · Safari 16.4 */
+}
+/* ---- JS ---- */
+/* 复合字体「My Composite」· 基线偏移
+ * @font-face 没有基线描述符，这段脚本把需要偏移的字符包进 <span>，
+ * 用相对定位移动，不影响行高。放在页面末尾，或在内容渲染后调用。 */
+(() => {
+  const SELECTOR = '.composite';
+  const SHIFT = [ // [起, 止, 偏移 em]，正值向上
+    [0x0020, 0x007E, 0.03], [0x00A0, 0x00B6, 0.03], [0x00B8, 0x02C6, 0.03],
+    [0x02C8, 0x02C9, 0.03], [0x02CC, 0x02D8, 0.03], [0x02DA, 0x04FF, 0.03],
+    [0x1E00, 0x1EFF, 0.03], [0x2000, 0x2013, 0.03], [0x2016, 0x2017, 0.03],
+    [0x201A, 0x201B, 0.03], [0x201E, 0x2024, 0.03], [0x2027, 0x203A, 0.03],
+    [0x203C, 0x206F, 0.03], [0x20A0, 0x20CF, 0.03], [0x2122, 0x2122, 0.03],
+    [0xFB00, 0xFB06, 0.03]
+  ];
+  const shiftOf = cp => {
+    let lo = 0, hi = SHIFT.length - 1;
+    while (lo <= hi) {
+      const m = (lo + hi) >> 1, r = SHIFT[m];
+      if (cp < r[0]) hi = m - 1; else if (cp > r[1]) lo = m + 1; else return r[2];
+    }
+    return 0;
+  };
+  const skip = el => !el || el.closest('[data-cf-shift], script, style, textarea, code, pre');
+  function apply(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    const nodes = [];
+    while (walker.nextNode()) if (!skip(walker.currentNode.parentElement)) nodes.push(walker.currentNode);
+    for (const node of nodes) {
+      const runs = [];
+      let cur = null;
+      for (const ch of node.data) {
+        const s = shiftOf(ch.codePointAt(0));
+        if (cur && cur.s === s) cur.t += ch; else runs.push(cur = { s, t: ch });
+      }
+      if (!runs.some(r => r.s)) continue;
+      const frag = document.createDocumentFragment();
+      for (const r of runs) {
+        if (!r.s) { frag.append(r.t); continue; }
+        const span = document.createElement('span');
+        span.dataset.cfShift = '';
+        span.style.cssText = `position:relative;inset-block-start:${-r.s}em`;
+        span.textContent = r.t;
+        frag.append(span);
+      }
+      node.replaceWith(frag);
+    }
+  }
+  document.querySelectorAll(SELECTOR).forEach(apply);
+})();

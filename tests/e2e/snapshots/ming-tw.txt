@@ -1,0 +1,1462 @@
+/* 复合字体「My Composite」
+ * 汉字基础字体用 @import 直接引用 Google Fonts，排在 font-family 的第二位；
+ * 下面只定义需要覆盖它的类别：用 unicode-range 接管字符，用 size-adjust 调整大小。
+ * 同名 @font-face 中，浏览器从最后一条往前匹配。 */
+/* 斜体：每组规则另有一份 font-style: italic。有斜体的类别用斜体字体（或倾斜轴）；
+ * 没有斜体的类别（汉字、假名等）用正体文件、也声明成 italic，浏览器就不会把它们模拟倾斜。 */
+/* ascent-override / descent-override / line-gap-override：西文等规则使用汉字字体的行高度量（已除以 size-adjust），
+ * 行高和基线位置都和汉字字体一致。Chrome 87+、Firefox 89+ 支持；Safari 会忽略，按各字体自己的度量显示。 */
+@import url(…);
+
+/* ===== font-weight: 100 ===== */
+
+/* 半角西文、半角数字 — EB Garamond 400（Google，6 个分片） · 114% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* --- 斜体 --- */
+
+/* 半角西文、半角数字 — EB Garamond Italic 400（Google，6 个分片） · 114% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 100;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* ===== font-weight: 200 ===== */
+
+/* 半角西文、半角数字 — EB Garamond 400（Google，6 个分片） · 114% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* --- 斜体 --- */
+
+/* 半角西文、半角数字 — EB Garamond Italic 400（Google，6 个分片） · 114% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 200;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114%;
+  ascent-override: 100.88%;
+  descent-override: 25.44%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* ===== font-weight: 300 ===== */
+
+/* 半角西文、半角数字 — EB Garamond 400（Google，6 个分片） · 114.5% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114.5%;
+  ascent-override: 100.44%;
+  descent-override: 25.33%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114.5%;
+  ascent-override: 100.44%;
+  descent-override: 25.33%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114.5%;
+  ascent-override: 100.44%;
+  descent-override: 25.33%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114.5%;
+  ascent-override: 100.44%;
+  descent-override: 25.33%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114.5%;
+  ascent-override: 100.44%;
+  descent-override: 25.33%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 114.5%;
+  ascent-override: 100.44%;
+  descent-override: 25.33%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* --- 斜体 --- */
+
+/* 半角西文、半角数字 — EB Garamond Italic 400（Google，6 个分片） · 114.5% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114.5%;
+  ascent-override: 100.44%;
+  descent-override: 25.33%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114.5%;
+  ascent-override: 100.44%;
+  descent-override: 25.33%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114.5%;
+  ascent-override: 100.44%;
+  descent-override: 25.33%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114.5%;
+  ascent-override: 100.44%;
+  descent-override: 25.33%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114.5%;
+  ascent-override: 100.44%;
+  descent-override: 25.33%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 114.5%;
+  ascent-override: 100.44%;
+  descent-override: 25.33%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* ===== font-weight: 400 ===== */
+
+/* 半角西文、半角数字 — EB Garamond 400（Google，6 个分片） · 115% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 115%;
+  ascent-override: 100%;
+  descent-override: 25.22%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 115%;
+  ascent-override: 100%;
+  descent-override: 25.22%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 115%;
+  ascent-override: 100%;
+  descent-override: 25.22%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 115%;
+  ascent-override: 100%;
+  descent-override: 25.22%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 115%;
+  ascent-override: 100%;
+  descent-override: 25.22%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 115%;
+  ascent-override: 100%;
+  descent-override: 25.22%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* --- 斜体 --- */
+
+/* 半角西文、半角数字 — EB Garamond Italic 400（Google，6 个分片） · 115% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 115%;
+  ascent-override: 100%;
+  descent-override: 25.22%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 115%;
+  ascent-override: 100%;
+  descent-override: 25.22%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 115%;
+  ascent-override: 100%;
+  descent-override: 25.22%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 115%;
+  ascent-override: 100%;
+  descent-override: 25.22%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 115%;
+  ascent-override: 100%;
+  descent-override: 25.22%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 115%;
+  ascent-override: 100%;
+  descent-override: 25.22%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* ===== font-weight: 500 ===== */
+
+/* 半角西文、半角数字 — EB Garamond 500（Google，6 个分片） · 115.5% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 115.5%;
+  ascent-override: 99.57%;
+  descent-override: 25.11%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 115.5%;
+  ascent-override: 99.57%;
+  descent-override: 25.11%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 115.5%;
+  ascent-override: 99.57%;
+  descent-override: 25.11%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 115.5%;
+  ascent-override: 99.57%;
+  descent-override: 25.11%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 115.5%;
+  ascent-override: 99.57%;
+  descent-override: 25.11%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 115.5%;
+  ascent-override: 99.57%;
+  descent-override: 25.11%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* --- 斜体 --- */
+
+/* 半角西文、半角数字 — EB Garamond Italic 500（Google，6 个分片） · 115.5% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 115.5%;
+  ascent-override: 99.57%;
+  descent-override: 25.11%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 115.5%;
+  ascent-override: 99.57%;
+  descent-override: 25.11%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 115.5%;
+  ascent-override: 99.57%;
+  descent-override: 25.11%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 115.5%;
+  ascent-override: 99.57%;
+  descent-override: 25.11%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 115.5%;
+  ascent-override: 99.57%;
+  descent-override: 25.11%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 115.5%;
+  ascent-override: 99.57%;
+  descent-override: 25.11%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* ===== font-weight: 600 ===== */
+
+/* 半角西文、半角数字 — EB Garamond 600（Google，6 个分片） · 116% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 116%;
+  ascent-override: 99.14%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 116%;
+  ascent-override: 99.14%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 116%;
+  ascent-override: 99.14%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 116%;
+  ascent-override: 99.14%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 116%;
+  ascent-override: 99.14%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 116%;
+  ascent-override: 99.14%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* --- 斜体 --- */
+
+/* 半角西文、半角数字 — EB Garamond Italic 600（Google，6 个分片） · 116% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 116%;
+  ascent-override: 99.14%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 116%;
+  ascent-override: 99.14%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 116%;
+  ascent-override: 99.14%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 116%;
+  ascent-override: 99.14%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 116%;
+  ascent-override: 99.14%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 116%;
+  ascent-override: 99.14%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* ===== font-weight: 700 ===== */
+
+/* 半角西文、半角数字 — EB Garamond 700（Google，6 个分片） · 116.5% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 116.5%;
+  ascent-override: 98.71%;
+  descent-override: 24.89%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 116.5%;
+  ascent-override: 98.71%;
+  descent-override: 24.89%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 116.5%;
+  ascent-override: 98.71%;
+  descent-override: 24.89%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 116.5%;
+  ascent-override: 98.71%;
+  descent-override: 24.89%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 116.5%;
+  ascent-override: 98.71%;
+  descent-override: 24.89%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 116.5%;
+  ascent-override: 98.71%;
+  descent-override: 24.89%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* --- 斜体 --- */
+
+/* 半角西文、半角数字 — EB Garamond Italic 700（Google，6 个分片） · 116.5% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 116.5%;
+  ascent-override: 98.71%;
+  descent-override: 24.89%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 116.5%;
+  ascent-override: 98.71%;
+  descent-override: 24.89%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 116.5%;
+  ascent-override: 98.71%;
+  descent-override: 24.89%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 116.5%;
+  ascent-override: 98.71%;
+  descent-override: 24.89%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 116.5%;
+  ascent-override: 98.71%;
+  descent-override: 24.89%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 116.5%;
+  ascent-override: 98.71%;
+  descent-override: 24.89%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* ===== font-weight: 800 ===== */
+
+/* 半角西文、半角数字 — EB Garamond 800（Google，6 个分片） · 117% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 117%;
+  ascent-override: 98.29%;
+  descent-override: 24.79%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 117%;
+  ascent-override: 98.29%;
+  descent-override: 24.79%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 117%;
+  ascent-override: 98.29%;
+  descent-override: 24.79%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 117%;
+  ascent-override: 98.29%;
+  descent-override: 24.79%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 117%;
+  ascent-override: 98.29%;
+  descent-override: 24.79%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 117%;
+  ascent-override: 98.29%;
+  descent-override: 24.79%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* --- 斜体 --- */
+
+/* 半角西文、半角数字 — EB Garamond Italic 800（Google，6 个分片） · 117% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 117%;
+  ascent-override: 98.29%;
+  descent-override: 24.79%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 117%;
+  ascent-override: 98.29%;
+  descent-override: 24.79%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 117%;
+  ascent-override: 98.29%;
+  descent-override: 24.79%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 117%;
+  ascent-override: 98.29%;
+  descent-override: 24.79%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 117%;
+  ascent-override: 98.29%;
+  descent-override: 24.79%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 117%;
+  ascent-override: 98.29%;
+  descent-override: 24.79%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* ===== font-weight: 900 ===== */
+
+/* 半角西文、半角数字 — EB Garamond 800（Google，6 个分片） · 117.5% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 117.5%;
+  ascent-override: 97.87%;
+  descent-override: 24.68%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 117.5%;
+  ascent-override: 97.87%;
+  descent-override: 24.68%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 117.5%;
+  ascent-override: 97.87%;
+  descent-override: 24.68%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 117.5%;
+  ascent-override: 97.87%;
+  descent-override: 24.68%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 117.5%;
+  ascent-override: 97.87%;
+  descent-override: 24.68%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+  size-adjust: 117.5%;
+  ascent-override: 97.87%;
+  descent-override: 24.68%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* --- 斜体 --- */
+
+/* 半角西文、半角数字 — EB Garamond Italic 800（Google，6 个分片） · 117.5% */
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 117.5%;
+  ascent-override: 97.87%;
+  descent-override: 24.68%;
+  line-gap-override: 0%;
+  unicode-range: U+460-4FF, U+20B4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 117.5%;
+  ascent-override: 97.87%;
+  descent-override: 24.68%;
+  line-gap-override: 0%;
+  unicode-range: U+301, U+400-45F, U+490-491, U+4B0-4B1;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 117.5%;
+  ascent-override: 97.87%;
+  descent-override: 24.68%;
+  line-gap-override: 0%;
+  unicode-range: U+370-377, U+37A-37F, U+384-38A, U+38C, U+38E-3A1, U+3A3-3FF;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 117.5%;
+  ascent-override: 97.87%;
+  descent-override: 24.68%;
+  line-gap-override: 0%;
+  unicode-range: U+102-103, U+110-111, U+128-129, U+168-169, U+1A0-1A1, U+1AF-1B0, U+300-301,
+    U+303-304, U+308-309, U+323, U+329, U+1EA0-1EF9, U+20AB;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 117.5%;
+  ascent-override: 97.87%;
+  descent-override: 24.68%;
+  line-gap-override: 0%;
+  unicode-range: U+100-2BA, U+2BD-2C5, U+2C8-2C9, U+2CC, U+2CE-2D7, U+2DD-2FF, U+304, U+308,
+    U+329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4;
+}
+@font-face {
+  font-family: "My Composite";
+  src: url(…) format("woff2");
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+  size-adjust: 117.5%;
+  ascent-override: 97.87%;
+  descent-override: 24.68%;
+  line-gap-override: 0%;
+  unicode-range: U+20-7E, U+A0-B6, U+B8-FF, U+131, U+152-153, U+2BB-2BC, U+2C6, U+2DA, U+2DC,
+    U+304, U+308, U+329, U+2000-2013, U+2016-2017, U+201A-201B, U+201E-2024,
+    U+2027-203A, U+203C-206F, U+20AC, U+2122;
+}
+
+/* 用法：给元素加 class="composite"。
+ * 不要在这些元素上设置 font-size-adjust：它会让上面各条规则里的 size-adjust 失效。 */
+.composite {
+  font-family: "My Composite", "Noto Serif TC", serif;
+  text-autospace: normal;          /* 中西间距 · Chrome 140 · Firefox 145 · Safari 18.4 */
+  text-spacing-trim: trim-start;   /* 标点挤压 · Chrome 123 · Firefox — · Safari — */
+  line-break: strict;              /* 禁则 · Chrome 58 · Firefox 69 · Safari 11 */
+  hanging-punctuation: allow-end;  /* 标点悬挂 · Chrome — · Firefox — · Safari 10 */
+  font-synthesis-style: none;      /* 没有斜体的字保持正体，不让浏览器模拟倾斜 · Chrome 97 · Firefox 111 · Safari 16.4 */
+}
+/* ---- JS ---- */
+/* 所有类别的基线偏移都是 0，不需要 JS。 */
