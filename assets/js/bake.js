@@ -26,31 +26,48 @@ const LIC_PRIVATE = ['Contains fonts used under their own licenses. Private use 
 const LIC_HEAD_OPEN = 'This font combines the fonts listed below. All of them are under the SIL Open Font License 1.1 or a compatible open license, and this font is licensed under the SIL Open Font License 1.1. Their copyright notices and license texts follow.';
 const LIC_HEAD_PRIVATE = 'This font combines the fonts listed below. Some of them are not under an open license; whoever made this font confirmed they have the right to modify and combine them. Do not redistribute this font.';
 
-/* ---------- Google Fonts 的源文件：google/fonts 仓库的目录列表（每个字体族一次，缓存一周） ---------- */
+/* ---------- Google Fonts 的源文件：google/fonts 仓库里的完整文件 ----------
+   先按仓库的命名规则直接猜文件名（可变字体：字体族去空格[轴,…].ttf，轴名按 ASCII 排序；静态字体：字体族去空格-Regular.ttf 等），
+   用 HEAD 请求确认存在；猜不到才用 GitHub API 列目录。API 每个 IP 每小时只能用 60 次，公司网络里很多人共用一个出口，很快会用完 */
 const gfDirs = new Map();      // 字体族 -> { st: 'loading' | 'ok' | 'err', lic, slug, names: [[文件名, 大小]], text, rfn }
+const gfUrl = (lic, slug, name) => BK.raw + lic + '/' + slug + '/' + encodeURIComponent(name);
+async function gfGuess(family, slug) {
+  let lic = null, text = '';
+  for (const [l, f] of [['ofl', 'OFL.txt'], ['apache', 'LICENSE.txt'], ['ufl', 'UFL.txt'], ['ufl', 'LICENCE.txt']]) {
+    const r = await fetch(gfUrl(l, slug, f));
+    if (r.ok) { lic = l; text = await r.text(); break; }
+  }
+  if (!lic) return null;
+  const head = async n => { try { const r = await fetch(gfUrl(lic, slug, n), { method: 'HEAD' }); return r.ok ? [n, +r.headers.get('content-length') || 0] : null; } catch (e) { return null; } };
+  const stem = family.replace(/\s+/g, ''), ax = (GF_AXES[family] || '').split(',').map(x => x.split(' ')[0]).filter(t => t && t !== 'ital').sort();
+  let names = [];
+  if (ax.length) names = (await Promise.all([`${stem}[${ax}].ttf`, `${stem}-Italic[${ax}].ttf`].map(head))).filter(Boolean);
+  if (!names.length) names = (await Promise.all(Object.entries(STY).flatMap(([w, st]) => [`${stem}-${st}.ttf`, `${stem}-${+w === 400 ? '' : st}Italic.ttf`]).map(head))).filter(Boolean);
+  return names.length ? { lic, names, text } : null;
+}
+async function gfList(slug) {
+  for (const lic of ['ofl', 'apache', 'ufl']) {
+    const r = await fetch(BK.api + lic + '/' + slug);
+    if (r.status === 404) continue;
+    if (!r.ok) throw Object.assign(new Error('gh'), { code: r.status === 403 || r.status === 429 ? 'ghLimit' : 'net' });
+    const names = (await r.json()).map(x => [x.name, x.size]), lf = names.find(([n]) => /^(OFL|LICENSE|LICENCE|UFL)\.txt$/i.test(n));
+    return { lic, names, text: lf ? await (await fetch(gfUrl(lic, slug, lf[0]))).text() : '' };
+  }
+  throw Object.assign(new Error('gf'), { code: 'gfNone' });
+}
 function gfInfo(family) {
   let g = gfDirs.get(family);
   if (g) return g;
   g = { st: 'loading' };
   gfDirs.set(family, g);
   (async () => {
-    const slug = family.toLowerCase().replace(/[^a-z0-9]/g, ''), ck = 'composite-font:gf:' + slug;
+    const slug = family.toLowerCase().replace(/[^a-z0-9]/g, ''), ck = 'composite-font:gf2:' + slug;
     let d = lsGet(ck);
     if (!d || Date.now() - d.t > 7 * 864e5) {
-      d = null;
-      for (const lic of ['ofl', 'apache', 'ufl']) {
-        const r = await fetch(BK.api + lic + '/' + slug);
-        if (r.status === 404) continue;
-        if (!r.ok) throw Object.assign(new Error('gh'), { code: r.status === 403 || r.status === 429 ? 'ghLimit' : 'net' });
-        d = { t: Date.now(), lic, names: (await r.json()).map(x => [x.name, x.size]) };
-        break;
-      }
-      if (!d) throw Object.assign(new Error('gf'), { code: 'gfNone' });
+      d = { t: Date.now(), ...((await gfGuess(family, slug)) || (await gfList(slug))) };
       try { localStorage.setItem(ck, JSON.stringify(d)); } catch (e) { /* 存不了就下次再查 */ }
     }
-    const lf = d.names.find(([n]) => /^(OFL|LICENSE|UFL)\.txt$/i.test(n));
-    const text = lf ? await (await fetch(BK.raw + d.lic + '/' + slug + '/' + lf[0])).text() : '';
-    Object.assign(g, { st: 'ok', lic: d.lic, slug, names: d.names, text, rfn: rfnOf(text) });
+    Object.assign(g, { st: 'ok', lic: d.lic, slug, names: d.names, text: d.text, rfn: rfnOf(d.text) });
   })().catch(e => Object.assign(g, { st: 'err', err: e.code || 'net' })).finally(() => { if (exTab === 'font') renderFontTab(); });
   return g;
 }
@@ -149,7 +166,7 @@ function fxPlan() {
         const pick = gfPick(g.names, f.weight, !!f.ital);
         if (!pick) s = { key: 'g:' + name, kind: 'google', name, err: 'gfNone' };
         else {
-          s = { key: pick.name, kind: 'google', name, file: pick.name, url: BK.raw + g.lic + '/' + g.slug + '/' + encodeURIComponent(pick.name), size: pick.size, lic: g.lic, licText: g.text, rfn: g.rfn };
+          s = { key: pick.name, kind: 'google', name, file: pick.name, url: gfUrl(g.lic, g.slug, pick.name), size: pick.size, lic: g.lic, licText: g.text, rfn: g.rfn };
           if (pick.vf) { const a = axisOf(G(f.family), 'wght'); w = a ? Math.min(a[2], Math.max(a[1], f.weight)) : f.weight; }
         }
       }
