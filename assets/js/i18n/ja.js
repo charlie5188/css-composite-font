@@ -173,6 +173,7 @@ export default {
   exLmHanTip: "どの行も同じ高さ",
   exLmOffTip: "欧文だけの行が低くなる",
   splitAria: "ドラッグで左右の幅を調整（ダブルクリックで元に戻す）",
+  specSplitAria: "ドラッグで参照図の高さを調整（ダブルクリックで元に戻す）",
   wSubCont: "書き出す範囲",
   wFollowPage: "可変フォントの太さはページに合わせて変わります：{list}",
   wColW: "太さ",

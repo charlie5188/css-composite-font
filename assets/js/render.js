@@ -734,13 +734,15 @@ export function drawSpecimen() {
   const show = ['国', ...(sh.kana ? ['あ'] : []), ...(sh.bopo ? ['ㄅ'] : []), ...(sh.latin ? ['Hxg'] : []), ...(sh.digit ? ['0'] : [])];
   const GAP = 0.2;      // 各组之间的距离（字号的倍数）
   /* 字号先按宽度定（最大 88px），画布高度再跟着字号走：参考图固定在校样栏底部，不能太高 */
-  let fs = 88;
+  const userH = state.view.specH;      // 拖动分界线定的高度：字号跟着高度变（最大是高度的 1/1.6）
+  let fs = userH ? Math.max(40, Math.floor(userH / 1.6)) : 88;
   ctx.font = `${fw} ${fs}px ${fam}`;
   const span = show.reduce((s, ch) => s + ctx.measureText(ch).width, 0) + fs * GAP * (show.length - 1);
   if (span > plotR - 24) fs = Math.floor(fs * (plotR - 24) / span);
   const nLines = 3 + (sh.latin ? 3 : 0) + (sh.digit ? 2 : 0) + (sh.kana ? 2 : 0) + (sh.bopo ? 2 : 0);
   const LT = 9;      // 参考线的标签最高排到这里
-  const H = Math.round(Math.min(200, Math.max(110, fs * 1.6, nLines * 13 + 16 + LT - 7)));
+  const minH = Math.max(110, nLines * 13 + 16 + LT - 7);      // 右边的参考线标签要放得下
+  const H = Math.round(userH ? Math.max(minH, userH) : Math.min(200, Math.max(minH, fs * 1.6)));
   const dpr = window.devicePixelRatio || 1;
   cv.style.height = H + 'px';
   cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);

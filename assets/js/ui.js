@@ -305,6 +305,23 @@ export function initSplit() {
   addEventListener('resize', debounce(applySplit, 100));
   applySplit();
 }
+/* 参考图的高度：拖动它上边的分界线（或聚焦后按 ↑↓），双击恢复按字号自动定的高度。校样至少留 160px */
+export function initSpecSplit() {
+  const sp = $('#specSplit'), maxH = () => Math.max(120, $('.tester').clientHeight - 160);
+  const set = h => { state.view.specH = Math.round(Math.min(maxH(), Math.max(110, h))); drawSpecimen(); };
+  sp.addEventListener('pointerdown', e => {
+    e.preventDefault(); sp.setPointerCapture(e.pointerId); document.body.classList.add('hsplitting');
+    const y0 = e.clientY, h0 = $('#spec').getBoundingClientRect().height;
+    const move = ev => set(h0 - (ev.clientY - y0));
+    const up = () => { sp.removeEventListener('pointermove', move); sp.removeEventListener('pointerup', up); sp.removeEventListener('pointercancel', up); document.body.classList.remove('hsplitting'); saveState(); };
+    sp.addEventListener('pointermove', move); sp.addEventListener('pointerup', up); sp.addEventListener('pointercancel', up);
+  });
+  sp.addEventListener('dblclick', () => { delete state.view.specH; drawSpecimen(); saveState(); });
+  sp.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+    e.preventDefault(); set($('#spec').getBoundingClientRect().height + (e.key === 'ArrowUp' ? 1 : -1) * (e.shiftKey ? 64 : 16)); saveState();
+  });
+}
 $('#wMatrix').addEventListener('focusin', e => { const el = e.target; if (el.matches('input[data-w], select[data-w]')) previewSoft(+el.dataset.w); });
 $('#wSub').addEventListener('change', e => { if (e.target.id === 'wLo' || e.target.id === 'wHi') setWRange(parseFloat($('#wLo').value), parseFloat($('#wHi').value)); });
 $('#wSub').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('input')) e.target.blur(); });
@@ -1310,7 +1327,7 @@ export function init() {
   });
   for (const d of ['#aboutDlg', '#exDlg']) $(d).addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });      // 点对话框外面（背景）关闭
   applyUI();
-  initSplit(); initHistory(); initTips();
+  initSplit(); initSpecSplit(); initHistory(); initTips();
   rebuildNow();
   new ResizeObserver(debounce(drawSpecimen, 100)).observe($('#spec'));
   document.fonts.addEventListener('loadingdone', debounce(fitGlyphs, 60));      // 字样里的字晚一点才下载时，下载完再量

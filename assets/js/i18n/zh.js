@@ -173,6 +173,7 @@ export default {
   exLmHanTip: "各行一样高",
   exLmOffTip: "只有西文的行会变矮",
   splitAria: "拖动调整左右两栏的宽度，双击恢复",
+  specSplitAria: "拖动调整参考图的高度，双击恢复",
   wSubCont: "导出范围",
   wFollowPage: "可变字体的粗细跟随页面：{list}",
   wColW: "粗细",

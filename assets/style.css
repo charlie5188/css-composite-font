@@ -228,8 +228,13 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .bench>.split{position:relative;z-index:3;overflow:visible;cursor:col-resize;touch-action:none;outline:none}
 .split::before{content:"";position:absolute;inset:0 -5px 0 -4px}
 .split::after{content:"";position:absolute;top:0;bottom:0;left:-2px;width:3px;background:transparent;transition:background .12s}
-.split:hover::after,.split:focus-visible::after,.splitting .split::after{background:var(--accent)}
+.split:hover::after,.split:focus-visible::after,.splitting .split::after,.hsplitting .hsplit::after{background:var(--accent)}
 .splitting,.splitting *{cursor:col-resize!important;user-select:none}
+/* 参考图上边的分界线：上下拖动调高度 */
+.hsplit{position:absolute;left:0;right:0;top:0;height:0;z-index:3;cursor:row-resize;touch-action:none;outline:none}
+.hsplit::before{inset:-5px 0 -4px}
+.hsplit::after{left:0;right:0;top:-2px;bottom:auto;width:auto;height:3px}
+.hsplitting,.hsplitting *{cursor:row-resize!important;user-select:none}
 /* 窄屏：一次只显示一栏，底部页签切换 */
 .mtabs{display:none}
 @media (max-width:1000px){
@@ -458,7 +463,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* 校样栏：上面校样自己滚动，下面参考图固定 */
 .tester{display:flex;flex-direction:column;overflow:hidden}      /* 窄屏上不显示这一栏时，由 .bench>.tester 的规则隐藏 */
 .proof-scroll{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain}
-.panel{flex:none;display:grid;min-width:0;border-top:1px solid var(--line)}
+.panel{position:relative;flex:none;display:grid;min-width:0;border-top:1px solid var(--line)}
 .spec-wrap{min-width:0}
 /* 参考图的「显示」放在白色区域右上角，和校样纸面上的一样 */
 .spec-wrap{position:relative}
