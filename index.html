@@ -8,22 +8,23 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=59fa28a3">
+<link rel="stylesheet" href="assets/style.css?v=63129d8c">
 <!-- 模块的缓存版本号：模块之间互相 import 时不带 ?v=，靠 import map 换成带版本号的地址（tools/rehash.py 生成） -->
 <script type="importmap">{
  "imports": {
+  "./assets/js/appcode.js": "./assets/js/appcode.js?v=f192a153",
   "./assets/js/bake.js": "./assets/js/bake.js?v=e1515c3c",
   "./assets/js/core.js": "./assets/js/core.js?v=f94192eb",
-  "./assets/js/export.js": "./assets/js/export.js?v=0ad91cd8",
+  "./assets/js/export.js": "./assets/js/export.js?v=00e8050f",
   "./assets/js/gfmeta.js": "./assets/js/gfmeta.js?v=c4697b71",
   "./assets/js/i18n.js": "./assets/js/i18n.js?v=6e75ec0f",
-  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=fa0844e0",
-  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=df764964",
-  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=e504f168",
+  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=0dd1402c",
+  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=b84ca06e",
+  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=d72c13e9",
   "./assets/js/main.js": "./assets/js/main.js?v=77ec7ac1",
   "./assets/js/refresh.js": "./assets/js/refresh.js?v=4dffc5b8",
   "./assets/js/render.js": "./assets/js/render.js?v=1f7f48f8",
-  "./assets/js/ui.js": "./assets/js/ui.js?v=8c09d1ff",
+  "./assets/js/ui.js": "./assets/js/ui.js?v=dcbcfc43",
   "./assets/js/unicode.js": "./assets/js/unicode.js?v=f50d2344"
  }
 }</script>
@@ -177,9 +178,10 @@
       <div class="ex-kinds" role="tablist" aria-orientation="vertical" data-ta="aria-label:exportAria">
         <button role="tab" type="button" id="kindCss" data-kind="css" aria-selected="true" aria-controls="exBody"><b data-t="kindCss"></b><span data-t="kindCssSub"></span></button>
         <button role="tab" type="button" id="kindFont" data-kind="font" aria-selected="false" aria-controls="exBody"><b data-t="kindFont"></b><span data-t="kindFontSub"></span></button>
+        <button role="tab" type="button" id="kindApp" data-kind="app" aria-selected="false" aria-controls="exBody"><b data-t="kindApp"></b><span data-t="kindAppSub"></span></button>
       </div>
       <div class="ex-fields">
-        <div class="field"><span class="lab-i"><label for="exName"><span class="kind-css" data-t="exName"></span><span class="kind-font" data-t="fxNameLabel"></span></label><button type="button" class="info" data-info="nameInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><input id="exName" type="text" spellcheck="false"></div>
+        <div class="field"><span class="lab-i"><label for="exName"><span class="kind-code" data-t="exName"></span><span class="kind-font" data-t="fxNameLabel"></span></label><button type="button" class="info" data-info="nameInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><input id="exName" type="text" spellcheck="false"></div>
         <div class="ex-fields kind-css">
         <div class="field" id="exContField" hidden><span class="lab-i"><span class="flabel" data-t="exWRange"></span><button type="button" class="info" data-info="wrangeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><div class="wrange"><input type="number" id="exWLo" min="100" max="900" step="1" data-ta="aria-label:wrLo"><span class="wr-dash" aria-hidden="true">–</span><input type="number" id="exWHi" min="100" max="900" step="1" data-ta="aria-label:wrHi"><div class="chips wr-chips" id="exWPresets" role="group" data-ta="aria-label:exWRange"></div></div><p class="callout wr-note" id="exWNote" data-t="wrFaux" hidden></p></div>
         <div class="field" id="exWeightsField"><span class="lab-i"><span class="flabel" data-t="exWeights"></span><button type="button" class="info" data-info="weightsInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><div class="chips" id="exWeights" role="group" data-ta="aria-label:exWeights"></div><p class="w-hint warn" id="exWHint" hidden></p></div>
@@ -189,6 +191,7 @@
         <p class="callout ex-warn" id="exLangWarn" hidden></p>
         <div class="field"><span class="lab-i"><label for="exItalic" data-t="exItalic"></label><button type="button" class="info" data-info="italicInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><select id="exItalic"><option value="1" data-t="exItalicOn"></option><option value="0" data-t="exItalicOff"></option></select></div>
         </div>
+        <p class="hint kind-app" data-t="appIntro"></p>
         <!-- 字体文件自己的字重和斜体：生成很慢，不跟网页导出的 9 个字重绑在一起 -->
         <div class="ex-fields kind-font">
         <div class="field" id="fxWeightsField"><span class="lab-i"><span class="flabel" data-t="fxWeightsLabel"></span></span><div class="chips" id="fxWeights" role="group" data-ta="aria-label:fxWeightsLabel"></div><p class="hint" data-t="fxWeightsHint"></p></div>
@@ -198,11 +201,14 @@
       </div>
     </div>
     <div class="dlg-body ex-out" id="exBody" role="tabpanel" tabindex="-1" autofocus>
-      <div class="kind-css">
+      <div class="kind-code">
       <div class="ex-top">
       <div class="tabs ex-tabs" role="tablist" data-ta="aria-label:codeAria">
-        <button role="tab" type="button" id="tabCss" aria-selected="true" aria-controls="paneCode">CSS</button>
-        <button role="tab" type="button" id="tabJs" aria-selected="false" aria-controls="paneCode" data-t="tabJs"></button>
+        <button role="tab" type="button" id="tabCss" class="kind-css" data-tab="css" aria-selected="true" aria-controls="paneCode">CSS</button>
+        <button role="tab" type="button" id="tabJs" class="kind-css" data-tab="js" aria-selected="false" aria-controls="paneCode" data-t="tabJs"></button>
+        <button role="tab" type="button" id="tabSwift" class="kind-app" data-tab="swift" aria-selected="false" aria-controls="paneCode">Swift</button>
+        <button role="tab" type="button" id="tabKotlin" class="kind-app" data-tab="kotlin" aria-selected="false" aria-controls="paneCode">Kotlin</button>
+        <button role="tab" type="button" id="tabDart" class="kind-app" data-tab="dart" aria-selected="false" aria-controls="paneCode">Flutter</button>
       </div>
       <div class="ex-actions"><button class="btn" id="dlBtn" type="button" data-t="download" hidden></button><button class="btn primary" id="copyBtn" type="button" data-t="copy"></button></div>
       </div>

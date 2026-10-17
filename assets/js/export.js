@@ -3,6 +3,7 @@ import { CLASSES, CLS, EFF, hex } from './unicode.js';
 import { LM, TYPO, WEIGHTS, isViewTypo, buildPlan, buildSegments, customRanges, ensureLineMetrics, expandPlan, fontKey, fontLabel, fvsOf, gfSpec, italFallback, italOf, kindLabel, lmKey, lmOn, localSrc, overridesFor, resolveCls, resolveCustom, source, sources, state, stepSpan, typoMergedAway, typoValue, vfAxes, vfAxisNow } from './core.js';
 import { guessGeneric, renderLangWarn } from './render.js';
 import { renderFontFields, renderFontTab } from './bake.js';
+import { appModel, buildDart, buildKotlin, buildSwift, typeName } from './appcode.js';
 /* ================= 导出 ================= */
 export const ownerName = o => o[0] === '#' ? T('customName', { c: (state.custom[+o.slice(1)]?.chars || '').slice(0, 16) }) : tr(CLS[o].name);
 export const fmtRangeShort = ([a, b]) => a === b ? `U+${a.toString(16).toUpperCase()}` : `U+${a.toString(16).toUpperCase()}-${b.toString(16).toUpperCase()}`;
@@ -202,10 +203,13 @@ export function highlight(code, lang) {
   return h;
 }
 export let exKind = 'css', exTab = 'css', lastExport = '';
-export function setExTab(k) { exTab = k; }      // exKind：网页（CSS）/ 字体文件；exTab：CSS / JS 代码
+export function setExTab(k) { exTab = k; }      // exKind：网页（CSS）/ 字体文件 / App 代码；exTab：css / js，或 swift / kotlin / dart
+export const APP_TABS = ['swift', 'kotlin', 'dart'];
 /* 切换导出的种类：下面的设置和结果整块换成这一种 */
 export function setExKind(k, render = true) {
-  exKind = k === 'font' ? 'font' : 'css';
+  exKind = ['font', 'app'].includes(k) ? k : 'css';
+  if (exKind === 'app' && !APP_TABS.includes(exTab)) exTab = 'swift';
+  if (exKind === 'css' && APP_TABS.includes(exTab)) exTab = 'css';
   state.view.exKind = exKind;
   $('#export').dataset.kind = exKind;
   document.querySelectorAll('.ex-kinds [data-kind]').forEach(b => b.setAttribute('aria-selected', b.dataset.kind === exKind));
@@ -244,6 +248,8 @@ export let gzTok = 0;
 export function renderExport() {
   ensureExportSources();
   if (exKind === 'font') { renderFontFields(); renderFontTab(); return; }
+  document.querySelectorAll('.ex-tabs [data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === exTab));
+  if (exKind === 'app') return renderAppCode();
   const { css, count, files: fl } = buildCss();
   const js = buildJs();
   const kb = s => (new Blob([s]).size / 1024).toFixed(1);
@@ -272,4 +278,16 @@ export function renderExport() {
   $('#copyBtn').disabled = !lastExport;
   $('#exBar').hidden = !$('#exNote').textContent;
 }
+/* App 代码：三种语言共用一份数据，换页签只换生成器 */
+export function renderAppCode() {
+  const m = appModel(), build = { swift: buildSwift, kotlin: buildKotlin, dart: buildDart }[exTab];
+  lastExport = build(m);
+  $('#codeOut').innerHTML = esc(lastExport).replace(/^(\s*\/\/.*)$/gm, '<span class="cm">$1</span>');
+  $('#exNote').textContent = T({ swift: 'appNoteSwift', kotlin: 'appNoteKotlin', dart: 'appNoteDart' }[exTab]);
+  const meta = $('#exStats'); ++gzTok;
+  meta.hidden = false; meta.textContent = T('appStats', { n: m.classes.length, f: m.fonts.length, w: m.weights.length }) + ' · ' + appFileName();
+  $('#copyBtn').disabled = false;
+  $('#exBar').hidden = false;
+}
+export const appFileName = () => typeName() + { swift: '.swift', kotlin: '.kt', dart: '.dart' }[exTab];
 export const renderExportSoon = debounce(() => renderExport(), 150);

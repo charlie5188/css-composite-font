@@ -4,7 +4,7 @@ import { CLASSES, CLS, inRanges, rebuildClassRanges } from './unicode.js';
 import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, objByKey, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, userPresets, vfAxis, vfCache } from './core.js';
 import { PUNCT_CENTER, REGION_OF_LANG, formsOf, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, lastMeasure, lastRef, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
-import { cssFamilyName, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
+import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
 /* ================= 交互：字符类别表 ================= */
 export function targetOf(row) { return row.dataset.id ? { type: 'class', id: row.dataset.id } : { type: 'custom', i: +row.dataset.ci }; }
 export const keyOf = t => t.type === 'class' ? t.id : '#' + t.i;
@@ -550,12 +550,7 @@ export function initToolbar() {
     if (state.scope) state.typo.lang = state.scope;
     refresh('toolbar', 'editor', 'preview', 'specimen', 'export');
   });
-  const tabs = { tabCss: 'css', tabJs: 'js' };
-  for (const [id, key] of Object.entries(tabs)) $('#' + id).addEventListener('click', () => {
-    setExTab(key);
-    for (const other of Object.keys(tabs)) $('#' + other).setAttribute('aria-selected', other === id);
-    renderExport();
-  });
+  $('.ex-tabs').addEventListener('click', e => { const b = e.target.closest('[data-tab]'); if (b) { setExTab(b.dataset.tab); renderExport(); } });
   $('.ex-kinds').addEventListener('click', e => { const b = e.target.closest('[data-kind]'); if (b) { setExKind(b.dataset.kind); saveState(); } });
   $('#exToggle').addEventListener('click', showExport);
   $('#exClose').addEventListener('click', () => $('#exDlg').close());
@@ -565,10 +560,10 @@ export function initToolbar() {
   $('#dlBtn').hidden = !canDownload;
   $('#dlBtn').addEventListener('click', () => {
     if (!lastExport) return;
-    const js = exTab === 'js';
+    const js = exTab === 'js', app = exKind === 'app';
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([lastExport], { type: js ? 'text/javascript' : 'text/css' }));
-    a.download = (cssFamilyName().replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'composite-font') + (js ? '-baseline.js' : '.css');
+    a.href = URL.createObjectURL(new Blob([lastExport], { type: app ? 'text/plain' : js ? 'text/javascript' : 'text/css' }));
+    a.download = app ? appFileName() : (cssFamilyName().replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'composite-font') + (js ? '-baseline.js' : '.css');
     document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
