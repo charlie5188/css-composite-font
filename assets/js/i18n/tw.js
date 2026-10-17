@@ -205,7 +205,6 @@ export default {
   pfRegion: "地區",
   pfStyle: "風格",
   pfSource: "來源",
-  saveMetaHint: "用來在預設集裡篩選。已按字型推算好，不對可以改。",
   saveSrcGoogle: "全部是 Google Fonts：任何電腦都能用",
   saveSrcLocal: "用到了本機字型或字型檔案：換一台電腦要有同樣的字型",
   saveFileNote: "字型檔案不會存進預設集，下次開啟需要重新上傳。",

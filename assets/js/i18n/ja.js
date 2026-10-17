@@ -205,7 +205,6 @@ export default {
   pfRegion: "地域",
   pfStyle: "スタイル",
   pfSource: "入手先",
-  saveMetaHint: "プリセットの絞り込みに使います。フォントから推定済みなので、違っていれば直してください。",
   saveSrcGoogle: "すべて Google Fonts：どのパソコンでも使えます",
   saveSrcLocal: "ローカルフォントかフォントファイルを使っています：別のパソコンでは同じフォントが必要です",
   saveFileNote: "フォントファイルはプリセットに保存されません。次に開くときにもう一度アップロードしてください。",

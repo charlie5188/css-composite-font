@@ -205,8 +205,8 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .pmiss{font-size:var(--fs-s);line-height:1.4;color:var(--warn)}
 .pdel{position:absolute;top:6px;right:6px}
 #saveDlg{width:min(460px,calc(100vw - 32px))}
-.save-meta{display:grid;gap:var(--sp-3);padding-top:var(--sp-4);border-top:1px solid var(--line)}
-.dlg-form .save-meta>.hint,.dlg-form #saveDup{font-size:var(--fs-s);color:var(--muted)}
+.save-meta{display:grid;gap:var(--sp-3)}
+.dlg-form #saveDup{font-size:var(--fs-s);color:var(--muted)}
 .dlg-form .save-src{color:var(--ink)}
 .save-meta .seg{justify-self:start}
 .pfilter{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3);margin:0 0 var(--sp-3)}      /* 预设筛选：三组，组内间距 4px、组间 12px（不用竖线：换行时会落在行尾） */
