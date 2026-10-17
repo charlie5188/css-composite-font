@@ -1,8 +1,9 @@
 import { refresh } from './refresh.js';
+import { FIT_SAMPLES, chooseFits, createFitter } from './autofit.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
-import { CLASSES, CLS, inRanges, rebuildClassRanges } from './unicode.js';
-import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, objByKey, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, userPresets, vfAxis, vfCache } from './core.js';
-import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, lastMeasure, lastRef, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
+import { CLASSES, CLS, classOf, inRanges, parseChars, rebuildClassRanges } from './unicode.js';
+import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, objByKey, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
+import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
 /* ================= 交互：字符类别表 ================= */
@@ -10,13 +11,33 @@ export function targetOf(row) { return row.dataset.id ? { type: 'class', id: row
 export const keyOf = t => t.type === 'class' ? t.id : '#' + t.i;
 export const objOf = t => t.type === 'class' ? state.classes[t.id] : state.custom[t.i];
 export const resolvedOf = t => t.type === 'class' ? resolveCls(t.id) : resolveCustom(state.custom[t.i]);
-export function changed({ fonts = false, editor = true } = {}) {
+export function changed({ fonts = false, editor = true, fontChange = false } = {}) {
+  const notice = fontChange ? trimExportWeights() : '';
   refreshCustomRanges();
   if (editor) renderEditor(); else refreshInherited();
   renderPreview();
   if (fonts) rebuild(); else { drawSpecimen(); renderExport(); }
   markCustomPreset();
   saveState();
+  if (notice) { refresh('toolbar', 'export', 'fxFields'); toast(notice); }
+}
+/* 只在用户提交换字体 / 跟随关系时检查，不放进常规刷新、异步加载或撤销里。
+   因此重新勾回和换成更宽的字族都不会被后台再次改掉，加载时还不知道的范围也保持原状。 */
+function trimExportWeights() {
+  if (state.wmode === 'cont') return '';
+  const notices = [], empty = [];
+  let removed = false;
+  for (const [obj, key, label] of [[state, 'weightsPrunedWeb', T('kindCss')], [state.fx, 'weightsPrunedFiles', T('kindFont')]]) {
+    if (!obj?.weights?.length) continue;
+    const outside = uncoveredWeights(obj.weights);
+    if (!outside.length) continue;
+    if (outside.length === obj.weights.length) { empty.push(label); continue; }
+    obj.weights = obj.weights.filter(W => !outside.includes(W));
+    notices.push(T(key, { weights: outside.join(T('joiner')) })); removed = true;
+  }
+  if (empty.length) notices.push(T('weightsPrunedEmpty', { kinds: empty.join(T('joiner')) }));
+  if (removed) notices.push(T('weightsPrunedUndo'));
+  return notices.join(' ');
 }
 export function markCustomPreset() {
   if (state.preset && !String(state.preset).startsWith('user:')) { state.preset = ''; renderPresetCards(); }
@@ -25,6 +46,8 @@ export const LIMITS = { size: [20, 300], shift: [-60, 60] };
 /* 写入一格：空 = 恢复继承；commit 为 false 时（还在输入）忽略超出范围的中间值 */
 export function setNum(inp, commit) {
   const t = targetOf(inp.closest('.ct-row')), key = keyOf(t), field = inp.dataset.field, W = BASE_W;
+  /* 输入负号、小数点等未完成的数字时，浏览器的 value 也可能是空；不能误当成清空继承。 */
+  if (inp.validity.badInput) { if (commit) inp.value = (field === 'size' ? ownSize(key, W) : objOf(t).shift) ?? ''; return; }
   const raw = inp.value.trim();
   let v = raw === '' ? null : parseFloat(raw);
   if (v !== null && !Number.isFinite(v)) { if (commit) inp.value = (field === 'size' ? ownSize(key, W) : objOf(t).shift) ?? ''; return; }
@@ -51,8 +74,9 @@ $('#editor').addEventListener('change', e => {
   if (el.classList.contains('num')) { setNum(el, true); return; }
   if (el.dataset.act === 'fsel') {
     if (el.value === 'pick') { el.value = o.follow || 'own'; openPicker(t); return; }
+    recordHistory();
     o.follow = el.value === 'own' ? null : el.value;
-    changed({ fonts: true });
+    changed({ fonts: true, fontChange: true });
   }
 });
 $('#editor').addEventListener('input', e => {
@@ -60,13 +84,39 @@ $('#editor').addEventListener('input', e => {
   if (inp.classList.contains('chars')) { objOf(targetOf(row)).chars = inp.value; changed({ fonts: true, editor: false }); return; }
   if (inp.classList.contains('num')) setNum(inp, false);
 });
+$('#editor').addEventListener('focusout', e => { if (e.target.matches('input.num,input.mnum,input.mw')) refreshInherited(); });
+/* 鼠标与键盘共用步进：从继承值起步；保留手输的任意数值，不吸附到步长的倍数。 */
+function stepCell(inp, up, large) {
+  const current = +(inp.value || inp.placeholder);
+  let next;
+  if (inp.matches('select')) {
+    // 静态字重按 100 档移动；缺档时跳到下一个真实可用的字重。
+    const weights = [...inp.options].map(o => +o.value);
+    next = up ? weights.find(w => w >= current + 100) : weights.reverse().find(w => w <= current - 100);
+  } else {
+    const delta = +inp.step * (large ? 10 : 1) * (up ? 1 : -1);
+    next = Math.min(+inp.max, Math.max(+inp.min, Math.round((current + delta) * 1000) / 1000));
+  }
+  if (next == null || next === current) return false;
+  inp.value = next;
+  return true;
+}
+/* 点箭头时保留输入焦点，避免失焦提交重建别的格子；不把占位值提前写成单独设定。 */
+$('#editor').addEventListener('pointerdown', e => { if (e.target.closest('[data-step]')) e.preventDefault(); });
+$('#editor').addEventListener('click', e => {
+  const b = e.target.closest('[data-step]'); if (!b) return;
+  const inp = b.closest('.cell-step').querySelector('input,select');
+  if (inp.dataset.w) previewSoft(+inp.dataset.w);
+  if (!stepCell(inp, b.dataset.step === 'up', false)) return;
+  if (inp.classList.contains('num')) setNum(inp, true);
+  else if (inp.classList.contains('mnum')) setMatrixSize(inp, true);
+  else setWeightAt(inp.dataset.k, +inp.dataset.w, inp);
+});
 $('#editor').addEventListener('keydown', e => {
   const inp = e.target;
   if (!inp.classList?.contains('num') || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
   e.preventDefault();
-  const base = parseFloat(inp.value === '' ? inp.placeholder : inp.value) || 0;
-  inp.value = round(base + (e.key === 'ArrowUp' ? 1 : -1) * (e.shiftKey ? 5 : 0.5));
-  setNum(inp, true);
+  if (stepCell(inp, e.key === 'ArrowUp', e.shiftKey)) setNum(inp, true);
 });
 /* ================= 交互：各字重 ================= */
 export const keyTarget = k => k[0] === '#' ? { type: 'custom', i: +k.slice(1) } : { type: 'class', id: k };
@@ -94,6 +144,7 @@ export function setWeightAt(k, W, el) {
 }
 export function setMatrixSize(inp, commit) {
   const k = inp.dataset.k, W = +inp.dataset.w, raw = inp.value.trim();
+  if (inp.validity.badInput) { if (commit) inp.value = ownSize(k, W) ?? ''; return; }
   let v = raw === '' ? null : parseFloat(raw);
   if (v !== null && !Number.isFinite(v)) { if (commit) inp.value = ownSize(k, W) ?? ''; return; }
   const [lo, hi] = LIMITS.size;
@@ -111,10 +162,10 @@ export function previewSoft(W) {
   if (cont) { v.wcont = W; root.style.setProperty('--fw', W); drawSpecimen(); } else rebuild();
   syncToolbar(); saveState();
 }
-/* 校样的字重：分档时取最接近的导出字重；连续时是范围里的任意值，各字重里高亮它所在的那一档 */
+/* 预览不受导出勾选限制，方便先看效果再决定是否导出；连续时仍在导出范围内预览。 */
 export function setPreviewW(x) {
   const v = state.view;
-  if (state.wmode !== 'cont') { setPreviewWeight(state.weights.reduce((a, b) => Math.abs(b - x) < Math.abs(a - x) ? b : a)); return; }
+  if (state.wmode !== 'cont') { setPreviewWeight(WEIGHTS.reduce((a, b) => Math.abs(b - x) < Math.abs(a - x) ? b : a)); return; }
   const [lo, hi] = state.wrange, w = Math.min(hi, Math.max(lo, Math.round(x)));
   if (document.activeElement !== $('#vWn')) $('#vWn').value = w;
   if (w === v.wcont) return;
@@ -124,10 +175,8 @@ export function setPreviewW(x) {
 }
 /* 导出哪些字重（分档）：各字重里的勾选和导出对话框里的按钮是同一个设定 */
 export function setWeights(ws) {
-  const v = state.view, prevW = v.weight;
   state.weights = [...new Set(ws)].sort((a, c) => a - c);
-  if (!state.weights.includes(prevW)) v.weight = state.weights.includes(BASE_W) ? BASE_W : state.weights[0];
-  refresh('toolbar', 'editor', 'export', ...(v.weight !== prevW ? ['fonts'] : []));
+  refresh('toolbar', 'editor', 'export');
 }
 /* 连续模式的导出范围：各字重里和导出对话框里各有一组，校样的字重也只走这个范围 */
 export function setWRange(lo, hi) {
@@ -142,7 +191,29 @@ export function setWRange(lo, hi) {
   refresh('toolbar', 'editor', 'fonts', 'export');
 }
 $('#wMatrix').addEventListener('click', e => {
+  /* 行的空白、列间距也能预览；控件继续处理自己的点击，不把导出勾选或菜单点击当成选行。 */
+  const row = e.target.closest('[data-row]');
+  if (row && !e.target.closest('button,input,select,textarea,label,a')) {
+    const W = +row.dataset.row;
+    if (state.wmode === 'cont') setPreviewW(W); else setPreviewWeight(W);
+    return;
+  }
   const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.wreset) {
+    const key = b.dataset.wreset, o = objByKey(key), weight = defaultFontWeight(o.font);
+    recordHistory();
+    // 400 也是表格的一行；一并恢复基础值，才能单独重置自动调整过的类别。
+    o.size = null; o.shift = null;
+    if (!o.follow && weight != null) o.font = { ...o.font, weight };
+    // 字体来源、其他可变轴和跨类别共享的本机字体名映射继续保留。
+    for (const [W, row] of Object.entries(state.wOver)) if (+W !== BASE_W) {
+      delete row[key];
+      if (!Object.keys(row).length) delete state.wOver[W];
+    }
+    changed({ fonts: true });
+    toast(T('tWColumnReset', { c: keyName(key) }));
+    return;
+  }
   if (b.dataset.pw) { const W = +b.dataset.pw; if (state.wmode === 'cont') setPreviewW(W); else setPreviewWeight(W); return; }
   const W = +b.dataset.w;
   if (b.dataset.act === 'wclear') {      // 清除这个字重的单独调整：大小、粗细、换的字体、本机字体名
@@ -165,20 +236,17 @@ $('#wMatrix').addEventListener('change', e => {
   if (el.dataset.act === 'wnum' || el.dataset.act === 'wsel') setWeightAt(el.dataset.k, +el.dataset.w, el);
 });
 $('#wMatrix').addEventListener('input', e => { if (e.target.classList.contains('mnum')) setMatrixSize(e.target, false); });
-/* ↑↓：大小每次 0.5（Shift 5），粗细每次 10（Shift 100）。空着的格子从灰色的推算值开始，而不是从 0 或轴的下限 */
+/* ↑↓：大小每次 0.5（Shift 5），VF 粗细每次 10（Shift 100），静态字体按可用的 100 档调整。 */
 $('#wMatrix').addEventListener('keydown', e => {
   const inp = e.target, up = e.key === 'ArrowUp';
   if (!up && e.key !== 'ArrowDown') return;
+  if (inp.matches('.msel') && (e.altKey || e.ctrlKey || e.metaKey)) return; // 保留下拉框打开菜单等原有快捷键。
   if (inp.classList?.contains('mnum')) {
     e.preventDefault();
-    const base = parseFloat(inp.value === '' ? inp.placeholder : inp.value) || 0;
-    inp.value = round(base + (up ? 1 : -1) * (e.shiftKey ? 5 : 0.5));
-    setMatrixSize(inp, true);
-  } else if (inp.classList?.contains('mw')) {
+    if (stepCell(inp, up, e.shiftKey)) setMatrixSize(inp, true);
+  } else if (inp.matches('.mw,.msel')) {
     e.preventDefault();
-    const base = parseFloat(inp.value === '' ? inp.placeholder : inp.value) || 400;
-    inp.value = Math.min(+inp.max, Math.max(+inp.min, Math.round(base + (up ? 1 : -1) * (e.shiftKey ? 100 : 10))));
-    setWeightAt(inp.dataset.k, +inp.dataset.w, inp);
+    if (stepCell(inp, up, e.shiftKey)) setWeightAt(inp.dataset.k, +inp.dataset.w, inp);
   }
 });
 /* 危险操作点两次才执行：第一次点击时按钮换成确认文字（.armed，原来的内容先藏起来），3 秒内再点才执行，过时恢复原样。
@@ -542,7 +610,7 @@ export function initToolbar() {
   for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vRules', 'rules'], ['vMiss', 'miss'], ['vItalic', 'italic']])
     $('#' + id).addEventListener('click', () => { v()[key] = !v()[key]; refresh('toolbar', 'preview', 'export'); });
   $('#viewTypo').addEventListener('change', e => { const k = e.target.dataset.vtypo; if (k) { state.typo[k] = e.target.value; syncViewTypo(); refresh('preview'); } });
-  /* 校样的字重：分档时只在导出的字重之间换（↑↓ 跳一档），连续时是导出范围里的任意值 */
+  /* 校样的字重：分档时 ↑↓ 跳一档，和点击表格行一样可预览尚未导出的字重。 */
   const wn = $('#vWn');
   wn.addEventListener('input', () => { if (state.wmode !== 'cont') return; const x = parseFloat(wn.value); if (x >= state.wrange[0] && x <= state.wrange[1]) setPreviewW(x); });
   wn.addEventListener('change', () => { const x = parseFloat(wn.value); if (isFinite(x)) setPreviewW(x); wn.value = state.wmode === 'cont' ? v().wcont : v().weight; });
@@ -550,7 +618,7 @@ export function initToolbar() {
     if (e.key === 'Enter') { wn.blur(); return; }
     if (state.wmode === 'cont' || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
     e.preventDefault();
-    const ws = state.weights, i = Math.max(0, ws.indexOf(v().weight));
+    const ws = WEIGHTS, i = Math.max(0, ws.indexOf(v().weight));
     setPreviewWeight(ws[Math.min(ws.length - 1, Math.max(0, i + (e.key === 'ArrowUp' ? 1 : -1)))]);
     wn.value = v().weight;
   });
@@ -814,68 +882,107 @@ export function applyPreset(id) {
   state.presetBase = presetSnap();
   refresh('ranges', 'toolbar', 'editor', 'preview', 'presets', 'fonts');
 }
-/* 自动调整西文大小：以汉字字体自带的西文为基准，取「按大写高对齐」和「按 x 高对齐」的几何平均，大写高不超过自带西文的 103%；
-   汉字字体没有自带西文时，让大写高占字面的 83%。返回要乘的倍数，量不到时为 null */
-export function idealScale() {
-  if (!lastMeasure) return null;
-  if (lastRef && !lastRef.none) {
-    const sCap = lastRef.cap / lastMeasure.capRatio, sX = lastRef.x / lastMeasure.xRatio;
-    return Math.min(Math.sqrt(sCap * sX), 1.03 * sCap);
-  }
-  return 0.83 / lastMeasure.capRatio;
-}
-/* 一键自动调整（字符类别旁的魔法棒）：
-   1. 大小：每个导出的字重分别量、分别设定。汉字越粗，笔画往外扩，字面看起来越大，合适的西文大小也跟着变（各预设实测相差 2–5%）。
-      400 写进基础设定；其他字重和 400 相差不到 0.5 的沿用 400，否则写成这个字重自己的大小。
-   2. 基线：调好大小后，按 400（没导出 400 时按当前字重）量大写字母的中线和汉字字面中线的差。
-      差在 2% em 以内看不出来，基线保持 0——不为了看不出的差别让导出多一段 JS */
+/* 按依赖顺序测量，先西文再数字，最后例外；所有类别算完才一次写入。
+   基线目前是类别的基础设定，不按字重单独存；连续模式仍只调大小、基线。
+   跟随项继续继承，用户单独覆盖的大小/基线保持原值。 */
 export const SHIFT_MIN = 2;
+const fitShift = v => Math.abs(v) < SHIFT_MIN ? 0 : Math.min(30, Math.max(-30, v));
+const sameFitFont = (a, b) => sameFontAs(a, b) || (a?.kind === 'file' && b?.kind === 'file' && a.fileId && a.fileId === b.fileId);
+function autoTargets() {
+  const targets = CLASSES.filter(c => c.id !== 'han' && !state.classes[c.id].follow && state.classes[c.id].font).map(c => ({
+    key: c.id, ref: c.id === 'digit' ? 'latin' : 'han',
+    sample: c.id === 'latin' ? '' : [...FIT_SAMPLES[c.id]].filter(ch => classOf(ch.codePointAt(0)) === c.id).join(''),
+    width: ['punct', 'symbol', 'shared'].includes(c.id),
+  }));
+  state.custom.forEach((o, i) => {
+    if (o.follow || !o.font || !parseChars(o.chars).length) return;
+    const ranges = parseChars(o.chars), count = ranges.reduce((n, [a, b]) => n + b - a + 1, 0);
+    // 单组例外共用一个大小/基线；混合类别或过大的范围没有可靠的单一参照。
+    const chars = count <= 64 ? ranges.flatMap(([a, b]) => Array.from({ length: b - a + 1 }, (_, j) => String.fromCodePoint(a + j))) : [];
+    const kinds = new Set(chars.map(ch => classOf(ch.codePointAt(0))));
+    const ref = kinds.size === 1 && !kinds.has(null) ? [...kinds][0] : null;
+    targets.push({ key: '#' + i, ref, sample: chars.join(''), minimum: 1, width: ['punct', 'symbol', 'shared'].includes(ref) });
+  });
+  return targets;
+}
 export let autoBusy = false, autoDoneTimer = 0;
 export async function autoAdjust() {
   if (autoBusy) return;
-  const cont = state.wmode === 'cont', list = cont ? WEIGHTS.filter(W => stepSpan(W)) : [...state.weights];
-  const W0 = state.view.weight, C0 = state.view.wcont, sizes = {};
-  const at = async W => { state.view.weight = W; if (cont) state.view.wcont = W; await rebuildNow(); };      // 载入这个字重的字体并重画参考图
-  const btn = $('#autoAdj'), lab = btn.querySelector('.wand-lab'), n = list.length + 1;      // 每个字重量一次，最后再量一次基线
-  const step = i => { lab.textContent = T('autoAdjProgress', { i, n }); };
-  clearTimeout(autoDoneTimer); btn.classList.remove('done');
-  autoBusy = true; btn.disabled = true; btn.setAttribute('aria-busy', 'true'); step(0);
-  let shift = null, mid = null;
-  try {
-    for (const [i, W] of list.entries()) {
-      setBusy(T('measuringW', { w: W })); step(i);
-      await at(W);
-      const k = idealScale();
-      if (k) sizes[W] = Math.min(200, Math.max(50, round(resolveCls('latin', W, true).size * k)));
+  const cont = state.wmode === 'cont', list = cont ? [...new Set([BASE_W, ...WEIGHTS.filter(W => stepSpan(W))])].sort((a, b) => a - b) : [...new Set([BASE_W, ...state.weights])].sort((a, b) => a - b);
+  const targets = autoTargets(), snapshot = histSnap(), planned = new Map(), skipped = new Set();
+  const resolved = (key, W, depth = 0) => {
+    const o = objByKey(key), ov = W !== BASE_W ? state.wOver[W]?.[key] : null;
+    let r = key[0] === '#' ? resolveCustom(o, W, true) : resolveCls(key, W, true);
+    if (o.follow && depth < 4) {
+      const parent = resolved(o.follow, W, depth + 1);
+      r = { ...parent, size: ov?.size ?? o.size ?? parent.size, shift: o.shift ?? parent.shift };
     }
-    const ws = Object.keys(sizes).map(Number);
-    if (ws.length) {
-      const base = sizes[BASE_W] ?? sizes[ws[0]];
-      setSizeAt('latin', BASE_W, base === inheritedSize('latin', BASE_W) ? null : base);      // 和继承来的一样就不写
-      for (const W of list) if (W !== BASE_W) setSizeAt('latin', W, sizes[W] != null && Math.abs(sizes[W] - base) >= 0.5 ? sizes[W] : null);
-      refreshCustomRanges(); step(list.length);
-      await at(list.includes(BASE_W) ? BASE_W : W0);
-      if (lastMeasure) {
-        const cur = resolveCls('latin').shift;
-        mid = lastMeasure.midEm * 100;                        // 正值 = 大写中线偏低
-        const target = round(cur + mid);
-        shift = Math.abs(target) < SHIFT_MIN ? 0 : Math.min(30, Math.max(-30, target));
-        state.classes.latin.shift = shift || null;
+    const p = planned.get(key), f = p?.fits.get(W), base = p?.fits.get(BASE_W);
+    if (f) r = { ...r, size: base && Math.abs(f.size - base.size) < .5 ? base.size : f.size,
+      shift: base ? fitShift(base.shift) : r.shift,
+      font: !cont && f.weight != null ? { ...r.font, weight: f.weight } : r.font };
+    return cont && Array.isArray(vfAxisNow(r.font)) ? { ...r, font: { ...r.font, weight: W } } : r;
+  };
+  if (!targets.length || targets.every(t => t.ref && list.every(W => sameFitFont(resolved(t.key, W).font, resolved(t.ref, W).font)))) return toast(T('autoSameFont'));
+  const fitter = createFitter(), btn = $('#autoAdj'), lab = btn.querySelector('.wand-lab');
+  clearTimeout(autoDoneTimer); btn.classList.remove('done');
+  autoBusy = true; btn.disabled = true; btn.setAttribute('aria-busy', 'true');
+  try {
+    let progress = 0;
+    for (const target of targets) {
+      const rows = [];
+      if (!target.ref || (target.key !== 'latin' && !target.sample)) { progress += list.length; skipped.add(target.key); continue; }
+      for (const W of list) {
+        lab.textContent = T('autoAdjProgress', { i: ++progress, n: targets.length * list.length });
+        setBusy(T('measuringW', { w: W }));
+        const han = resolved(target.ref, W), latin = resolved(target.key, W);
+        if (sameFitFont(han.font, latin.font)) continue;
+        rows.push(await fitter.fit({ ...target, W, han, latin }, !cont));
+        if (histSnap() !== snapshot) return toast(T('autoCancelled'));
+      }
+      if (!rows.length) continue;
+      // 某档缺少同类参照时保留整类，避免基础设置的改动间接改掉没有测成的档位。
+      if (rows.some(r => !r.candidates.length)) { skipped.add(target.key); continue; }
+      const fits = chooseFits(rows);
+      if (fits.size) planned.set(target.key, { fits });
+    }
+    if (!planned.size) return toast(skipped.size ? T('autoSkipped', { classes: [...skipped].map(keyName).join(T('joiner')) }) : T('autoSameFont'));
+    recordHistory();
+    for (const [key, { fits }] of planned) {
+      const o = objByKey(key), base = fits.get(BASE_W);
+      if (base) {
+        if (!cont && base.weight != null) o.font = { ...o.font, weight: base.weight };
+        setSizeAt(key, BASE_W, base.size === inheritedSize(key, BASE_W) ? null : base.size);
+        o.shift = fitShift(base.shift) || null;
+      }
+      for (const W of list) {
+        if (W === BASE_W) continue;
+        const fit = fits.get(W);
+        if (!fit) continue;
+        const baseSize = o.size ?? 100;
+        setSizeAt(key, W, Math.abs(fit.size - baseSize) >= .5 ? fit.size : null);
+        if (!cont && fit.weight != null) {
+          const ov = ((state.wOver[W] ||= {})[key] ||= {});
+          if (ov.font) ov.font = { ...ov.font, weight: fit.weight };
+          else {
+            const expected = fontAtWeight(o.font, W), avail = expected.kind === 'google' && gfWeights(expected.family);
+            const auto = avail && !Array.isArray(vfAxisNow(expected)) ? avail.reduce((a, b) => Math.abs(b - expected.weight) < Math.abs(a - expected.weight) ? b : a) : expected.weight;
+            if (fit.weight === auto) delete ov.weight; else ov.weight = fit.weight;
+          }
+          pruneOv(W, key);
+        }
       }
     }
+    lab.textContent = T('autoAdjDone'); btn.classList.add('done');
+    autoDoneTimer = setTimeout(() => { btn.classList.remove('done'); lab.textContent = T('autoAdj'); }, 1800);
+    syncToolbar(); changed({ fonts: true });
+    toast(T('tAuto', { classes: [...planned.keys()].map(keyName).join(T('joiner')) }) + (skipped.size ? ' ' + T('autoSkipped', { classes: [...skipped].map(keyName).join(T('joiner')) }) : ''));
+  } catch (error) {
+    console.warn('Auto-fit failed', error); toast(T('tNotReady'));
   } finally {
-    state.view.weight = W0; state.view.wcont = C0; autoBusy = false; btn.disabled = false; btn.removeAttribute('aria-busy'); setBusy('');
+    fitter.dispose(); autoBusy = false; btn.disabled = false; btn.removeAttribute('aria-busy'); setBusy('');
+    if (!btn.classList.contains('done')) lab.textContent = T('autoAdj');
   }
-  /* 完成：按钮上短暂显示「✓ 已调整」，再换回原来的文字 */
-  lab.textContent = T('autoAdjDone'); btn.classList.add('done');
-  autoDoneTimer = setTimeout(() => { btn.classList.remove('done'); lab.textContent = T('autoAdj'); }, 1800);
-  syncToolbar(); changed({ fonts: true });
-  const vals = Object.values(sizes);
-  if (!vals.length) return toast(T('tNotReady'));
-  const lo = Math.min(...vals), hi = Math.max(...vals);
-  const size = lo === hi ? `${lo}%` : T('autoSizeRange', { lo, hi, n: vals.length });
-  const sh = shift == null ? '' : shift ? T('autoShift', { v: (shift > 0 ? '+' : '') + shift }) : T('autoNoShift', { d: Math.abs(mid).toFixed(1) });
-  toast(T('tAuto', { size, shift: sh }));
 }
 /* 把现在的设定存成自己的预设；meta 是对话框里确认的地区和风格 */
 export function savePresetAs(n, meta) {
@@ -1273,6 +1380,7 @@ export function initPicker() {
   $('#pkCancel').addEventListener('click', () => picker.close());
   $('#pkOk').addEventListener('click', () => {
     if (!pickCand || !pickTarget) return;
+    recordHistory(); // 换字体和自动取消导出合成一步，先记下用户之前尚未保存的编辑。
     const o = objOf(pickTarget);
     /* 400 以外的字重：选的是同一个字体的其他粗细 / 名称 / 文件，就只记在这个字重；换成别的字体，则替换所有字重 */
     const base = o.font, c = pickCand, key = keyOf(pickTarget);
@@ -1284,7 +1392,7 @@ export function initPicker() {
       delete ov.weight;
       o.vary = { ...(o.vary || {}), ...cleanVary(c) };
       picker.close();
-      changed({ fonts: true }); refresh('export');
+      changed({ fonts: true, fontChange: true }); refresh('export');
       return;
     }
     if (pickW) delete state.wOver[pickW]?.[key]?.font;
@@ -1299,14 +1407,14 @@ export function initPicker() {
         if (v && v !== el.placeholder) state.weightNames[k] = v; else delete state.weightNames[k];
       }
       picker.close();
-      changed({ fonts: true }); refresh('export');
+      changed({ fonts: true, fontChange: true }); refresh('export');
       return;
     }
     o.follow = null;     // 选了字体就改为独立字体，大小和基线保留各自的设定
     o.font = pickW && c.kind === 'google' && !gfWeightVal() ? G(c.family, 400) : c;
     o.vary = cleanVary(c);
     picker.close();
-    changed({ fonts: true });
+    changed({ fonts: true, fontChange: true });
   });
 }
 
@@ -1342,7 +1450,14 @@ export function syncPanes() {
   document.querySelectorAll('#mTabs [data-mv]').forEach(b => b.setAttribute('aria-selected', b.dataset.mv === mv));
 }
 export let toastT;
-export function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2600); }
+export function toast(t) {
+  const el = $('#toast');
+  clearTimeout(toastT);
+  el.classList.remove('on'); el.textContent = t;
+  void el.offsetWidth; // 连续触发时也重新滑入，让新的提示能被注意到。
+  el.classList.add('on');
+  toastT = setTimeout(() => el.classList.remove('on'), 2600);
+}
 
 /* 重置：点一次变成确认，3 秒内再点才执行。「我的预设」不受影响 */
 export function resetAll() {

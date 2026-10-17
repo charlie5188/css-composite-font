@@ -4,19 +4,21 @@
  * 同名 @font-face 中，浏览器从最后一条往前匹配。 */
 /* 斜体：每组规则另有一份 font-style: italic。有斜体的类别用斜体字体（或倾斜轴）；
  * 没有斜体的类别（汉字、假名等）用正体文件、也声明成 italic，浏览器就不会把它们模拟倾斜。 */
+/* font-variation-settings 用于细调可变字体的粗细和其他轴：Chrome 140+、Firefox 62+ 支持；Safari 不认这一行，粗细按 font-weight 那一档、其他轴按字体的默认值显示。 */
 /* ascent-override / descent-override / line-gap-override：西文等规则使用汉字字体的行高度量（已除以 size-adjust），
  * 行高和基线位置都和汉字字体一致。Chrome 87+、Firefox 89+ 支持；Safari 会忽略，按各字体自己的度量显示。 */
 @import url(…);
 
 /* ===== font-weight: 100 ===== */
 
-/* 半角西文、半角数字 — Inter 100（Google，6 个分片） · 98% */
+/* 半角西文、半角数字 — Inter 160（Google，6 个分片） · 98% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 100;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 160;
   size-adjust: 98%;
   ascent-override: 118.37%;
   descent-override: 29.59%;
@@ -29,6 +31,7 @@
   font-weight: 100;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 160;
   size-adjust: 98%;
   ascent-override: 118.37%;
   descent-override: 29.59%;
@@ -41,6 +44,7 @@
   font-weight: 100;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 160;
   size-adjust: 98%;
   ascent-override: 118.37%;
   descent-override: 29.59%;
@@ -53,6 +57,7 @@
   font-weight: 100;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 160;
   size-adjust: 98%;
   ascent-override: 118.37%;
   descent-override: 29.59%;
@@ -66,6 +71,7 @@
   font-weight: 100;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 160;
   size-adjust: 98%;
   ascent-override: 118.37%;
   descent-override: 29.59%;
@@ -79,6 +85,7 @@
   font-weight: 100;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 160;
   size-adjust: 98%;
   ascent-override: 118.37%;
   descent-override: 29.59%;
@@ -90,13 +97,14 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — Inter Italic 100（Google，6 个分片） · 98% */
+/* 半角西文、半角数字 — Inter Italic 160（Google，6 个分片） · 98% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 100;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 160;
   size-adjust: 98%;
   ascent-override: 118.37%;
   descent-override: 29.59%;
@@ -109,6 +117,7 @@
   font-weight: 100;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 160;
   size-adjust: 98%;
   ascent-override: 118.37%;
   descent-override: 29.59%;
@@ -121,6 +130,7 @@
   font-weight: 100;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 160;
   size-adjust: 98%;
   ascent-override: 118.37%;
   descent-override: 29.59%;
@@ -133,6 +143,7 @@
   font-weight: 100;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 160;
   size-adjust: 98%;
   ascent-override: 118.37%;
   descent-override: 29.59%;
@@ -146,6 +157,7 @@
   font-weight: 100;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 160;
   size-adjust: 98%;
   ascent-override: 118.37%;
   descent-override: 29.59%;
@@ -159,6 +171,7 @@
   font-weight: 100;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 160;
   size-adjust: 98%;
   ascent-override: 118.37%;
   descent-override: 29.59%;
@@ -170,13 +183,14 @@
 
 /* ===== font-weight: 200 ===== */
 
-/* 半角西文、半角数字 — Inter 200（Google，6 个分片） · 98.5% */
+/* 半角西文、半角数字 — Inter 220（Google，6 个分片） · 98.5% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 200;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 220;
   size-adjust: 98.5%;
   ascent-override: 117.77%;
   descent-override: 29.44%;
@@ -189,6 +203,7 @@
   font-weight: 200;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 220;
   size-adjust: 98.5%;
   ascent-override: 117.77%;
   descent-override: 29.44%;
@@ -201,6 +216,7 @@
   font-weight: 200;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 220;
   size-adjust: 98.5%;
   ascent-override: 117.77%;
   descent-override: 29.44%;
@@ -213,6 +229,7 @@
   font-weight: 200;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 220;
   size-adjust: 98.5%;
   ascent-override: 117.77%;
   descent-override: 29.44%;
@@ -226,6 +243,7 @@
   font-weight: 200;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 220;
   size-adjust: 98.5%;
   ascent-override: 117.77%;
   descent-override: 29.44%;
@@ -239,6 +257,7 @@
   font-weight: 200;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 220;
   size-adjust: 98.5%;
   ascent-override: 117.77%;
   descent-override: 29.44%;
@@ -250,13 +269,14 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — Inter Italic 200（Google，6 个分片） · 98.5% */
+/* 半角西文、半角数字 — Inter Italic 220（Google，6 个分片） · 98.5% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 200;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 220;
   size-adjust: 98.5%;
   ascent-override: 117.77%;
   descent-override: 29.44%;
@@ -269,6 +289,7 @@
   font-weight: 200;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 220;
   size-adjust: 98.5%;
   ascent-override: 117.77%;
   descent-override: 29.44%;
@@ -281,6 +302,7 @@
   font-weight: 200;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 220;
   size-adjust: 98.5%;
   ascent-override: 117.77%;
   descent-override: 29.44%;
@@ -293,6 +315,7 @@
   font-weight: 200;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 220;
   size-adjust: 98.5%;
   ascent-override: 117.77%;
   descent-override: 29.44%;
@@ -306,6 +329,7 @@
   font-weight: 200;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 220;
   size-adjust: 98.5%;
   ascent-override: 117.77%;
   descent-override: 29.44%;
@@ -319,6 +343,7 @@
   font-weight: 200;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 220;
   size-adjust: 98.5%;
   ascent-override: 117.77%;
   descent-override: 29.44%;
@@ -330,13 +355,14 @@
 
 /* ===== font-weight: 300 ===== */
 
-/* 半角西文、半角数字 — Inter 300（Google，6 个分片） · 99% */
+/* 半角西文、半角数字 — Inter 260（Google，6 个分片） · 99% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 300;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 260;
   size-adjust: 99%;
   ascent-override: 117.17%;
   descent-override: 29.29%;
@@ -349,6 +375,7 @@
   font-weight: 300;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 260;
   size-adjust: 99%;
   ascent-override: 117.17%;
   descent-override: 29.29%;
@@ -361,6 +388,7 @@
   font-weight: 300;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 260;
   size-adjust: 99%;
   ascent-override: 117.17%;
   descent-override: 29.29%;
@@ -373,6 +401,7 @@
   font-weight: 300;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 260;
   size-adjust: 99%;
   ascent-override: 117.17%;
   descent-override: 29.29%;
@@ -386,6 +415,7 @@
   font-weight: 300;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 260;
   size-adjust: 99%;
   ascent-override: 117.17%;
   descent-override: 29.29%;
@@ -399,6 +429,7 @@
   font-weight: 300;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 260;
   size-adjust: 99%;
   ascent-override: 117.17%;
   descent-override: 29.29%;
@@ -410,13 +441,14 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — Inter Italic 300（Google，6 个分片） · 99% */
+/* 半角西文、半角数字 — Inter Italic 260（Google，6 个分片） · 99% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 300;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 260;
   size-adjust: 99%;
   ascent-override: 117.17%;
   descent-override: 29.29%;
@@ -429,6 +461,7 @@
   font-weight: 300;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 260;
   size-adjust: 99%;
   ascent-override: 117.17%;
   descent-override: 29.29%;
@@ -441,6 +474,7 @@
   font-weight: 300;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 260;
   size-adjust: 99%;
   ascent-override: 117.17%;
   descent-override: 29.29%;
@@ -453,6 +487,7 @@
   font-weight: 300;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 260;
   size-adjust: 99%;
   ascent-override: 117.17%;
   descent-override: 29.29%;
@@ -466,6 +501,7 @@
   font-weight: 300;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 260;
   size-adjust: 99%;
   ascent-override: 117.17%;
   descent-override: 29.29%;
@@ -479,6 +515,7 @@
   font-weight: 300;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 260;
   size-adjust: 99%;
   ascent-override: 117.17%;
   descent-override: 29.29%;
@@ -1118,13 +1155,14 @@
 
 /* ===== font-weight: 800 ===== */
 
-/* 半角西文、半角数字 — Inter 800（Google，6 个分片） · 102.5% */
+/* 半角西文、半角数字 — Inter 740（Google，6 个分片） · 102.5% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 102.5%;
   ascent-override: 113.17%;
   descent-override: 28.29%;
@@ -1137,6 +1175,7 @@
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 102.5%;
   ascent-override: 113.17%;
   descent-override: 28.29%;
@@ -1149,6 +1188,7 @@
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 102.5%;
   ascent-override: 113.17%;
   descent-override: 28.29%;
@@ -1161,6 +1201,7 @@
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 102.5%;
   ascent-override: 113.17%;
   descent-override: 28.29%;
@@ -1174,6 +1215,7 @@
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 102.5%;
   ascent-override: 113.17%;
   descent-override: 28.29%;
@@ -1187,6 +1229,7 @@
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 102.5%;
   ascent-override: 113.17%;
   descent-override: 28.29%;
@@ -1198,13 +1241,14 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — Inter Italic 800（Google，6 个分片） · 102.5% */
+/* 半角西文、半角数字 — Inter Italic 740（Google，6 个分片） · 102.5% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 800;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 102.5%;
   ascent-override: 113.17%;
   descent-override: 28.29%;
@@ -1217,6 +1261,7 @@
   font-weight: 800;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 102.5%;
   ascent-override: 113.17%;
   descent-override: 28.29%;
@@ -1229,6 +1274,7 @@
   font-weight: 800;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 102.5%;
   ascent-override: 113.17%;
   descent-override: 28.29%;
@@ -1241,6 +1287,7 @@
   font-weight: 800;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 102.5%;
   ascent-override: 113.17%;
   descent-override: 28.29%;
@@ -1254,6 +1301,7 @@
   font-weight: 800;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 102.5%;
   ascent-override: 113.17%;
   descent-override: 28.29%;
@@ -1267,6 +1315,7 @@
   font-weight: 800;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 102.5%;
   ascent-override: 113.17%;
   descent-override: 28.29%;
@@ -1278,7 +1327,7 @@
 
 /* ===== font-weight: 900 ===== */
 
-/* 半角西文、半角数字 — Inter 900（Google，6 个分片） · 103.5% */
+/* 半角西文、半角数字 — Inter 800（Google，6 个分片） · 103.5% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
@@ -1358,7 +1407,7 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — Inter Italic 900（Google，6 个分片） · 103.5% */
+/* 半角西文、半角数字 — Inter Italic 800（Google，6 个分片） · 103.5% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");

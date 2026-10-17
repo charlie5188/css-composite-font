@@ -49,11 +49,38 @@ otherwise Playwright's Chromium.
    when the change to the exported CSS/JS is intended, and say so in the commit message.
 3. New interface text exists in all four `assets/js/i18n/*.js` files with the same `{placeholders}`; inline
    `{ zh, ja, tw, en }` objects in `core.js` / `unicode.js` keep all four on one line (`npm run check` checks both).
-4. Behaviour users can see is reflected where it is explained: the About dialog (`index.html`, four language
-   blocks `data-ui="zh|tw|ja|en"`), the font-file notes (`fxLimits` in i18n) and README.md (English, 日本語, 中文 sections).
+4. Whenever a feature is added or changed, update its explanation in 「原理与限制」 (the About dialog in
+   `index.html`) as part of the same change, in all four `data-ui="zh|tw|ja|en"` blocks. Describe the current
+   behaviour, supported cases, export effects and relevant limitations. Rewrite outdated explanations rather
+   than appending conflicting notes, and do not describe proposed behaviour as already implemented.
+   Also update the font-file notes (`fxLimits` in i18n) and README.md (English, 日本語, 简体中文, 繁體中文 sections)
+   wherever they explain the affected behaviour.
 5. Look at the page: `python3 tools/serve.py`, then check desktop width, 390 px width, and dark mode. New UI uses the
    design-system classes and tokens.
 6. Commit message: imperative English summary line, body explaining why.
+
+## Built-in presets
+
+- When adding or modifying built-in presets, ask the user whether to run 「自动调整」 (Auto-adjust)
+  on the affected presets and save the results back into their definitions. Ask once for the affected presets
+  together. If the user has already explicitly requested or declined this in the current task, follow that
+  choice without asking again.
+- If approved, run the current auto-fit implementation using each preset's updated fonts and settings, then
+  write the measured size, weight and baseline results for each supported independent class back into the built-in preset definitions.
+  If declined, keep the intended manual settings; do not silently replace them with auto-fit results.
+
+## Localization
+
+- Traditional Chinese (`tw`) uses **Taiwan Traditional Chinese** wording, terminology and punctuation throughout
+  the UI, including dialogs, tooltips and help text. Do not treat it as a character conversion from Simplified
+  Chinese or mix in mainland or Hong Kong terminology. For example, use 字型, 字元, 匯出 and 程式碼.
+- When terminology or typography conventions are uncertain, consult W3C's
+  [中文排版需求 (clreq)](https://www.w3.org/TR/clreq/) and
+  [日本語組版処理の要件 (jlreq)](https://www.w3.org/TR/jlreq/) before choosing the wording or describing the behaviour.
+  For `tw`, follow clreq's Traditional Chinese text and Taiwan-specific conventions; use jlreq to clarify
+  Japanese typography concepts without applying Japanese conventions to Taiwan Chinese by default.
+- Keep the same concept named consistently across controls, help text and documentation. If the references do
+  not cover a general UI term, use common Taiwan UI wording rather than a literal translation.
 
 ## Layout of the code
 
@@ -94,7 +121,7 @@ tests/e2e/               Playwright: CSS snapshots per preset, UI, layout, font-
   by `tools/rehash.py`, maps each to a `?v=<hash>` URL. Never edit the map or the `?v=` values by hand.
 - **Typography settings** (`TYPO` in `core.js`): `grp: 'font'` rows live in the Fonts tab; `grp: 'view'`
   (alignment, `text-wrap`) are preview-only, live in the tester's View menu, and are never exported; the rest
-  are in the Typography tab and go into the exported CSS when they differ from the browser default.
+  are in the Text layout tab and go into the exported CSS when they differ from the browser default.
   None of them affect font files.
 - **Font files.** `bake.js` builds a plan (same rules as the CSS), downloads sources (google/fonts on GitHub
   raw, local fonts via the Local Font Access API, or uploaded files), and posts jobs to a worker that loads
@@ -106,7 +133,7 @@ tests/e2e/               Playwright: CSS snapshots per preset, UI, layout, font-
 - **Undo / redo.** Every debounced `saveState()` records a snapshot of `state` without `view` and the preview-only
   typography keys. Anything that changes settings through `refresh()` / `changed()` is undoable for free; keep
   preview-only state in `state.view` so it stays out of the history.
-- **UI shell.** The page never scrolls; `.bench` holds the editor (Presets / Fonts / Typography tabs) and the
+- **UI shell.** The page never scrolls; `.bench` holds the editor (Presets / Fonts / Text layout tabs) and the
   tester, each scrolling on its own. Export and About are `<dialog class="side-dlg">`. Below 1000 px one pane
   is shown at a time (`.app[data-mview]`, bottom tabs).
 
@@ -126,7 +153,9 @@ for a role that already has one; if something is really missing, add it to that 
   destructive actions. Anything destructive that can't be undone goes through `armConfirm(btn, text, run)` in
   `ui.js` (second click within 3 s); keep the button's own label inside an element so it can be hidden.
 - **Other components:** `.seg` (segmented choice), `.chips` (multi-select pills; `.chips.tags` for text labels such as filters), `.sw` (switch), `.cell-in` +
-  `.cell-num` (inputs inside tables; `.own` = set in the base settings, `.set` = set for one weight), `.pop` (popover
+  `.cell-num` (inputs inside tables; `.own` = set in the base settings, `.set` = set for one weight), `.cell-step`
+  (table stepper: a numeric input or weight select plus `.cell-step-actions` / `.cell-step-btn`; keep its fixed
+  arrow gutter aligned with the header, keyboard arrows operate the field), `.pop` (popover
   surface) with `.menu` / `.mm-item` / `.mm-radio` / `.mm-check`, `.sec-head` + `.sec-title` + `.sec-acts` (section
   heading), `.callout` (yellow notice), `.dlg-form` + `.dlg-act` (small dialog: title, fields, buttons bottom right), `.badge` (count pill), `.info` (the (i) button that opens `#infoPop`), tooltips through `title`.
 - **Icons:** Tabler Icons (outline, MIT; license in `assets/LICENSE-tabler-icons.txt`) as an SVG sprite at the top of

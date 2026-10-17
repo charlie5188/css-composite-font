@@ -4,6 +4,7 @@
  * 同名 @font-face 中，浏览器从最后一条往前匹配。 */
 /* 斜体：每组规则另有一份 font-style: italic。有斜体的类别用斜体字体（或倾斜轴）；
  * 没有斜体的类别（汉字、假名等）用正体文件、也声明成 italic，浏览器就不会把它们模拟倾斜。 */
+/* font-variation-settings 用于细调可变字体的粗细和其他轴：Chrome 140+、Firefox 62+ 支持；Safari 不认这一行，粗细按 font-weight 那一档、其他轴按字体的默认值显示。 */
 /* ascent-override / descent-override / line-gap-override：西文等规则使用汉字字体的行高度量（已除以 size-adjust），
  * 行高和基线位置都和汉字字体一致。Chrome 87+、Firefox 89+ 支持；Safari 会忽略，按各字体自己的度量显示。 */
 @import url(…);
@@ -650,13 +651,14 @@
 
 /* ===== font-weight: 500 ===== */
 
-/* 半角西文、半角数字 — EB Garamond 500（Google，6 个分片） · 115.5% */
+/* 半角西文、半角数字 — EB Garamond 460（Google，6 个分片） · 115.5% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 460;
   size-adjust: 115.5%;
   ascent-override: 99.57%;
   descent-override: 25.11%;
@@ -669,6 +671,7 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 460;
   size-adjust: 115.5%;
   ascent-override: 99.57%;
   descent-override: 25.11%;
@@ -681,6 +684,7 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 460;
   size-adjust: 115.5%;
   ascent-override: 99.57%;
   descent-override: 25.11%;
@@ -693,6 +697,7 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 460;
   size-adjust: 115.5%;
   ascent-override: 99.57%;
   descent-override: 25.11%;
@@ -706,6 +711,7 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 460;
   size-adjust: 115.5%;
   ascent-override: 99.57%;
   descent-override: 25.11%;
@@ -719,6 +725,7 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 460;
   size-adjust: 115.5%;
   ascent-override: 99.57%;
   descent-override: 25.11%;
@@ -730,13 +737,14 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — EB Garamond Italic 500（Google，6 个分片） · 115.5% */
+/* 半角西文、半角数字 — EB Garamond Italic 460（Google，6 个分片） · 115.5% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 500;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 460;
   size-adjust: 115.5%;
   ascent-override: 99.57%;
   descent-override: 25.11%;
@@ -749,6 +757,7 @@
   font-weight: 500;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 460;
   size-adjust: 115.5%;
   ascent-override: 99.57%;
   descent-override: 25.11%;
@@ -761,6 +770,7 @@
   font-weight: 500;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 460;
   size-adjust: 115.5%;
   ascent-override: 99.57%;
   descent-override: 25.11%;
@@ -773,6 +783,7 @@
   font-weight: 500;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 460;
   size-adjust: 115.5%;
   ascent-override: 99.57%;
   descent-override: 25.11%;
@@ -786,6 +797,7 @@
   font-weight: 500;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 460;
   size-adjust: 115.5%;
   ascent-override: 99.57%;
   descent-override: 25.11%;
@@ -799,6 +811,7 @@
   font-weight: 500;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 460;
   size-adjust: 115.5%;
   ascent-override: 99.57%;
   descent-override: 25.11%;
@@ -810,7 +823,7 @@
 
 /* ===== font-weight: 600 ===== */
 
-/* 半角西文、半角数字 — EB Garamond 600（Google，6 个分片） · 116% */
+/* 半角西文、半角数字 — EB Garamond 500（Google，6 个分片） · 116% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
@@ -890,7 +903,7 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — EB Garamond Italic 600（Google，6 个分片） · 116% */
+/* 半角西文、半角数字 — EB Garamond Italic 500（Google，6 个分片） · 116% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
@@ -970,13 +983,14 @@
 
 /* ===== font-weight: 700 ===== */
 
-/* 半角西文、半角数字 — EB Garamond 700（Google，6 个分片） · 116.5% */
+/* 半角西文、半角数字 — EB Garamond 620（Google，6 个分片） · 116.5% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 620;
   size-adjust: 116.5%;
   ascent-override: 98.71%;
   descent-override: 24.89%;
@@ -989,6 +1003,7 @@
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 620;
   size-adjust: 116.5%;
   ascent-override: 98.71%;
   descent-override: 24.89%;
@@ -1001,6 +1016,7 @@
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 620;
   size-adjust: 116.5%;
   ascent-override: 98.71%;
   descent-override: 24.89%;
@@ -1013,6 +1029,7 @@
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 620;
   size-adjust: 116.5%;
   ascent-override: 98.71%;
   descent-override: 24.89%;
@@ -1026,6 +1043,7 @@
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 620;
   size-adjust: 116.5%;
   ascent-override: 98.71%;
   descent-override: 24.89%;
@@ -1039,6 +1057,7 @@
   font-weight: 700;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 620;
   size-adjust: 116.5%;
   ascent-override: 98.71%;
   descent-override: 24.89%;
@@ -1050,13 +1069,14 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — EB Garamond Italic 700（Google，6 个分片） · 116.5% */
+/* 半角西文、半角数字 — EB Garamond Italic 620（Google，6 个分片） · 116.5% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 700;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 620;
   size-adjust: 116.5%;
   ascent-override: 98.71%;
   descent-override: 24.89%;
@@ -1069,6 +1089,7 @@
   font-weight: 700;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 620;
   size-adjust: 116.5%;
   ascent-override: 98.71%;
   descent-override: 24.89%;
@@ -1081,6 +1102,7 @@
   font-weight: 700;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 620;
   size-adjust: 116.5%;
   ascent-override: 98.71%;
   descent-override: 24.89%;
@@ -1093,6 +1115,7 @@
   font-weight: 700;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 620;
   size-adjust: 116.5%;
   ascent-override: 98.71%;
   descent-override: 24.89%;
@@ -1106,6 +1129,7 @@
   font-weight: 700;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 620;
   size-adjust: 116.5%;
   ascent-override: 98.71%;
   descent-override: 24.89%;
@@ -1119,6 +1143,7 @@
   font-weight: 700;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 620;
   size-adjust: 116.5%;
   ascent-override: 98.71%;
   descent-override: 24.89%;
@@ -1130,13 +1155,14 @@
 
 /* ===== font-weight: 800 ===== */
 
-/* 半角西文、半角数字 — EB Garamond 800（Google，6 个分片） · 117% */
+/* 半角西文、半角数字 — EB Garamond 660（Google，6 个分片） · 117% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 660;
   size-adjust: 117%;
   ascent-override: 98.29%;
   descent-override: 24.79%;
@@ -1149,6 +1175,7 @@
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 660;
   size-adjust: 117%;
   ascent-override: 98.29%;
   descent-override: 24.79%;
@@ -1161,6 +1188,7 @@
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 660;
   size-adjust: 117%;
   ascent-override: 98.29%;
   descent-override: 24.79%;
@@ -1173,6 +1201,7 @@
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 660;
   size-adjust: 117%;
   ascent-override: 98.29%;
   descent-override: 24.79%;
@@ -1186,6 +1215,7 @@
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 660;
   size-adjust: 117%;
   ascent-override: 98.29%;
   descent-override: 24.79%;
@@ -1199,6 +1229,7 @@
   font-weight: 800;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 660;
   size-adjust: 117%;
   ascent-override: 98.29%;
   descent-override: 24.79%;
@@ -1210,13 +1241,14 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — EB Garamond Italic 800（Google，6 个分片） · 117% */
+/* 半角西文、半角数字 — EB Garamond Italic 660（Google，6 个分片） · 117% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 800;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 660;
   size-adjust: 117%;
   ascent-override: 98.29%;
   descent-override: 24.79%;
@@ -1229,6 +1261,7 @@
   font-weight: 800;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 660;
   size-adjust: 117%;
   ascent-override: 98.29%;
   descent-override: 24.79%;
@@ -1241,6 +1274,7 @@
   font-weight: 800;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 660;
   size-adjust: 117%;
   ascent-override: 98.29%;
   descent-override: 24.79%;
@@ -1253,6 +1287,7 @@
   font-weight: 800;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 660;
   size-adjust: 117%;
   ascent-override: 98.29%;
   descent-override: 24.79%;
@@ -1266,6 +1301,7 @@
   font-weight: 800;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 660;
   size-adjust: 117%;
   ascent-override: 98.29%;
   descent-override: 24.79%;
@@ -1279,6 +1315,7 @@
   font-weight: 800;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 660;
   size-adjust: 117%;
   ascent-override: 98.29%;
   descent-override: 24.79%;
@@ -1290,13 +1327,14 @@
 
 /* ===== font-weight: 900 ===== */
 
-/* 半角西文、半角数字 — EB Garamond 800（Google，6 个分片） · 117.5% */
+/* 半角西文、半角数字 — EB Garamond 740（Google，6 个分片） · 117.5% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 900;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 117.5%;
   ascent-override: 97.87%;
   descent-override: 24.68%;
@@ -1309,6 +1347,7 @@
   font-weight: 900;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 117.5%;
   ascent-override: 97.87%;
   descent-override: 24.68%;
@@ -1321,6 +1360,7 @@
   font-weight: 900;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 117.5%;
   ascent-override: 97.87%;
   descent-override: 24.68%;
@@ -1333,6 +1373,7 @@
   font-weight: 900;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 117.5%;
   ascent-override: 97.87%;
   descent-override: 24.68%;
@@ -1346,6 +1387,7 @@
   font-weight: 900;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 117.5%;
   ascent-override: 97.87%;
   descent-override: 24.68%;
@@ -1359,6 +1401,7 @@
   font-weight: 900;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 117.5%;
   ascent-override: 97.87%;
   descent-override: 24.68%;
@@ -1370,13 +1413,14 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — EB Garamond Italic 800（Google，6 个分片） · 117.5% */
+/* 半角西文、半角数字 — EB Garamond Italic 740（Google，6 个分片） · 117.5% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 900;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 117.5%;
   ascent-override: 97.87%;
   descent-override: 24.68%;
@@ -1389,6 +1433,7 @@
   font-weight: 900;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 117.5%;
   ascent-override: 97.87%;
   descent-override: 24.68%;
@@ -1401,6 +1446,7 @@
   font-weight: 900;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 117.5%;
   ascent-override: 97.87%;
   descent-override: 24.68%;
@@ -1413,6 +1459,7 @@
   font-weight: 900;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 117.5%;
   ascent-override: 97.87%;
   descent-override: 24.68%;
@@ -1426,6 +1473,7 @@
   font-weight: 900;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 117.5%;
   ascent-override: 97.87%;
   descent-override: 24.68%;
@@ -1439,6 +1487,7 @@
   font-weight: 900;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 740;
   size-adjust: 117.5%;
   ascent-override: 97.87%;
   descent-override: 24.68%;

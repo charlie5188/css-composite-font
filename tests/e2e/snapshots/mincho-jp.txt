@@ -4,13 +4,14 @@
  * 同名 @font-face 中，浏览器从最后一条往前匹配。 */
 /* 斜体：每组规则另有一份 font-style: italic。有斜体的类别用斜体字体（或倾斜轴）；
  * 没有斜体的类别（汉字、假名等）用正体文件、也声明成 italic，浏览器就不会把它们模拟倾斜。 */
+/* font-variation-settings 用于细调可变字体的粗细和其他轴：Chrome 140+、Firefox 62+ 支持；Safari 不认这一行，粗细按 font-weight 那一档、其他轴按字体的默认值显示。 */
 /* ascent-override / descent-override / line-gap-override：西文等规则使用汉字字体的行高度量（已除以 size-adjust），
  * 行高和基线位置都和汉字字体一致。Chrome 87+、Firefox 89+ 支持；Safari 会忽略，按各字体自己的度量显示。 */
 @import url(…);
 
 /* ===== font-weight: 100 ===== */
 
-/* 半角西文、半角数字 — Cormorant Garamond 300（Google，5 个分片） · 120% */
+/* 半角西文、半角数字 — Cormorant Garamond 400（Google，5 个分片） · 120% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
@@ -78,7 +79,7 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — Cormorant Garamond Italic 300（Google，5 个分片） · 120% */
+/* 半角西文、半角数字 — Cormorant Garamond Italic 400（Google，5 个分片） · 120% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
@@ -146,7 +147,7 @@
 
 /* ===== font-weight: 200 ===== */
 
-/* 半角西文、半角数字 — Cormorant Garamond 300（Google，5 个分片） · 120% */
+/* 半角西文、半角数字 — Cormorant Garamond 400（Google，5 个分片） · 120% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
@@ -214,7 +215,7 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — Cormorant Garamond Italic 300（Google，5 个分片） · 120% */
+/* 半角西文、半角数字 — Cormorant Garamond Italic 400（Google，5 个分片） · 120% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
@@ -418,13 +419,14 @@
 
 /* ===== font-weight: 400 ===== */
 
-/* 半角西文、半角数字 — Cormorant Garamond 500（Google，5 个分片） · 120% */
+/* 半角西文、半角数字 — Cormorant Garamond 420（Google，5 个分片） · 120% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 420;
   size-adjust: 120%;
   ascent-override: 96.67%;
   descent-override: 24.17%;
@@ -437,6 +439,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 420;
   size-adjust: 120%;
   ascent-override: 96.67%;
   descent-override: 24.17%;
@@ -449,6 +452,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 420;
   size-adjust: 120%;
   ascent-override: 96.67%;
   descent-override: 24.17%;
@@ -462,6 +466,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 420;
   size-adjust: 120%;
   ascent-override: 96.67%;
   descent-override: 24.17%;
@@ -475,6 +480,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 420;
   size-adjust: 120%;
   ascent-override: 96.67%;
   descent-override: 24.17%;
@@ -486,13 +492,14 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — Cormorant Garamond Italic 500（Google，5 个分片） · 120% */
+/* 半角西文、半角数字 — Cormorant Garamond Italic 420（Google，5 个分片） · 120% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 400;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 420;
   size-adjust: 120%;
   ascent-override: 96.67%;
   descent-override: 24.17%;
@@ -505,6 +512,7 @@
   font-weight: 400;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 420;
   size-adjust: 120%;
   ascent-override: 96.67%;
   descent-override: 24.17%;
@@ -517,6 +525,7 @@
   font-weight: 400;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 420;
   size-adjust: 120%;
   ascent-override: 96.67%;
   descent-override: 24.17%;
@@ -530,6 +539,7 @@
   font-weight: 400;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 420;
   size-adjust: 120%;
   ascent-override: 96.67%;
   descent-override: 24.17%;
@@ -543,6 +553,7 @@
   font-weight: 400;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 420;
   size-adjust: 120%;
   ascent-override: 96.67%;
   descent-override: 24.17%;
@@ -554,13 +565,14 @@
 
 /* ===== font-weight: 500 ===== */
 
-/* 半角西文、半角数字 — Cormorant Garamond 600（Google，5 个分片） · 120.5% */
+/* 半角西文、半角数字 — Cormorant Garamond 520（Google，5 个分片） · 120.5% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 520;
   size-adjust: 120.5%;
   ascent-override: 96.27%;
   descent-override: 24.07%;
@@ -573,6 +585,7 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 520;
   size-adjust: 120.5%;
   ascent-override: 96.27%;
   descent-override: 24.07%;
@@ -585,6 +598,7 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 520;
   size-adjust: 120.5%;
   ascent-override: 96.27%;
   descent-override: 24.07%;
@@ -598,6 +612,7 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 520;
   size-adjust: 120.5%;
   ascent-override: 96.27%;
   descent-override: 24.07%;
@@ -611,6 +626,7 @@
   font-weight: 500;
   font-style: normal;
   font-display: swap;
+  font-variation-settings: "wght" 520;
   size-adjust: 120.5%;
   ascent-override: 96.27%;
   descent-override: 24.07%;
@@ -622,13 +638,14 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — Cormorant Garamond Italic 600（Google，5 个分片） · 120.5% */
+/* 半角西文、半角数字 — Cormorant Garamond Italic 520（Google，5 个分片） · 120.5% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
   font-weight: 500;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 520;
   size-adjust: 120.5%;
   ascent-override: 96.27%;
   descent-override: 24.07%;
@@ -641,6 +658,7 @@
   font-weight: 500;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 520;
   size-adjust: 120.5%;
   ascent-override: 96.27%;
   descent-override: 24.07%;
@@ -653,6 +671,7 @@
   font-weight: 500;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 520;
   size-adjust: 120.5%;
   ascent-override: 96.27%;
   descent-override: 24.07%;
@@ -666,6 +685,7 @@
   font-weight: 500;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 520;
   size-adjust: 120.5%;
   ascent-override: 96.27%;
   descent-override: 24.07%;
@@ -679,6 +699,7 @@
   font-weight: 500;
   font-style: italic;
   font-display: swap;
+  font-variation-settings: "wght" 520;
   size-adjust: 120.5%;
   ascent-override: 96.27%;
   descent-override: 24.07%;
@@ -690,7 +711,7 @@
 
 /* ===== font-weight: 600 ===== */
 
-/* 半角西文、半角数字 — Cormorant Garamond 700（Google，5 个分片） · 121% */
+/* 半角西文、半角数字 — Cormorant Garamond 600（Google，5 个分片） · 121% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");
@@ -758,7 +779,7 @@
 
 /* --- 斜体 --- */
 
-/* 半角西文、半角数字 — Cormorant Garamond Italic 700（Google，5 个分片） · 121% */
+/* 半角西文、半角数字 — Cormorant Garamond Italic 600（Google，5 个分片） · 121% */
 @font-face {
   font-family: "My Composite";
   src: url(…) format("woff2");

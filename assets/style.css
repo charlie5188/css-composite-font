@@ -133,7 +133,19 @@ select{-webkit-appearance:none;appearance:none;padding-right:30px;background-ima
 .cell-in:focus{border-bottom-color:var(--ink);outline:none;background-color:var(--sheet)}
 .cell-in::placeholder{color:var(--faint);opacity:1}
 .cell-num{text-align:right;text-align-last:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.cell-num[type=number]{appearance:textfield}
+.cell-num[type=number]::-webkit-inner-spin-button,.cell-num[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 select.cell-in{padding-right:18px;background-position:right 3px center;background-size:10px 10px}
+/* 共用步进格：箭头在悬停 / 聚焦时出现，触屏常显；固定留白让数字与表头始终对齐。 */
+:root{--cell-step-w:20px}
+.cell-step{display:grid;grid-template-columns:minmax(0,1fr) var(--cell-step-w);align-items:center;width:100%;min-width:0}
+.cell-step select.cell-in{background-image:none;padding-right:var(--sp-1)}
+.cell-step-actions{display:grid;opacity:0}
+.cell-step:hover .cell-step-actions,.cell-step:focus-within .cell-step-actions{opacity:1}
+.cell-step-btn.btn-icon{width:var(--cell-step-w);height:14px;padding:0;border-radius:var(--r-s);color:var(--muted)}
+.cell-step-btn.btn-icon .ic{width:12px;height:12px}
+.cell-step-btn[data-step=up] .ic{transform:rotate(180deg)}
+@media(hover:none){.cell-step-actions{opacity:1}}
 .cell-in.own{font-weight:500}
 .cell-in.set{color:var(--accent);font-weight:500}
 select.cell-in[data-auto]:not(.set){color:var(--faint)}      /* 下拉框里推算的值：和输入框的占位文字一样是灰色 */
@@ -261,7 +273,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 /* 窗格顶上的工具条：一样高 */
 .bench{--bar-h:54px}
 @media (max-width:560px){.compose{--px:8px}}      /* 手机上表格本来就挤：窗格左右留白减半 */
-/* 表头「字体」旁的魔法棒：一键调整西文的大小和基线。表头是等宽小字，按钮用正常的界面字 */
+/* 表头「字体」旁的魔法棒：一键匹配西文大小、字重和基线。表头是等宽小字，按钮用正常的界面字 */
 .wand{color:var(--ink)}      /* 外观见 .btn-ghost；下面是调整中、完成的样子 */
 .wand:disabled{opacity:1;cursor:progress}
 /* 调整中：魔法棒换成转圈，文字显示进度；完成后短暂显示绿色对勾 */
@@ -276,9 +288,9 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 @media (prefers-reduced-motion:reduce){.wand[aria-busy="true"] .spin{animation-duration:2.4s}}
 
 /* 类别名短、字体名长：类别列固定为最长类别名（加齿轮）的宽度，其余都给字体列；类别下的小字说明可以折行 */
-.ct-row{--name-w:108px;display:grid;grid-template-columns:28px var(--name-w) minmax(0,1fr) 48px 48px 14px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule);--c:var(--c-custom)}
+.ct-row{--name-w:108px;display:grid;grid-template-columns:28px var(--name-w) minmax(0,1fr) 72px 72px 14px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule);--c:var(--c-custom)}
 .ct-head{font-family:var(--mono);font-size:var(--fs-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:14px 0 8px;border-bottom:1px solid var(--line)}
-.ct-head .r{text-align:right;padding-right:6px}
+.ct-head .r{text-align:right;padding-right:var(--sp-1)}
 .ct-head .r.lab-i{display:flex;justify-content:flex-end;gap:4px;white-space:nowrap}      /* 放不下时往左边空着的表头里伸 */
 :root:lang(ja) .ct-row{--name-w:126px}
 :root:lang(en) .ct-row{--name-w:122px}
@@ -291,7 +303,11 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .ct-name small{font-size:var(--fs-xs);color:var(--muted);line-height:1.35}
 .dot{display:none;width:8px;height:8px;border-radius:var(--r-s);background:var(--c);flex:none}
 .show-colors .dot{display:inline-block}
-.ct-font{display:flex;align-items:center;gap:6px;min-width:0}
+.ct-font{display:flex;flex-direction:column;align-items:stretch;gap:2px;min-width:0}
+.ct-font-pick{display:flex;align-items:center;gap:6px;min-width:0}
+.ct-font-meta{padding:0 var(--sp-1);line-height:1.4;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.ct-font-meta:not([hidden]){display:flex;flex-wrap:wrap;column-gap:var(--sp-1)}
+.ct-font-range{white-space:nowrap}
 .fsel{flex:1}      /* 外观见 .cell-in。注意只能换 background-color：background 简写会把箭头图也清掉 */
 .fsel.follow{color:var(--muted)}
 .status{flex:none;width:6px;height:6px;border-radius:50%;background:var(--faint)}
@@ -359,7 +375,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .ct-add{flex:1;display:flex;align-items:center;gap:8px;min-height:44px;padding:0;border:0;background:none;font-size:var(--fs-m);color:var(--muted);text-align:left}
 .ct-add .plus{width:28px;display:grid;place-items:center}
 .ct-add:hover{color:var(--ink)}
-@media (max-width:440px){.ct-row{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 50px 50px 14px}.ct-glyph{display:none}.ct-row .chars{grid-column:1/2}.ct-row .ct-ax{grid-column:2/3}}
+@media (max-width:440px){.ct-row{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 72px 72px 14px}.ct-glyph{display:none}.ct-row .chars{grid-column:1/2}.ct-row .ct-ax{grid-column:2/3}}
 
 /* ---------- tester ---------- */
 .tester{min-width:0}
@@ -509,12 +525,16 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 #vWNote{margin:0 0 8px}
 .wm{--wm-cols:80px 1fr;display:grid;grid-template-columns:var(--wm-cols);column-gap:8px;overflow-x:auto}      /* 各行用 subgrid 共用同一套列宽，表头和数字才对得齐 */
 .wm-row{grid-column:1/-1;display:grid;grid-template-columns:subgrid;align-items:center;min-height:34px;border-bottom:1px solid var(--rule)}
+.wm-row[data-row]{cursor:pointer}
+.wm-row[data-row]:not(.cur):hover{background:color-mix(in srgb,var(--ink) 4%,transparent)}
 .wm-row>:first-child{padding-left:8px}
 .wm-cls{min-height:0;padding:10px 0 2px;border-bottom:0;font-size:var(--fs-s);color:var(--ink)}
 .wm-cls>span{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;padding-bottom:4px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}      /* 类别名盖在它的几列上面 */
 .wm-cls>span:empty{border-bottom:0}
+.wm-clabel{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.wm-cls .btn-icon{flex:none}
 .wm-sub{min-height:0;padding:0 0 6px;border-bottom-color:var(--line);font-family:var(--mono);font-size:var(--fs-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.wm-sub>span{text-align:right;padding-right:4px}
+.wm-sub>span{text-align:right;padding-right:calc(var(--cell-step-w) + var(--sp-1))}
 .wm-sub>.wm-xh,.wm-sub>.wm-wh{text-align:left;padding-right:0}
 .wm-x{display:flex;align-items:center}
 .wm-w{display:flex;align-items:center;gap:6px;min-width:0}
@@ -522,16 +542,14 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .wm-pw{border:0;background:none;padding:6px 0;font:var(--fs-m)/1 var(--mono);color:var(--ink);text-align:left;white-space:nowrap}
 button.wm-pw:hover{text-decoration:underline;text-underline-offset:3px}
 .wm-pw small{margin-left:5px;font-family:var(--ui);font-size:var(--fs-xs);color:var(--muted)}
-.wm-row.off .wm-pw{color:var(--faint)}
+.wm-row.off .wm-pw{color:var(--muted)}
 .wm-row.cur{background:color-mix(in srgb,var(--accent) 7%,transparent);box-shadow:inset 2px 0 var(--accent)}
 .wm-row.cur .wm-pw{color:var(--accent);font-weight:600}
 .wm-c{position:relative;display:flex;align-items:center;min-width:0}
 /* 格子里的数字：和类别表的数字框一样，灰色是推算 / 沿用的值，基础设定是黑色，各字重自己填的是蓝色 */
-.wm-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.wm-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;padding-right:calc(var(--cell-step-w) + var(--sp-1))}
 .wm-name.guess{color:var(--caution)}
 .wm-c.swapped .cell-in{color:var(--accent);font-style:italic}
-.cell-num[type=number]{-moz-appearance:textfield;appearance:textfield}
-.cell-num::-webkit-inner-spin-button,.cell-num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 /* 单独换字体：悬停这一行时出现在格子左边 */
 .wm-act{display:flex;justify-content:center}
 .wm-more{opacity:0}      /* 行末菜单：鼠标移到这一行、或键盘移到它上面时才显示 */
@@ -764,5 +782,10 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-scope>span{color:var(--muted);font-size:var(--fs-s)}
 .pk-scope label{display:inline-flex;gap:6px;align-items:center}
 
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--sheet);padding:9px 16px;border-radius:var(--r-pill);font-size:var(--fs-m);opacity:0;pointer-events:none;transition:opacity .2s}
-.toast.on{opacity:1}
+.toast{--toast-bottom:calc(20px + env(safe-area-inset-bottom,0px));position:fixed;left:50%;bottom:var(--toast-bottom);transform:translateX(-50%);width:max-content;max-width:calc(100vw - 2 * var(--sp-4));background:var(--ink);color:var(--sheet);padding:9px 16px;border-radius:var(--r-pill);font-size:var(--fs-m);opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1;animation:toast-in .28s cubic-bezier(.2,.8,.2,1)}
+/* 从屏幕底部滑到提示的位置；长提示和手机底部页签也使用同一套位移。 */
+@keyframes toast-in{from{opacity:0;transform:translate(-50%,calc(100% + var(--toast-bottom)))}to{opacity:1;transform:translate(-50%,0)}}
+/* 窄屏的长结果说明可换行，留出底部页签的位置；不用胶囊弧边挤压文字。 */
+@media (max-width:1000px){.toast{--toast-bottom:calc(48px + var(--sp-3) + env(safe-area-inset-bottom,0px));border-radius:var(--r)}}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}.toast.on{animation:none}}

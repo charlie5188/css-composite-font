@@ -130,6 +130,70 @@ test('各字重：改某个字重的大小只写进那个字重，勾选和导�
   expect(await page.textContent('#codeOut')).not.toMatch(/font-weight: 300;/);
 });
 
+test('各字重：点击行间距或空白预览，保留导出勾选和输入、菜单操作', async ({ page }) => {
+  await open(page);
+  await page.click('#ltabFonts');
+  // 第一列和字重列之间的间距直接命中行本身，不能只给子元素绑定点击。
+  const row = page.locator('#wMatrix [data-row="700"]');
+  // 字体加载会重画表格：在同一次读取中计算行内位置，再由 locator 等待并点击当前行。
+  const gap = await row.evaluate(el => {
+    const cell = el.querySelector('.wm-x').getBoundingClientRect(), bounds = el.getBoundingClientRect();
+    return { x: cell.right - bounds.left + 3, y: bounds.height / 2 };
+  });
+  await row.click({ position: gap });
+  await expect(row).toHaveAttribute('aria-current', 'true');
+  await expect(page.locator('#vWn')).toHaveValue('700');
+  await expect(page.locator('#wMatrix input[data-wx="700"]')).toBeChecked();
+  // 点击导出勾选和行末菜单不会顺带切换到它们所在行。
+  await page.click('#wMatrix input[data-wx="300"]');
+  await expect(page.locator('#vWn')).toHaveValue('700');
+  await page.locator('#wMatrix [data-row="500"]').hover();
+  await page.click('#wMatrix [data-wmenu="500"]');
+  await expect(page.locator('#wRowMenu')).toBeVisible();
+  await expect(page.locator('#vWn')).toHaveValue('700');
+  await page.keyboard.press('Escape');
+  // 未导出的空行同样可预览，勾选保持关闭，重载后也保留预览。
+  await page.locator('#wMatrix [data-row="300"]').click({ position: { x: 2, y: 2 } });
+  await expect(page.locator('#wMatrix [data-row="300"]')).toHaveClass(/off.*cur/);
+  await expect(page.locator('#wMatrix input[data-wx="300"]')).not.toBeChecked();
+  await expect(page.locator('#vWn')).toHaveValue('300');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('composite-font:state:v1'))?.view.weight)).toBe(300);
+  await page.reload(); await page.click('#ltabFonts');
+  await expect(page.locator('#wMatrix [data-row="300"]')).toHaveAttribute('aria-current', 'true');
+  await expect(page.locator('#wMatrix input[data-wx="300"]')).not.toBeChecked();
+  // 原有按钮仍是键盘入口，编辑数值仍可直接输入并预览。
+  await page.locator('#wMatrix [data-pw="300"]').focus();
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#vWn')).toHaveValue('300');
+  const size = page.locator('#wMatrix .mnum[data-k="latin"][data-w="600"]');
+  await size.fill('119'); await size.press('Tab');
+  await expect(size).toHaveValue('119');
+  await expect(page.locator('#vWn')).toHaveValue('600');
+});
+
+test('各字重：连续范围和窄屏可点行空白，单一导出仍可预览其他字重', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await open(page); await page.click('#ltabFonts');
+  await page.evaluate(async () => {
+    const u = await import('./assets/js/ui.js');
+    u.setWeights([400]);
+  });
+  await page.locator('#wMatrix [data-row="700"]').click({ position: { x: 2, y: 2 } });
+  await expect(page.locator('#wMatrix [data-row="700"]')).toHaveAttribute('aria-current', 'true');
+  await expect(page.locator('#wMatrix input[data-wx="700"]')).not.toBeChecked();
+  await page.click('#mTabs [data-mv="preview"]');
+  await expect(page.locator('#vWn')).toBeVisible();
+  await expect(page.locator('#vWn')).toHaveValue('700');
+  await page.locator('#vWn').press('ArrowDown');
+  await expect(page.locator('#vWn')).toHaveValue('600');
+  await page.click('#mTabs [data-mv="edit"]');
+  await page.click('#vWMode [data-m="cont"]');
+  await page.locator('#wMatrix [data-row="700"]').click({ position: { x: 2, y: 2 } });
+  await expect(page.locator('#wMatrix [data-row="700"]')).toHaveAttribute('aria-current', 'true');
+  await page.click('#mTabs [data-mv="preview"]');
+  await expect(page.locator('#vWn')).toHaveValue('700');
+});
+
 test('撤销 / 重做：按钮和快捷键，输入框里的 ⌘Z 不抢', async ({ page }) => {
   await open(page);
   await page.click('#ltabFonts');
