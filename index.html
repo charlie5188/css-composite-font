@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=88a4ceaa">
+<link rel="stylesheet" href="assets/style.css?v=e9e025fa">
 <!-- 模块的缓存版本号：模块之间互相 import 时不带 ?v=，靠 import map 换成带版本号的地址（tools/rehash.py 生成） -->
 <script type="importmap">{
  "imports": {
@@ -22,7 +22,7 @@
   "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=e504f168",
   "./assets/js/main.js": "./assets/js/main.js?v=77ec7ac1",
   "./assets/js/refresh.js": "./assets/js/refresh.js?v=4dffc5b8",
-  "./assets/js/render.js": "./assets/js/render.js?v=be3858d6",
+  "./assets/js/render.js": "./assets/js/render.js?v=1f7f48f8",
   "./assets/js/ui.js": "./assets/js/ui.js?v=8c09d1ff",
   "./assets/js/unicode.js": "./assets/js/unicode.js?v=f50d2344"
  }
@@ -70,7 +70,7 @@
         <span class="hist"><button type="button" class="btn-icon" id="undoBtn" aria-disabled="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.6 6.4h7.1a3.6 3.6 0 0 1 0 7.2H6.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M5.4 3.4 2.4 6.4l3 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" class="btn-icon" id="redoBtn" aria-disabled="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.4 6.4H6.3a3.6 3.6 0 0 0 0 7.2h3.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10.6 3.4l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
       </div>
       <div class="pane-sec presets" id="panePresets" role="tabpanel" aria-labelledby="ltabPresets" hidden>
-        <div class="sec-head preset-head"><h2 class="label lab-i" id="presetsLabel"><span data-t="preset"></span><button type="button" class="info" data-info="presetInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></h2>
+        <div class="sec-head preset-head"><h2 class="sec-title lab-i" id="presetsLabel"><span data-t="preset"></span><button type="button" class="info" data-info="presetInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></h2>
           <div class="preset-acts">
             <button type="button" class="btn-ghost" id="pfBtn" popovertarget="pfMenu" aria-haspopup="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 3.5h11l-4.3 5v4.2l-2.4 1.1V8.5z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg><span data-t="pfTitle"></span><span class="badge" id="pfCount"></span></button>
             <div class="pop menu pf-menu" id="pfMenu" popover role="group" data-ta="aria-label:pfAria"></div>
@@ -81,19 +81,19 @@
       </div>
       <div class="pane-sec" id="paneFonts" role="tabpanel" aria-labelledby="ltabFonts">
       <!-- 表格只管基础设定（400，其他字重按它推算）；按字重的差异在下面的「各字重」里 -->
-      <div class="sec-head base-head"><h3 class="label" data-t="baseTitle"></h3><button type="button" class="btn-ghost wand" id="autoAdj" data-ta="title:autoAdjTip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.2 13.8 9.6 6.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8.7 5.5l1.8 1.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12.2 1.4v2.4M11 2.6h2.4M14.4 6v1.8M13.5 6.9h1.8M6.6 1.6v1.6M5.8 2.4h1.6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg><span class="spin" aria-hidden="true"></span><span class="ok-mark" aria-hidden="true">✓</span><span class="wand-lab" data-t="autoAdj"></span></button></div>
+      <div class="sec-head base-head"><h3 class="sec-title" data-t="baseTitle"></h3><button type="button" class="btn-ghost wand" id="autoAdj" data-ta="title:autoAdjTip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.2 13.8 9.6 6.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8.7 5.5l1.8 1.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12.2 1.4v2.4M11 2.6h2.4M14.4 6v1.8M13.5 6.9h1.8M6.6 1.6v1.6M5.8 2.4h1.6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg><span class="spin" aria-hidden="true"></span><span class="ok-mark" aria-hidden="true">✓</span><span class="wand-lab" data-t="autoAdj"></span></button></div>
       <div class="ct-row ct-head"><span class="ct-glyph"></span><span class="lab-i"><span data-t="colClass"></span><button type="button" class="info" data-info="classInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><span data-t="colFont"></span><span class="r lab-i"><span data-t="colSize"></span><button type="button" class="info" data-info="sizeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><span class="r lab-i"><span data-t="colShift"></span><button type="button" class="info" data-info="shiftInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><span></span></div>
       <div id="classRows"></div>
       <div id="customRows"></div>
       <!-- 表格最后一行：添加例外字符（例外字符一行行接在类别后面，所以不另设标题） -->
       <div class="ct-add-row"><button type="button" class="ct-add" id="addCustom"><span class="plus" aria-hidden="true">+</span><span data-t="addCustomRow"></span></button><button type="button" class="info" data-info="customInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></div>
       <!-- 各字重：行是字重、列是有自己字体的类别。分档 / 连续决定有哪些行、粗细能不能单独设定 -->
-      <div class="sec-head w-head"><h3 class="label lab-i"><span data-t="wTitle"></span><button type="button" class="info" data-info="wmodeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></h3><span class="w-acts"><button type="button" class="btn-icon wreset" id="wReset" hidden data-ta="title:wResetTip;aria-label:wResetTip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.5-3.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4.3 1.8v2.8h2.8" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="seg" id="vWMode" role="radiogroup" data-ta="aria-label:exWMode"><button type="button" role="radio" data-m="steps" data-t="wmStepsShort" data-ta="title:wmStepsTip"></button><button type="button" role="radio" data-m="cont" data-t="wmContShort" data-ta="title:wmContTip"></button></span></span></div>
+      <div class="sec-head w-head"><h3 class="sec-title lab-i"><span data-t="wTitle"></span><button type="button" class="info" data-info="wmodeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></h3><span class="w-acts"><button type="button" class="btn-icon wreset" id="wReset" hidden data-ta="title:wResetTip;aria-label:wResetTip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.5-3.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4.3 1.8v2.8h2.8" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="seg" id="vWMode" role="radiogroup" data-ta="aria-label:exWMode"><button type="button" role="radio" data-m="steps" data-t="wmStepsShort" data-ta="title:wmStepsTip"></button><button type="button" role="radio" data-m="cont" data-t="wmContShort" data-ta="title:wmContTip"></button></span></span></div>
       <div class="w-sub" id="wSub"></div>
       <div class="callout" id="vWNote" hidden></div>
       <div class="wm" id="wMatrix" role="group" data-ta="aria-label:wTitle"></div>
       <!-- 字体特性：选哪个字形（OpenType 特性）和行高度量，属于字体，但不分字重 -->
-      <div class="sec-head feat-head"><h3 class="label lab-i"><span data-t="featTitle"></span></h3><span class="sec-acts"><span class="typo-changed" id="featChanged"></span><button type="button" class="btn-text typo-reset" id="featReset" data-t="typoReset" hidden></button></span></div>
+      <div class="sec-head feat-head"><h3 class="sec-title lab-i"><span data-t="featTitle"></span></h3><span class="sec-acts"><span class="typo-changed" id="featChanged"></span><button type="button" class="btn-text typo-reset" id="featReset" data-t="typoReset" hidden></button></span></div>
       <div class="typo-body" id="featRows"></div>
       </div>
       <div class="pane-sec typo" id="paneTypo" role="tabpanel" aria-labelledby="ltabTypo" hidden>

@@ -146,7 +146,9 @@ select.cell-in{padding-right:18px;background-position:right 3px center;backgroun
 .mm-radio[aria-checked="true"]{font-weight:600}
 .mm-note{margin:2px 10px 6px;font-size:var(--fs-s);line-height:1.55;color:var(--muted)}
 /* 小节标题：左边等宽小标题（.label），右边是这一节的操作 */
-.sec-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--sp-2) var(--sp-3);margin:var(--sp-5) 0 var(--sp-1)}
+.sec-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--sp-2) var(--sp-3);margin:var(--sp-6) 0 var(--sp-2)}
+/* 层级靠字号、字重和留白，不靠分隔线：小节标题（.sec-title）> 条目名（.typo-name）> 表头、说明（等宽小字 .label、灰字） */
+.sec-title{margin:0;font-size:var(--fs-xl);font-weight:600;color:var(--ink);line-height:1.3;letter-spacing:-.01em}
 .sec-acts{display:inline-flex;align-items:center;gap:var(--sp-2) var(--sp-3)}
 /* 小对话框（保存预设等）：标题、说明、字段，按钮在右下角，主按钮在最右 */
 .dlg-form{display:grid;gap:var(--sp-4);padding:22px 24px 20px}
@@ -468,7 +470,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* 参考图的「显示」放在白色区域右上角，和校样纸面上的一样 */
 .spec-wrap{position:relative}
 /* 参考图的工具条：和校样的工具条一样贴着顶边通栏。每个开关前面是那一组参考线的样子（颜色、虚实），兼作图例 */
-.spec-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:2px;min-height:40px;padding:4px 10px 4px 16px;border-bottom:1px solid var(--line);line-height:1.4;font-family:var(--ui)}
+.spec-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px;min-height:40px;padding:4px 10px 4px 16px;border-bottom:1px solid var(--line);line-height:1.4;font-family:var(--ui)}
 .sg-tog{gap:7px;color:var(--faint)}      /* 外观见 .btn-ghost */
 .sg-tog[aria-pressed="true"]{color:var(--ink)}
 .sg-tog .sg-line{display:block;flex:none;width:16px;border-top:2px solid var(--line)}
@@ -521,9 +523,9 @@ button.wm-pw:hover{text-decoration:underline;text-underline-offset:3px}
 #featRows{padding-top:0}
 .typo-changed{font-size:var(--fs-s);color:var(--accent);white-space:nowrap}
 .typo-reset{font-size:var(--fs-s);padding:0;white-space:nowrap}
-.typo-body{display:grid;gap:4px;padding:6px 0 12px}
+.typo-body{display:grid;gap:var(--sp-2);padding:0 0 var(--sp-3)}
 /* 左列较窄：名称和选项并排，浏览器支持另起一行 */
-.typo-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:4px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
+.typo-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:var(--sp-2) var(--sp-3);align-items:center;padding:var(--sp-3) 0}      /* 条目之间只留白，不画线 */
 .typo-unsup{grid-column:1/-1;margin:0;font-size:var(--fs-s);line-height:1.5;color:var(--caution)}
 /* 数字样式的字样卡片：标题在上，卡片占整行 */
 .typo-row.tiles{grid-template-columns:minmax(0,1fr)}
@@ -551,7 +553,7 @@ button.wm-pw:hover{text-decoration:underline;text-underline-offset:3px}
 .tt-box.tt-lb{width:4em;min-height:4.05em;text-spacing-trim:space-all;text-autospace:no-autospace;font-feature-settings:normal}
 .typo-note{grid-column:1/-1;margin:2px 0 0;font-size:var(--fs-s);line-height:1.55;color:var(--muted)}
 .typo-name{display:flex;align-items:center;gap:7px;line-height:1.35}
-.typo-name b{font-weight:600}
+.typo-name b{font-size:var(--fs-m);font-weight:600}
 .typo-row select{width:100%}
 @media (max-width:700px){.typo-row{grid-template-columns:minmax(0,1fr)}}
 

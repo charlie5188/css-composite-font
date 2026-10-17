@@ -727,7 +727,10 @@ export function drawSpecimen() {
   const cv = $('#spec'), sh = specShown();
   const W = cv.clientWidth || 600;
   const ctx = cv.getContext('2d');
-  const labelW = Math.min(150, W * 0.3), plotR = W - labelW;
+  /* 右边标签区按最长的标签留宽度（以前固定 150px，右边空出一大块） */
+  ctx.font = `11px ${cssVar('--ui') || 'sans-serif'}`;
+  const labKeys = ['gFaceTop', 'gFaceBot', 'gBase', ...(sh.latin ? ['gCap', 'gX', 'gLatBase'] : []), ...(sh.digit ? ['gFig', 'gDigBase'] : []), ...(sh.kana ? ['gKanaTop', 'gKanaBot'] : []), ...(sh.bopo ? ['gBopoTop', 'gBopoBot'] : [])];
+  const labelW = Math.min(150, W * 0.3, Math.ceil(Math.max(...labKeys.map(k => ctx.measureText(T(k)).width))) + 8 + 12), plotR = W - labelW;
   const fam = `${liveFamily ? `"${liveFamily}", ` : ''}serif`, fw = state.wmode === 'cont' ? state.view.wcont : state.view.weight;
   const shiftOf = ch => settingOf(ownerOf(ch.codePointAt(0))).shift / 100;
   /* 画出来的字：汉字总在；假名 あ、注音 ㄅ、西文 Hxg（连在一起，按字体本身的字距）、数字 0 按显示设定 */

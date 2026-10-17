@@ -123,11 +123,11 @@ for a role that already has one; if something is really missing, add it to that 
   `ui.js` (second click within 3 s); keep the button's own label inside an element so it can be hidden.
 - **Other components:** `.seg` (segmented choice), `.chips` (multi-select pills; `.chips.tags` for text labels such as filters), `.sw` (switch), `.cell-in` +
   `.cell-num` (inputs inside tables; `.own` = set in the base settings, `.set` = set for one weight), `.pop` (popover
-  surface) with `.menu` / `.mm-item` / `.mm-radio` / `.mm-check`, `.sec-head` + `.label` + `.sec-acts` (section
+  surface) with `.menu` / `.mm-item` / `.mm-radio` / `.mm-check`, `.sec-head` + `.sec-title` + `.sec-acts` (section
   heading), `.callout` (yellow notice), `.dlg-form` + `.dlg-act` (small dialog: title, fields, buttons bottom right), `.badge` (count pill), `.info` (the (i) button that opens `#infoPop`), tooltips through `title`.
 - **Conventions:** buttons show hover with a tinted background, fields with a border. A selected card has an ink
-  border plus a 1 px inset (`.pcard`, `.ex-kinds`, `.typo-tiles`). Row separators use `--rule`; table headers and
-  section edges use `--line`. Base form-element styles are wrapped in `:where()` so a component class always wins.
+  border plus a 1 px inset (`.pcard`, `.ex-kinds`, `.typo-tiles`). Row separators use `--rule` inside tables only; elsewhere hierarchy comes from
+  size, weight and spacing (`.sec-title` 18 px > item names 13 px bold > `.label` / grey notes), not divider lines. Base form-element styles are wrapped in `:where()` so a component class always wins.
 
 ## Gotchas that have bitten before
 
