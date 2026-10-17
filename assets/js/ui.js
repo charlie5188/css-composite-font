@@ -669,14 +669,47 @@ export const PRESET_ORDER = {
   ja: ['mincho-jp', 'gothic-jp', 'antigochi', 'mac-jp', 'serif-sc', 'sans-sc', 'ming-tw', 'hei-tw', 'hei-hk', 'mac', 'mac-tw'],
 };
 export const orderedPresets = () => { const o = PRESET_ORDER[UI] || PRESET_ORDER.zh, at = id => (i => i < 0 ? 99 : i)(o.indexOf(id)); return [...PRESETS].sort((a, b) => at(a.id) - at(b.id)); };
+/* ================= 预设筛选 =================
+   三组：地区、风格（宋体 / 明朝 还是 黑体 / ゴシック，看汉字字体的名字）、来源（Google Fonts 还是本机字体）。
+   组内任选一个就算符合，组间要同时符合；一组都没选 = 不限。筛选条件放在视图状态里，不进撤销记录 */
+export const PF_GROUPS = [['region', [['sc', 'pfSc'], ['tc', 'pfTc'], ['jp', 'pfJp']]], ['style', [['serif', 'pfSerif'], ['sans', 'pfSans']]], ['src', [['google', 'pfGoogle'], ['local', 'pfLocal']]]];
+export const styleOfFont = f => /Serif|Mincho|Ming|Song|明|宋/i.test(f?.family || f?.name || f?.fileName || '') ? 'serif' : 'sans';
+export const presetMeta = (script, han) => ({ region: script, style: styleOfFont(han), src: han?.kind === 'google' ? 'google' : 'local' });
+export function renderPresetFilter(shown, total) {
+  const pf = state.view.pfilter || {}, on = PF_GROUPS.some(([g]) => pf[g]?.length);
+  $('#presetFilter').innerHTML = PF_GROUPS.map(([g, opts]) => `<span class="chips tags">${opts.map(([v, k]) =>
+    `<button type="button" data-pf="${g}:${v}" aria-pressed="${!!pf[g]?.includes(v)}"${T(k + 'Tip') !== k + 'Tip' ? ` title="${esc(T(k + 'Tip'))}"` : ''}>${esc(T(k))}</button>`).join('')}</span>`).join('') +
+    (on ? `<span class="pf-end"><span class="mono">${shown} / ${total}</span><button type="button" class="btn-text" data-pf="clear">${esc(T('pfClear'))}</button></span>` : '');
+}
 /* 「我的预设」排在最前面，后面是内置的 */
 export function renderPresetCards() {
-  const cards = [];
-  for (const [n, snap] of Object.entries(userPresets)) if (snap?.classes?.han)
-    cards.push(presetCard({ id: 'user:' + n, name: n, tag: T('presetMine'), cls: snap.classes, script: scriptOfLang(snap.typo?.lang), user: true, active: state.preset === 'user:' + n }));
-  for (const p of orderedPresets()) cards.push(presetCard({ id: p.id, name: tr(p.name), tag: tr(p.tag), cls: freshClasses(p), script: p.region === 'hk' ? 'tc' : p.region, active: state.preset === p.id }));
-  $('#presetCards').innerHTML = cards.join('');
+  const all = [], pf = state.view.pfilter || {};
+  for (const [n, snap] of Object.entries(userPresets)) if (snap?.classes?.han) {
+    const script = scriptOfLang(snap.typo?.lang);
+    all.push([presetMeta(script, snap.classes.han.font), { id: 'user:' + n, name: n, tag: T('presetMine'), cls: snap.classes, script, user: true, active: state.preset === 'user:' + n }]);
+  }
+  for (const p of orderedPresets()) {
+    const script = p.region === 'hk' ? 'tc' : p.region;
+    all.push([presetMeta(script, p.han), { id: p.id, name: tr(p.name), tag: tr(p.tag), cls: freshClasses(p), script, active: state.preset === p.id }]);
+  }
+  const fit = m => PF_GROUPS.every(([g]) => !pf[g]?.length || pf[g].includes(m[g]));
+  const cards = all.filter(([m]) => fit(m)).map(([, c]) => presetCard(c));
+  $('#presetCards').innerHTML = cards.join('') || `<p class="pf-none">${esc(T('pfNone'))} <button type="button" class="btn-text" data-pf="clear">${esc(T('pfClear'))}</button></p>`;
+  renderPresetFilter(cards.length, all.length);
 }
+/* 点筛选按钮：组内加上 / 去掉这一项；「清除筛选」在筛选条和空结果里都有 */
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-pf]'); if (!b || !b.closest('#panePresets')) return;
+  const v = state.view;
+  if (b.dataset.pf === 'clear') delete v.pfilter;
+  else {
+    const [g, x] = b.dataset.pf.split(':'), pf = v.pfilter ||= {}, list = pf[g] ||= [];
+    if (list.includes(x)) list.splice(list.indexOf(x), 1); else list.push(x);
+    if (!list.length) delete pf[g];
+    if (!Object.keys(pf).length) delete v.pfilter;
+  }
+  renderPresetCards(); saveState();
+});
 export const renderPresetCardsSoon = debounce(renderPresetCards, 120);
 export const hasFileFont = () => [...CLASSES.map(c => state.classes[c.id].font), ...state.custom.map(c => c.font)].some(f => f && f.kind === 'file');
 export function applyPreset(id) {

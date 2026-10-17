@@ -118,7 +118,7 @@ for a role that already has one; if something is really missing, add it to that 
   `.btn-icon` (icon only; `.sm`, and `.mini` for small icons inside text), `.btn-text` (link style). Add `.danger` for
   destructive actions. Anything destructive that can't be undone goes through `armConfirm(btn, text, run)` in
   `ui.js` (second click within 3 s); keep the button's own label inside an element so it can be hidden.
-- **Other components:** `.seg` (segmented choice), `.chips` (multi-select pills), `.sw` (switch), `.cell-in` +
+- **Other components:** `.seg` (segmented choice), `.chips` (multi-select pills; `.chips.tags` for text labels such as filters), `.sw` (switch), `.cell-in` +
   `.cell-num` (inputs inside tables; `.own` = set in the base settings, `.set` = set for one weight), `.pop` (popover
   surface) with `.menu` / `.mm-item` / `.mm-radio` / `.mm-check`, `.sec-head` + `.label` + `.sec-acts` (section
   heading), `.callout` (yellow notice), `.info` (the (i) button that opens `#infoPop`), tooltips through `title`.

@@ -147,3 +147,18 @@ test('撤销 / 重做：按钮和快捷键，输入框里的 ⌘Z 不抢', async
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z');
   await expect(size).toHaveValue(before);
 });
+
+test('预设筛选：组内任选、组间同时满足，没有结果时可以清除', async ({ page }) => {
+  await open(page);
+  const cards = page.locator('#presetCards .pcard');
+  const all = await cards.count();
+  await page.click('[data-pf="style:serif"]');
+  await page.click('[data-pf="region:jp"]');
+  await expect(cards).toHaveCount(1);      // 明朝 × Cormorant
+  await page.click('[data-pf="region:tc"]');
+  await expect(cards).toHaveCount(2);      // 再加上 明體 × Garamond
+  await page.click('[data-pf="src:local"]');
+  await expect(cards).toHaveCount(0);      // macOS 预设都是黑体
+  await page.click('#presetCards [data-pf="clear"]');
+  await expect(cards).toHaveCount(all);
+});

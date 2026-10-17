@@ -198,6 +198,10 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .pname{font-size:var(--fs-l);font-weight:600;line-height:1.3}
 .pmiss{font-size:var(--fs-s);line-height:1.4;color:var(--warn)}
 .pdel{position:absolute;top:6px;right:6px}
+.pfilter{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-2) var(--sp-3);margin:0 0 var(--sp-3)}      /* 预设筛选：三组，组内间距 4px、组间 12px（不用竖线：换行时会落在行尾） */
+.pf-end{margin-left:auto;display:inline-flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-s);color:var(--muted)}
+.pf-end .btn-text{font-size:var(--fs-s)}
+.pf-none{grid-column:1/-1;margin:var(--sp-4) 0;font-size:var(--fs-m);color:var(--muted)}
 .save-form{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center}
 .save-form[hidden]{display:none}
 .save-form input{width:180px}
@@ -593,6 +597,7 @@ button.wm-pw:hover{text-decoration:underline;text-underline-offset:3px}
 .chips button[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
 /* 字重按钮：400、700 直接写上「正文」「粗体」 */
 .chips button.wl{width:auto;padding:4px 10px}
+.chips.tags button{width:auto;padding:4px 10px;font-family:var(--ui)}      /* 文字标签的筛选按钮：宽度随文字 */
 button.wl small{font-family:var(--ui);font-size:var(--fs-xs);margin-left:5px;opacity:.75}
 .w-hint{margin:2px 0 0;font-size:var(--fs-s);line-height:1.6}
 .w-hint .btn-text{font-size:var(--fs-s);white-space:nowrap;color:inherit}
