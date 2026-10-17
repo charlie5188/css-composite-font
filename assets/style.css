@@ -169,7 +169,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 /* ---------- top bar ---------- */
 /* 标题用正在调的复合字体排：改了设定马上看得到 */
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:52px;padding:0 16px;border-bottom:1px solid var(--ink);background:var(--bg)}
-.brand{margin:0;min-width:0;font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-size:21px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand{margin:-.25em 0;padding:.25em 0;min-width:0;font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-size:21px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}      /* 省略号要 overflow:hidden；上下留出空间，西文的降部（p、g）不被裁掉 */
 .top-right{display:flex;align-items:center;gap:18px;flex:none}
 .ex-toggle{padding:5px 16px}
 .topbar .btn-ghost{font-size:var(--fs-m)}
