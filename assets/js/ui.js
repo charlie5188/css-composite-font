@@ -1,8 +1,8 @@
 import { refresh } from './refresh.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, inRanges, rebuildClassRanges } from './unicode.js';
-import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, objByKey, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, userPresets, vfAxis, vfCache } from './core.js';
-import { PUNCT_CENTER, REGION_OF_LANG, formsOf, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, lastMeasure, lastRef, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
+import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, objByKey, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, userPresets, vfAxis, vfCache } from './core.js';
+import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, lastMeasure, lastRef, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
 /* ================= 交互：字符类别表 ================= */
@@ -79,7 +79,9 @@ export function pruneOv(W, k) {
 /* 某个字重的粗细：可变字体是任意值，静态的 Google Fonts 是一档。400 改的是字体本身；单独换过字体时改的是那个字体 */
 export function setWeightAt(k, W, el) {
   const o = objByKey(k), withW = (f, v) => f.kind === 'google' ? G(f.family, v) : { ...f, weight: v };
-  const raw = el.value.trim(), v = el.dataset.act === 'wnum' ? (raw === '' ? null : Math.min(+el.max, Math.max(+el.min, Math.round(+raw)))) : +el.value || null;
+  const raw = el.value.trim();
+  let v = el.dataset.act === 'wnum' ? (raw === '' ? null : Math.min(+el.max, Math.max(+el.min, Math.round(+raw)))) : +el.value || null;
+  if (el.dataset.auto && v === +el.dataset.auto) v = null;      // 选回「推算」的那一档：不再单独设定
   if (W === BASE_W) { if (v != null) o.font = withW(o.font, v); }
   else {
     const ov = ((state.wOver[W] ||= {})[k] ||= {});
@@ -189,6 +191,32 @@ export function armConfirm(btn, text, run) {
   btn.armT = setTimeout(disarm, 3000);
 }
 /* 清除所有字重的单独调整 */
+/* 「各字重」每行末尾的菜单：给这个字重换字体、恢复这个字重的设定 */
+let wMenuW = 0, wMenuBtn = null;
+$('#wMatrix').addEventListener('click', e => {
+  const b = e.target.closest('[data-wmenu]'); if (!b) return;
+  wMenuW = +b.dataset.wmenu; wMenuBtn = b;
+  const keys = wKeys().filter(k => { const o = objByKey(k); return !o.follow && o.font; });
+  $('#wRowMenu').innerHTML = keys.map(k => `<button type="button" class="mm-item" role="menuitem" data-wm-pick="${esc(k)}">${esc(T('wMenuPick', { c: keyName(k) }))}</button>`).join('') +
+    (wRowAdjusted(wMenuW) ? `<button type="button" class="mm-item" role="menuitem" data-wm-reset>${esc(T('wMenuReset', { w: wMenuW }))}</button>` : '');
+}, true);
+$('#wRowMenu').addEventListener('toggle', e => {
+  if (e.newState !== 'open' || !wMenuBtn) return;
+  const m = $('#wRowMenu'), r = wMenuBtn.getBoundingClientRect();      // 右边和按钮对齐
+  m.style.left = Math.max(8, r.right - m.offsetWidth) + 'px';
+  m.style.top = (r.bottom + 4 + m.offsetHeight > innerHeight ? Math.max(8, r.top - m.offsetHeight - 4) : r.bottom + 4) + 'px';
+});
+$('#wRowMenu').addEventListener('click', e => {
+  const b = e.target.closest('.mm-item'); if (!b) return;
+  $('#wRowMenu').hidePopover();
+  if (b.dataset.wmPick) openPicker(keyTarget(b.dataset.wmPick), wMenuW);
+  else if (b.hasAttribute('data-wm-reset')) {
+    delete state.wOver[wMenuW];
+    for (const k of Object.keys(state.weightNames)) if (k.endsWith('|' + wMenuW)) delete state.weightNames[k];
+    changed({ fonts: true });
+    toast(T('tWRowReset', { w: wMenuW }));
+  }
+});
 $('#wReset').addEventListener('click', e => armConfirm(e.currentTarget, T('wResetConfirm'), () => {
   state.wOver = {}; state.weightNames = {};
   changed({ fonts: true });
@@ -1157,9 +1185,9 @@ export function openPicker(t, W = BASE_W) {      // W：从「各字重」的某
   picker.querySelector(`[name="pkScope"][value="${pickW ? 'w' : 'all'}"]`).checked = true;      // 从某个字重打开：默认只换这个字重
   /* Google Fonts：平时选具体粗细；按字重指定时第一项是「自动」，字体名固定 */
   let wOpts = WEIGHTS.map(w => `<option value="${w}">${w}</option>`).join('');
-  if (pickW && o.font.kind === 'google') {
+  if (pickW && o.font.kind === 'google') {      // 推算的那一档用值 0（不单独设定），其他只列这个字体真有的字重
     const autoF = fontAtWeight(o.font, W), auto = sources.get(fontKey(autoF))?.actualWeight || autoF.weight;
-    wOpts = `<option value="0">${esc(T('wAuto', { w: auto }))}</option>` + wOpts;
+    wOpts = (gfWeights(o.font.family) || WEIGHTS).map(w => w === auto ? `<option value="0">${w} · ${esc(T('wAutoTag'))}</option>` : `<option value="${w}">${w}</option>`).join('');
   }
   $('#gfWeight').innerHTML = wOpts;
   $('#gfFamily').value = ovf?.kind === 'google' ? ovf.family : pickW ? (o.font.kind === 'google' ? o.font.family : '') : cur?.kind === 'google' ? cur.family : '';

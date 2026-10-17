@@ -43,15 +43,21 @@ def build(d):
         if any(s in f.get('subsets', []) for s in CJK):
             style[style_of(f)].append(f['family'])
     style = {k: ','.join(v) for k, v in style.items()}
+    # 没有 wght 轴的字体族：实际有哪几档正体字重（100 的倍数写成一位数字，例如 "47" = 400、700）
+    weights = {f['family']: ''.join(sorted({str(int(k) // 100) for k in f.get('fonts', {}) if k.isdigit() and int(k) % 100 == 0}))
+               for f in fams if not any(a['tag'] == 'wght' for a in f.get('axes', []))}
+    weights = {k: v for k, v in weights.items() if v}
     j = lambda o: json.dumps(o, ensure_ascii=False, separators=(',', ':'))
     month = datetime.date.today().strftime('%Y-%m')
     return (f"/* Google Fonts 的元数据（{month} 取自 fonts.google.com/metadata/fonts；这个接口不允许网页直接读取，所以内置一份。由 tools/gfmeta.py 生成，不要手改）：\n"
             "   GF_AXES：可变字体的轴「标签 最小 最大 默认」；GF_ITALIC：有斜体的字体族；AXIS_NAMES：轴的英文名。没收录的字体族照旧在线检测 wght 轴。\n"
-            "   GF_STYLE：中日韩字体的风格（serif = 宋体 / 明朝，sans = 黑体 / ゴシック，other = 展示、手写、等宽），逗号分隔 */\n"
+            "   GF_STYLE：中日韩字体的风格（serif = 宋体 / 明朝，sans = 黑体 / ゴシック，other = 展示、手写、等宽），逗号分隔\n"
+            "   GF_WEIGHTS：没有 wght 轴的字体族有哪几档正体字重，每档写成字重 / 100 的一位数字 */\n"
             f"export const GF_AXES = {j(axes)};\n"
             f"export const GF_ITALIC = new Set({j('|'.join(italic))}.split('|'));\n"
             f"export const AXIS_NAMES = {j(names)};\n"
-            f"export const GF_STYLE = {j(style)};\n")
+            f"export const GF_STYLE = {j(style)};\n"
+            f"export const GF_WEIGHTS = {j(weights)};\n")
 
 
 if __name__ == '__main__':

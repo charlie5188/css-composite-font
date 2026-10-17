@@ -1,6 +1,6 @@
 import { $, T, UI, debounce, lsGet, lsSet, root, sleep, tr } from './i18n.js';
 import { CLASSES, EFF, classOf, fmtRanges, inRanges, intersect, parseChars, parseRanges, rebuildClassRanges, union } from './unicode.js';
-import { AXIS_NAMES, GF_AXES, GF_ITALIC, GF_STYLE } from './gfmeta.js';
+import { AXIS_NAMES, GF_AXES, GF_ITALIC, GF_STYLE, GF_WEIGHTS } from './gfmeta.js';
 import { checkMissSoon, drawSpecimen, fitGlyphs, refreshVAutospace, renderChipsStatus, renderEditor } from './render.js';
 import { renderExport, renderExportSoon } from './export.js';
 import { renderPresetCardsSoon } from './ui.js';
@@ -783,6 +783,8 @@ export function guessPath(file, W) {
   const mm = stem.match(WORD_RE);
   return (mm ? stem.slice(0, -mm[0].length) + mm[1] : stem + '-') + WEIGHT_WORDS[W][0] + ext;
 }
+/* Google 静态字体实际有的字重（元数据里没有的字体族返回 null，当作 100–900 都可能有） */
+export const gfWeights = fam => GF_WEIGHTS[fam] ? [...GF_WEIGHTS[fam]].map(d => d * 100) : null;
 export function fontAtWeight(f, W, live = false) {
   if (!f || W === BASE_W) return f;
   if (f.kind === 'google') return G(f.family, Math.min(900, Math.max(100, f.weight + (W - BASE_W))));

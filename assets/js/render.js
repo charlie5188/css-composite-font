@@ -1,6 +1,6 @@
 import { $, T, UI, debounce, esc, root, tr } from './i18n.js';
 import { CLASSES, CLS, GROUPS, classOf, fmtRanges, inRanges, isMoved } from './unicode.js';
-import { BASE_W, EA_FEAT, autoNames, clampW, stepSpan, NUM_FEAT, NUM_TAGS, SAMPLES, TYPO, WEIGHTS, anyShift, axisLabel, axisOf, finalFont, fontAtWeight, fontKey, fontLabel, inheritedShift, inheritedSize, liveFamily, numLabel, numTags, objByKey, ownFontAt, ownSize, ownerOf, resolveCls, resolveCustom, settingOf, sources, srcError, state, typoValue, usedFont, vfAxisNow } from './core.js';
+import { BASE_W, EA_FEAT, autoNames, clampW, stepSpan, NUM_FEAT, NUM_TAGS, SAMPLES, TYPO, WEIGHTS, anyShift, axisLabel, axisOf, finalFont, fontAtWeight, fontKey, gfWeights, weightChain, fontLabel, inheritedShift, inheritedSize, liveFamily, numLabel, numTags, objByKey, ownFontAt, ownSize, ownerOf, resolveCls, resolveCustom, settingOf, sources, srcError, state, typoValue, usedFont, vfAxisNow } from './core.js';
 import { loadBlank, missingIn, renderTypoStatus, syncViewTypo } from './ui.js';
 /* ================= 渲染：字符类别表（对应 InDesign 的复合字体对话框） ================= */
 export const GLYPH = { han: '永', latin: 'Ag', digit: '01', kana: 'あ', bopo: 'ㄅ', punct: '」、', symbol: '※', shared: '“…' };
@@ -181,21 +181,29 @@ export function wInfo(k, o, W) {
   }
   if (eff.kind === 'google') {
     const autoF = fontAtWeight(o.font, W), val = base ? eff.weight : ov?.font ? ov.font.weight : (ov?.weight || 0);
-    return { kind: 'gsel', ov, val, set: !base && !!val, auto: sources.get(fontKey(autoF))?.actualWeight || autoF.weight, noAuto: base || !!ov?.font };
+    const avail = gfWeights(eff.family);
+    /* 推算值：字体加载完以后用实际取到的字重；还没加载时按加载的规则（向 400 方向找最近的、这个字体有的字重）先算出来 */
+    const auto = sources.get(fontKey(autoF))?.actualWeight || (avail && weightChain(Math.round(autoF.weight / 100) * 100).find(w => avail.includes(w))) || autoF.weight;
+    return { kind: 'gsel', ov, val, set: !base && !!val, auto, noAuto: base || !!ov?.font, avail: avail || WEIGHTS };
   }
   const f = base ? o.font : ov?.font || fontAtWeight(o.font, W), set = !base && (!!ov?.font || (fontKey(o.font) + '|' + W) in state.weightNames);
   return { kind: 'name', ov, name: shortName(f), set, guess: !base && !set && o.font.kind === 'local' && autoNames.get(fontKey(o.font) + '|' + W)?.status === 'guess' };
 }
+/* Google 静态字体的粗细：只列这个字体真有的字重。和「大小」一样，灰色是推算的值，蓝色是单独设定的；选回推算的那一档就是不单独设定 */
+function wOptions(i) {
+  const cur = i.val || i.auto, list = [...new Set([...i.avail, cur])].sort((a, b) => a - b);
+  return list.map(w => `<option value="${w}"${w === cur ? ' selected' : ''}>${w}</option>`).join('');
+}
+const wSelTip = i => i.noAuto ? '' : T(i.set ? 'wSetTip' : 'wAutoTip', { w: i.auto });
+const wSelect = (i, d, aria, swap) => `<select class="msel cell-in cell-num${i.set ? ' set' : ''}" data-act="wsel" ${d}${i.noAuto ? '' : ` data-auto="${i.auto}" data-tip="${esc(wSelTip(i))}"`} aria-label="${aria}"${swap}>${wOptions(i)}</select>`;
 export function wCell(k, o, W) {
   const base = W === BASE_W, i = wInfo(k, o, W), d = `data-k="${esc(k)}" data-w="${W}"`, aria = esc(T('wWeightAria', { c: keyName(k), w: W }));
   if (i.kind === 'name') return `<span class="wm-c"><button type="button" class="wm-name cell-in cell-num${i.set ? ' set' : ''}${i.guess ? ' guess' : ''}" data-act="wpick" ${d} title="${esc(T('wNameTip', { w: W, name: i.name }) + (i.guess ? ' ' + T('wNameGuess') : ''))}">${esc(nameTail(shortName(o.font), i.name))}</button></span>`;
   const swap = i.ov?.font ? ` title="${esc(T('wSwapped', { font: fontLabel(i.ov.font) }))}"` : '';
-  const pick = base ? '' : `<button type="button" class="btn-icon mini wm-pick" data-act="wpick" ${d} title="${esc(T('wPickTip', { w: W }))}" aria-label="${esc(T('wPickTip', { w: W }))}">⋯</button>`;
   const ctl = i.kind === 'vf'
     ? `<input class="mw cell-in cell-num${i.set ? ' set' : ''}" type="number" data-act="wnum" ${d} min="${i.axis[0]}" max="${i.axis[1]}" step="10" value="${i.val ?? ''}" placeholder="${i.auto}" aria-label="${aria}"${swap}>`
-    : `<select class="msel cell-in cell-num${i.set ? ' set' : ''}" data-act="wsel" ${d} aria-label="${aria}"${swap}>` + (i.noAuto ? '' : `<option value="0">${esc(T('wAuto', { w: i.auto }))}</option>`) +
-      WEIGHTS.map(w => `<option value="${w}"${i.val === w ? ' selected' : ''}>${w}</option>`).join('') + '</select>';
-  return `<span class="wm-c${i.ov?.font ? ' swapped' : ''}">${ctl}${pick}</span>`;
+    : wSelect(i, d, aria, swap);
+  return `<span class="wm-c${i.ov?.font ? ' swapped' : ''}">${ctl}</span>`;
 }
 export function sizeCell(k, W) {
   const own = ownSize(k, W);
@@ -207,19 +215,20 @@ export function renderWeights() {
   const cols = wKeys().map(k => { const o = objByKey(k), own = !o.follow && !!o.font, vf = own && Array.isArray(vfAxisNow(o.font)); return { k, o, vf, w: own && !(cont && vf) }; });
   const rows = cont ? WEIGHTS.filter(W => stepSpan(W)) : WEIGHTS;
   const n = cols.reduce((a, c) => a + (c.w ? 2 : 1), 0), lead = cont ? 1 : 2;      // 前面几列：分档时是「导出」勾选 + 字重，连续时只有字重
-  box.style.setProperty('--wm-cols', `${cont ? '' : 'max-content '}${cont ? 58 : 70}px repeat(${n}, minmax(52px, 1fr))`);
+  box.style.setProperty('--wm-cols', `${cont ? '' : 'max-content '}${cont ? 58 : 70}px repeat(${n}, minmax(52px, 1fr)) 28px`);      // 最后一列：这一行的操作菜单
   /* 重画以后把焦点放回原来那一格（勾选导出、字体加载完重画时） */
   const act = box.contains(document.activeElement) ? document.activeElement : null;
   const keep = act && (act.classList[0] ? '.' + CSS.escape(act.classList[0]) : act.tagName.toLowerCase()) + ['k', 'w', 'wx', 'pw'].filter(a => act.dataset[a] != null).map(a => `[data-${a}="${CSS.escape(act.dataset[a])}"]`).join('');
-  const clsHead = `<div class="wm-row wm-cls">${'<span></span>'.repeat(lead)}${cols.map(c => `<span style="grid-column:span ${c.w ? 2 : 1};--c:var(--c-${c.k[0] === '#' ? 'custom' : c.k})"><i class="dot"></i>${esc(keyName(c.k))}</span>`).join('')}</div>`;
-  const subHead = `<div class="wm-row wm-sub">${cont ? '' : `<span class="wm-xh">${esc(T('wColExport'))}</span>`}<span class="wm-wh">${esc(T('wColWeight'))}</span>${cols.map(c => (c.w ? `<span${c.vf ? ` title="VF ${vfAxisNow(c.o.font).join('–')}"` : ''}>${esc(T('wColW'))}</span>` : '') + `<span>${esc(T('colSize'))}</span>`).join('')}</div>`;
+  const clsHead = `<div class="wm-row wm-cls">${'<span></span>'.repeat(lead)}${cols.map(c => `<span style="grid-column:span ${c.w ? 2 : 1};--c:var(--c-${c.k[0] === '#' ? 'custom' : c.k})"><i class="dot"></i>${esc(keyName(c.k))}</span>`).join('')}<span></span></div>`;
+  const subHead = `<div class="wm-row wm-sub">${cont ? '' : `<span class="wm-xh">${esc(T('wColExport'))}</span>`}<span class="wm-wh">${esc(T('wColWeight'))}</span>${cols.map(c => (c.w ? `<span${c.vf ? ` title="VF ${vfAxisNow(c.o.font).join('–')}"` : ''}>${esc(T('wColW'))}</span>` : '') + `<span>${esc(T('colSize'))}</span>`).join('')}<span></span></div>`;
   const body = rows.map(W => {
     const on = cont || state.weights.includes(W), cur = on && W === PW;
     const tag = W === BASE_W ? T('wBase') : W === 700 ? T('w700') : '';
     const lab = `${W}${tag ? `<small>${esc(tag)}</small>` : ''}`;
     const cells = on ? cols.map(c => (c.w ? wCell(c.k, c.o, W) : '') + sizeCell(c.k, W)).join('') : '<span></span>'.repeat(n);
+    const menu = on && W !== BASE_W ? `<button type="button" class="btn-icon sm wm-more" data-wmenu="${W}" popovertarget="wRowMenu" aria-haspopup="menu" aria-label="${esc(T('wRowMenu', { w: W }))}" title="${esc(T('wRowMenu', { w: W }))}"><svg class="ic" aria-hidden="true"><use href="#i-dots"/></svg></button>` : '';
     return `<div class="wm-row${on ? '' : ' off'}${cur ? ' cur' : ''}" data-row="${W}"${cur ? ' aria-current="true"' : ''}>
-      ${cont ? '' : `<span class="wm-x"><input type="checkbox" data-wx="${W}"${on ? ' checked' : ''} aria-label="${esc(T('wExportAria', { w: W }))}" title="${esc(T('wExportAria', { w: W }))}"></span>`}<span class="wm-w">${on ? `<button type="button" class="wm-pw" data-pw="${W}" title="${esc(T('wPreviewTip', { w: W }))}">${lab}</button>` : `<span class="wm-pw">${lab}</span>`}</span>${cells}
+      ${cont ? '' : `<span class="wm-x"><input type="checkbox" data-wx="${W}"${on ? ' checked' : ''} aria-label="${esc(T('wExportAria', { w: W }))}" title="${esc(T('wExportAria', { w: W }))}"></span>`}<span class="wm-w">${on ? `<button type="button" class="wm-pw" data-pw="${W}" title="${esc(T('wPreviewTip', { w: W }))}">${lab}</button>` : `<span class="wm-pw">${lab}</span>`}</span>${cells}<span class="wm-act">${menu}</span>
     </div>`;
   }).join('');
   box.innerHTML = clsHead + subHead + body;
@@ -250,8 +259,9 @@ export function syncMatrix() {
       el.placeholder = i.auto; if (el !== act) el.value = i.val ?? '';
       el.classList.toggle('set', i.set);
     } else if (el.classList.contains('msel') && i.kind === 'gsel') {
-      const a = el.querySelector('option[value="0"]'); if (a) a.textContent = T('wAuto', { w: i.auto });
-      el.value = String(i.val); el.classList.toggle('set', i.set);
+      el.innerHTML = wOptions(i);      // 推算的那一档可能变了（字体加载完才知道实际字重）
+      if (i.noAuto) { delete el.dataset.auto; delete el.dataset.tip; } else { el.dataset.auto = i.auto; el.dataset.tip = wSelTip(i); }
+      el.classList.toggle('set', i.set);
     }
   });
   $('#wReset').hidden = !wAnyAdjusted();

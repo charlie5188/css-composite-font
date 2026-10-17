@@ -136,6 +136,8 @@ select{-webkit-appearance:none;appearance:none;padding-right:30px;background-ima
 select.cell-in{padding-right:18px;background-position:right 3px center;background-size:10px 10px}
 .cell-in.own{font-weight:500}
 .cell-in.set{color:var(--accent);font-weight:500}
+select.cell-in[data-auto]:not(.set){color:var(--faint)}      /* 下拉框里推算的值：和输入框的占位文字一样是灰色 */
+select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 /* 浮层：菜单、说明、分组开关共用一个外观。.menu 是一列菜单项（.mm-item）；.mm-radio / .mm-check 选中时前面打勾 */
 .pop{position:fixed;inset:auto;margin:0;border:1px solid var(--ink);border-radius:var(--r);background:var(--sheet);color:var(--ink);box-shadow:var(--shadow-pop)}
 .menu{padding:6px;width:min(260px,calc(100vw - 24px))}
@@ -531,8 +533,10 @@ button.wm-pw:hover{text-decoration:underline;text-underline-offset:3px}
 .cell-num[type=number]{-moz-appearance:textfield;appearance:textfield}
 .cell-num::-webkit-inner-spin-button,.cell-num::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 /* 单独换字体：悬停这一行时出现在格子左边 */
-.wm-pick{position:absolute;left:-2px;top:50%;transform:translateY(-50%);line-height:1;opacity:0}
-.wm-row:hover .wm-pick,.wm-pick:focus-visible,.wm-c.swapped .wm-pick{opacity:1}
+.wm-act{display:flex;justify-content:center}
+.wm-more{opacity:0}      /* 行末菜单：鼠标移到这一行、或键盘移到它上面时才显示 */
+.wm-row:hover .wm-more,.wm-more:focus-visible,.wm-more:popover-open,.wm-more[aria-expanded="true"]{opacity:1}
+@media (hover:none){.wm-more{opacity:1}}
 /* 字体页签最后的「字体特性」：标题和例外字符一样，后面一句说明不分字重 */
 #featRows{padding-top:0}
 .typo-changed{font-size:var(--fs-s);color:var(--accent);white-space:nowrap}

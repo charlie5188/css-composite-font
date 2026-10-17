@@ -194,3 +194,18 @@ test('(i)：鼠标停一会儿就打开说明，移开关掉；悬停后再点�
   await page.waitForTimeout(500);
   await expect(pop).toBeVisible();
 });
+
+test('各字重：静态字体只列有的字重，行末菜单能换字体、恢复这一行', async ({ page }) => {
+  await open(page);
+  await pick(page, 'mincho-jp');      // Shippori Mincho：只有 400–800
+  await page.click('#ltabFonts');
+  const sel = () => page.locator('#wMatrix [data-row="200"] select.msel').first();
+  await expect.poll(async () => sel().evaluate(s => [...s.options].map(o => o.value).join())).toBe('400,500,600,700,800');
+  await sel().selectOption('700');
+  await expect(sel()).toHaveClass(/\bset\b/);
+  await page.locator('#wMatrix [data-row="200"]').hover();
+  await page.click('#wMatrix [data-wmenu="200"]');
+  await expect(page.locator('#wRowMenu')).toContainText('换字体');
+  await page.click('#wRowMenu [data-wm-reset]');
+  await expect(sel()).not.toHaveClass(/\bset\b/);
+});
