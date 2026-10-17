@@ -75,7 +75,7 @@ assets/js/gfmeta.js      Google Fonts metadata: axes, italics, CJK font styles (
 tools/                   rehash.py, serve.py, check-i18n.mjs, bake.py, gfmeta.py
 tests/py/                pytest for bake_core.py, fixtures in tests/fixtures (small OFL fonts)
 tests/e2e/               Playwright: CSS snapshots per preset, UI, layout, font-file export, App code (the generated
-                         Swift is compiled and run when swiftc is available, i.e. on macOS)
+                         code is compiled and run when the toolchain is there; see below)
 ```
 
 ## How things fit together
@@ -130,6 +130,17 @@ for a role that already has one; if something is really missing, add it to that 
 - **Conventions:** buttons show hover with a tinted background, fields with a border. A selected card has an ink
   border plus a 1 px inset (`.pcard`, `.ex-kinds`, `.typo-tiles`). Row separators use `--rule` inside tables only; elsewhere hierarchy comes from
   size, weight and spacing (`.sec-title` 18 px > item names 13 px bold > `.label` / grey notes), not divider lines. Base form-element styles are wrapped in `:where()` so a component class always wins.
+
+## App code checks
+
+`tests/e2e/app-code.spec.js` always checks that the generated range table matches the web export. When a toolchain
+is installed it also compiles the generated code and splits a sample string with it; missing toolchains are skipped
+(CI has none of them, so run this locally after changing `appcode.js`):
+
+- **Swift:** `swiftc` (macOS, Xcode command line tools). Builds the AppKit branch.
+- **Kotlin:** `brew install kotlin` plus the Android API as a jar: Robolectric's `android-all` from Maven Central,
+  saved as `~/.cache/cf-android/android-all-14.jar` (or set `CF_ANDROID_JAR`). Compiled with `-Werror`.
+- **Dart:** `brew install --cask flutter`. `flutter analyze` must report nothing, then `flutter test` builds a `TextSpan`.
 
 ## Gotchas that have bitten before
 

@@ -279,7 +279,6 @@ export function buildDart(m = appModel()) {
 // Declare each family in pubspec.yaml (fonts:) with the same name as below.
 // Flutter text spans can't move their baseline, so \`shift\` is listed but not applied.
 
-import 'dart:ui' show FontVariation;
 import 'package:flutter/painting.dart';
 
 class ${m.name} {
