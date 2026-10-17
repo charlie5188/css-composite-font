@@ -193,6 +193,7 @@ export default {
   resetNote: "フォント・組版・校正テキストをすべて初期のプリセットに戻します。",
   presetMine: "マイプリセット",
   pfAria: "プリセットを絞り込む",
+  pfTitle: "絞り込み",
   pfSc: "簡体字",
   pfTc: "繁体字",
   pfJp: "日本語",

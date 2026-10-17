@@ -684,10 +684,11 @@ export function inferMeta(st) {
   return { region, style: styleOfFont(han), src: own.length && own.every(f => f.kind === 'google') ? 'google' : 'local' };
 }
 export function renderPresetFilter(shown, total) {
-  const pf = state.view.pfilter || {}, on = PF_GROUPS.some(([g]) => pf[g]?.length);
-  $('#presetFilter').innerHTML = PF_GROUPS.map(([g, opts]) => `<span class="chips tags">${opts.map(([v, k]) =>
-    `<button type="button" data-pf="${g}:${v}" aria-pressed="${!!pf[g]?.includes(v)}"${T(k + 'Tip') !== k + 'Tip' ? ` title="${esc(T(k + 'Tip'))}"` : ''}>${esc(T(k))}</button>`).join('')}</span>`).join('') +
-    (on ? `<span class="pf-end"><span class="mono">${shown} / ${total}</span><button type="button" class="btn-text" data-pf="clear">${esc(T('pfClear'))}</button></span>` : '');
+  const pf = state.view.pfilter || {}, n = PF_GROUPS.reduce((k, [g]) => k + (pf[g]?.length || 0), 0);
+  $('#pfCount').textContent = n || '';      // 按钮上：选了几项
+  $('#pfMenu').innerHTML = PF_GROUPS.map(([g, opts]) => `<p class="mm-lab">${esc(T({ region: 'pfRegion', style: 'pfStyle', src: 'pfSource' }[g]))}</p>` + opts.map(([v, k]) =>
+    `<button type="button" class="mm-item mm-check" data-pf="${g}:${v}" aria-pressed="${!!pf[g]?.includes(v)}"${T(k + 'Tip') !== k + 'Tip' ? ` title="${esc(T(k + 'Tip'))}"` : ''}>${esc(T(k))}</button>`).join('')).join('<hr>') +
+    (n ? `<hr><div class="pf-end"><button type="button" class="mm-item" data-pf="clear">${esc(T('pfClear'))}</button><span class="mono">${shown} / ${total}</span></div>` : '');
 }
 /* 「我的预设」排在最前面，后面是内置的 */
 export function renderPresetCards() {
@@ -708,6 +709,7 @@ export function renderPresetCards() {
 /* 点筛选按钮：组内加上 / 去掉这一项；「清除筛选」在筛选条和空结果里都有 */
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-pf]'); if (!b || !b.closest('#panePresets')) return;
+  const focus = b.dataset.pf;      // 菜单重画以后，焦点放回刚点的那一项
   const v = state.view;
   if (b.dataset.pf === 'clear') delete v.pfilter;
   else {
@@ -717,6 +719,13 @@ document.addEventListener('click', e => {
     if (!Object.keys(pf).length) delete v.pfilter;
   }
   renderPresetCards(); saveState();
+  $(`#pfMenu [data-pf="${focus}"]`)?.focus();
+});
+/* 筛选菜单：挂在按钮下面，右边对齐 */
+$('#pfMenu').addEventListener('toggle', e => {
+  if (e.newState !== 'open') return;
+  const r = $('#pfBtn').getBoundingClientRect(), pop = e.currentTarget;
+  pop.style.top = r.bottom + 6 + 'px'; pop.style.left = Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8)) + 'px';
 });
 export const renderPresetCardsSoon = debounce(renderPresetCards, 120);
 export const hasFileFont = () => [...CLASSES.map(c => state.classes[c.id].font), ...state.custom.map(c => c.font)].some(f => f && f.kind === 'file');

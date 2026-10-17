@@ -193,6 +193,7 @@ export default {
   resetNote: "字体、排版和校样文字都回到默认预设。",
   presetMine: "我的预设",
   pfAria: "筛选预设",
+  pfTitle: "筛选",
   pfSc: "简体",
   pfTc: "繁体",
   pfJp: "日文",

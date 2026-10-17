@@ -14,13 +14,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      # 生成字体文件的测试要下载 Pyodide 和源字体（约 1 分钟），只在字体生成相关的文件改了时才跑
+      - name: Decide whether the font-file test is needed
+        id: scope
+        run: |
+          base="${{ github.event.before }}"
+          if [ -z "$base" ] || [ "$base" = 0000000000000000000000000000000000000000 ] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then echo "net=1" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if git diff --name-only "$base" HEAD | grep -qE '^(assets/py/|assets/js/(bake|core|export|unicode)\.js|tests/e2e/(font-file|helpers)|tests/fixtures/|package|playwright|\.github/)'; then echo "net=1"; else echo "net=0"; fi >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@v4
         with: { node-version: '20' }
       - run: npm ci
       - run: python3 tools/rehash.py . --check
       - run: node tools/check-i18n.mjs
       - run: npx playwright install --with-deps chromium
-      - run: npx playwright test
+      - run: npx playwright test ${{ steps.scope.outputs.net == '0' && '--grep-invert @net' || '' }}
       - uses: actions/upload-artifact@v4
         if: failure()
         with: { name: test-results, path: test-results }

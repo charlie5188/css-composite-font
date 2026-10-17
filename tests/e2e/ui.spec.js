@@ -151,6 +151,7 @@ test('预设筛选：组内任选、组间同时满足，没有结果时可以�
   await open(page);
   const cards = page.locator('#presetCards .pcard');
   const all = await cards.count();
+  await page.click('#pfBtn');      // 筛选在菜单里
   await page.click('[data-pf="style:serif"]');
   await page.click('[data-pf="region:jp"]');
   await expect(cards).toHaveCount(1);      // 明朝 × Cormorant
@@ -172,6 +173,7 @@ test('保存预设用对话框：地区和风格预先推算好、可以改，�
   await page.click('#saveStyle [data-v="other"]');
   await page.click('#saveOk');
   await expect(page.locator('#saveDlg')).toBeHidden();
+  await page.click('#pfBtn');
   await page.click('[data-pf="style:other"]');
   await expect(page.locator('#presetCards .pname')).toHaveText(['测试']);
 });

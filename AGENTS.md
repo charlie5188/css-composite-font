@@ -42,7 +42,9 @@ otherwise Playwright's Chromium.
 ## Definition of done
 
 1. `npm run rehash` if you touched `assets/` (forgetting it serves stale modules from cache; `npm run check` catches it).
-2. `npm run verify` passes. Snapshot diffs in `tests/e2e/snapshots/` are real output changes: update them only
+2. `npm run verify` passes. For changes that can't affect font baking (styles, UI text, layout), `npm run check` and
+   `npm run test:offline` are enough locally; CI skips the font-file test too unless baking-related files changed.
+   Snapshot diffs in `tests/e2e/snapshots/` are real output changes: update them only
    when the change to the exported CSS/JS is intended, and say so in the commit message.
 3. New interface text exists in all three `assets/js/i18n/*.js` files with the same `{placeholders}`.
 4. Behaviour users can see is reflected where it is explained: the About dialog (`index.html`, three language
@@ -122,7 +124,7 @@ for a role that already has one; if something is really missing, add it to that 
 - **Other components:** `.seg` (segmented choice), `.chips` (multi-select pills; `.chips.tags` for text labels such as filters), `.sw` (switch), `.cell-in` +
   `.cell-num` (inputs inside tables; `.own` = set in the base settings, `.set` = set for one weight), `.pop` (popover
   surface) with `.menu` / `.mm-item` / `.mm-radio` / `.mm-check`, `.sec-head` + `.label` + `.sec-acts` (section
-  heading), `.callout` (yellow notice), `.dlg-form` + `.dlg-act` (small dialog: title, fields, buttons bottom right), `.info` (the (i) button that opens `#infoPop`), tooltips through `title`.
+  heading), `.callout` (yellow notice), `.dlg-form` + `.dlg-act` (small dialog: title, fields, buttons bottom right), `.badge` (count pill), `.info` (the (i) button that opens `#infoPop`), tooltips through `title`.
 - **Conventions:** buttons show hover with a tinted background, fields with a border. A selected card has an ink
   border plus a 1 px inset (`.pcard`, `.ex-kinds`, `.typo-tiles`). Row separators use `--rule`; table headers and
   section edges use `--line`. Base form-element styles are wrapped in `:where()` so a component class always wins.
