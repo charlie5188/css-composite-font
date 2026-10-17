@@ -381,14 +381,26 @@ export function renderNumHint() {
   /* 卡片：这个字体没有的样式淡一些（排出来和默认一样），鼠标停留时说明 */
   document.querySelectorAll('#featRows [data-typo="num"], #featRows [data-typo="zero"]').forEach(b => {
     const lack = fx ? b.dataset.v.split(' ').map(v => NUM_FEAT[v]).filter(t => t && numWhy(fx, t) === 'none') : [];
-    b.classList.toggle('lack', !!lack.length);
-    b.title = b.dataset.v + (lack.length ? ' — ' + T('numLacks', { font: shortName(f), list: lack.map(numLabel).join(T('joiner')) }) : '');
+    markLack(b, !!lack.length);
+    b.title = b.dataset.v + (lack.length ? ' — ' + T('numLacks', { font: shortName(f), list: lack.map(numLabel).join(T('joiner')) }).trim() : '');
   });
+  for (const k of ['num', 'zero']) lackNote(k, f, f?.kind === 'google' ? T('numGoogleShort') : '');
   if (!fx) return;
   const font = shortName(f), none = numTags().filter(t => numWhy(fx, t) === 'none');
   el.textContent = T('numDefIs', { font, list: [fx.def.fig, fx.def.spc].map(numLabel).join(T('joiner')) }) +
-    (none.length ? T('numLacks', { font, list: none.map(numLabel).join(T('joiner')) }) + (f.kind === 'google' ? T('numGoogleShort') : '') : '');
-  el.classList.toggle('warn', !!none.length);
+    (none.length ? T('numLacks', { font, list: none.map(numLabel).join(T('joiner')) }) + (f.kind === 'google' && !document.querySelector('.typo-lack[data-key="num"]:not([hidden]), .typo-lack[data-key="zero"]:not([hidden])') ? T('numGoogleShort') : '') : '');      // 警告条里已经说了 Google 的原因时不重复
+}
+/* 特性卡片：当前字体里没有这个特性时不显示字样（排出来和默认一样，反而误导），只写「字体里没有」；仍然可以选 */
+function markLack(b, on) {
+  b.classList.toggle('lack', on);
+  const s = b.querySelector('.tt-s'); if (s) s.dataset.lack = on ? T('lackTile') : '';
+}
+/* 选中的值在当前字体里没有：卡片描边改成警告色，下面出警告条 */
+function lackNote(key, f, extra) {
+  const el = $(`.typo-lack[data-key="${key}"]`); if (!el) return;
+  const b = document.querySelector(`#featRows [data-typo="${key}"][aria-checked="true"].lack`);
+  el.hidden = !b;
+  if (b) el.textContent = T('lackSel', { font: shortName(f), v: b.querySelector('.tt-l')?.firstChild?.textContent || b.dataset.v }) + extra;
 }
 /* 字形标准、假名标点宽度的卡片：这个字体里没有效果的选项淡一些；字形标准一个都没有时在下面说明 */
 export const EA_SAMPLE = { eaVar: '辻葛飴鴎国', eaWidth: 'イリ「ア」ﾃｽ' };
@@ -402,20 +414,21 @@ export function renderEaMarks() {
     const jisAny = fx[k] && ['jp78', 'jp83', 'jp90', 'jp04'].some(t => fx[k][t]);
     document.querySelectorAll(`#featRows [data-typo="${k}"]`).forEach(b => {
       const tag = EA_FEAT[b.dataset.v], none = !!(tag && fx[k] && !fx[k][tag]), isDef = none && /^jp/.test(tag) && jisAny;
-      b.classList.toggle('lack', none && !isDef);
+      markLack(b, none && !isDef);
       b.title = b.dataset.v + (none ? ' — ' + T(isDef ? 'eaDefault' : 'eaLack', { font: shortName(fonts[k]) }) : '');
     });
+    lackNote(k, fonts[k], fonts[k]?.kind === 'google' ? T('eaGoogle') : '');
   }
   /* 宽度：比例宽、全角都没有时，在卡片下面说一句（卡片看起来都一样，不是没生效） */
   const wh = $('#eaWHint');
   if (wh) {
     const noneW = fx.eaWidth && !['pwid', 'fwid'].some(t => fx.eaWidth[t]);
-    wh.hidden = !noneW;
+    wh.hidden = !noneW || !$('.typo-lack[data-key="eaWidth"]').hidden;      // 选中的值没有时由警告条说明，不重复
     if (noneW) wh.textContent = T('eaWNone', { font: shortName(fonts.eaWidth) }) + (fonts.eaWidth.kind === 'google' ? T('eaGoogle') : '');
   }
   const el = $('#eaHint'); if (!el) return;
   const none = fx.eaVar && !['jp78', 'jp83', 'jp90', 'jp04', 'smpl', 'trad'].some(t => fx.eaVar[t]);
-  el.hidden = !none;
+  el.hidden = !none || !$('.typo-lack[data-key="eaVar"]').hidden;
   if (none) el.textContent = T('eaNone', { font: shortName(fonts.eaVar) }) + (fonts.eaVar.kind === 'google' ? T('eaGoogle') : '');
 }
 /* 改了某一格后，只更新其他格的继承值，不重绘表格（保持输入焦点） */

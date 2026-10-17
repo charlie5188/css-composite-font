@@ -586,7 +586,7 @@ export function renderTypoRows() {
     return `<div class="typo-row${t.tiles ? ' tiles' : ''}">
       <span class="typo-name lab-i">${t.tiles ? `<b id="tyl-${t.key}">${esc(tr(t.label))}</b>` : `<label for="ty-${t.key}"><b>${esc(tr(t.label))}</b></label>`}${infoButton('typo:' + t.key)}</span>
       ${ctl}
-      <p class="typo-unsup" data-key="${t.key}" hidden>${esc(T('supNo'))}</p>${t.hint ? `<p class="typo-note" id="${t.hint}" hidden></p>` : ''}
+      <p class="typo-unsup" data-key="${t.key}" hidden>${esc(T('supNo'))}</p><p class="callout typo-lack" data-key="${t.key}" hidden></p>${t.hint ? `<p class="typo-note" id="${t.hint}" hidden></p>` : ''}
     </div>`;
   };
   const rows = TYPO.filter(t => !t.attr && !isViewTypo(t));

@@ -547,7 +547,10 @@ button.wm-pw:hover{text-decoration:underline;text-underline-offset:3px}
 .tt-l{font-size:var(--fs-xs);line-height:1.35;color:var(--muted)}
 .tt-l small{display:block;font-size:var(--fs-xs);color:var(--faint)}
 .typo-tiles button[aria-checked="true"] .tt-l{color:var(--ink)}
-.typo-tiles button.lack .tt-s{opacity:.4}
+.typo-tiles button.lack .tt-s{position:relative;justify-self:stretch;color:transparent}      /* 字体里没有的特性：不显示字样，只写一句 */
+.typo-tiles button.lack .tt-s::after{content:attr(data-lack);position:absolute;inset:0;display:grid;place-items:center;font:var(--fs-xs)/1.3 var(--ui);letter-spacing:0;color:var(--faint);white-space:normal}
+.typo-tiles button.lack[aria-checked="true"]{border-color:var(--caution);box-shadow:inset 0 0 0 1px var(--caution)}
+.typo-lack{grid-column:1/-1;margin-top:2px}
 .tt-l code{display:block;margin-top:2px;font-family:var(--mono);font-size:var(--fs-xs);color:var(--faint);overflow-wrap:anywhere}
 /* 示意图：灰色，选中时变黑；虚线是版心边缘 */
 .tt-pic{line-height:0;color:var(--faint)}
