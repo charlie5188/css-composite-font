@@ -2,7 +2,7 @@
 
 复合字体工坊 · 複合字型工坊 · 合成フォント工房
 
-Build a composite font the way InDesign does: a separate font, size and baseline for CJK ideographs, kana, punctuation, Latin and digits, tuned for every weight, proofed live, and exported as CSS for the web or as font files for apps that have no composite fonts.
+Build a composite font the way InDesign does: a separate font, size and baseline for CJK ideographs, kana, punctuation, Western text and digits, tuned for every weight, proofed live, and exported as CSS for the web or as font files for apps that have no composite fonts.
 
 **Try it: <https://charlie5188.github.io/css-composite-font/>** The interface is in English, 简体中文, 繁體中文 and 日本語.
 
@@ -10,13 +10,13 @@ Build a composite font the way InDesign does: a separate font, size and baseline
 
 ## Why
 
-A plain `font-family` fallback picks fonts, but it can't make the Latin font a little larger to match the CJK face, decide whether quotes and dashes come from the CJK or the Latin font, or keep the balance right as text gets bolder. This tool does all of that with standard CSS, so it works in every current browser.
+A plain `font-family` fallback picks fonts, but it can't make the Western font a little larger to match the CJK character face, decide whether quotes and dashes come from the CJK or the Western font, or keep the balance right as text gets bolder. This tool does all of that with standard CSS, so it works in every current browser.
 
 ## Highlights
 
-- **Per character class.** CJK ideographs, kana, Latin, digits, punctuation, symbols, shared CJK/Latin punctuation and Zhuyin each get their own font, size and baseline, plus your own exception characters.
+- **Per character class.** CJK ideographs, kana, Western text, digits, full-width punctuation, symbols, punctuation shared by CJK and Western text, and Zhuyin each get their own font, size and baseline, plus your own exception characters.
 - **Weight-aware.** Settings made at 400 carry over to every weight; a weights table shows and tunes size and weight per weight. Variable fonts can take any weight, and a continuous mode lets pages use any `font-weight`.
-- **Auto-adjust.** One click measures the fonts and sets the Latin size for each weight and the baseline so capitals sit centred on the CJK face.
+- **Auto-adjust.** One click measures the fonts and sets the Western size for each weight and the baseline so capitals sit centred on the CJK character face.
 - **Three outputs.** Paste-ready CSS (usually a few KB, the CJK font linked from Google Fonts); TTF / OTF / WOFF2 files baked in the browser for Figma, Keynote, Word and the like; and, experimentally, Swift / Kotlin / Flutter code that applies the same rules in native apps.
 - **Any font.** Google Fonts, installed fonts or uploaded files, with coverage checks and missing glyphs marked in the proof.
 - **Regionally correct.** Checks glyph forms and punctuation position for Simplified, Taiwan, Hong Kong and Japanese text, can scope the CSS to one language, and exports native CJK typography properties such as `text-autospace` and `line-break`.
