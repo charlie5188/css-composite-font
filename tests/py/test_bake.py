@@ -126,6 +126,12 @@ def test_cff_source_keeps_vertical_origin(work, tmp_path):
         assert abs(origin - want) <= 1, ch
 
 
+def test_formats_independent(work):
+    # 只要 OTF：zip 里没有 TTF
+    _, fonts, names = run(work, [job()], ttf=False, otf=True)
+    assert 'CFTest-Regular.otf' in names and not any(n.endswith('.ttf') for n in names)
+
+
 def test_otf_output(work):
     _, fonts, names = run(work, [job()], otf=True)
     assert {'CFTest-Regular.ttf', 'CFTest-Regular.otf', 'README.txt'} <= set(names)

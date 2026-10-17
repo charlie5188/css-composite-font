@@ -1,7 +1,7 @@
 /* 界面文字：日本語。一个键一行；三种语言的键要一致（tools/check-i18n.mjs 检查） */
 export default {
-  fxOtf: "OTF も作る（印刷用）",
-  fxOtfHint: "OTF は CFF の曲線で、アウトラインは TTF と同じです。印刷所や .otf が必要なワークフロー向けで、ファイルは 25〜36% 大きく、作成時間はおよそ倍になります。Figma、Keynote、Word などで使うなら TTF で十分です。",
+  fxOtf: "OTF（印刷用）",
+  fxOtfHint: "OTF は、結合した TrueType の曲線を CFF の曲線に変換したものです。元のフォントの CFF 曲線そのものではなく、和文のプロ用フォントで一般的な CID 形式でもありません。印刷所や .otf が必要なワークフロー向けで、ファイルは 25〜36% 大きく、作成時間はおよそ倍になります。Figma、Keynote、Word などで使うなら TTF で十分です。",
   fxStOtf: "{name} を OTF に変換中（{i} / {n}）",
   fxLicCopy: "フォントにライセンスの記載はなく、著作権表示だけがあります：「{t}」",
   fxLicText: "フォントに記載されたライセンス：「{t}」",
@@ -9,7 +9,7 @@ export default {
   kindCss: "Web（CSS）",
   kindCssSub: "@font-face のルール。Web ページでそのまま使います",
   kindFont: "フォントファイル",
-  kindFontSub: "TTF / WOFF2。インストールしてほかのアプリで使います",
+  kindFontSub: "TTF / OTF / WOFF2。インストールしてほかのアプリで使います",
   kindApp: "アプリのコード",
   kindAppSub: "iOS・Android・Flutter（試験的）",
   appIntro: "ネイティブアプリには合成フォントがありません。ここで生成するコードは、文字クラスごとにテキストを区切り、それぞれにフォント・サイズ・ベースラインを設定します。規則は Web の書き出しと同じで、ウェイトは「Web」で選んだものを使います。",
@@ -58,7 +58,7 @@ export default {
   fxOut: "出力",
   fxOutLine: "フォント名「{fam}」、{n} ファイル。名前・ウェイト・イタリックは書き出しの設定で変更できます。",
   fxNoItal: "この合成フォントにはイタリックのフォントがないため、正体だけを作ります。",
-  fxWoff2: "WOFF2 も作る（Web 用）",
+  fxWoff2: "WOFF2（Web 用）",
   fxEst: "約 {min} 分かかる見込みです。初回は約 {mb} MB のダウンロードが必要です。",
   fxAgree: "上の「ライセンス不明」のフォントを改変・合成する権利があることを確認しました",
   fxNoWeights: "書き出しの設定でウェイトを 1 つ以上選んでください。",

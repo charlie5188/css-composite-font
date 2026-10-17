@@ -13,14 +13,14 @@
 <script type="importmap">{
  "imports": {
   "./assets/js/appcode.js": "./assets/js/appcode.js?v=c14be6f0",
-  "./assets/js/bake.js": "./assets/js/bake.js?v=e1515c3c",
-  "./assets/js/core.js": "./assets/js/core.js?v=f94192eb",
+  "./assets/js/bake.js": "./assets/js/bake.js?v=98993e7b",
+  "./assets/js/core.js": "./assets/js/core.js?v=3c294ec7",
   "./assets/js/export.js": "./assets/js/export.js?v=00e8050f",
   "./assets/js/gfmeta.js": "./assets/js/gfmeta.js?v=c4697b71",
   "./assets/js/i18n.js": "./assets/js/i18n.js?v=6e75ec0f",
-  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=a2e6f78d",
-  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=41a8c810",
-  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=b44b87be",
+  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=7e1213b5",
+  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=315c5311",
+  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=df0662fc",
   "./assets/js/main.js": "./assets/js/main.js?v=77ec7ac1",
   "./assets/js/refresh.js": "./assets/js/refresh.js?v=4dffc5b8",
   "./assets/js/render.js": "./assets/js/render.js?v=1f7f48f8",
@@ -197,7 +197,7 @@
         <div class="ex-fields kind-font">
         <div class="field" id="fxWeightsField"><span class="lab-i"><span class="flabel" data-t="fxWeightsLabel"></span></span><div class="chips" id="fxWeights" role="group" data-ta="aria-label:fxWeightsLabel"></div><p class="hint" data-t="fxWeightsHint"></p></div>
         <div class="field"><span class="flabel" data-t="fxStyleLabel"></span><label class="fx-chk"><input type="checkbox" id="fxItalic"> <span data-t="fxItalicOpt"></span></label></div>
-        <div class="field"><span class="flabel" data-t="fxFormatLabel"></span><label class="fx-chk"><input type="checkbox" checked disabled> <span data-t="fxTtf"></span></label><label class="fx-chk"><input type="checkbox" id="fxWoff2"> <span data-t="fxWoff2"></span></label><span class="fx-opt"><label class="fx-chk"><input type="checkbox" id="fxOtf"> <span data-t="fxOtf"></span></label><button type="button" class="info" data-info="otfInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span></div>
+        <div class="field"><span class="flabel" data-t="fxFormatLabel"></span><label class="fx-chk"><input type="checkbox" id="fxTtf"> <span data-t="fxTtf"></span></label><label class="fx-chk"><input type="checkbox" id="fxWoff2"> <span data-t="fxWoff2"></span></label><span class="fx-opt"><label class="fx-chk"><input type="checkbox" id="fxOtf"> <span data-t="fxOtf"></span></label><button type="button" class="info" data-info="otfInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span></div>
         </div>
       </div>
     </div>
@@ -218,7 +218,7 @@
         <div class="code"><div class="code-meta" id="exStats"></div><pre id="codeOut"></pre></div>
       </div>
       </div>
-      <!-- 字体文件：把合成字体做成 TTF / WOFF2（assets/js/bake.js） -->
+      <!-- 字体文件：把合成字体做成 TTF / OTF / WOFF2（assets/js/bake.js） -->
       <div class="kind-font"><div class="fx" id="fontPane" aria-live="polite"></div></div>
     </div>
     <button type="button" class="btn-icon dlg-x" id="exClose" data-ta="aria-label:closeAria;title:closeAria">×</button>
@@ -264,8 +264,9 @@
         <h3>App 代码（实验性）</h3>
         <p>iOS、Android 和 Flutter 没有复合字体。导出里的「App 代码」生成一段 Swift、Kotlin 或 Dart：按字符类别把文字切成片段，每段分别设字体、大小和基线偏移，字符范围和网页导出完全相同。代码里的字体名称（PostScript 名、文件名、family）是推测的，要对照 App 里实际打包的字体改；混用不同大小的字会让行高变化，没有网页那样的行高修正；Flutter 不能单独移动基线。三种代码都编译过（Kotlin 对着 Android API，Flutter 通过 analyze 和 test），切分结果也核对过，但没有在真机上看过排版效果，发现问题欢迎在 <a href="https://github.com/charlie5188/css-composite-font" target="_blank" rel="noopener">GitHub</a> 提交 PR 或 Issue。字体授权允许的话，把生成的字体文件打包进 App 效果最完整。</p>
         <h3>字体文件</h3>
-        <p>「字体文件」页签把合成字体做成真正的字体（TTF，可选 WOFF2），给 Figma、Keynote、Word 这类不支持合成字体的软件用。做法和导出的 CSS 一一对应：每条规则的字体只取它负责的字，按大小缩放、按基线上下平移，再合并成一个字体；行高度量用汉字基础字体的。生成在浏览器里进行（Pyodide + fontTools），字体不会上传到任何服务器。</p>
+        <p>「字体文件」页签把合成字体做成真正的字体（TTF、WOFF2、OTF，可任选），给 Figma、Keynote、Word 这类不支持合成字体的软件用。做法和导出的 CSS 一一对应：每条规则的字体只取它负责的字，按大小缩放、按基线上下平移，再合并成一个字体；行高度量用汉字基础字体的。生成在浏览器里进行（Pyodide + fontTools），字体不会上传到任何服务器。</p>
         <p>源字体：Google Fonts 的字体从 google/fonts 仓库下载完整文件，网页接口给的切片去掉了大部分 OpenType 特性；上传的字体直接使用；本机安装的字体通过浏览器的本机字体接口读取（Chrome、Edge，需要授权）。CFF 轮廓的 OTF 会转换成 TrueType 曲线（误差不超过 1/1000 em），字体集合（TTC）只取用到的那一款。只有 OFL、Apache 等允许修改的许可可以直接合并，许可不明的字体（包括系统自带和商用的字体）要先确认有权修改，生成的文件只给自己用。字体微调（hinting）会去掉，只影响 Windows 上的小字号。浏览器会在中西文之间自动加 1/8 em 的间距，其他软件不会。</p>
+        <p>格式：合并只能在 TrueType 曲线上做，所以 OTF 是最后从合并结果转换成 CFF 曲线得到的。浏览器里能跑的字体库（fontTools）不能合并中日文 OTF 常用的 CID 结构 CFF，也不能把 TrueType 和 CFF 曲线放进同一个字体；能直接合并 CFF、生成 CID 结构 OTF 的 Adobe AFDKO 是 C 程序，不能在浏览器里运行。所以源字体是 CFF 时，会经过「三次曲线 → 二次曲线 → 三次曲线」的转换（误差不超过 1/1000 em，印刷上看不出），生成的 OTF 也不是 CID 结构。现在的软件都能正常使用，个别要求 CID 字体的老印刷流程可能不接受。</p>
         <h3>为什么不用 font-size-adjust</h3>
         <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支持双值语法）也能统一字号，但它对元素里的每个字体都生效：把西文调到目标大写高的同时，汉字字体也会按它自带的西文度量被缩放。它也不能按字符类别分配字体，解决不了引号归属。更关键的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同时出现时，<code>size-adjust</code> 不再起作用。所以使用复合字体的元素上不要再写 <code>font-size-adjust</code>。校样的「对照其他做法」里可以切换到这个做法比较效果。</p>
         <h3>CSS 原生 CJK 排版属性</h3>
@@ -317,8 +318,9 @@
         <h3>App 程式碼（實驗性）</h3>
         <p>iOS、Android 和 Flutter 沒有複合字型。匯出裡的「App 程式碼」產生一段 Swift、Kotlin 或 Dart：按字元類別把文字切成片段，每段分別設字型、大小和基線偏移，字元範圍和網頁匯出完全相同。程式碼裡的字型名稱（PostScript 名、檔名、family）是推測的，要對照 App 裡實際打包的字型改；混用不同大小的字會讓行高變化，沒有網頁那樣的行高修正；Flutter 不能單獨移動基線。三種程式碼都編譯過（Kotlin 對著 Android API，Flutter 通過 analyze 和 test），切分結果也核對過，但沒有在實機上看過排版效果，發現問題歡迎在 <a href="https://github.com/charlie5188/css-composite-font" target="_blank" rel="noopener">GitHub</a> 提交 PR 或 Issue。字型授權允許的話，把產生的字型檔案打包進 App 效果最完整。</p>
         <h3>字型檔案</h3>
-        <p>「字型檔案」頁籤把複合字型做成真正的字型（TTF，可選 WOFF2），給 Figma、Keynote、Word 這類不支援複合字型的軟體用。做法和匯出的 CSS 一一對應：每條規則的字型只取它負責的字，按大小縮放、按基線上下平移，再合併成一個字型；行高度量用漢字基礎字型的。產生在瀏覽器裡進行（Pyodide + fontTools），字型不會上傳到任何伺服器。</p>
+        <p>「字型檔案」頁籤把複合字型做成真正的字型（TTF、WOFF2、OTF，可任選），給 Figma、Keynote、Word 這類不支援複合字型的軟體用。做法和匯出的 CSS 一一對應：每條規則的字型只取它負責的字，按大小縮放、按基線上下平移，再合併成一個字型；行高度量用漢字基礎字型的。產生在瀏覽器裡進行（Pyodide + fontTools），字型不會上傳到任何伺服器。</p>
         <p>來源字型：Google Fonts 的字型從 google/fonts 倉庫下載完整檔案，網頁介面給的切片去掉了大部分 OpenType 特性；上傳的字型直接使用；本機安裝的字型透過瀏覽器的本機字型介面讀取（Chrome、Edge，需要授權）。CFF 輪廓的 OTF 會轉換成 TrueType 曲線（誤差不超過 1/1000 em），字型集合（TTC）只取用到的那一款。只有 OFL、Apache 等允許修改的授權可以直接合併，授權不明的字型（包括系統內建和商用的字型）要先確認有權修改，產生的檔案只給自己用。字型微調（hinting）會去掉，只影響 Windows 上的小字號。瀏覽器會在中西文之間自動加 1/8 em 的間距，其他軟體不會。</p>
+        <p>格式：合併只能在 TrueType 曲線上做，所以 OTF 是最後從合併結果轉換成 CFF 曲線得到的。瀏覽器裡能跑的字型函式庫（fontTools）不能合併中日文 OTF 常用的 CID 結構 CFF，也不能把 TrueType 和 CFF 曲線放進同一個字型；能直接合併 CFF、產生 CID 結構 OTF 的 Adobe AFDKO 是 C 程式，不能在瀏覽器裡執行。所以來源字型是 CFF 時，會經過「三次曲線 → 二次曲線 → 三次曲線」的轉換（誤差不超過 1/1000 em，印刷上看不出），產生的 OTF 也不是 CID 結構。現在的軟體都能正常使用，個別要求 CID 字型的舊印刷流程可能不接受。</p>
         <h3>為什麼不用 font-size-adjust</h3>
         <p><code>font-size-adjust</code>（Chrome 127、Firefox 92、Safari 17 支援雙值語法）也能統一字號，但它對元素裡的每個字型都生效：把西文調到目標大寫高的同時，漢字字型也會按它自帶的西文度量被縮放。它也不能按字元類別分配字型，解決不了引號歸屬。更關鍵的是，MDN 指出它和 <code>@font-face</code> 的 <code>size-adjust</code> 同時出現時，<code>size-adjust</code> 不再起作用。所以使用複合字型的元素上不要再寫 <code>font-size-adjust</code>。校樣的「對照其他做法」裡可以切換到這個做法比較效果。</p>
         <h3>CSS 原生 CJK 排版屬性</h3>
@@ -370,8 +372,9 @@
         <h3>アプリのコード（試験的）</h3>
         <p>iOS・Android・Flutter には合成フォントがありません。書き出しの「アプリのコード」は Swift・Kotlin・Dart のコードを生成し、文字クラスごとにテキストを区切って、それぞれにフォント・サイズ・ベースラインの調整を設定します。文字の範囲は Web の書き出しとまったく同じです。コード内のフォント名（PostScript 名・ファイル名・family）は推定なので、アプリに同梱したフォントに合わせて直してください。サイズの違う文字が混ざると行の高さが変わり、Web のような行の高さの補正はありません。Flutter ではベースラインを部分的に動かせません。3 種類ともコンパイルし（Kotlin は Android API に対して、Flutter は analyze と test）、区切り方も確認済みですが、実機での組版の見た目は確認していません。問題を見つけたら <a href="https://github.com/charlie5188/css-composite-font" target="_blank" rel="noopener">GitHub</a> で PR や Issue をお寄せください。フォントのライセンスが許せば、生成したフォントファイルをアプリに同梱するのがいちばん確実です。</p>
         <h3>フォントファイル</h3>
-        <p>「フォントファイル」タブでは、合成フォントを本物のフォント（TTF、WOFF2 も可）にします。Figma、Keynote、Word など合成フォントに対応していないアプリで使うためのものです。書き出す CSS と同じ規則で、各フォントから担当する文字だけを取り出し、サイズとベースラインを調整してから 1 つのフォントにまとめます。行の高さは漢字のベースフォントに合わせます。処理はブラウザの中で行い（Pyodide + fontTools）、フォントがサーバーに送られることはありません。</p>
+        <p>「フォントファイル」タブでは、合成フォントを本物のフォント（TTF・WOFF2・OTF から選べます）にします。Figma、Keynote、Word など合成フォントに対応していないアプリで使うためのものです。書き出す CSS と同じ規則で、各フォントから担当する文字だけを取り出し、サイズとベースラインを調整してから 1 つのフォントにまとめます。行の高さは漢字のベースフォントに合わせます。処理はブラウザの中で行い（Pyodide + fontTools）、フォントがサーバーに送られることはありません。</p>
         <p>元のフォント：Google Fonts のフォントは google/fonts リポジトリから完全なファイルをダウンロードします。Web 用の配信ではほとんどの OpenType 機能が削られているためです。アップロードしたフォントはそのまま使い、このコンピュータのフォントはブラウザのローカルフォント API で読み取ります（Chrome、Edge。許可が必要です）。CFF アウトラインの OTF は TrueType の曲線に変換し（誤差は 1/1000 em 以下）、フォントコレクション（TTC）からは使われている 1 書体だけを取り出します。合成できるのは OFL や Apache など改変を許可するライセンスのフォントで、ライセンス不明のフォント（OS 付属のフォントや商用フォントを含む）は、改変する権利があることを先に確認する必要があり、作ったファイルは自分だけで使います。ヒンティングは削除されます（影響は Windows の小さいサイズだけです）。和欧間の 1/8 em のアキはブラウザが自動で入れるもので、ほかのアプリでは入りません。</p>
+        <p>形式：結合は TrueType の曲線でしか行えないため、OTF は最後に結合結果を CFF の曲線に変換して作ります。ブラウザで動くフォントライブラリ（fontTools）は、和文 OTF で一般的な CID 形式の CFF を結合できず、TrueType と CFF の曲線を 1 つのフォントに混ぜることもできません。CFF を直接結合して CID 形式の OTF を作れる Adobe AFDKO は C のプログラムで、ブラウザでは動きません。そのため元のフォントが CFF の場合は「3 次曲線 → 2 次曲線 → 3 次曲線」と変換され（誤差は 1/1000 em 以内で、印刷では見分けられません）、できる OTF も CID 形式ではありません。今のアプリでは問題なく使えますが、CID フォントを求める古い印刷ワークフローでは受け付けられないことがあります。</p>
         <h3>font-size-adjust を使わない理由</h3>
         <p><code>font-size-adjust</code>（2 値構文は Chrome 127、Firefox 92、Safari 17 が対応）でもサイズをそろえられますが、要素内のすべてのフォントに効きます。欧文を目標のキャップハイトに合わせると、漢字フォントも付属欧文のメトリクスに応じて拡大縮小されます。文字クラスごとにフォントを割り当てることもできないため、引用符の問題も解決しません。さらに MDN によれば、<code>@font-face</code> の <code>size-adjust</code> と併用すると <code>size-adjust</code> が効かなくなります。合成フォントを使う要素には <code>font-size-adjust</code> を指定しないでください。校正刷りの「他の方法と比較」で違いを確認できます。</p>
         <h3>CSS ネイティブの CJK 組版プロパティ</h3>

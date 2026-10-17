@@ -320,8 +320,9 @@ def run_all(jobs_json, opts_json, progress):
                     inst[k] = instance_file(SRC + s['file'], s.get('weight'), s.get('fvs'), WORK + 'inst%d.ttf' % made, s.get('ps'))
                 srcs.append(inst[k])
             font, ps = bake(job['plan'], srcs, opts['family'], job['weight'], job['italic'], opts['lic'], WORK, opts.get('otLang'), trimmed)
-            b = io.BytesIO(); font.save(b); data = b.getvalue()
-            z.writestr(ps + '.ttf', data); out.append([ps + '.ttf', len(data)])
+            if opts.get('ttf', True):      # 合并本来就在 TrueType 曲线上做，不要 TTF 时只是不写进 zip
+                b = io.BytesIO(); font.save(b); data = b.getvalue()
+                z.writestr(ps + '.ttf', data); out.append([ps + '.ttf', len(data)])
             if opts.get('woff2'):
                 font.flavor = 'woff2'; b = io.BytesIO(); font.save(b); data = b.getvalue()
                 z.writestr(ps + '.woff2', data); out.append([ps + '.woff2', len(data)])

@@ -1,7 +1,7 @@
 /* 界面文字：简体中文。一个键一行；三种语言的键要一致（tools/check-i18n.mjs 检查） */
 export default {
-  fxOtf: "同时生成 OTF（印刷用）",
-  fxOtfHint: "OTF 用 CFF 曲线，轮廓和 TTF 相同，给印刷厂或要求 .otf 的流程用；文件大 25–36%，生成时间约多一倍。在 Figma、Keynote、Word 等软件里用 TTF 就够了。",
+  fxOtf: "OTF（印刷用）",
+  fxOtfHint: "OTF 是由合并好的 TrueType 曲线转换成 CFF 曲线的，不是源字体原来的 CFF 曲线，也不是中日文专业字体常用的 CID 结构；给印刷厂或要求 .otf 的流程用。文件大 25–36%，生成时间约多一倍。在 Figma、Keynote、Word 等软件里用 TTF 就够了。",
   fxStOtf: "转换成 OTF：{name}（{i} / {n}）",
   fxLicCopy: "字体里没有写许可，只有版权声明：「{t}」",
   fxLicText: "字体里写的许可说明：「{t}」",
@@ -9,7 +9,7 @@ export default {
   kindCss: "网页（CSS）",
   kindCssSub: "@font-face 规则，网页里直接用",
   kindFont: "字体文件",
-  kindFontSub: "TTF / WOFF2，装进电脑给其他软件用",
+  kindFontSub: "TTF / OTF / WOFF2，装进电脑给其他软件用",
   kindApp: "App 代码",
   kindAppSub: "iOS · Android · Flutter，实验性",
   appIntro: "原生 App 没有复合字体。这里生成的代码按字符类别把文字切成片段，分别设字体、大小和基线，规则和网页导出相同；字重用「网页」里选的导出字重。",
@@ -58,7 +58,7 @@ export default {
   fxOut: "输出",
   fxOutLine: "字体名称「{fam}」，共 {n} 个文件。名称、字重、斜体在导出设置里修改。",
   fxNoItal: "这个合成字体里没有斜体字体，只生成正体。",
-  fxWoff2: "同时生成 WOFF2（网页用）",
+  fxWoff2: "WOFF2（网页用）",
   fxEst: "预计约 {min} 分钟；第一次使用还要下载约 {mb} MB。",
   fxAgree: "我确认有权修改并合并上面「许可不明」的字体",
   fxNoWeights: "在导出设置里至少选一个字重。",

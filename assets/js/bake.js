@@ -271,16 +271,17 @@ export function fxEstimate(pl) {
     sec += 3 + j.srcs.reduce((a, s) => { const x = s && pl.srcs.get(s.key); return a + (x ? (x.size || 0) / 1e6 * (x.cff ? 4 : 2) : 0); }, 0) + (state.fx.otf ? mb * 2 : 0);
   }
   for (const s of pl.srcs.values()) if (s.kind === 'google' && !fx.sent.has(s.file)) mb += (s.size || 0) / 1e6;      // 已经交给 Worker 的不用再下载
-  return { n: pl.jobs.length * (1 + state.fx.woff2 + state.fx.otf), min: Math.max(1, Math.round(sec / 60)), mb: Math.round(mb + (fx.worker ? 0 : BK.runtimeMB)) };
+  return { n: pl.jobs.length * (state.fx.ttf + state.fx.woff2 + state.fx.otf), min: Math.max(1, Math.round(sec / 60)), mb: Math.round(mb + (fx.worker ? 0 : BK.runtimeMB)) };
 }
 
 /* ---------- 字体文件：左边的设置、右边的面板 ---------- */
 export const fx = { worker: null, sent: new Set(), running: false, agree: false, stage: '', pct: 0, t0: 0, tick: null, result: null, err: '', sig: '' };
-export const fxSig = pl => JSON.stringify([pl.fam, state.fx.woff2, state.fx.otf, pl.jobs.map(j => [j.W, j.italic, j.srcs.map(s => s && [s.key, s.weight, s.fvs]), j.plan.map(p => [p.size, p.range && p.range.length])]), state.classes, state.custom]);
+export const fxSig = pl => JSON.stringify([pl.fam, state.fx.ttf, state.fx.woff2, state.fx.otf, pl.jobs.map(j => [j.W, j.italic, j.srcs.map(s => s && [s.key, s.weight, s.fvs]), j.plan.map(p => [p.size, p.range && p.range.length])]), state.classes, state.custom]);
 export const fmtMB = n => (n / 1e6).toFixed(n < 1e7 ? 1 : 0);
 export function renderFontFields() {
   $('#fxWeights').innerHTML = WEIGHTS.map(w => `<button type="button" data-w="${w}" aria-pressed="${state.fx.weights.includes(w)}" title="${esc(wTip(w))}"${wTag(w) ? ' class="wl"' : ''}>${w}${wTag(w)}</button>`).join('');
   $('#fxItalic').checked = state.fx.italic;
+  $('#fxTtf').checked = state.fx.ttf;
   $('#fxWoff2').checked = state.fx.woff2;
   $('#fxOtf').checked = state.fx.otf;
 }
@@ -407,7 +408,7 @@ export async function fxRun() {
       };
     });
     const open = [...pl.srcs.values()].every(s => ['ofl', 'apache', 'ufl'].includes(s.lic));
-    const opts = { family: pl.fam, woff2: state.fx.woff2, otf: state.fx.otf, lic: open ? LIC_OFL : LIC_PRIVATE,
+    const opts = { family: pl.fam, ttf: state.fx.ttf, woff2: state.fx.woff2, otf: state.fx.otf, lic: open ? LIC_OFL : LIC_PRIVATE,
       extra: [[open ? 'OFL.txt' : 'LICENSES.txt', fxLicenseText(pl, open)], ['README.txt', fxReadme(pl)]],
       otLang: otLang(state.scope || state.typo.lang),      // 字形超过上限时只留这个语言的字形变体
       notes: { head: T('fxTrimHead'), langs: T('fxTrimLangs'), rare: T('fxTrimRare'), names: OT_LANG_NAMES(), sep: T('joiner') } };
@@ -502,8 +503,11 @@ export function initFontTab() {
     refresh('fxFields', 'fx');
   });
   $('#fxItalic').addEventListener('change', e => { state.fx.italic = e.target.checked; refresh('fx'); });
-  $('#fxWoff2').addEventListener('change', e => { state.fx.woff2 = e.target.checked; refresh('fx'); });
-  $('#fxOtf').addEventListener('change', e => { state.fx.otf = e.target.checked; refresh('fx'); });
+  // 三种格式各自独立，但至少要留一种：取消最后一个时不让取消
+  for (const [id, k] of [['#fxTtf', 'ttf'], ['#fxWoff2', 'woff2'], ['#fxOtf', 'otf']]) $(id).addEventListener('change', e => {
+    if (!e.target.checked && ['ttf', 'woff2', 'otf'].every(x => x === k || !state.fx[x])) { e.target.checked = true; return; }
+    state.fx[k] = e.target.checked; refresh('fx');
+  });
   $('#fontPane').addEventListener('change', e => { if (e.target.id === 'fxAgree') { fx.agree = e.target.checked; renderFontTab(); } });
   $('#fontPane').addEventListener('click', e => {
     const id = e.target.closest('button')?.id;

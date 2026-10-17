@@ -620,7 +620,7 @@ export function normalizeState() {
   }
   for (const c of CLASSES) state.classes[c.id] ||= { follow: c.follow || null, font: null, size: null, shift: null };     // 后来新增的类别
   /* 导出字体文件：自己的字重（默认 400、700，生成慢，不跟网页导出的字重绑在一起）、是否生成斜体、是否另存 WOFF2 */
-  state.fx = { weights: [400, 700], italic: true, woff2: false, otf: false, ...(state.fx || {}) };
+  state.fx = { weights: [400, 700], italic: true, ttf: true, woff2: false, otf: false, ...(state.fx || {}) };
   if (!Array.isArray(state.fx.weights)) state.fx.weights = [400, 700];
   if (state.typo?.lang === 'zh-Hant') state.typo.lang = 'zh-Hant-TW';       // 「繁體中文」拆成台湾、香港
   if (state.scope === 'zh-Hant') state.scope = 'zh-Hant-TW';
