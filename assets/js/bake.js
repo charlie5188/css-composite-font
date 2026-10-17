@@ -284,7 +284,7 @@ export function renderFontFields() {
   $('#fxWoff2').checked = state.fx.woff2;
   $('#fxOtf').checked = state.fx.otf;
 }
-export const fxLimits = () => `<div class="fx-sec fx-limits"><h3 class="fx-h">${esc(T('fxLimitsTitle'))}</h3><ul>${T('fxLimits').split('\n').map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
+export const fxLimits = () => `<div class="fx-sec fx-limits"><h3 class="label">${esc(T('fxLimitsTitle'))}</h3><ul>${T('fxLimits').split('\n').map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>`;
 export function renderFontTab() {
   const box = $('#fontPane');
   if (!CAN_BAKE) {
@@ -325,9 +325,9 @@ export function renderFontTab() {
   const sig = fxSig(pl), res = fx.result, stale = res && fx.sig !== sig;
   const ready = !fx.running && pl.jobs.length && !block.length && !pl.loading && !pl.needLocal && (!pl.unknown || fx.agree);
   const summary = !pl.jobs.length ? '' : pl.needLocal ? T('fxSummaryLocal', est) : pl.loading ? T('fxSummaryWait', est) : T(est.mb ? 'fxSummary' : 'fxSummaryNoDl', est);
-  box.innerHTML = `<div class="fx-sec"><h3 class="fx-h">${esc(T('fxSources'))}</h3>${localAsk}<div class="fx-src">${rows.join('') || `<p class="hint">…</p>`}</div>
-      ${pl.unknown ? `<div class="fx-agree">${localWarn}<label class="fx-chk"><input type="checkbox" id="fxAgree"${fx.agree ? ' checked' : ''}> ${esc(T('fxAgree'))}</label></div>` : ''}</div>
-    ${block.length ? `<div class="fx-block">${block.map(b => `<p>${esc(b)}</p>`).join('')}</div>` : ''}
+  box.innerHTML = `<div class="fx-sec"><h3 class="label">${esc(T('fxSources'))}</h3>${localAsk}<div class="fx-src">${rows.join('') || `<p class="hint">…</p>`}</div>
+      ${pl.unknown ? `<div class="callout fx-agree">${localWarn}<label class="fx-chk"><input type="checkbox" id="fxAgree"${fx.agree ? ' checked' : ''}> ${esc(T('fxAgree'))}</label></div>` : ''}</div>
+    ${block.length ? `<div class="callout fx-block">${block.map(b => `<p>${esc(b)}</p>`).join('')}</div>` : ''}
     <div class="fx-go">
       <button type="button" class="btn${fx.running || (res && !stale) ? '' : ' primary'}" id="fxGo"${fx.running || ready ? '' : ' disabled'}>${esc(T(fx.running ? 'fxStop' : 'fxGen'))}</button>
       <span class="fx-sum">${esc(summary)}${pl.jobs.length ? `<br><span class="fx-styles">${esc(pl.jobs.map(j => styleName(j.W, j.italic)).join(' · '))}</span>` : ''}${pl.italSkipped ? `<br>${esc(T('fxNoItal'))}` : ''}</span>
@@ -352,7 +352,7 @@ export function renderFxRun(stale) {
     const r = fx.result;
     el.innerHTML = `<p>${esc(T('fxDone', { s }))}${stale ? ` <span class="fx-stale">${esc(T('fxStale'))}</span>` : ''}</p>
       <div class="fx-files">${r.files.map(([n, b]) => `<span>${esc(n)}</span><span>${fmtMB(b)} MB</span>`).join('')}</div>
-      ${r.trimmed ? `<p class="fx-note-trim">${esc(fxTrimText(r.trimmed))}</p>` : ''}
+      ${r.trimmed ? `<p class="callout fx-note-trim">${esc(fxTrimText(r.trimmed))}</p>` : ''}
       <p><button type="button" class="btn primary" id="fxSave">${esc(T('fxDownload', { mb: fmtMB(r.zip.size) }))}</button></p>`;
   }
 }

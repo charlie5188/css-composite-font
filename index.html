@@ -8,11 +8,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=a1fac4ce">
+<link rel="stylesheet" href="assets/style.css?v=ef3df257">
 <!-- 模块的缓存版本号：模块之间互相 import 时不带 ?v=，靠 import map 换成带版本号的地址（tools/rehash.py 生成） -->
 <script type="importmap">{
  "imports": {
-  "./assets/js/bake.js": "./assets/js/bake.js?v=c373ddc0",
+  "./assets/js/bake.js": "./assets/js/bake.js?v=e1515c3c",
   "./assets/js/core.js": "./assets/js/core.js?v=eec72c4a",
   "./assets/js/export.js": "./assets/js/export.js?v=0ad91cd8",
   "./assets/js/gfmeta.js": "./assets/js/gfmeta.js?v=9a213e0f",
@@ -22,8 +22,8 @@
   "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=1dc03995",
   "./assets/js/main.js": "./assets/js/main.js?v=77ec7ac1",
   "./assets/js/refresh.js": "./assets/js/refresh.js?v=4dffc5b8",
-  "./assets/js/render.js": "./assets/js/render.js?v=d1330dc6",
-  "./assets/js/ui.js": "./assets/js/ui.js?v=40a082b2",
+  "./assets/js/render.js": "./assets/js/render.js?v=e248f07f",
+  "./assets/js/ui.js": "./assets/js/ui.js?v=1460b5e8",
   "./assets/js/unicode.js": "./assets/js/unicode.js?v=f50d2344"
  }
 }</script>
@@ -35,11 +35,11 @@
   <header class="topbar">
     <h1 class="brand" data-t="title">复合字体工坊</h1>
     <div class="top-right">
-      <button type="button" class="top-link" id="aboutBtn" aria-haspopup="dialog" aria-controls="aboutDlg" data-t="aboutTitle"></button>
+      <button type="button" class="btn-ghost" id="aboutBtn" aria-haspopup="dialog" aria-controls="aboutDlg" data-t="aboutTitle"></button>
       <button type="button" class="btn primary ex-toggle" id="exToggle" aria-haspopup="dialog" aria-controls="exDlg"><span data-t="exportTitle"></span></button>
       <!-- 「⋯」菜单：不常用的操作。重置会改动所有设置（字体、排版、校样），所以放在全局的顶栏里，而不是某个页签里 -->
-      <button type="button" class="top-more" id="moreBtn" popovertarget="moreMenu" aria-haspopup="menu" data-ta="aria-label:moreAria;title:moreAria"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.2" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.8" cy="8" r="1.3"/></svg></button>
-      <div class="more-menu" id="moreMenu" popover role="menu">
+      <button type="button" class="btn-icon" id="moreBtn" popovertarget="moreMenu" aria-haspopup="menu" data-ta="aria-label:moreAria;title:moreAria"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.2" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.8" cy="8" r="1.3"/></svg></button>
+      <div class="pop menu more-menu" id="moreMenu" popover role="menu">
         <!-- 界面语言：没选过时跟随浏览器，选了就记下来。语言名总是用它自己的文字写 -->
         <div class="mm-group" role="group" aria-labelledby="uiLangLab">
           <p class="mm-lab" id="uiLangLab" data-t="uiLang"></p>
@@ -51,7 +51,7 @@
         <button type="button" class="mm-item mm-about" role="menuitem" id="aboutItem" data-t="aboutTitle"></button>
         <a class="mm-item" role="menuitem" href="https://github.com/charlie5188/css-composite-font" target="_blank" rel="noopener" data-ta="aria-label:ghAria">GitHub <span aria-hidden="true">↗</span></a>
         <hr>
-        <button type="button" class="mm-item danger" role="menuitem" id="resetAll" data-t="resetAll"></button>
+        <button type="button" class="mm-item danger" role="menuitem" id="resetAll"><span data-t="resetAll"></span></button>
         <p class="mm-note" data-t="resetNote"></p>
       </div>
     </div>
@@ -67,15 +67,15 @@
         <button type="button" role="tab" id="ltabFonts" data-ltab="fonts" aria-controls="paneFonts" aria-selected="true" data-t="tabFonts"></button>
         <button type="button" role="tab" id="ltabTypo" data-ltab="typo" aria-controls="paneTypo" aria-selected="false"><span data-t="typoTitle"></span><span class="ltab-n" id="typoCount"></span></button>
         <span class="busy" id="busy" aria-live="polite"></span>
-        <span class="hist"><button type="button" class="icon-btn" id="undoBtn" aria-disabled="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.6 6.4h7.1a3.6 3.6 0 0 1 0 7.2H6.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M5.4 3.4 2.4 6.4l3 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" class="icon-btn" id="redoBtn" aria-disabled="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.4 6.4H6.3a3.6 3.6 0 0 0 0 7.2h3.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10.6 3.4l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
+        <span class="hist"><button type="button" class="btn-icon" id="undoBtn" aria-disabled="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.6 6.4h7.1a3.6 3.6 0 0 1 0 7.2H6.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M5.4 3.4 2.4 6.4l3 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" class="btn-icon" id="redoBtn" aria-disabled="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.4 6.4H6.3a3.6 3.6 0 0 0 0 7.2h3.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10.6 3.4l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
       </div>
       <div class="pane-sec presets" id="panePresets" role="tabpanel" aria-labelledby="ltabPresets" hidden>
-        <div class="sec-row preset-head"><h2 class="label lab-i" id="presetsLabel"><span data-t="preset"></span><button type="button" class="info" data-info="presetInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></h2>
+        <div class="sec-head preset-head"><h2 class="label lab-i" id="presetsLabel"><span data-t="preset"></span><button type="button" class="info" data-info="presetInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></h2>
           <div class="preset-acts">
-            <button type="button" class="tbtn" id="savePresetBtn"><span aria-hidden="true">+ </span><span data-t="presetSaveAs"></span></button>
+            <button type="button" class="btn-text" id="savePresetBtn"><span aria-hidden="true">+ </span><span data-t="presetSaveAs"></span></button>
             <div class="save-form" id="saveRow" hidden>
               <input id="presetName" type="text" spellcheck="false" data-ta="placeholder:presetName;aria-label:presetName">
-              <button class="btn primary" id="presetSave" type="button" data-t="save"></button><button class="tbtn" id="presetCancel" type="button" data-t="cancel"></button>
+              <button class="btn primary" id="presetSave" type="button" data-t="save"></button><button class="btn-text" id="presetCancel" type="button" data-t="cancel"></button>
             </div>
           </div>
         </div>
@@ -83,23 +83,23 @@
       </div>
       <div class="pane-sec" id="paneFonts" role="tabpanel" aria-labelledby="ltabFonts">
       <!-- 表格只管基础设定（400，其他字重按它推算）；按字重的差异在下面的「各字重」里 -->
-      <div class="sec-row sub base-head"><h3 class="label" data-t="baseTitle"></h3><button type="button" class="tbtn wand" id="autoAdj" data-ta="title:autoAdjTip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.2 13.8 9.6 6.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8.7 5.5l1.8 1.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12.2 1.4v2.4M11 2.6h2.4M14.4 6v1.8M13.5 6.9h1.8M6.6 1.6v1.6M5.8 2.4h1.6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg><span class="spin" aria-hidden="true"></span><span class="ok-mark" aria-hidden="true">✓</span><span class="wand-lab" data-t="autoAdj"></span></button></div>
+      <div class="sec-head base-head"><h3 class="label" data-t="baseTitle"></h3><button type="button" class="btn-ghost wand" id="autoAdj" data-ta="title:autoAdjTip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.2 13.8 9.6 6.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8.7 5.5l1.8 1.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12.2 1.4v2.4M11 2.6h2.4M14.4 6v1.8M13.5 6.9h1.8M6.6 1.6v1.6M5.8 2.4h1.6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg><span class="spin" aria-hidden="true"></span><span class="ok-mark" aria-hidden="true">✓</span><span class="wand-lab" data-t="autoAdj"></span></button></div>
       <div class="ct-row ct-head"><span class="ct-glyph"></span><span class="lab-i"><span data-t="colClass"></span><button type="button" class="info" data-info="classInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><span data-t="colFont"></span><span class="r lab-i"><span data-t="colSize"></span><button type="button" class="info" data-info="sizeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><span class="r lab-i"><span data-t="colShift"></span><button type="button" class="info" data-info="shiftInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><span></span></div>
       <div id="classRows"></div>
       <div id="customRows"></div>
       <!-- 表格最后一行：添加例外字符（例外字符一行行接在类别后面，所以不另设标题） -->
       <div class="ct-add-row"><button type="button" class="ct-add" id="addCustom"><span class="plus" aria-hidden="true">+</span><span data-t="addCustomRow"></span></button><button type="button" class="info" data-info="customInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></div>
       <!-- 各字重：行是字重、列是有自己字体的类别。分档 / 连续决定有哪些行、粗细能不能单独设定 -->
-      <div class="sec-row sub w-head"><h3 class="label lab-i"><span data-t="wTitle"></span><button type="button" class="info" data-info="wmodeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></h3><span class="w-acts"><button type="button" class="wreset" id="wReset" hidden data-ta="title:wResetTip;aria-label:wResetTip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.5-3.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4.3 1.8v2.8h2.8" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wr-lab"></span></button><span class="seg" id="vWMode" role="radiogroup" data-ta="aria-label:exWMode"><button type="button" role="radio" data-m="steps" data-t="wmStepsShort" data-ta="title:wmStepsTip"></button><button type="button" role="radio" data-m="cont" data-t="wmContShort" data-ta="title:wmContTip"></button></span></span></div>
+      <div class="sec-head w-head"><h3 class="label lab-i"><span data-t="wTitle"></span><button type="button" class="info" data-info="wmodeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></h3><span class="w-acts"><button type="button" class="btn-icon wreset" id="wReset" hidden data-ta="title:wResetTip;aria-label:wResetTip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.5-3.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4.3 1.8v2.8h2.8" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span class="seg" id="vWMode" role="radiogroup" data-ta="aria-label:exWMode"><button type="button" role="radio" data-m="steps" data-t="wmStepsShort" data-ta="title:wmStepsTip"></button><button type="button" role="radio" data-m="cont" data-t="wmContShort" data-ta="title:wmContTip"></button></span></span></div>
       <div class="w-sub" id="wSub"></div>
-      <div class="wmode-note" id="vWNote" hidden></div>
+      <div class="callout" id="vWNote" hidden></div>
       <div class="wm" id="wMatrix" role="group" data-ta="aria-label:wTitle"></div>
       <!-- 字体特性：选哪个字形（OpenType 特性）和行高度量，属于字体，但不分字重 -->
-      <div class="sec-row sub feat-head"><h3 class="label lab-i"><span data-t="featTitle"></span></h3><span class="typo-changed" id="featChanged"></span><button type="button" class="tbtn typo-reset" id="featReset" data-t="typoReset" hidden></button></div>
+      <div class="sec-head feat-head"><h3 class="label lab-i"><span data-t="featTitle"></span></h3><span class="sec-acts"><span class="typo-changed" id="featChanged"></span><button type="button" class="btn-text typo-reset" id="featReset" data-t="typoReset" hidden></button></span></div>
       <div class="typo-body" id="featRows"></div>
       </div>
       <div class="pane-sec typo" id="paneTypo" role="tabpanel" aria-labelledby="ltabTypo" hidden>
-        <div class="typo-head"><span class="typo-scope lab-i"><span data-t="typoScope"></span><button type="button" class="info" data-info="typoInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><span class="typo-changed" id="typoChanged"></span><button type="button" class="tbtn typo-reset" id="typoReset" data-t="typoReset" hidden></button></div>
+        <div class="typo-head"><span class="typo-scope lab-i"><span data-t="typoScope"></span><button type="button" class="info" data-info="typoInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><span class="typo-changed" id="typoChanged"></span><button type="button" class="btn-text typo-reset" id="typoReset" data-t="typoReset" hidden></button></div>
         <div class="typo-body">
           <div id="typoRows"></div>
         </div>
@@ -122,13 +122,13 @@
             <label class="nf" for="vSize" data-ta="title:tipSize"><span class="nf-ic" data-scrub="size" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M1.2 13 4.6 3.5 8 13M2.4 9.8h4.4M9.4 13l2.4-6.4 2.4 6.4M10.2 11h3.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></span><input type="number" id="vSize" min="12" max="160" step="1" inputmode="numeric" data-ta="aria-label:fontSize"><span class="unit">px</span></label>
             <label class="nf" for="vLh" data-ta="title:tipLh"><span class="nf-ic" data-scrub="lh" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M7 3.5h8M7 8h8M7 12.5h8M3 2.5v11M1.4 4.2 3 2.5l1.6 1.7M1.4 11.8 3 13.5l1.6-1.7" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><input type="number" id="vLh" min="1" max="2.6" step="0.05" inputmode="decimal" data-ta="aria-label:lineHeight"><output class="unit" id="vLhOut" for="vLh"></output></label>
             <span class="bar-sep" aria-hidden="true"></span>
-            <button class="tog view-btn" type="button" id="viewBtn" popovertarget="viewPop" aria-haspopup="true"><svg class="vb-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.4 8S3.8 3.6 8 3.6 14.6 8 14.6 8 12.2 12.4 8 12.4 1.4 8 1.4 8Z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.2"/></svg><span data-t="viewMenu"></span></button>
-            <div class="view-pop" id="viewPop" popover role="group" data-ta="aria-label:viewMenu">
-              <button class="tog" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
-              <button class="tog" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
-              <button class="tog" type="button" id="vRules" aria-pressed="false" data-t="vRules"></button>
-              <button class="tog" type="button" id="vMiss" aria-pressed="false" data-t="vMiss"></button>
-              <button class="tog" type="button" id="vItalic" aria-pressed="false" data-t="vItalic"></button>
+            <button class="btn-ghost view-btn" type="button" id="viewBtn" popovertarget="viewPop" aria-haspopup="true"><svg class="vb-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.4 8S3.8 3.6 8 3.6 14.6 8 14.6 8 12.2 12.4 8 12.4 1.4 8 1.4 8Z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.2"/></svg><span data-t="viewMenu"></span></button>
+            <div class="pop menu view-pop" id="viewPop" popover role="group" data-ta="aria-label:viewMenu">
+              <button class="mm-item mm-check" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
+              <button class="mm-item mm-check" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
+              <button class="mm-item mm-check" type="button" id="vRules" aria-pressed="false" data-t="vRules"></button>
+              <button class="mm-item mm-check" type="button" id="vMiss" aria-pressed="false" data-t="vMiss"></button>
+              <button class="mm-item mm-check" type="button" id="vItalic" aria-pressed="false" data-t="vItalic"></button>
               <!-- 对齐等：页面版式，只改校样，不写进导出的 CSS -->
               <div class="vt" id="viewTypo"></div>
               <p class="vt-note" data-t="viewTypoNote"></p>
@@ -151,10 +151,10 @@
           <!-- 参考图的工具条：和校样的工具条同一个样子。图例就是开关：点一下显示 / 隐藏那一组参考线 -->
           <div class="spec-bar" id="specBar" role="group" data-ta="aria-label:guides">
             <span class="bar-lab" data-t="guides"></span>
-            <button class="sg-tog" type="button" data-sg="latin" aria-pressed="true" style="--c:var(--c-latin)"><i class="sg-line" aria-hidden="true"></i><span data-t="sgLatin"></span></button>
-            <button class="sg-tog" type="button" data-sg="digit" aria-pressed="true" style="--c:var(--c-digit)"><i class="sg-line" aria-hidden="true"></i><span data-t="sgDigit"></span></button>
-            <button class="sg-tog dash" type="button" data-sg="kana" aria-pressed="true" style="--c:var(--c-kana)"><i class="sg-line" aria-hidden="true"></i><span data-t="sgKana"></span></button>
-            <button class="sg-tog dash" type="button" data-sg="bopo" aria-pressed="false" style="--c:var(--c-bopo)"><i class="sg-line" aria-hidden="true"></i><span data-t="sgBopo"></span></button>
+            <button class="btn-ghost sg-tog" type="button" data-sg="latin" aria-pressed="true" style="--c:var(--c-latin)"><i class="sg-line" aria-hidden="true"></i><span data-t="sgLatin"></span></button>
+            <button class="btn-ghost sg-tog" type="button" data-sg="digit" aria-pressed="true" style="--c:var(--c-digit)"><i class="sg-line" aria-hidden="true"></i><span data-t="sgDigit"></span></button>
+            <button class="btn-ghost sg-tog dash" type="button" data-sg="kana" aria-pressed="true" style="--c:var(--c-kana)"><i class="sg-line" aria-hidden="true"></i><span data-t="sgKana"></span></button>
+            <button class="btn-ghost sg-tog dash" type="button" data-sg="bopo" aria-pressed="false" style="--c:var(--c-bopo)"><i class="sg-line" aria-hidden="true"></i><span data-t="sgBopo"></span></button>
           </div>
           <canvas id="spec" data-ta="aria-label:specAria"></canvas>
         </div>
@@ -183,12 +183,12 @@
       <div class="ex-fields">
         <div class="field"><span class="lab-i"><label for="exName"><span class="kind-css" data-t="exName"></span><span class="kind-font" data-t="fxNameLabel"></span></label><button type="button" class="info" data-info="nameInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><input id="exName" type="text" spellcheck="false"></div>
         <div class="ex-fields kind-css">
-        <div class="field" id="exContField" hidden><span class="lab-i"><span class="flabel" data-t="exWRange"></span><button type="button" class="info" data-info="wrangeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><div class="wrange"><input type="number" id="exWLo" min="100" max="900" step="1" data-ta="aria-label:wrLo"><span class="wr-dash" aria-hidden="true">–</span><input type="number" id="exWHi" min="100" max="900" step="1" data-ta="aria-label:wrHi"><div class="chips wr-chips" id="exWPresets" role="group" data-ta="aria-label:exWRange"></div></div><p class="wr-note" id="exWNote" data-t="wrFaux" hidden></p></div>
+        <div class="field" id="exContField" hidden><span class="lab-i"><span class="flabel" data-t="exWRange"></span><button type="button" class="info" data-info="wrangeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><div class="wrange"><input type="number" id="exWLo" min="100" max="900" step="1" data-ta="aria-label:wrLo"><span class="wr-dash" aria-hidden="true">–</span><input type="number" id="exWHi" min="100" max="900" step="1" data-ta="aria-label:wrHi"><div class="chips wr-chips" id="exWPresets" role="group" data-ta="aria-label:exWRange"></div></div><p class="callout wr-note" id="exWNote" data-t="wrFaux" hidden></p></div>
         <div class="field" id="exWeightsField"><span class="lab-i"><span class="flabel" data-t="exWeights"></span><button type="button" class="info" data-info="weightsInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><div class="chips" id="exWeights" role="group" data-ta="aria-label:exWeights"></div><p class="w-hint warn" id="exWHint" hidden></p></div>
         <div class="field" id="exBaseField"><span class="lab-i"><label for="exBase" data-t="exBase"></label><button type="button" class="info" data-info="baseInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><select id="exBase"><option value="link" data-t="exBaseLink"></option><option value="expand" data-t="exBaseExpand"></option></select></div>
         <div class="field"><span class="lab-i"><label for="exGeneric" data-t="exGeneric"></label><button type="button" class="info" data-info="genericInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><select id="exGeneric"><option value="auto" data-t="auto"></option><option value="serif">serif</option><option value="sans-serif">sans-serif</option></select></div>
         <div class="field"><span class="lab-i"><label for="exLang" data-t="exLang"></label><button type="button" class="info" data-info="scopeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><select id="exLang"></select></div>
-        <p class="ex-warn" id="exLangWarn" hidden></p>
+        <p class="callout ex-warn" id="exLangWarn" hidden></p>
         <div class="field"><span class="lab-i"><label for="exItalic" data-t="exItalic"></label><button type="button" class="info" data-info="italicInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><select id="exItalic"><option value="1" data-t="exItalicOn"></option><option value="0" data-t="exItalicOff"></option></select></div>
         </div>
         <!-- 字体文件自己的字重和斜体：生成很慢，不跟网页导出的 9 个字重绑在一起 -->
@@ -216,7 +216,7 @@
       <!-- 字体文件：把合成字体做成 TTF / WOFF2（assets/js/bake.js） -->
       <div class="kind-font"><div class="fx" id="fontPane" aria-live="polite"></div></div>
     </div>
-    <button type="button" class="x-btn dlg-x" id="exClose" data-ta="aria-label:closeAria;title:closeAria">×</button>
+    <button type="button" class="btn-icon dlg-x" id="exClose" data-ta="aria-label:closeAria;title:closeAria">×</button>
   </section>
 </dialog>
 
@@ -388,7 +388,7 @@
         <a class="gh" href="https://github.com/charlie5188/css-composite-font" target="_blank" rel="noopener" data-ta="aria-label:ghAria">GitHub <span aria-hidden="true">↗</span></a>
       </footer>
     </div>
-    <button type="button" class="x-btn dlg-x" id="aboutClose" data-ta="aria-label:closeAria;title:closeAria">×</button>
+    <button type="button" class="btn-icon dlg-x" id="aboutClose" data-ta="aria-label:closeAria;title:closeAria">×</button>
   </div>
 </dialog>
 
@@ -399,7 +399,7 @@
     <p id="leaveMsg"></p>
     <input id="leaveName" type="text" spellcheck="false" data-ta="placeholder:presetName;aria-label:presetName">
     <div class="leave-act">
-      <button type="button" class="tbtn" id="leaveCancel" data-t="cancel"></button>
+      <button type="button" class="btn-text" id="leaveCancel" data-t="cancel"></button>
       <button type="button" class="btn" id="leaveDiscard" data-t="leaveDiscard"></button>
       <button type="button" class="btn primary" id="leaveSave" data-t="leaveSave"></button>
     </div>
@@ -423,14 +423,14 @@
     <div data-pane="local" hidden>
       <div class="pk-grid pk-local">
         <div class="field"><label for="lfName" data-t="lfName"></label><input id="lfName" list="lfList" autocomplete="off" spellcheck="false" data-ta="placeholder:lfPh"></div>
-        <button class="tbtn" type="button" id="lfQuery" data-t="lfQuery" data-ta="title:lfMsg"></button>
+        <button class="btn-text" type="button" id="lfQuery" data-t="lfQuery" data-ta="title:lfMsg"></button>
       </div>
       <label class="pk-check"><input type="checkbox" id="lfVar"><span data-t="lfVar"></span></label>
       <p class="hint" id="lfMsg" hidden></p>
     </div>
     <div data-pane="file" hidden>
       <div class="pk-file"><label class="btn file-btn"><input id="ffFile" class="vh" type="file" accept=".woff2,.woff,.otf,.ttf"><span data-t="ffChoose"></span></label><span class="hint" id="ffName"></span></div>
-      <div class="pk-file" id="ffItalField" hidden><label class="tbtn file-btn"><input id="ffItal" class="vh" type="file" accept=".woff2,.woff,.otf,.ttf"><span data-t="ffItal"></span></label><span class="hint" id="ffItalName"></span></div>
+      <div class="pk-file" id="ffItalField" hidden><label class="btn-text file-btn"><input id="ffItal" class="vh" type="file" accept=".woff2,.woff,.otf,.ttf"><span data-t="ffItal"></span></label><span class="hint" id="ffItalName"></span></div>
       <div class="field" id="ffPathField" hidden><label for="ffPath" data-t="ffPath"></label><input id="ffPath" type="text" autocomplete="off" spellcheck="false"></div>
     </div>
     <!-- 2. 预览：样张、状态（可变字体 · 加载结果 · 斜体）、字符集 -->
@@ -444,7 +444,7 @@
     <!-- 4. 应用范围 + 按钮 -->
     <div class="pk-actions">
       <div class="pk-scope" id="pkScope" role="radiogroup" hidden><span data-t="pkScopeLab"></span><label><input type="radio" name="pkScope" value="w"><span id="pkScopeW"></span></label><label><input type="radio" name="pkScope" value="all"><span data-t="pkScopeAll"></span></label></div>
-      <button class="tbtn" type="button" id="pkCancel" data-t="cancel"></button>
+      <button class="btn-text" type="button" id="pkCancel" data-t="cancel"></button>
       <button class="btn primary" type="button" id="pkOk" data-t="pkUse" disabled></button>
     </div>
   </div>
@@ -452,7 +452,7 @@
 <datalist id="gfList"></datalist>
 <datalist id="lfList"></datalist>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
-<div id="infoPop" class="info-pop" popover></div>
-<div id="grpPop" class="grp-pop" popover></div>
+<div id="infoPop" class="pop info-pop" popover></div>
+<div id="grpPop" class="pop grp-pop" popover></div>
 </body>
 </html>

@@ -46,7 +46,8 @@ otherwise Playwright's Chromium.
 3. New interface text exists in all three `assets/js/i18n/*.js` files with the same `{placeholders}`.
 4. Behaviour users can see is reflected where it is explained: the About dialog (`index.html`, three language
    blocks `data-ui="zh|tw|ja"`), the font-file notes (`fxLimits` in i18n) and README.md (English, 日本語, 中文 sections).
-5. Look at the page: `python3 tools/serve.py`, then check desktop width, 390 px width, and dark mode.
+5. Look at the page: `python3 tools/serve.py`, then check desktop width, 390 px width, and dark mode. New UI uses the
+   design-system classes and tokens.
 6. Commit message: imperative English summary line, body explaining why.
 
 ## Layout of the code
@@ -102,6 +103,29 @@ tests/e2e/               Playwright: CSS snapshots per preset, UI, layout, font-
   tester, each scrolling on its own. Export and About are `<dialog class="side-dlg">`. Below 1000 px one pane
   is shown at a time (`.app[data-mview]`, bottom tabs).
 
+## Design system
+
+The UI is hand-written HTML and CSS on purpose; there is no component library. Everything shared lives in the
+component block near the top of `assets/style.css`. **A new control starts from these classes. Don't add a new look
+for a role that already has one; if something is really missing, add it to that block and to this list.**
+
+- **Tokens** on `:root`: colours (`--ink`, `--ink-2`, `--muted`, `--faint`, `--line`, `--rule`, `--accent`, `--warn`,
+  `--caution` …, redefined for dark mode), type scale `--fs-xs/s/m/l/xl/2xl` (11 / 12 / 13 / 14 / 18 / 22 px), spacing
+  `--sp-1`…`--sp-6` (4–32 px), radii `--r-s` (2), `--r` (4), `--r-pill`, control height `--ctl-h` (30), `--shadow-pop`.
+  UI text and radii use tokens, never raw px. Specimen text (proof, glyph samples, preset thumbnails, the title) is
+  sized by its content and is the only exception.
+- **Buttons, five kinds:** `.btn` (secondary), `.btn.primary`, `.btn-ghost` (toolbar: icon and/or label),
+  `.btn-icon` (icon only; `.sm`, and `.mini` for small icons inside text), `.btn-text` (link style). Add `.danger` for
+  destructive actions. Anything destructive that can't be undone goes through `armConfirm(btn, text, run)` in
+  `ui.js` (second click within 3 s); keep the button's own label inside an element so it can be hidden.
+- **Other components:** `.seg` (segmented choice), `.chips` (multi-select pills), `.sw` (switch), `.cell-in` +
+  `.cell-num` (inputs inside tables; `.own` = set in the base settings, `.set` = set for one weight), `.pop` (popover
+  surface) with `.menu` / `.mm-item` / `.mm-radio` / `.mm-check`, `.sec-head` + `.label` + `.sec-acts` (section
+  heading), `.callout` (yellow notice), `.info` (the (i) button that opens `#infoPop`), tooltips through `title`.
+- **Conventions:** buttons show hover with a tinted background, fields with a border. A selected card has an ink
+  border plus a 1 px inset (`.pcard`, `.ex-kinds`, `.typo-tiles`). Row separators use `--rule`; table headers and
+  section edges use `--line`. Base form-element styles are wrapped in `:where()` so a component class always wins.
+
 ## Gotchas that have bitten before
 
 - Popovers outside an open modal `<dialog>` are inert: `#infoPop` is moved into the open dialog before it opens.
@@ -121,3 +145,4 @@ tests/e2e/               Playwright: CSS snapshots per preset, UI, layout, font-
 - Don't commit generated or local files (`node_modules/`, `.venv/`, `test-results/`, screenshots, `.DS_Store`).
 - Don't add fonts to `tests/fixtures` that are not OFL/Apache, or large ones; subset them and include the license.
 - Don't put personal data (emails, tokens) in code, commits or test fixtures.
+- Don't style a one-off button, notice or popover; use or extend the design-system block (see Design system).

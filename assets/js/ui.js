@@ -179,20 +179,21 @@ $('#wMatrix').addEventListener('keydown', e => {
     setWeightAt(inp.dataset.k, +inp.dataset.w, inp);
   }
 });
-/* 清除所有字重的单独调整：点一次变成确认，3 秒内再点才执行 */
-let wResetT = null;
-$('#wReset').addEventListener('click', e => {
-  const b = e.currentTarget, lab = b.querySelector('.wr-lab');
-  if (!b.classList.contains('armed')) {
-    b.classList.add('armed'); lab.textContent = T('wResetConfirm');
-    wResetT = setTimeout(() => { b.classList.remove('armed'); lab.textContent = ''; }, 3000);
-    return;
-  }
-  clearTimeout(wResetT); b.classList.remove('armed'); lab.textContent = '';
+/* 危险操作点两次才执行：第一次点击时按钮换成确认文字（.armed，原来的内容先藏起来），3 秒内再点才执行，过时恢复原样。
+   按钮原来的文字要包在元素里（纯文字节点藏不起来） */
+export function armConfirm(btn, text, run) {
+  const disarm = () => { btn.classList.remove('armed'); btn.querySelector(':scope > .arm-lab')?.remove(); };
+  if (btn.classList.contains('armed')) { clearTimeout(btn.armT); disarm(); run(); return; }
+  const lab = document.createElement('span'); lab.className = 'arm-lab'; lab.textContent = text;
+  btn.append(lab); btn.classList.add('armed');
+  btn.armT = setTimeout(disarm, 3000);
+}
+/* 清除所有字重的单独调整 */
+$('#wReset').addEventListener('click', e => armConfirm(e.currentTarget, T('wResetConfirm'), () => {
   state.wOver = {}; state.weightNames = {};
   changed({ fonts: true });
   toast(T('tWReset'));
-});
+}));
 /* ================= 撤销 / 重做 =================
    按钮在左窗格页签那一排的右端；快捷键 ⌘Z / ⇧⌘Z（Windows：Ctrl+Z / Ctrl+Y）。在输入框里时交给输入框自己撤销 */
 export const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
@@ -659,7 +660,7 @@ export function presetCard({ id, name, tag, cls, script, user, active }) {
       <span class="ptag" title="${esc(tag)}">${esc(tag)}</span>
       <span class="pname">${esc(name)}</span>
       ${miss ? `<span class="pmiss">${esc(T('presetMissing'))}</span>` : ''}
-    </button>${user ? `<button type="button" class="pdel" data-del="${esc(id.slice(5))}" aria-label="${esc(T('presetDelete'))} ${esc(name)}" title="${esc(T('presetDelete'))}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M6.3 4.5V2.8h3.4v1.7M4 4.5l.7 8.7c.04.5.45.8.95.8h4.7c.5 0 .9-.3.95-.8L12 4.5M6.6 7v4.4M9.4 7v4.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : ''}</div>`;
+    </button>${user ? `<button type="button" class="btn-icon sm danger pdel" data-del="${esc(id.slice(5))}" aria-label="${esc(T('presetDelete'))} ${esc(name)}" title="${esc(T('presetDelete'))}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M6.3 4.5V2.8h3.4v1.7M4 4.5l.7 8.7c.04.5.45.8.95.8h4.7c.5 0 .9-.3.95-.8L12 4.5M6.6 7v4.4M9.4 7v4.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : ''}</div>`;
 }
 /* 内置预设按界面语言排：这个语言的预设在前，其他语言的排在后面 */
 export const PRESET_ORDER = {
@@ -775,20 +776,15 @@ export function askLeave(id) {
   $('#leaveName').focus();
 }
 export function initPresets() {
-  let armed = null;
   $('#presetCards').addEventListener('click', e => {
     const del = e.target.closest('.pdel');
     if (del) {
       const n = del.dataset.del;
-      if (armed !== n) {
-        armed = n; del.classList.add('armed'); del.textContent = T('presetDeleteConfirm');
-        setTimeout(() => { if (armed === n) { armed = null; renderPresetCards(); } }, 3000);
-        return;
-      }
-      armed = null;
-      delete userPresets[n]; lsSet(LS_PRESETS, userPresets);
-      if (state.preset === 'user:' + n) state.preset = '';
-      refresh('presets'); toast(T('tDeleted'));
+      armConfirm(del, T('presetDeleteConfirm'), () => {
+        delete userPresets[n]; lsSet(LS_PRESETS, userPresets);
+        if (state.preset === 'user:' + n) state.preset = '';
+        refresh('presets'); toast(T('tDeleted'));
+      });
       return;
     }
     const c = e.target.closest('[data-preset]');
@@ -873,7 +869,7 @@ export function renderAxes() {
         const opts = [...(g ? [['def', T('axOpszOff', { d: def })]] : []), ['auto', T('axOpszAuto')], ['fix', T('axFix')]];
         return `<div class="ax-row mode${mode === 'fix' ? ' fix' : ''}">${name}<select class="ax-mode" data-axmode="${t}" aria-label="${lab}">${opts.map(([k, l]) => `<option value="${k}"${k === mode ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>${mode === 'fix' ? ctl(v) : ''}</div>`;
       }
-      return `<div class="ax-row">${name}${ctl(typeof v === 'number' ? v : def)}<button type="button" class="tbtn" data-axreset="${t}"${typeof v === 'number' ? '' : ' disabled'}>${esc(T('axReset'))}</button></div>`;
+      return `<div class="ax-row">${name}${ctl(typeof v === 'number' ? v : def)}<button type="button" class="btn-text" data-axreset="${t}"${typeof v === 'number' ? '' : ' disabled'}>${esc(T('axReset'))}</button></div>`;
     };
     const rest = main.length ? more : [];
     body = `<p class="hint">${esc(T(g ? 'axNoteG' : 'axNote'))}</p>` + (main.length ? main : more).map(row).join('') +
@@ -1231,18 +1227,7 @@ export function initReset() {
     if (lmWas !== 'han') rebuild();
     refresh('typoRows', 'preview', 'export');
   });
-  let armedT = null;
-  $('#resetAll').addEventListener('click', e => {
-    const b = e.currentTarget;
-    if (!b.classList.contains('armed')) {
-      b.classList.add('armed'); b.textContent = T('resetConfirm');
-      armedT = setTimeout(() => { b.classList.remove('armed'); b.textContent = T('resetAll'); }, 3000);
-      return;
-    }
-    clearTimeout(armedT); b.classList.remove('armed'); b.textContent = T('resetAll');
-    $('#moreMenu').hidePopover();
-    resetAll();
-  });
+  $('#resetAll').addEventListener('click', e => armConfirm(e.currentTarget, T('resetConfirm'), () => { $('#moreMenu').hidePopover(); resetAll(); }));
 }
 export function init() {
   refreshCustomRanges();

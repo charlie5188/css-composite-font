@@ -25,7 +25,7 @@ export function fontCell(key, o, isHan, allowLatin) {
   const live = !o.follow && o.font ? ownFontAt(o, PW !== BASE_W ? state.wOver[PW]?.[key] : null, PW, true) : null;
   const liveKey = live ? fontKey(finalFont(live, o.vary).font) : '', s = live ? sources.get(liveKey) : null;
   return `<span class="status ${o.follow ? 'none' : (s ? s.status : 'loading')}"${o.follow ? '' : ` data-key="${esc(liveKey)}"`}></span>` +
-    `<select class="fsel${o.follow ? ' follow' : ''}" data-act="fsel" title="${esc((opts.find(([v]) => v === cur) || [])[1] || '')}" aria-label="${esc(T('fontAria', { c: keyName(key) }))}">` +
+    `<select class="fsel cell-in${o.follow ? ' follow' : ''}" data-act="fsel" title="${esc((opts.find(([v]) => v === cur) || [])[1] || '')}" aria-label="${esc(T('fontAria', { c: keyName(key) }))}">` +
     opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select>';
 }
 export function numCell(field, key) {
@@ -33,7 +33,7 @@ export function numCell(field, key) {
   const own = field === 'size' ? ownSize(key, BASE_W) : o.shift;
   const inh = field === 'size' ? inheritedSize(key, BASE_W) : inheritedShift(key);
   const cls = own == null ? '' : ' own';
-  return `<input class="num${cls}" type="text" inputmode="decimal" autocomplete="off" data-field="${field}" value="${own ?? ''}" placeholder="${inh}"
+  return `<input class="num cell-in cell-num${cls}" type="text" inputmode="decimal" autocomplete="off" data-field="${field}" value="${own ?? ''}" placeholder="${inh}"
     aria-label="${esc(T(field === 'size' ? 'sizeAria' : 'shiftAria', { c: keyName(key) }))}">`;
 }
 /* 调过的可变轴：写在这一行下面，例如「宽度 80 · 光学尺寸 跟随字号」 */
@@ -49,7 +49,7 @@ export function errRow(key, o) {
   const s = sources.get(fontKey(finalFont(f, o.vary).font));
   if (s?.status === 'error') return `<span class="ct-err">${esc(srcError(s))}</span>`;
   /* CJK 字体（Google 上切成上百个分片）用了非整百的粗细，就会加载可变版本：每个分片约为静态的 1.9 倍 */
-  if (f.kind === 'google' && f.weight % 100 && s?.status === 'ok' && s.faces.length > 30) return `<span class="ct-note">${esc(T('vfCjkCost'))}</span>`;
+  if (f.kind === 'google' && f.weight % 100 && s?.status === 'ok' && s.faces.length > 30) return `<span class="callout ct-note">${esc(T('vfCjkCost'))}</span>`;
   return '';
 }
 /* ================= 地区检查：字形和标点位置是不是当前语言的写法 ================= */
@@ -104,8 +104,8 @@ export function regionCheck(lang) {
 export function regionRow(key) {
   if (key !== 'han' && key !== 'punct') return '';
   const lang = state.typo.lang, c = regionCheck(lang);
-  if (key === 'han' && c.forms) return `<span class="ct-note">${esc(T('regForms', { got: T('reg_' + c.forms.got), lang: langName(lang) }))}</span>`;
-  if (key === 'punct' && c.punct) return `<span class="ct-note">${esc(T(c.punct.pos === 'center' ? 'regPunctCenter' : 'regPunctCorner', { lang: langName(lang) }))}</span>`;
+  if (key === 'han' && c.forms) return `<span class="callout ct-note">${esc(T('regForms', { got: T('reg_' + c.forms.got), lang: langName(lang) }))}</span>`;
+  if (key === 'punct' && c.punct) return `<span class="callout ct-note">${esc(T(c.punct.pos === 'center' ? 'regPunctCenter' : 'regPunctCorner', { lang: langName(lang) }))}</span>`;
   return '';
 }
 /* 导出区：按适用语言检查，写在「适用语言」下面 */
@@ -136,7 +136,7 @@ export function renderClassRows() {
     const nMoved = groups.filter(g => isMoved(c.id, g)).length;
     const nIn = c.id === 'latin' ? Object.entries(GROUPS).reduce((n, [cid, gs]) => n + gs.filter(g => isMoved(cid, g)).length, 0) : 0;
     const note = [c.note ? tr(c.note) : '', nMoved ? T('movedNote', { n: nMoved }) : '', nIn ? T('movedIn', { n: nIn }) : ''].filter(Boolean).join(' · ');
-    const gear = groups.length ? `<button type="button" class="gear${nMoved ? ' on' : ''}" data-act="groups" data-cls="${c.id}" popovertarget="grpPop" aria-label="${esc(T('gearAria', { c: tr(c.name) }))}" title="${esc(T('gearAria', { c: tr(c.name) }))}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.76 2.85L6.8 0.8L9.2 0.8L9.24 2.85A5.3 5.3 0 0 1 10.77 3.48L12.24 2.06L13.94 3.76L12.52 5.23A5.3 5.3 0 0 1 13.15 6.76L15.2 6.8L15.2 9.2L13.15 9.24A5.3 5.3 0 0 1 12.52 10.77L13.94 12.24L12.24 13.94L10.77 12.52A5.3 5.3 0 0 1 9.24 13.15L9.2 15.2L6.8 15.2L6.76 13.15A5.3 5.3 0 0 1 5.23 12.52L3.76 13.94L2.06 12.24L3.48 10.77A5.3 5.3 0 0 1 2.85 9.24L0.8 9.2L0.8 6.8L2.85 6.76A5.3 5.3 0 0 1 3.48 5.23L2.06 3.76L3.76 2.06L5.23 3.48A5.3 5.3 0 0 1 6.76 2.85Z" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.25"/></svg></button>` : '';
+    const gear = groups.length ? `<button type="button" class="btn-icon mini gear${nMoved ? ' on' : ''}" data-act="groups" data-cls="${c.id}" popovertarget="grpPop" aria-label="${esc(T('gearAria', { c: tr(c.name) }))}" title="${esc(T('gearAria', { c: tr(c.name) }))}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.76 2.85L6.8 0.8L9.2 0.8L9.24 2.85A5.3 5.3 0 0 1 10.77 3.48L12.24 2.06L13.94 3.76L12.52 5.23A5.3 5.3 0 0 1 13.15 6.76L15.2 6.8L15.2 9.2L13.15 9.24A5.3 5.3 0 0 1 12.52 10.77L13.94 12.24L12.24 13.94L10.77 12.52A5.3 5.3 0 0 1 9.24 13.15L9.2 15.2L6.8 15.2L6.76 13.15A5.3 5.3 0 0 1 5.23 12.52L3.76 13.94L2.06 12.24L3.48 10.77A5.3 5.3 0 0 1 2.85 9.24L0.8 9.2L0.8 6.8L2.85 6.76A5.3 5.3 0 0 1 3.48 5.23L2.06 3.76L3.76 2.06L5.23 3.48A5.3 5.3 0 0 1 6.76 2.85Z" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.25"/></svg></button>` : '';
     return `<div class="ct-row" data-id="${c.id}" style="--c:var(--c-${c.id})">
       <span class="ct-glyph" aria-hidden="true">${esc(GLYPH[c.id])}</span>
       <span class="ct-name"${tip ? ` title="${esc(tip)}"` : ''}><span class="nm"><i class="dot"></i>${esc(tr(c.name))}${gear}</span>${note ? `<small>${esc(note)}</small>` : ''}</span>
@@ -149,7 +149,7 @@ export function renderClassRows() {
       <input class="chars" type="text" value="${esc(cu.chars)}" placeholder="${esc(T('customPh'))}" aria-label="${esc(T('custom'))}" spellcheck="false">
       <span class="ct-font">${fontCell('#' + i, cu, false, true)}</span>
       ${numCell('size', '#' + i)}${numCell('shift', '#' + i)}
-      <button class="x" type="button" data-act="remove" aria-label="${esc(T('customRemove'))}" title="${esc(T('customRemove'))}">×</button>${axRow('#' + i, cu)}${errRow('#' + i, cu)}
+      <button class="btn-icon mini danger x" type="button" data-act="remove" aria-label="${esc(T('customRemove'))}" title="${esc(T('customRemove'))}">×</button>${axRow('#' + i, cu)}${errRow('#' + i, cu)}
     </div>`).join('')
     : '';
   fitGlyphs();
@@ -188,18 +188,18 @@ export function wInfo(k, o, W) {
 }
 export function wCell(k, o, W) {
   const base = W === BASE_W, i = wInfo(k, o, W), d = `data-k="${esc(k)}" data-w="${W}"`, aria = esc(T('wWeightAria', { c: keyName(k), w: W }));
-  if (i.kind === 'name') return `<span class="wm-c"><button type="button" class="wm-name${i.set ? ' set' : ''}${i.guess ? ' guess' : ''}" data-act="wpick" ${d} title="${esc(T('wNameTip', { w: W, name: i.name }) + (i.guess ? ' ' + T('wNameGuess') : ''))}">${esc(nameTail(shortName(o.font), i.name))}</button></span>`;
+  if (i.kind === 'name') return `<span class="wm-c"><button type="button" class="wm-name cell-in cell-num${i.set ? ' set' : ''}${i.guess ? ' guess' : ''}" data-act="wpick" ${d} title="${esc(T('wNameTip', { w: W, name: i.name }) + (i.guess ? ' ' + T('wNameGuess') : ''))}">${esc(nameTail(shortName(o.font), i.name))}</button></span>`;
   const swap = i.ov?.font ? ` title="${esc(T('wSwapped', { font: fontLabel(i.ov.font) }))}"` : '';
-  const pick = base ? '' : `<button type="button" class="wm-pick" data-act="wpick" ${d} title="${esc(T('wPickTip', { w: W }))}" aria-label="${esc(T('wPickTip', { w: W }))}">⋯</button>`;
+  const pick = base ? '' : `<button type="button" class="btn-icon mini wm-pick" data-act="wpick" ${d} title="${esc(T('wPickTip', { w: W }))}" aria-label="${esc(T('wPickTip', { w: W }))}">⋯</button>`;
   const ctl = i.kind === 'vf'
-    ? `<input class="mw${i.set ? ' set' : ''}" type="number" data-act="wnum" ${d} min="${i.axis[0]}" max="${i.axis[1]}" step="10" value="${i.val ?? ''}" placeholder="${i.auto}" aria-label="${aria}"${swap}>`
-    : `<select class="msel${i.set ? ' set' : ''}" data-act="wsel" ${d} aria-label="${aria}"${swap}>` + (i.noAuto ? '' : `<option value="0">${esc(T('wAuto', { w: i.auto }))}</option>`) +
+    ? `<input class="mw cell-in cell-num${i.set ? ' set' : ''}" type="number" data-act="wnum" ${d} min="${i.axis[0]}" max="${i.axis[1]}" step="10" value="${i.val ?? ''}" placeholder="${i.auto}" aria-label="${aria}"${swap}>`
+    : `<select class="msel cell-in cell-num${i.set ? ' set' : ''}" data-act="wsel" ${d} aria-label="${aria}"${swap}>` + (i.noAuto ? '' : `<option value="0">${esc(T('wAuto', { w: i.auto }))}</option>`) +
       WEIGHTS.map(w => `<option value="${w}"${i.val === w ? ' selected' : ''}>${w}</option>`).join('') + '</select>';
   return `<span class="wm-c${i.ov?.font ? ' swapped' : ''}">${ctl}${pick}</span>`;
 }
 export function sizeCell(k, W) {
   const own = ownSize(k, W);
-  return `<input class="mnum${own == null ? '' : W === BASE_W ? ' own' : ' set'}" type="text" inputmode="decimal" autocomplete="off" data-k="${esc(k)}" data-w="${W}" value="${own ?? ''}" placeholder="${inheritedSize(k, W)}" aria-label="${esc(T('wSizeAria', { c: keyName(k), w: W }))}">`;
+  return `<input class="mnum cell-in cell-num${own == null ? '' : W === BASE_W ? ' own' : ' set'}" type="text" inputmode="decimal" autocomplete="off" data-k="${esc(k)}" data-w="${W}" value="${own ?? ''}" placeholder="${inheritedSize(k, W)}" aria-label="${esc(T('wSizeAria', { c: keyName(k), w: W }))}">`;
 }
 export const wAnyAdjusted = () => WEIGHTS.some(wRowAdjusted);
 export function renderWeights() {
@@ -314,7 +314,7 @@ export function renderGroups() {
     GROUPS[id].map(g => `<div class="gp-row"><span class="gp-sample" aria-hidden="true">${esc(g.sample)}</span>
       <span class="gp-name">${esc(tr(g.name))}<small>${esc(fmtRanges(g.r))}</small></span>
       <button type="button" class="sw" role="switch" data-g="${id}.${g.id}" aria-checked="${!isMoved(id, g)}" aria-label="${esc(tr(g.name))}"></button></div>`).join('') +
-    (GROUPS[id].some(g => isMoved(id, g)) ? `<div class="gp-foot"><button type="button" class="tbtn" data-act="gpreset">${esc(T('gpReset'))}</button></div>` : '');
+    (GROUPS[id].some(g => isMoved(id, g)) ? `<div class="gp-foot"><button type="button" class="btn-text" data-act="gpreset">${esc(T('gpReset'))}</button></div>` : '');
 }
 /* ================= 数字样式 =================
    在这个字体里有没有效果：每个特性单独加上画一遍 0–9，和不加时逐像素比较。一样 = 字体没有这个特性，或者本来就是这样
@@ -700,7 +700,7 @@ export function renderWHint() {
   if (miss.includes(400)) out.push(T('wMiss400', { w: matchWeight(ws, 400) }));
   if (miss.includes(700)) { const m = matchWeight(ws, 700); out.push(T(m < 600 ? 'wMiss700Faux' : 'wMiss700', { w: m })); }
   el.hidden = !miss.length;
-  if (miss.length) el.innerHTML = esc(out.join('')) + ` <button type="button" class="tbtn" data-act="wadd">${esc(T('wAdd', { w: miss.join(T('joiner')) }))}</button>`;
+  if (miss.length) el.innerHTML = esc(out.join('')) + ` <button type="button" class="btn-text" data-act="wadd">${esc(T('wAdd', { w: miss.join(T('joiner')) }))}</button>`;
 }
 
 /* ================= 度量 ================= */
