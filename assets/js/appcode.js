@@ -73,7 +73,7 @@ export function classOfModel(m, cp) {
   return 0;
 }
 const rows = (items, per, indent) => { const out = []; for (let i = 0; i < items.length; i += per) out.push(indent + items.slice(i, i + per).join(', ')); return out.join(',\n'); };
-const head = (m, c) => `${c} Composite Font Workshop · "${(state.name || '').trim() || 'My Composite'}" → ${m.name}
+const head = (m, c) => `${c} Composite Font Studio · "${(state.name || '').trim() || 'My Composite'}" → ${m.name}
 ${c} EXPERIMENTAL. There are no composite fonts on this platform, so this splits text into runs by character
 ${c} class and gives each run its own font, size and baseline offset, using the same rules as the web export.
 ${c} Font names below are guesses: check them against the font files you bundle.

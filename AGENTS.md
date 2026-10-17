@@ -5,7 +5,7 @@ README.md describes the product; this file is about working on the code.
 
 ## What this is
 
-Composite Font Workshop (复合字体工坊 / 複合字型工坊 / 合成フォント工房) is a single-page tool that builds an InDesign-style composite font (different fonts and sizes for Han, kana,
+Composite Font Studio (复合字体工坊 / 複合字型工坊 / 合成フォント工房) is a single-page tool that builds an InDesign-style composite font (different fonts and sizes for Han, kana,
 punctuation, Latin, digits) and exports it as CSS (`@font-face` + `unicode-range` + `size-adjust`) or as real
 font files (TTF / OTF / WOFF2, baked in the browser with fontTools on Pyodide).
 

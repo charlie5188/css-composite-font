@@ -1,4 +1,4 @@
-# Composite Font Workshop
+# Composite Font Studio
 
 复合字体工坊 · 複合字型工坊 · 合成フォント工房
 

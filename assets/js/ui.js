@@ -1261,7 +1261,7 @@ export function renderAboutToc() {
 }
 export function applyUI() {
   root.lang = UI === 'ja' ? 'ja' : UI === 'tw' ? 'zh-Hant-TW' : UI === 'en' ? 'en' : 'zh-Hans';
-  document.title = `${T('title')} · Composite Font Workshop`;
+  document.title = UI === 'en' ? T('title') : `${T('title')} · Composite Font Studio`;
   document.querySelectorAll('[data-t]').forEach(el => { el.textContent = T(el.dataset.t); });
   document.querySelectorAll('[data-th]').forEach(el => { el.innerHTML = T(el.dataset.th); });
   document.querySelectorAll('[data-ta]').forEach(el => el.dataset.ta.split(';').forEach(p => { const [a, k] = p.split(':'); el.setAttribute(a, T(k)); }));
