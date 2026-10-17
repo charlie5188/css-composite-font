@@ -443,7 +443,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* 不常用的显示选项收进「显示」菜单；按钮上显示开了几项 */
 .view-btn{color:var(--muted)}
 .view-btn::after{content:"";display:inline-block;width:5px;height:5px;margin-left:8px;border-right:1.25px solid currentColor;border-bottom:1.25px solid currentColor;transform:translateY(-2px) rotate(45deg)}
-.view-pop{width:auto;min-width:180px}
+.view-pop{width:min(320px,calc(100vw - 24px))}      /* 说明文字是全宽的：宽度要定住，不然会被长句撑开 */
 .vt{display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;gap:6px 10px;margin-top:4px;padding:8px 10px 0;border-top:1px solid var(--rule)}      /* 三行共用列宽，下拉框对齐 */
 .vt-row{display:contents;font-size:var(--fs-m)}
 .vt-row select{font-size:var(--fs-s);padding-top:4px;padding-bottom:4px}
