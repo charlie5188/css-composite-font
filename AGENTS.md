@@ -22,8 +22,9 @@ font files (TTF / OTF / WOFF2, baked in the browser with fontTools on Pyodide).
 npm run setup        # npm ci, Playwright's Chromium, and a .venv with fontTools 4.60.2 / uharfbuzz / pytest
 ```
 
-Needs Node 20+ and Python 3.9+ (CI uses 3.12, the worker runs Pyodide's 3.12). Locally the browser tests use an installed Google Chrome when there is one,
-otherwise Playwright's Chromium.
+Needs Node 20+ and Python 3.9+ (CI uses 3.12, the worker runs Pyodide's 3.12). Browser tests use Playwright's
+bundled Chromium locally and in CI. Use `PW_CHANNEL=chrome npm test` for an additional installed-Chrome check;
+it must not replace the default run, since newer Chrome can hide compatibility failures in CI's browser.
 
 ## Commands
 

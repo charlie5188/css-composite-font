@@ -100,6 +100,32 @@ test('自动匹配：真实可变字体的字重和大小一起改善，视图�
   await expect(page.locator('#codeOut')).toContainText(`"wght" ${after.weight}`);
 });
 
+test('不支持可变轴描述的浏览器仍可匹配字重，其他轴无法测量时保留该类别', async ({ page }) => {
+  await page.addInitScript(() => {
+    const NativeFontFace = window.FontFace;
+    window.FontFace = function (family, src, descriptors = {}) {
+      const { variationSettings, ...supported } = descriptors;
+      return new NativeFontFace(family, src, supported);
+    };
+    window.FontFace.prototype = new Proxy(NativeFontFace.prototype, { has: (target, key) => key !== 'variationSettings' && Reflect.has(target, key) });
+  });
+  await fixture(page);
+  await adjust(page);
+  expect((await values(page)).weight).toBeGreaterThan(100);
+  await page.evaluate(async () => {
+    const c = await import('./assets/js/core.js'), u = await import('./assets/js/ui.js');
+    // 给类别声明额外轴；不支持描述的浏览器必须整类保留，不能用默认轴代替用户选值。
+    c.state.classes.latin.font.axes = [['wght', 100, 900, 400], ['wdth', 50, 200, 100]];
+    c.state.classes.latin.vary = { wdth: 75 }; c.state.classes.latin.size = 137;
+    u.changed({ fonts: true });
+  });
+  const before = await values(page);
+  await adjust(page);
+  expect(await values(page)).toEqual(before);
+  await expect(page.locator('#toast')).toContainText('保留原设置');
+  expect(await page.evaluate(() => [...document.fonts].filter(f => f.family.startsWith('__cf_fit_')).length)).toBe(0);
+});
+
 test('连续模式和单一字重只调整大小、基线，保留字重', async ({ page }) => {
   await fixture(page, { continuous: true });
   const before = await values(page);
@@ -130,11 +156,12 @@ test('缺少汉字参照不应用回退字体的测量结果', async ({ page }) 
 
 test('静态字体缺少目标字重时测量实际档位，不把候选的回退当成新字重', async ({ page }) => {
   await fixture(page);
+  const fontUrl = new URL('tests/fixtures/NotoSansJP-Subset.ttf', page.url()).href;
   await page.route('https://fonts.googleapis.com/**', route => {
     const family = new URL(route.request().url()).searchParams.get('family');
     // 只有 Regular 可用；仍用真实字体轮廓，模拟静态字族在 100、200 等档位回退到 400。
     if (!family?.endsWith('@400')) return route.fulfill({ status: 400, body: '' });
-    return route.fulfill({ contentType: 'text/css', body: `@font-face { font-family: 'Shippori Mincho'; src: url('http://127.0.0.1:8765/tests/fixtures/NotoSansJP-Subset.ttf'); }` });
+    return route.fulfill({ contentType: 'text/css', body: `@font-face { font-family: 'Shippori Mincho'; src: url('${fontUrl}'); }` });
   });
   const result = await page.evaluate(async () => {
     const c = await import('./assets/js/core.js'), { createFitter, chooseFits } = await import('./assets/js/autofit.js');

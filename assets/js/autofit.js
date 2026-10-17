@@ -59,10 +59,12 @@ function stems(ctx, ch, height) {
 }
 
 export function createFitter() {
-  const faces = [], cache = new Map();
+  const faces = [], cache = new Map(), variations = 'variationSettings' in FontFace.prototype;
   async function measure(r, weight, han = false, chars = '') {
     const { font, fvs } = finalFont(r.font, r.vary);
     if (!font) return null;
+    // 旧浏览器忽略 FontFace 的可变轴描述；其他轴无法可靠测量时保留该类别，不能按默认轮廓误调。
+    if (!variations && fvs && Object.keys(fvs).length) return null;
     const axis = vfAxisNow(font), w = weight ?? font.weight ?? 400;
     const key = JSON.stringify([fontKey(font), fvs, w, han, chars]);
     if (cache.has(key)) return cache.get(key);
@@ -78,26 +80,28 @@ export function createFitter() {
       if (Array.isArray(axis)) vars.wght = w;
       const settings = Object.entries(vars).map(([k, v]) => `"${k}" ${v}`).join(', ');
       const sample = chars || SAMPLE + (han ? '国' : '');
+      // wght 同时走标准 font-weight：旧版 Chromium 不支持 variationSettings，会把所有候选画成默认字重。
+      const cssWeight = Array.isArray(axis) ? w : 400, fontSpec = `${cssWeight} ${FS}px "${family}"`;
       for (const fc of s.faces) {
         // CJK 网页字体可能有上百分片；每个候选只注册样字用到的分片，避免多类别测量堆积临时 face。
         if (fc.range && ![...sample].some(ch => inRanges(fc.range, ch.codePointAt(0)))) continue;
-        const d = { ...(fc.range ? { unicodeRange: fmtRanges(fc.range) } : {}), ...(settings ? { variationSettings: settings } : {}) };
+        const d = { weight: String(cssWeight), ...(fc.range ? { unicodeRange: fmtRanges(fc.range) } : {}), ...(settings ? { variationSettings: settings } : {}) };
         const face = new FontFace(family, fc.buffer || fc.src, d);
         faces.push(face); document.fonts.add(face);
       }
       let timer;
       try {
-        await Promise.race([document.fonts.load(`${FS}px "${family}"`, sample), new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('font timeout')), 8000); })]);
+        await Promise.race([document.fonts.load(fontSpec, sample), new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('font timeout')), 8000); })]);
       } catch (e) { return null; } finally { clearTimeout(timer); }
       const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
       ctx.canvas.width = ctx.canvas.height = 512;
       /* 用项目已有的零宽空白字体接管缺字，不能把系统的 CJK 回退误当成源字体。 */
       if (!(await loadBlank())) return null;
-      ctx.font = `${FS}px "${family}", "__cf_blank"`;
+      ctx.font = `${fontSpec}, "__cf_blank"`;
       const owns = ch => ctx.measureText(ch).width > 0;
       if (chars) {
         const owned = [...new Set(chars)].filter(owns), glyphs = {};
-        ctx.font = `${FS}px "${family}"`; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#000';
+        ctx.font = fontSpec; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#000';
         for (const ch of owned) {
           const m = ctx.measureText(ch), height = m.actualBoundingBoxAscent + m.actualBoundingBoxDescent;
           if (height > 0) glyphs[ch] = { height, width: m.width, mid: (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2,
@@ -107,7 +111,7 @@ export function createFitter() {
       }
       const hasLatin = [...SAMPLE].every(owns);
       if ((!han && !hasLatin) || (han && !owns('国'))) return null;
-      ctx.font = `${FS}px "${family}"`; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#000';
+      ctx.font = fontSpec; ctx.textBaseline = 'alphabetic'; ctx.fillStyle = '#000';
       const H = ctx.measureText('H').actualBoundingBoxAscent, x = ctx.measureText('x').actualBoundingBoxAscent;
       const m = han && ctx.measureText('国'), face = m ? m.actualBoundingBoxAscent + m.actualBoundingBoxDescent : null;
       const stroke = hasLatin ? ['H', 'h'].map(ch => stems(ctx, ch, ctx.measureText(ch).actualBoundingBoxAscent)) : [];
