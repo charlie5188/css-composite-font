@@ -2,7 +2,7 @@ import { refresh } from './refresh.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, inRanges, rebuildClassRanges } from './unicode.js';
 import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, objByKey, ownSize, presetDirty, presetSnap, rebuild, canRedo, canUndo, hist, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, userPresets, vfAxis, vfCache } from './core.js';
-import { PUNCT_CENTER, REGION_OF_LANG, drawSpecimen, markPreviewRow, renderClassRows, lastMeasure, lastRef, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
+import { PUNCT_CENTER, REGION_OF_LANG, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, lastMeasure, lastRef, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { cssFamilyName, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
 /* ================= 交互：字符类别表 ================= */
@@ -1263,6 +1263,7 @@ export function init() {
   initSplit(); initHistory(); initTips();
   rebuildNow();
   new ResizeObserver(debounce(drawSpecimen, 100)).observe($('#spec'));
+  document.fonts.addEventListener('loadingdone', debounce(fitGlyphs, 60));      // 字样里的字晚一点才下载时，下载完再量
   new ResizeObserver(debounce(refreshVAutospace, 100)).observe($('#proofText'));      // 直排校样的高度跟着窗口变
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => drawSpecimen());
   new MutationObserver(() => drawSpecimen()).observe(root, { attributes: true, attributeFilter: ['data-theme'] });

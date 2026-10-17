@@ -117,6 +117,17 @@ export function renderLangWarn() {
   if (list.length) el.textContent = T('exRegWarn', { lang: langName(lang), list: list.join(T('joiner')) });
 }
 export function renderEditor() { renderClassRows(); renderWeights(); }
+/* 类别表左边的字样：两个全角标点、放大后的西文可能比格子宽。先用 halt 把标点挤成半角（见 CSS，字体有这个特性时），
+   还放不下就只缩小这一格的字号（等比，不压扁）；左右各可以伸出 4px（左边是窗格留白，右边是格间距的一半） */
+export function fitGlyphs() {
+  for (const el of document.querySelectorAll('#classRows .ct-glyph')) {
+    el.style.fontSize = '';
+    if (!el.clientWidth) continue;      // 页签没打开、窄屏隐藏：显示时再量
+    const r = document.createRange(); r.selectNodeContents(el);
+    const w = r.getBoundingClientRect().width, room = el.clientWidth + 8;
+    if (w > room) el.style.fontSize = Math.max(14, Math.floor(parseFloat(getComputedStyle(el).fontSize) * room / w)) + 'px';
+  }
+}
 export function renderClassRows() {
   $('#classRows').innerHTML = visibleClasses().map(c => {
     const o = state.classes[c.id];
@@ -141,6 +152,7 @@ export function renderClassRows() {
       <button class="x" type="button" data-act="remove" aria-label="${esc(T('customRemove'))}" title="${esc(T('customRemove'))}">×</button>${axRow('#' + i, cu)}${errRow('#' + i, cu)}
     </div>`).join('')
     : '';
+  fitGlyphs();
 }
 /* ================= 各字重：每个字重的粗细和大小 =================
    行是字重（分档：9 档，勾上的才导出；连续：导出范围里的各档），列是有自己字体的类别。
@@ -632,6 +644,7 @@ export function syncLeftTab() {
   const k = ['fonts', 'typo'].includes(state.view.ltab) ? state.view.ltab : 'presets';
   document.querySelectorAll('.pane-bar [data-ltab]').forEach(b => b.setAttribute('aria-selected', b.dataset.ltab === k));
   $('#panePresets').hidden = k !== 'presets'; $('#paneFonts').hidden = k !== 'fonts'; $('#paneTypo').hidden = k !== 'typo';
+  if (k === 'fonts') fitGlyphs();
 }
 export function syncToolbar() {
   const v = state.view;

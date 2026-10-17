@@ -1,7 +1,7 @@
 import { $, T, UI, debounce, lsGet, lsSet, root, sleep, tr } from './i18n.js';
 import { CLASSES, EFF, classOf, fmtRanges, inRanges, intersect, parseChars, parseRanges, rebuildClassRanges, union } from './unicode.js';
 import { AXIS_NAMES, GF_AXES, GF_ITALIC } from './gfmeta.js';
-import { checkMissSoon, drawSpecimen, refreshVAutospace, renderChipsStatus, renderEditor } from './render.js';
+import { checkMissSoon, drawSpecimen, fitGlyphs, refreshVAutospace, renderChipsStatus, renderEditor } from './render.js';
 import { renderExport, renderExportSoon } from './export.js';
 import { renderPresetCardsSoon } from './ui.js';
 /* ================= 字体来源 ================= */
@@ -922,6 +922,7 @@ export async function rebuildNow() {
   const old = liveFaces;
   liveFaces = faces; liveFamily = fam;
   root.style.setProperty('--cf', `"${fam}"`);
+  requestAnimationFrame(fitGlyphs);      // 换了字体，类别表左边字样的宽度也变了
   root.style.setProperty('--fw', cont ? state.view.wcont : W);
   old.forEach(f => document.fonts.delete(f));
   refreshVAutospace();      // 换了字体，换列的位置可能变了
