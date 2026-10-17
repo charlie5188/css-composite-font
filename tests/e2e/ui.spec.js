@@ -126,9 +126,8 @@ test('各字重：改某个字重的大小只写进那个字重，勾选和导�
   await page.click('#wMatrix input[data-wx="300"]');
   await showExport(page);
   await expect(page.locator('#exWeights [data-w="300"]')).toHaveAttribute('aria-pressed', 'false');
-  const css = await page.textContent('#codeOut');
-  expect(css).toContain('size-adjust: 121%');
-  expect(css).not.toMatch(/font-weight: 300;/);
+  await expect(page.locator('#codeOut')).toContainText('size-adjust: 121%');      // 导出区是防抖更新的：等它刷新
+  expect(await page.textContent('#codeOut')).not.toMatch(/font-weight: 300;/);
 });
 
 test('撤销 / 重做：按钮和快捷键，输入框里的 ⌘Z 不抢', async ({ page }) => {
