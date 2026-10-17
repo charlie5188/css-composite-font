@@ -1,8 +1,8 @@
 import { refresh } from './refresh.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, inRanges, rebuildClassRanges } from './unicode.js';
-import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, objByKey, ownSize, presetDirty, presetSnap, rebuild, canRedo, canUndo, hist, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, userPresets, vfAxis, vfCache } from './core.js';
-import { PUNCT_CENTER, REGION_OF_LANG, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, lastMeasure, lastRef, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
+import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, objByKey, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, userPresets, vfAxis, vfCache } from './core.js';
+import { PUNCT_CENTER, REGION_OF_LANG, formsOf, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, lastMeasure, lastRef, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { cssFamilyName, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
 /* ================= 交互：字符类别表 ================= */
@@ -672,9 +672,17 @@ export const orderedPresets = () => { const o = PRESET_ORDER[UI] || PRESET_ORDER
 /* ================= 预设筛选 =================
    三组：地区、风格（宋体 / 明朝 还是 黑体 / ゴシック，看汉字字体的名字）、来源（Google Fonts 还是本机字体）。
    组内任选一个就算符合，组间要同时符合；一组都没选 = 不限。筛选条件放在视图状态里，不进撤销记录 */
-export const PF_GROUPS = [['region', [['sc', 'pfSc'], ['tc', 'pfTc'], ['jp', 'pfJp']]], ['style', [['serif', 'pfSerif'], ['sans', 'pfSans']]], ['src', [['google', 'pfGoogle'], ['local', 'pfLocal']]]];
-export const styleOfFont = f => /Serif|Mincho|Ming|Song|明|宋/i.test(f?.family || f?.name || f?.fileName || '') ? 'serif' : 'sans';
-export const presetMeta = (script, han) => ({ region: script, style: styleOfFont(han), src: han?.kind === 'google' ? 'google' : 'local' });
+export const PF_GROUPS = [['region', [['sc', 'pfSc'], ['tc', 'pfTc'], ['jp', 'pfJp']]], ['style', [['serif', 'pfSerif'], ['sans', 'pfSans'], ['other', 'pfOther']]], ['src', [['google', 'pfGoogle'], ['local', 'pfLocal']]]];
+/* 从设定推算预设的属性（保存对话框里的默认值；旧的「我的预设」没存属性时也用它）：
+   地区：导出的「适用语言」→ 汉字字体名里的地区（SC / TC / HK / JP）→ 校样的语言；风格：看汉字字体（styleOfFont）；
+   来源：所有类别都用 Google Fonts 才算 Google，有本机字体或字体文件就算本机（换一台电脑要有同样的字体） */
+const REGION_GROUP = { sc: 'sc', tw: 'tc', hk: 'tc', jp: 'jp' };
+export function inferMeta(st) {
+  const han = st.classes?.han?.font;
+  const own = [...Object.values(st.classes || {}), ...(st.custom || [])].filter(c => c && !c.follow && c.font).map(c => c.font);
+  const region = REGION_GROUP[REGION_OF_LANG[st.scope]] || REGION_GROUP[formsOf(han)] || scriptOfLang(st.typo?.lang);
+  return { region, style: styleOfFont(han), src: own.length && own.every(f => f.kind === 'google') ? 'google' : 'local' };
+}
 export function renderPresetFilter(shown, total) {
   const pf = state.view.pfilter || {}, on = PF_GROUPS.some(([g]) => pf[g]?.length);
   $('#presetFilter').innerHTML = PF_GROUPS.map(([g, opts]) => `<span class="chips tags">${opts.map(([v, k]) =>
@@ -685,12 +693,12 @@ export function renderPresetFilter(shown, total) {
 export function renderPresetCards() {
   const all = [], pf = state.view.pfilter || {};
   for (const [n, snap] of Object.entries(userPresets)) if (snap?.classes?.han) {
-    const script = scriptOfLang(snap.typo?.lang);
-    all.push([presetMeta(script, snap.classes.han.font), { id: 'user:' + n, name: n, tag: T('presetMine'), cls: snap.classes, script, user: true, active: state.preset === 'user:' + n }]);
+    const meta = { ...inferMeta(snap), ...(snap.meta || {}), src: inferMeta(snap).src };      // 地区、风格用保存时确认的；来源总是按字体算
+    all.push([meta, { id: 'user:' + n, name: n, tag: T('presetMine'), cls: snap.classes, script: scriptOfLang(snap.typo?.lang), user: true, active: state.preset === 'user:' + n }]);
   }
   for (const p of orderedPresets()) {
-    const script = p.region === 'hk' ? 'tc' : p.region;
-    all.push([presetMeta(script, p.han), { id: p.id, name: tr(p.name), tag: tr(p.tag), cls: freshClasses(p), script, active: state.preset === p.id }]);
+    const script = p.region === 'hk' ? 'tc' : p.region, cls = freshClasses(p);
+    all.push([{ region: script, style: p.style, src: inferMeta({ classes: cls }).src }, { id: p.id, name: tr(p.name), tag: tr(p.tag), cls, script, active: state.preset === p.id }]);
   }
   const fit = m => PF_GROUPS.every(([g]) => !pf[g]?.length || pf[g].includes(m[g]));
   const cards = all.filter(([m]) => fit(m)).map(([, c]) => presetCard(c));
@@ -714,7 +722,7 @@ export const renderPresetCardsSoon = debounce(renderPresetCards, 120);
 export const hasFileFont = () => [...CLASSES.map(c => state.classes[c.id].font), ...state.custom.map(c => c.font)].some(f => f && f.kind === 'file');
 export function applyPreset(id) {
   if (id.startsWith('user:')) {
-    const saved = userPresets[id.slice(5)]; if (!saved) return;
+    const { meta, ...saved } = userPresets[id.slice(5)] || {}; if (!saved.classes) return;      // meta：保存时确认的地区、风格，只用于筛选
     setState({ ...JSON.parse(JSON.stringify(saved)), view: state.view, preset: id });
   } else {
     const p = PRESETS.find(x => x.id === id); if (!p) return;
@@ -790,23 +798,37 @@ export async function autoAdjust() {
   const sh = shift == null ? '' : shift ? T('autoShift', { v: (shift > 0 ? '+' : '') + shift }) : T('autoNoShift', { d: Math.abs(mid).toFixed(1) });
   toast(T('tAuto', { size, shift: sh }));
 }
-/* 把现在的设定存成自己的预设 */
-export function savePresetAs(n) {
+/* 把现在的设定存成自己的预设；meta 是对话框里确认的地区和风格 */
+export function savePresetAs(n, meta) {
   const snap = JSON.parse(JSON.stringify(state)); delete snap.view; delete snap.presetBase;
-  userPresets[n] = snap; lsSet(LS_PRESETS, userPresets);
+  userPresets[n] = { ...snap, meta }; lsSet(LS_PRESETS, userPresets);
   state.preset = 'user:' + n; state.presetBase = presetSnap();
   refresh('presets');
   toast(T('tSaved', { n }) + (hasFileFont() ? T('tSavedFile') : ''));
 }
-/* 改过设定后换预设：先问要不要存下来 */
-export let leaveTo = null;
-export function askLeave(id) {
-  leaveTo = id;
-  const name = id.startsWith('user:') ? id.slice(5) : tr(PRESETS.find(p => p.id === id)?.name || { zh: id, ja: id, tw: id });
-  $('#leaveMsg').textContent = T('leaveMsg', { name });
-  $('#leaveName').value = state.name === 'My Composite' ? '' : state.name;
-  $('#leaveDlg').showModal();
-  $('#leaveName').focus();
+/* ================= 保存预设的对话框 =================
+   「存为预设」和「改过设定后换预设」都用它；后者多一句会丢失什么，和「不保存」。
+   地区、风格先按字体推算好（inferMeta），不对可以改；来源只显示，按字体算 */
+export let saveThen = null, saveMeta = null;
+const presetTitle = id => id.startsWith('user:') ? id.slice(5) : tr(PRESETS.find(p => p.id === id)?.name || { zh: id, ja: id, tw: id });
+export function openSave(leaveTo = null) {
+  saveThen = leaveTo;
+  const m = inferMeta(state);
+  saveMeta = { region: m.region, style: m.style };
+  $('#saveTitle').textContent = T(leaveTo ? 'leaveTitle' : 'presetSaveAs');
+  $('#saveMsg').hidden = !leaveTo; if (leaveTo) $('#saveMsg').textContent = T('leaveMsg', { name: presetTitle(leaveTo) });
+  $('#saveDiscard').hidden = !leaveTo;
+  $('#saveOk').textContent = T(leaveTo ? 'leaveSave' : 'save');
+  $('#saveName').value = state.preset?.startsWith('user:') ? state.preset.slice(5) : state.name === 'My Composite' ? '' : state.name;      // 改的是自己的预设：默认存回去
+  $('#saveSrc').textContent = T(m.src === 'google' ? 'saveSrcGoogle' : 'saveSrcLocal');
+  $('#saveFile').hidden = !hasFileFont();
+  syncSave();
+  $('#saveDlg').showModal(); $('#saveName').select();
+}
+export function syncSave() {
+  for (const g of ['region', 'style']) document.querySelectorAll(`#save${g === 'region' ? 'Region' : 'Style'} [data-v]`).forEach(b => b.setAttribute('aria-checked', b.dataset.v === saveMeta[g]));
+  const n = $('#saveName').value.trim();
+  $('#saveDup').hidden = !n || !(n in userPresets);
 }
 export function initPresets() {
   $('#presetCards').addEventListener('click', e => {
@@ -821,26 +843,22 @@ export function initPresets() {
       return;
     }
     const c = e.target.closest('[data-preset]');
-    if (c) { if (presetDirty()) askLeave(c.dataset.preset); else applyPreset(c.dataset.preset); }
+    if (c) { if (presetDirty()) openSave(c.dataset.preset); else applyPreset(c.dataset.preset); }
   });
-  const openSave = () => { $('#saveRow').hidden = false; $('#savePresetBtn').hidden = true; $('#presetName').value = state.name === 'My Composite' ? '' : state.name; $('#presetName').focus(); };
-  const closeSave = () => { $('#saveRow').hidden = true; $('#savePresetBtn').hidden = false; };
   const doSave = () => {
-    const n = $('#presetName').value.trim(); if (!n) return $('#presetName').focus();
-    savePresetAs(n); closeSave();
+    const n = $('#saveName').value.trim(); if (!n) return $('#saveName').focus();
+    savePresetAs(n, { ...saveMeta }); $('#saveDlg').close();
+    if (saveThen) applyPreset(saveThen);
   };
-  $('#leaveCancel').addEventListener('click', () => $('#leaveDlg').close());
-  $('#leaveDiscard').addEventListener('click', () => { $('#leaveDlg').close(); if (leaveTo) applyPreset(leaveTo); });
-  const leaveSave = () => {
-    const n = $('#leaveName').value.trim(); if (!n) return $('#leaveName').focus();
-    savePresetAs(n); $('#leaveDlg').close(); if (leaveTo) applyPreset(leaveTo);
-  };
-  $('#leaveSave').addEventListener('click', leaveSave);
-  $('#leaveName').addEventListener('keydown', e => { if (e.key === 'Enter') leaveSave(); });
-  $('#savePresetBtn').addEventListener('click', openSave);
-  $('#presetCancel').addEventListener('click', closeSave);
-  $('#presetSave').addEventListener('click', doSave);
-  $('#presetName').addEventListener('keydown', e => { if (e.key === 'Enter') doSave(); if (e.key === 'Escape') closeSave(); });
+  $('#savePresetBtn').addEventListener('click', () => openSave());
+  $('#saveOk').addEventListener('click', doSave);
+  $('#saveName').addEventListener('keydown', e => { if (e.key === 'Enter') doSave(); });
+  $('#saveName').addEventListener('input', syncSave);
+  $('#saveCancel').addEventListener('click', () => $('#saveDlg').close());
+  $('#saveDiscard').addEventListener('click', () => { $('#saveDlg').close(); if (saveThen) applyPreset(saveThen); });
+  for (const [id, g] of [['#saveRegion', 'region'], ['#saveStyle', 'style']])
+    $(id).addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) { saveMeta[g] = b.dataset.v; syncSave(); } });
+  $('#saveDlg').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });      // 点背景关闭
 }
 /* ================= 字体选择对话框 ================= */
 export let pickTarget = null, pickCand = null, pickTab = 'google';
@@ -862,6 +880,7 @@ export function candFromFields() {
     const n = $('#lfName').value.trim() || (base ? $('#lfName').placeholder : ''); if (!n) return null;
     const ps = localAlt.get(n), f = L(n, ps && ps !== n ? [ps] : []), fa = localAxesOf(n);
     if (fa) { setFontAxes(f, fa, pickW || 400); if (f.axis) $('#lfVar').checked = true; }      // 列出过本机字体时，直接读字体里的轴
+    if (localStyle.get(n)) f.cls = localStyle.get(n);
     else if ($('#lfVar').checked) { f.axis = [100, 900]; f.weight = pickW || 400; }      // 自己声明的可变字体，范围交给字体本身去夹
     return f;
   }
@@ -870,13 +889,16 @@ export function candFromFields() {
   return null;
 }
 /* 本机字体的轴：「列出本机字体」授权后，能读到字体文件本身 */
-export const localData = new Map(), localAxes = new Map();      // 字体全名 → FontData；→ 读到的轴（undefined = 读取中）
+export const localData = new Map(), localAxes = new Map(), localStyle = new Map();      // 字体全名 → FontData；→ 读到的轴（undefined = 读取中）；→ OS/2 里的风格
 export function localAxesOf(name) {
   if (localAxes.has(name)) return localAxes.get(name);
   const fd = localData.get(name);
   if (!fd) return null;
   localAxes.set(name, undefined);
-  fd.blob().then(b => b.arrayBuffer()).then(fileAxes).then(fa => { localAxes.set(name, fa); if (pickTab === 'local' && $('#lfName').value.trim() === name) updateCand(); }, () => localAxes.set(name, null));
+  fd.blob().then(b => b.arrayBuffer()).then(async buf => {
+    localAxes.set(name, await fileAxes(buf)); localStyle.set(name, await fileStyle(buf));
+    if (pickTab === 'local' && $('#lfName').value.trim() === name) updateCand();
+  }, () => localAxes.set(name, null));
   return undefined;
 }
 /* ================= 可变轴（粗细、斜体以外）：对这个类别的所有字重生效 ================= */
@@ -1124,6 +1146,7 @@ export function initPicker() {
     const id = 'f' + Date.now().toString(36);
     files.set(id, { name: file.name, buffer: await file.arrayBuffer() });
     pickCand = setFontAxes({ kind: 'file', fileId: id, fileName: file.name }, await fileAxes(files.get(id).buffer), pickW || 400);
+    const cls = await fileStyle(files.get(id).buffer); if (cls) pickCand.cls = cls;      // 字体自己声明的风格（宋体 / 黑体 / 其他），预设筛选用
     updateCand();
   });
   /* 斜体文件：记在这个字体文件上，导出斜体时这个类别用它（其他字重按文件名推算） */

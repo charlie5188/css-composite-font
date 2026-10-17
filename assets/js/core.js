@@ -1,6 +1,6 @@
 import { $, T, UI, debounce, lsGet, lsSet, root, sleep, tr } from './i18n.js';
 import { CLASSES, EFF, classOf, fmtRanges, inRanges, intersect, parseChars, parseRanges, rebuildClassRanges, union } from './unicode.js';
-import { AXIS_NAMES, GF_AXES, GF_ITALIC } from './gfmeta.js';
+import { AXIS_NAMES, GF_AXES, GF_ITALIC, GF_STYLE } from './gfmeta.js';
 import { checkMissSoon, drawSpecimen, fitGlyphs, refreshVAutospace, renderChipsStatus, renderEditor } from './render.js';
 import { renderExport, renderExportSoon } from './export.js';
 import { renderPresetCardsSoon } from './ui.js';
@@ -286,6 +286,54 @@ export async function fileAxes(buf) {
   } catch (e) { /* 读不懂就当作普通字体 */ }
   return null;
 }
+/* 字体文件里的一张表（DataView）：ttf / otf / ttc（第一个字体）直接读，woff 解压后读；woff2 是 brotli，浏览器解不开，返回 null */
+export async function sfntTable(buf, want) {
+  const v = new DataView(buf);
+  let sig = v.getUint32(0), base = 0;
+  if (sig === 0x74746366) { base = v.getUint32(12); sig = v.getUint32(base); }      // 'ttcf'
+  if (sig === 0x774F4632) return null;      // wOF2
+  if (sig === 0x774F4646) {      // wOFF
+    for (let i = 0, n = v.getUint16(12); i < n; i++) {
+      const r = 44 + i * 20; if (v.getUint32(r) !== want) continue;
+      const off = v.getUint32(r + 4), comp = v.getUint32(r + 8), orig = v.getUint32(r + 12);
+      let tb = buf.slice(off, off + comp);
+      if (comp < orig) tb = await new Response(new Blob([tb]).stream().pipeThrough(new DecompressionStream('deflate'))).arrayBuffer();
+      return new DataView(tb);
+    }
+    return null;
+  }
+  for (let i = 0, n = v.getUint16(base + 4); i < n; i++) {
+    const r = base + 12 + i * 16;
+    if (v.getUint32(r) === want) return new DataView(buf, v.getUint32(r + 8), v.getUint32(r + 12));
+  }
+  return null;
+}
+/* 字体自己声明的风格（OS/2 表）：先看 IBM 字族分类（sFamilyClass），没写再看 PANOSE。
+   serif = 宋体 / 明朝一类，sans = 黑体 / ゴシック，other = 装饰、手写、符号；没有声明时 null（很多中日文字体不写） */
+export function os2Style(t) {
+  if (!t || t.byteLength < 42) return null;
+  const cls = t.getInt16(30) >> 8, fam = t.getUint8(32), ser = t.getUint8(33);
+  if ([1, 2, 3, 4, 5, 7].includes(cls)) return 'serif';
+  if (cls === 8) return 'sans';
+  if ([9, 10, 12].includes(cls)) return 'other';
+  if (fam === 3 || fam === 4 || fam === 5) return 'other';      // PANOSE：手写、装饰、符号
+  if (fam === 2) return ser >= 11 && ser <= 15 ? 'sans' : ser >= 2 ? 'serif' : null;      // 拉丁正文：11–15 是各种无衬线
+  return null;
+}
+export async function fileStyle(buf) { try { return os2Style(await sfntTable(buf, 0x4F532F32)); } catch (e) { return null; } }      // 'OS/2'
+/* 一个字体是宋体（明朝）、黑体（ゴシック）还是其他：字体文件 / 本机字体读到的 OS/2 分类 → Google Fonts 的元数据 → 字体名 */
+const SERIF_RE = /Serif|Mincho|Ming|Song|Batang|Myeongjo|明|宋/i, SANS_RE = /Sans|Gothic|Hei|Kaku|PingFang|YaHei|Meiryo|Dotum|Gulim|Maru|Yuan|Rounded|M PLUS|黑|圆|圓|ゴシック/i;
+let gfStyleMap = null;
+export function styleOfFont(f) {
+  if (!f) return 'other';
+  if (f.cls) return f.cls;
+  if (f.kind === 'google') {
+    gfStyleMap ||= new Map(Object.entries(GF_STYLE).flatMap(([k, v]) => v.split(',').map(n => [n, k])));
+    const st = gfStyleMap.get(f.family); if (st) return st;
+  }
+  const n = f.family || f.name || f.fileName || '';
+  return SERIF_RE.test(n) ? 'serif' : SANS_RE.test(n) ? 'sans' : 'other';
+}
 /* 把读到的轴记到字体对象上：wght 轴另外记成 axis（粗细的范围） */
 export function setFontAxes(f, fa, W) {
   delete f.axis; delete f.axes; delete f.axesUnknown;
@@ -491,22 +539,23 @@ export const numLabel = t => tr(NUM_LABEL[t]);
 /* 预设的西文大小和基线都是「自动调整大小和基线」在 100–900 各字重量出来的结果（2026-10，Chrome 155、macOS）：
    latinSize 是 400 的大小，latinW 是和 400 相差 0.5 以上的字重自己的大小，
    latinShift 是基线（大写中线和汉字字面中线相差 2% em 以上时才有，导出时需要 JS）。 */
+/* style：汉字字体是宋体 / 明朝（serif）还是黑体 / ゴシック（sans），用于预设筛选 */
 export const PRESETS = [
-  { id: 'serif-sc', region: 'sc', name: { zh: '宋体 × Garamond', ja: '宋体 × Garamond', tw: '宋體 × Garamond' }, tag: { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文' }, han: G('Noto Serif SC'), latin: G('EB Garamond'), latinSize: 115, latinW: { 100: 114, 200: 114, 300: 114.5, 500: 115.5, 600: 116, 700: 116.5, 800: 117, 900: 117.5 }, sample: 'zh' },
-  { id: 'sans-sc', region: 'sc', name: { zh: '黑体 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter' }, tag: { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文' }, han: G('Noto Sans SC'), latin: G('Inter'), latinSize: 100, latinW: { 100: 98, 200: 98.5, 300: 99, 500: 101, 600: 101.5, 700: 102, 800: 102.5, 900: 103.5 }, sample: 'zh' },
-  { id: 'mincho-jp', region: 'jp', name: { zh: '明朝 × Cormorant', ja: '明朝 × Cormorant', tw: '明朝 × Cormorant' }, tag: { zh: '日文', ja: '日本語', tw: '日文' }, han: G('Shippori Mincho'), latin: G('Cormorant Garamond', 500), latinSize: 120, latinW: { 500: 120.5, 600: 121, 700: 121.5, 800: 122, 900: 122 }, sample: 'ja' },
-  { id: 'gothic-jp', region: 'jp', name: { zh: 'ゴシック × Jost', ja: 'ゴシック × Jost', tw: 'ゴシック × Jost' }, tag: { zh: '日文', ja: '日本語', tw: '日文' }, han: G('Noto Sans JP'), latin: G('Jost'), latinSize: 108, latinW: { 100: 107, 200: 107, 300: 107.5, 500: 108.5, 600: 108.5, 700: 109, 800: 109.5, 900: 109.5 }, latinShift: -2, sample: 'ja' },
+  { id: 'serif-sc', style: 'serif', region: 'sc', name: { zh: '宋体 × Garamond', ja: '宋体 × Garamond', tw: '宋體 × Garamond' }, tag: { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文' }, han: G('Noto Serif SC'), latin: G('EB Garamond'), latinSize: 115, latinW: { 100: 114, 200: 114, 300: 114.5, 500: 115.5, 600: 116, 700: 116.5, 800: 117, 900: 117.5 }, sample: 'zh' },
+  { id: 'sans-sc', style: 'sans', region: 'sc', name: { zh: '黑体 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter' }, tag: { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文' }, han: G('Noto Sans SC'), latin: G('Inter'), latinSize: 100, latinW: { 100: 98, 200: 98.5, 300: 99, 500: 101, 600: 101.5, 700: 102, 800: 102.5, 900: 103.5 }, sample: 'zh' },
+  { id: 'mincho-jp', style: 'serif', region: 'jp', name: { zh: '明朝 × Cormorant', ja: '明朝 × Cormorant', tw: '明朝 × Cormorant' }, tag: { zh: '日文', ja: '日本語', tw: '日文' }, han: G('Shippori Mincho'), latin: G('Cormorant Garamond', 500), latinSize: 120, latinW: { 500: 120.5, 600: 121, 700: 121.5, 800: 122, 900: 122 }, sample: 'ja' },
+  { id: 'gothic-jp', style: 'sans', region: 'jp', name: { zh: 'ゴシック × Jost', ja: 'ゴシック × Jost', tw: 'ゴシック × Jost' }, tag: { zh: '日文', ja: '日本語', tw: '日文' }, han: G('Noto Sans JP'), latin: G('Jost'), latinSize: 108, latinW: { 100: 107, 200: 107, 300: 107.5, 500: 108.5, 600: 108.5, 700: 109, 800: 109.5, 900: 109.5 }, latinShift: -2, sample: 'ja' },
   /* アンチゴチ：漢字はゴシック体、かなはアンチック体。欧文と約物はゴシックに従う。Zen Antique のかなは太いので、漢字は 500 で釣り合う */
-  { id: 'antigochi', region: 'jp', name: { zh: 'アンチゴチ', ja: 'アンチゴチ', tw: 'アンチゴチ' }, tag: { zh: '漫画对白', ja: 'マンガの台詞', tw: '漫畫對白' }, han: G('Zen Kaku Gothic New', 500), latin: null, latinShift: 3, classes: { kana: { font: G('Zen Antique') } }, sample: 'manga', vertical: true },
+  { id: 'antigochi', style: 'sans', region: 'jp', name: { zh: 'アンチゴチ', ja: 'アンチゴチ', tw: 'アンチゴチ' }, tag: { zh: '漫画对白', ja: 'マンガの台詞', tw: '漫畫對白' }, han: G('Zen Kaku Gothic New', 500), latin: null, latinShift: 3, classes: { kana: { font: G('Zen Antique') } }, sample: 'manga', vertical: true },
   /* macOS：SF Pro 不能用 local() 引用（系统界面字体对网页隐藏），西文用每台 Mac 都自带的 Avenir Next */
-  { id: 'mac', region: 'sc', name: { zh: '苹方 × Avenir Next', ja: 'PingFang × Avenir Next', tw: '蘋方-簡 × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 简体中文', ja: 'macOS 標準・簡体字', tw: 'macOS 系統字型 · 簡體中文' }, han: L('PingFang SC Regular', ['PingFangSC-Regular']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 104, latinW: { 700: 102.5, 800: 99.5, 900: 99.5 }, latinShift: -3,
+  { id: 'mac', style: 'sans', region: 'sc', name: { zh: '苹方 × Avenir Next', ja: 'PingFang × Avenir Next', tw: '蘋方-簡 × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 简体中文', ja: 'macOS 標準・簡体字', tw: 'macOS 系統字型 · 簡體中文' }, han: L('PingFang SC Regular', ['PingFangSC-Regular']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 104, latinW: { 700: 102.5, 800: 99.5, 900: 99.5 }, latinShift: -3,
     classes: { kana: { font: L('Hiragino Sans W3', ['HiraginoSans-W3']) } }, sample: 'zh' },   /* 苹方也有假名，但日文里用冬青黑体为日文设计的假名 */
-  { id: 'mac-jp', region: 'jp', name: { zh: 'ヒラギノ角ゴ × Avenir Next', ja: 'ヒラギノ角ゴ × Avenir Next', tw: 'ヒラギノ角ゴ × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 日文', ja: 'macOS 標準・日本語', tw: 'macOS 系統字型 · 日文' }, han: L('Hiragino Sans W3', ['HiraginoSans-W3']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 111.5, latinW: { 100: 108.5, 200: 110.5, 300: 111, 500: 112, 600: 112.5, 700: 112, 800: 110 }, latinShift: -3.5, sample: 'ja' },
+  { id: 'mac-jp', style: 'sans', region: 'jp', name: { zh: 'ヒラギノ角ゴ × Avenir Next', ja: 'ヒラギノ角ゴ × Avenir Next', tw: 'ヒラギノ角ゴ × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 日文', ja: 'macOS 標準・日本語', tw: 'macOS 系統字型 · 日文' }, han: L('Hiragino Sans W3', ['HiraginoSans-W3']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 111.5, latinW: { 100: 108.5, 200: 110.5, 300: 111, 500: 112, 600: 112.5, 700: 112, 800: 110 }, latinShift: -3.5, sample: 'ja' },
   /* 台湾、香港：思源（Noto CJK）的繁中版和简中版共用同一套西文，西文大小沿用对应的简中预设 */
-  { id: 'ming-tw', region: 'tc', name: { zh: '明體 × Garamond', ja: '明体 × Garamond', tw: '明體 × Garamond' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）' }, han: G('Noto Serif TC'), latin: G('EB Garamond'), latinSize: 115, latinW: { 100: 114, 200: 114, 300: 114.5, 500: 115.5, 600: 116, 700: 116.5, 800: 117, 900: 117.5 }, sample: 'tw' },
-  { id: 'hei-tw', region: 'tc', name: { zh: '黑體 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）' }, han: G('Noto Sans TC'), latin: G('Inter'), latinSize: 100, latinW: { 100: 98, 200: 98.5, 300: 99, 500: 101, 600: 101.5, 700: 102, 800: 102.5, 900: 103.5 }, sample: 'tw' },
-  { id: 'hei-hk', region: 'hk', name: { zh: '香港黑體 × Inter', ja: '香港の黒体 × Inter', tw: '香港黑體 × Inter' }, tag: { zh: '繁体中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）' }, han: G('Noto Sans HK'), latin: G('Inter'), latinSize: 100, latinW: { 100: 98, 200: 98.5, 300: 99, 500: 101, 600: 101.5, 700: 102, 800: 102.5, 900: 103.5 }, sample: 'hk' },
-  { id: 'mac-tw', region: 'tc', name: { zh: '蘋方-繁 × Avenir Next', ja: 'PingFang TC × Avenir Next', tw: '蘋方-繁 × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 繁体中文', ja: 'macOS 標準・繁体字', tw: 'macOS 系統字型 · 繁體中文' }, han: L('PingFang TC Regular', ['PingFangTC-Regular']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 104, latinW: { 700: 102.5, 800: 99.5, 900: 99.5 }, latinShift: -3, sample: 'tw' },
+  { id: 'ming-tw', style: 'serif', region: 'tc', name: { zh: '明體 × Garamond', ja: '明体 × Garamond', tw: '明體 × Garamond' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）' }, han: G('Noto Serif TC'), latin: G('EB Garamond'), latinSize: 115, latinW: { 100: 114, 200: 114, 300: 114.5, 500: 115.5, 600: 116, 700: 116.5, 800: 117, 900: 117.5 }, sample: 'tw' },
+  { id: 'hei-tw', style: 'sans', region: 'tc', name: { zh: '黑體 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）' }, han: G('Noto Sans TC'), latin: G('Inter'), latinSize: 100, latinW: { 100: 98, 200: 98.5, 300: 99, 500: 101, 600: 101.5, 700: 102, 800: 102.5, 900: 103.5 }, sample: 'tw' },
+  { id: 'hei-hk', style: 'sans', region: 'hk', name: { zh: '香港黑體 × Inter', ja: '香港の黒体 × Inter', tw: '香港黑體 × Inter' }, tag: { zh: '繁体中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）' }, han: G('Noto Sans HK'), latin: G('Inter'), latinSize: 100, latinW: { 100: 98, 200: 98.5, 300: 99, 500: 101, 600: 101.5, 700: 102, 800: 102.5, 900: 103.5 }, sample: 'hk' },
+  { id: 'mac-tw', style: 'sans', region: 'tc', name: { zh: '蘋方-繁 × Avenir Next', ja: 'PingFang TC × Avenir Next', tw: '蘋方-繁 × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 繁体中文', ja: 'macOS 標準・繁体字', tw: 'macOS 系統字型 · 繁體中文' }, han: L('PingFang TC Regular', ['PingFangTC-Regular']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 104, latinW: { 700: 102.5, 800: 99.5, 900: 99.5 }, latinShift: -3, sample: 'tw' },
 ];
 
 /* ================= 状态 ================= */

@@ -162,3 +162,17 @@ test('预设筛选：组内任选、组间同时满足，没有结果时可以�
   await page.click('#presetCards [data-pf="clear"]');
   await expect(cards).toHaveCount(all);
 });
+
+test('保存预设用对话框：地区和风格预先推算好、可以改，存下来后能按它筛选', async ({ page }) => {
+  await open(page);
+  await page.click('#savePresetBtn');
+  await expect(page.locator('#saveDlg')).toBeVisible();
+  await expect(page.locator('#saveRegion [aria-checked="true"]')).toHaveAttribute('data-v', 'sc');      // 默认预设：宋体 × Garamond
+  await expect(page.locator('#saveStyle [aria-checked="true"]')).toHaveAttribute('data-v', 'serif');
+  await page.fill('#saveName', '测试');
+  await page.click('#saveStyle [data-v="other"]');
+  await page.click('#saveOk');
+  await expect(page.locator('#saveDlg')).toBeHidden();
+  await page.click('[data-pf="style:other"]');
+  await expect(page.locator('#presetCards .pname')).toHaveText(['测试']);
+});

@@ -8,22 +8,22 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=495c661b">
+<link rel="stylesheet" href="assets/style.css?v=53ac94c9">
 <!-- 模块的缓存版本号：模块之间互相 import 时不带 ?v=，靠 import map 换成带版本号的地址（tools/rehash.py 生成） -->
 <script type="importmap">{
  "imports": {
   "./assets/js/bake.js": "./assets/js/bake.js?v=e1515c3c",
-  "./assets/js/core.js": "./assets/js/core.js?v=eec72c4a",
+  "./assets/js/core.js": "./assets/js/core.js?v=f94192eb",
   "./assets/js/export.js": "./assets/js/export.js?v=0ad91cd8",
-  "./assets/js/gfmeta.js": "./assets/js/gfmeta.js?v=9a213e0f",
+  "./assets/js/gfmeta.js": "./assets/js/gfmeta.js?v=c4697b71",
   "./assets/js/i18n.js": "./assets/js/i18n.js?v=6e75ec0f",
-  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=8ab04753",
-  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=ca492db4",
-  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=e4000e8f",
+  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=e12ea4e3",
+  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=61917e12",
+  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=b674c441",
   "./assets/js/main.js": "./assets/js/main.js?v=77ec7ac1",
   "./assets/js/refresh.js": "./assets/js/refresh.js?v=4dffc5b8",
   "./assets/js/render.js": "./assets/js/render.js?v=e248f07f",
-  "./assets/js/ui.js": "./assets/js/ui.js?v=3972a6b1",
+  "./assets/js/ui.js": "./assets/js/ui.js?v=e0cc53f1",
   "./assets/js/unicode.js": "./assets/js/unicode.js?v=f50d2344"
  }
 }</script>
@@ -73,10 +73,6 @@
         <div class="sec-head preset-head"><h2 class="label lab-i" id="presetsLabel"><span data-t="preset"></span><button type="button" class="info" data-info="presetInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></h2>
           <div class="preset-acts">
             <button type="button" class="btn-text" id="savePresetBtn"><span aria-hidden="true">+ </span><span data-t="presetSaveAs"></span></button>
-            <div class="save-form" id="saveRow" hidden>
-              <input id="presetName" type="text" spellcheck="false" data-ta="placeholder:presetName;aria-label:presetName">
-              <button class="btn primary" id="presetSave" type="button" data-t="save"></button><button class="btn-text" id="presetCancel" type="button" data-t="cancel"></button>
-            </div>
           </div>
         </div>
         <div class="pfilter" id="presetFilter" role="group" data-ta="aria-label:pfAria"></div>
@@ -394,15 +390,24 @@
 </dialog>
 
 <div class="miss-tip" id="missTip" role="tooltip" hidden></div>
-<dialog id="leaveDlg" aria-labelledby="leaveTitle">
-  <div class="leave">
-    <h2 id="leaveTitle" data-t="leaveTitle"></h2>
-    <p id="leaveMsg"></p>
-    <input id="leaveName" type="text" spellcheck="false" data-ta="placeholder:presetName;aria-label:presetName">
-    <div class="leave-act">
-      <button type="button" class="btn-text" id="leaveCancel" data-t="cancel"></button>
-      <button type="button" class="btn" id="leaveDiscard" data-t="leaveDiscard"></button>
-      <button type="button" class="btn primary" id="leaveSave" data-t="leaveSave"></button>
+<!-- 保存预设：「存为预设」和「改过设定后换预设」都用它。地区、风格按字体推算好，可以改（预设筛选用）；来源只显示 -->
+<dialog id="saveDlg" aria-labelledby="saveTitle">
+  <div class="dlg-form">
+    <h2 id="saveTitle"></h2>
+    <p id="saveMsg" hidden></p>
+    <label class="field"><span class="flabel" data-t="presetName"></span><input id="saveName" type="text" spellcheck="false" autocomplete="off"></label>
+    <p class="hint" id="saveDup" data-t="saveOverwrite" hidden></p>
+    <div class="save-meta">
+      <p class="hint" data-t="saveMetaHint"></p>
+      <div class="field"><span class="flabel" id="saveRegionLab" data-t="pfRegion"></span><span class="seg" id="saveRegion" role="radiogroup" aria-labelledby="saveRegionLab"><button type="button" role="radio" data-v="sc" data-t="pfSc"></button><button type="button" role="radio" data-v="tc" data-t="pfTc"></button><button type="button" role="radio" data-v="jp" data-t="pfJp"></button></span></div>
+      <div class="field"><span class="flabel" id="saveStyleLab" data-t="pfStyle"></span><span class="seg" id="saveStyle" role="radiogroup" aria-labelledby="saveStyleLab"><button type="button" role="radio" data-v="serif" data-t="pfSerif" data-ta="title:pfSerifTip"></button><button type="button" role="radio" data-v="sans" data-t="pfSans" data-ta="title:pfSansTip"></button><button type="button" role="radio" data-v="other" data-t="pfOther" data-ta="title:pfOtherTip"></button></span></div>
+      <div class="field"><span class="flabel" data-t="pfSource"></span><p class="save-src" id="saveSrc"></p></div>
+    </div>
+    <p class="callout" id="saveFile" data-t="saveFileNote" hidden></p>
+    <div class="dlg-act">
+      <button type="button" class="btn-text" id="saveCancel" data-t="cancel"></button>
+      <button type="button" class="btn" id="saveDiscard" data-t="leaveDiscard" hidden></button>
+      <button type="button" class="btn primary" id="saveOk" data-t="save"></button>
     </div>
   </div>
 </dialog>
