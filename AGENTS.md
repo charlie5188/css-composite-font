@@ -129,6 +129,10 @@ for a role that already has one; if something is really missing, add it to that 
   `.cell-num` (inputs inside tables; `.own` = set in the base settings, `.set` = set for one weight), `.pop` (popover
   surface) with `.menu` / `.mm-item` / `.mm-radio` / `.mm-check`, `.sec-head` + `.sec-title` + `.sec-acts` (section
   heading), `.callout` (yellow notice), `.dlg-form` + `.dlg-act` (small dialog: title, fields, buttons bottom right), `.badge` (count pill), `.info` (the (i) button that opens `#infoPop`), tooltips through `title`.
+- **Icons:** Tabler Icons (outline, MIT; license in `assets/LICENSE-tabler-icons.txt`) as an SVG sprite at the top of
+  `index.html`. Use `<svg class="ic" aria-hidden="true"><use href="#i-name"/></svg>`; to add one, copy its paths from
+  the Tabler outline set into a new `<symbol id="i-name" viewBox="0 0 24 24">`. Stroke width (1.75) and size come from
+  `.ic`; don't draw icons by hand or use text characters (×, +, ↗) as icons. The tile pictograms (`tSvg`) are illustrations, not icons.
 - **Conventions:** buttons show hover with a tinted background, fields with a border. A selected card has an ink
   border plus a 1 px inset (`.pcard`, `.ex-kinds`, `.typo-tiles`). Row separators use `--rule` inside tables only; elsewhere hierarchy comes from
   size, weight and spacing (`.sec-title` 18 px > item names 13 px bold > `.label` / grey notes), not divider lines. Base form-element styles are wrapped in `:where()` so a component class always wins.

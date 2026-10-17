@@ -289,7 +289,7 @@ export const fxLimits = () => `<div class="fx-sec fx-limits"><h3 class="label">$
 export function renderFontTab() {
   const box = $('#fontPane');
   if (!CAN_BAKE) {
-    box.innerHTML = `<p class="fx-intro">${esc(T('fxEmbedded'))}</p><p><a class="btn primary" id="fxPages" href="${esc(BK.pages)}" target="_blank" rel="noopener">${esc(T('fxOpenPages'))} ↗</a></p>${fxLimits()}`;
+    box.innerHTML = `<p class="fx-intro">${esc(T('fxEmbedded'))}</p><p><a class="btn primary" id="fxPages" href="${esc(BK.pages)}" target="_blank" rel="noopener">${esc(T('fxOpenPages'))} <svg class="ic ext" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></a></p>${fxLimits()}`;
     cfgLink().then(u => { const a = $('#fxPages'); if (a) a.href = u; });
     return;
   }

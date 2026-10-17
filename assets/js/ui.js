@@ -628,7 +628,7 @@ export function lmRow() {
     </div>`;
 }
 /* (i) 按钮：悬停时也有提示 */
-export const infoButton = key => `<button type="button" class="info" data-info="${esc(key)}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}" title="${esc(T('infoAria'))}">i</button>`;
+export const infoButton = key => `<button type="button" class="info" data-info="${esc(key)}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}" title="${esc(T('infoAria'))}"><svg class="ic" aria-hidden="true"><use href="#i-info-circle"/></svg></button>`;
 /* (i) 里的技术细节：CSS 属性名，以及各浏览器从哪个版本开始支持（标出当前浏览器，和它支不支持所选的值） */
 export function techHtml(prop, sup, ok) {
   const names = { chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' };
@@ -673,7 +673,7 @@ export function presetCard({ id, name, tag, cls, script, user, active }) {
       <span class="ptag" title="${esc(tag)}">${esc(tag)}</span>
       <span class="pname">${esc(name)}</span>
       ${miss ? `<span class="pmiss">${esc(T('presetMissing'))}</span>` : ''}
-    </button>${user ? `<button type="button" class="btn-icon sm danger pdel" data-del="${esc(id.slice(5))}" aria-label="${esc(T('presetDelete'))} ${esc(name)}" title="${esc(T('presetDelete'))}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M6.3 4.5V2.8h3.4v1.7M4 4.5l.7 8.7c.04.5.45.8.95.8h4.7c.5 0 .9-.3.95-.8L12 4.5M6.6 7v4.4M9.4 7v4.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : ''}</div>`;
+    </button>${user ? `<button type="button" class="btn-icon sm danger pdel" data-del="${esc(id.slice(5))}" aria-label="${esc(T('presetDelete'))} ${esc(name)}" title="${esc(T('presetDelete'))}"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg></button>` : ''}</div>`;
 }
 /* 内置预设按界面语言排：这个语言的预设在前，其他语言的排在后面 */
 export const PRESET_ORDER = {

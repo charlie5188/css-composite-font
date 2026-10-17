@@ -88,7 +88,7 @@ button{cursor:pointer}
 :where(select,input[type=text],input[type=number],input:not([type])){background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:6px 8px;min-width:0}
 :where(select,input[type=text],input[type=number]):hover{border-color:var(--faint)}
 /* 下拉框：不用浏览器自带的箭头（太贴右边），换成自己画的，离右边框 10px。灰色在深浅两种主题下都看得清 */
-select{-webkit-appearance:none;appearance:none;padding-right:30px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.6 6 7.6 9 4.6' fill='none' stroke='%23888884' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:12px 12px;text-overflow:ellipsis}
+select{-webkit-appearance:none;appearance:none;padding-right:30px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6l6 -6' fill='none' stroke='%23888884' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:12px 12px;text-overflow:ellipsis}
 :where(input[type=number]){font-family:var(--mono);font-variant-numeric:tabular-nums}
 .btn{border:1px solid var(--ink);background:transparent;border-radius:var(--r-pill);padding:6px 16px;font-size:var(--fs-m);white-space:nowrap;color:var(--ink);text-decoration:none}
 .btn:hover{background:var(--ink);color:var(--sheet)}
@@ -97,7 +97,11 @@ select{-webkit-appearance:none;appearance:none;padding-right:30px;background-ima
 .btn:disabled{opacity:.4;cursor:not-allowed}
 .btn-ghost,.btn-icon{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;height:var(--ctl-h);padding:0 var(--sp-2);border:0;border-radius:var(--r);background:none;font-size:var(--fs-s);color:var(--ink-2);white-space:nowrap;text-decoration:none}
 .btn-ghost:hover,.btn-icon:hover,.btn-ghost:has(+ .pop:popover-open),.btn-icon:has(+ .pop:popover-open){background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink)}
-.btn-ghost svg{width:15px;height:15px;flex:none}
+/* 图标：Tabler Icons 的线条图标（下拉箭头和菜单里的勾也是，画在 CSS 里），sprite 在 index.html 开头。线宽统一 1.75（24 格），16px 下约 1.2px */
+.sprite{position:absolute;width:0;height:0;overflow:hidden}
+.ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+.ic.ext{width:12px;height:12px;vertical-align:-1px}      /* 文字后面的外链箭头 */
+.btn-ghost svg{width:16px;height:16px;flex:none}
 .btn-icon{width:var(--ctl-h);padding:0;font-size:var(--fs-l)}
 .btn-icon svg{width:16px;height:16px;flex:none}
 .btn-icon.sm{width:26px;height:26px}
@@ -141,7 +145,7 @@ select.cell-in{padding-right:18px;background-position:right 3px center;backgroun
 .mm-item:hover{background:var(--rule)}
 .mm-item.danger{color:var(--warn)}
 .mm-lab{margin:4px 10px 2px;font-size:var(--fs-xs);color:var(--muted)}
-.mm-radio::before,.mm-check::before{content:"";flex:none;width:14px;height:14px;background:no-repeat center/12px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2 5 8.6l4.5-5' fill='none' stroke='%23888884' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");opacity:0}
+.mm-radio::before,.mm-check::before{content:"";flex:none;width:14px;height:14px;background:no-repeat center/12px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12l5 5l10 -10' fill='none' stroke='%23888884' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");opacity:0}
 .mm-radio[aria-checked="true"]::before,.mm-check[aria-pressed="true"]::before{opacity:1}
 .mm-radio[aria-checked="true"]{font-weight:600}
 .mm-note{margin:2px 10px 6px;font-size:var(--fs-s);line-height:1.55;color:var(--muted)}
@@ -176,7 +180,6 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 /* 字体文件在后台生成时：按钮底边是进度条；生成好了、对话框关着时，右上角一个小点 */
 /* 「⋯」菜单 */
 #moreBtn{margin-left:-8px}
-#moreBtn svg{fill:currentColor}
 /* 语言：选中的那一项前面打勾；没选的留出同样的位置，文字才对齐 */
 .ex-toggle{position:relative;overflow:hidden}
 .ex-toggle.running::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:var(--pct,0%);background:var(--accent);transition:width .3s}
@@ -316,8 +319,9 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 @media (prefers-reduced-motion:reduce){.sw::after{transition:none}}
 .ct-row .chars{grid-column:1/3;font-size:var(--fs-l);padding:5px 6px;min-width:0;width:100%}
 .lab-i{display:inline-flex;align-items:center;gap:7px}
-.info{flex:none;width:15px;height:15px;border-radius:50%;border:1px solid var(--faint);background:none;color:var(--muted);font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:10px;font-weight:600;line-height:13px;padding:0;text-align:center;letter-spacing:0;text-transform:none}
-.info:hover{border-color:var(--ink);color:var(--ink)}
+.info{flex:none;display:inline-grid;place-items:center;width:16px;height:16px;border:0;border-radius:50%;background:none;color:var(--muted);padding:0}
+.info .ic{width:16px;height:16px}
+.info:hover{color:var(--ink)}
 .info-pop{width:min(340px,calc(100vw - 24px));max-height:min(70vh,520px);overflow:auto;padding:14px 16px;color:var(--ink-2);font-size:var(--fs-m);line-height:1.7}
 .info-pop p{margin:0 0 8px}
 .info-pop p:last-child{margin-bottom:0}
@@ -351,7 +355,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 /* 表格最后一行「+ 添加例外字符」：整行都能点，加号对齐字样那一列 */
 .ct-add-row{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--rule)}
 .ct-add{flex:1;display:flex;align-items:center;gap:8px;min-height:44px;padding:0;border:0;background:none;font-size:var(--fs-m);color:var(--muted);text-align:left}
-.ct-add .plus{width:28px;text-align:center;font-size:20px;line-height:1;font-weight:300}
+.ct-add .plus{width:28px;display:grid;place-items:center}
 .ct-add:hover{color:var(--ink)}
 @media (max-width:440px){.ct-row{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 50px 50px 14px}.ct-glyph{display:none}.ct-row .chars{grid-column:1/2}.ct-row .ct-ax{grid-column:2/3}}
 
@@ -579,7 +583,8 @@ button.wm-pw:hover{text-decoration:underline;text-underline-offset:3px}
 .dlg-side .ex-title{margin:0}
 .dlg-body{min-width:0;overflow:auto;padding:26px clamp(20px,4vw,48px) 32px;overscroll-behavior:contain}
 .dlg-body:focus{outline:none}      /* 打开时焦点在内容上：可以直接用键盘滚动 */
-.dlg-x{position:absolute;top:10px;right:10px;z-index:7;font-size:20px;color:var(--muted)}
+.dlg-x{position:absolute;top:10px;right:10px;z-index:7;color:var(--muted)}
+.dlg-x .ic{width:20px;height:20px}
 @media (max-width:760px){.side-dlg{width:100vw;height:100dvh;max-width:none;border:0;border-radius:0}.dlg-grid{display:block;overflow:auto}.dlg-side,.dlg-body{overflow:visible}.dlg-side{border-right:0;border-bottom:1px solid var(--line);padding-right:52px}.dlg-x{position:fixed}}
 .ex-title{margin:0 0 18px;font-size:clamp(22px,2.4vw,28px);font-weight:500;letter-spacing:-.015em;line-height:1.15}
 /* 导出的两种：左栏里上下两张卡片，选中的描黑边（和预设卡片一样） */
