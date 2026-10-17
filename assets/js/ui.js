@@ -1259,7 +1259,7 @@ export function renderAboutToc() {
   $('#aboutToc').innerHTML = [...body.querySelectorAll('h3')].map((h, i) => { h.id ||= `about-${UI}-${i}`; return `<a href="#${h.id}">${esc(h.textContent)}</a>`; }).join('');
 }
 export function applyUI() {
-  root.lang = UI === 'ja' ? 'ja' : UI === 'tw' ? 'zh-Hant-TW' : 'zh-Hans';
+  root.lang = UI === 'ja' ? 'ja' : UI === 'tw' ? 'zh-Hant-TW' : UI === 'en' ? 'en' : 'zh-Hans';
   document.title = `${T('title')} · Composite Font Workshop`;
   document.querySelectorAll('[data-t]').forEach(el => { el.textContent = T(el.dataset.t); });
   document.querySelectorAll('[data-th]').forEach(el => { el.innerHTML = T(el.dataset.th); });

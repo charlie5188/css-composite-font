@@ -8,7 +8,7 @@ test('页面加载、切换预设、切语言都没有脚本错误', async ({ pa
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|net::|CORS policy/.test(m.text())) errors.push(m.text()); });
   await open(page);
   for (const id of ['gothic-jp', 'antigochi', 'serif-sc']) { await pick(page, id); await page.waitForTimeout(300); }
-  for (const l of ['ja', 'tw', 'zh']) await setLang(page, l);
+  for (const l of ['ja', 'tw', 'en', 'zh']) await setLang(page, l);
   await showExport(page);
   await page.click('#kindFont'); await page.click('#kindCss'); await page.click('#tabJs');
   await page.waitForTimeout(500);

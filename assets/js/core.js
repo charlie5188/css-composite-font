@@ -171,7 +171,7 @@ export function axesOf(f) {
 }
 export const axisOf = (f, tag) => axesOf(f).find(a => a[0] === tag);
 export const extraAxes = f => axesOf(f).filter(a => !(a[0] === 'wght' && a[2] > 10) && a[0] !== 'ital');     // 粗细和斜体另有专门的设定
-export const AX_LABEL = { wdth: { zh: '宽度', ja: '幅', tw: '寬度' }, opsz: { zh: '光学尺寸', ja: 'オプティカルサイズ', tw: '光學尺寸' }, slnt: { zh: '倾斜', ja: '傾き', tw: '傾斜' }, GRAD: { zh: '笔画粗细', ja: 'グレード', tw: '筆畫粗細' } };
+export const AX_LABEL = { wdth: { zh: '宽度', ja: '幅', tw: '寬度', en: 'Width' }, opsz: { zh: '光学尺寸', ja: 'オプティカルサイズ', tw: '光學尺寸', en: 'Optical size' }, slnt: { zh: '倾斜', ja: '傾き', tw: '傾斜', en: 'Slant' }, GRAD: { zh: '笔画粗细', ja: 'グレード', tw: '筆畫粗細', en: 'Grade' } };
 export const axisLabel = t => AX_LABEL[t] ? tr(AX_LABEL[t]) : AXIS_NAMES[t] || t;
 /* 斜体时用的字体。Google Fonts 和上传的斜体文件用真正的斜体；有 slnt / ital 轴的可变字体倾斜过去；
    本机字体按名称找「… Italic」。都没有时返回 null：这个类别在斜体里保持正体 */
@@ -368,33 +368,33 @@ export const SAMPLES = {
   /* 正文示例按真实的中日文写：西文是日常文章里自然会出现的品牌、产品、缩写和单位（iPhone、5G、UI、km）。
      特意放进几种挤在一起的写法：「2026年，增长了12.5%（GMV…）」「人工智能（AI）」「她说：“……”」，
      日文对应「前年比12.5%増（…約1,200店）」「人工知能（AI）」「「……（予想の1.5倍）……」と話す」 */
-  zh: { label: { zh: '简体', ja: '簡体', tw: '簡體' }, lang: 'zh-Hans', text:
+  zh: { label: { zh: '简体', ja: '簡体', tw: '簡體', en: 'Simplified' }, lang: 'zh-Hans', text:
 `清晨6点半，第一班地铁驶出西直门站。车厢里人还不多，有人戴着AirPods听播客，有人用iPhone回复微信消息。这条线路全长27.6公里，共有19座车站，工作日客流量超过80万人次。
 
 2026年，北京独立咖啡馆的数量增长了12.5%（GMV同比增长约20%），不少店开始用人工智能（AI）排班和订货。车站旁新开的这家只卖三样：美式18元，拿铁22元，换燕麦奶加3元，也可以在App上提前下单。营业时间写在门口的小黑板上——工作日7:30开门，周末晚半小时；Wi-Fi密码贴在收银台旁边。
 
 店主林晓以前在一家SaaS公司做UI设计。她说：“开业第一个月卖出了4000多杯（比预想的多了一半）。来的大多是熟客……慢一点也没关系。”` },
-  ja: { label: { zh: '日文', ja: '日本語', tw: '日文' }, lang: 'ja', text:
+  ja: { label: { zh: '日文', ja: '日本語', tw: '日文', en: 'Japanese' }, lang: 'ja', text:
 `朝6時半、始発の電車が駅を出る。車内はまだ空いていて、AirPodsでポッドキャストを聴く人や、iPhoneでLINEを返す人がいる。この路線は全長27.6km、駅は19か所。平日には1日80万人以上が利用する。
 
 2026年、都内の個人経営カフェは前年比12.5%増（新規開業は約1,200店）。人工知能（AI）で発注やシフトを組む店も増えている。駅前のこの店のメニューは3つだけで、ドリップコーヒーが450円、カフェラテが520円、オーツミルクへの変更は＋50円。営業時間は平日7:30〜19:00、Wi-Fiのパスワードはレジの横に貼ってある。
 
 店主の林さんは以前、SaaS企業でUIデザイナーをしていた。「開店から1か月で4,000杯以上（予想の1.5倍）が売れました。来てくれるのは、ほとんど常連さんです」と話す。` },
   /* 台湾、香港：同样的内容按各自的用语写。台湾用「」作引号、「人工智慧」「營收年增」；香港夹着粤语字（嘅、咗、嚟、啲、冇），价格写 $ */
-  tw: { label: { zh: '繁体TW', ja: '繁体TW', tw: '繁體TW' }, lang: 'zh-Hant-TW', text:
+  tw: { label: { zh: '繁体TW', ja: '繁体TW', tw: '繁體TW', en: 'Traditional (TW)' }, lang: 'zh-Hant-TW', text:
 `早上6點半，第一班捷運從終點站開出。車廂裡人還不多，有人戴著AirPods聽Podcast，有人用iPhone回LINE訊息。這條路線全長27.6公里，共有19個車站，平日運量超過80萬人次。
 
 2026年，台北獨立咖啡店的數量成長了12.5%（營收年增約20%），不少店家開始用人工智慧（AI）排班和叫貨。車站旁新開的這家只賣三樣：美式70元、拿鐵90元，換燕麥奶加15元，也可以用App預先點餐。營業時間寫在門口的小黑板上——平日7:30開門，週末晚半小時；Wi-Fi密碼貼在櫃檯旁邊。
 
 店長林曉以前在一家SaaS公司做UI設計。她說：「開幕第一個月賣出了4,000多杯（比預期多了一半），來的大多是熟客……慢一點也沒關係。」` },
-  hk: { label: { zh: '繁体HK', ja: '繁体HK', tw: '繁體HK' }, lang: 'zh-Hant-HK', text:
+  hk: { label: { zh: '繁体HK', ja: '繁体HK', tw: '繁體HK', en: 'Traditional (HK)' }, lang: 'zh-Hant-HK', text:
 `早上6時半，第一班港鐵列車駛出總站。車廂內人不多，有人戴着AirPods聽Podcast，有人用iPhone覆WhatsApp。這條路線全長27.6公里，設有19個車站，平日客量超過80萬人次。
 
 2026年，本港獨立咖啡店數目增加了12.5%（營業額按年升約20%），不少店舖開始用人工智能（AI）編更和訂貨。車站旁新開的這間只賣三款：Americano $38、Latte $42，轉燕麥奶加$5，亦可以用App預先落單。營業時間寫在門口的小黑板上——平日7:30開門，週末遲半小時；Wi-Fi密碼貼在收銀處旁邊。
 
 店主林曉以前在一間SaaS公司做UI設計。佢話：「開業頭一個月賣咗4,000幾杯（比預期多咗一半），嚟嘅大多係熟客……慢啲都冇所謂。」` },
   /* 吹き出しのように括弧なし・句点なしで短く改行し、空行で吹き出しを分ける */
-  manga: { label: { zh: '漫画对白', ja: 'マンガ', tw: '漫畫對白' }, lang: 'ja', text:
+  manga: { label: { zh: '漫画对白', ja: 'マンガ', tw: '漫畫對白', en: 'Manga' }, lang: 'ja', text:
 `なんだって！？
 そんな馬鹿な
 話があるか…
@@ -406,7 +406,7 @@ export const SAMPLES = {
 まだ３人いるんだ
 
 ……１分だけ待つ` },
-  chars: { label: { zh: '字符表', ja: '文字表', tw: '字元表' }, lang: 'zh-Hans', text:
+  chars: { label: { zh: '字符表', ja: '文字表', tw: '字元表', en: 'Charset' }, lang: 'zh-Hans', text:
 `永国字體 あいうえお アイウエオ
 字骨曜返东国三力今直
 ，。、；：？！「」『』《》（）
@@ -444,65 +444,65 @@ export const tSvgTile = key => v => `<span class="tt-s tt-pic" aria-hidden="true
 /* 换行、标点挤压：用当前的合成字体，在窄框里真的排一段，左边的线是版心边缘 */
 export const tBox = (prop, text, lang, cls = '') => v => `<span class="tt-s tt-box${cls}"${lang ? ` lang="${lang}"` : ''} style="${prop}:${v}" aria-hidden="true">${text}</span>`;
 export const TYPO = [
-  { key: 'lang', label: { zh: '语言', ja: '言語', tw: '語言' }, prop: 'lang', attr: true, def: 'zh-Hans',
-    values: [['zh-Hans', { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文' }], ['zh-Hant-TW', { zh: '繁體中文（台灣）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）' }], ['zh-Hant-HK', { zh: '繁體中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）' }], ['ja', { zh: '日本語', ja: '日本語', tw: '日本語' }], ['ko', { zh: '한국어', ja: '韓国語', tw: '한국어' }], ['en', { zh: 'English', ja: '英語', tw: 'English' }]],
-    note: { zh: 'HTML 的 lang 属性，不是 CSS。它决定字形的地区变体、禁则规则，word-break: auto-phrase 也依赖它。', ja: 'HTML の lang 属性で、CSS ではありません。字形の地域差や禁則を決め、word-break: auto-phrase もこれに依存します。', tw: 'HTML 的 lang 屬性，不是 CSS。它決定字形的地區變體、禁則規則，word-break: auto-phrase 也依賴它。' } },
-  { key: 'autospace', label: { zh: '中西间距', ja: '和欧間のアキ', tw: '中西文間距' }, prop: 'text-autospace', def: 'normal', always: true, tiles: '字Ab字12字', tileW: 112, tileFs: 18, tileCode: true,
+  { key: 'lang', label: { zh: '语言', ja: '言語', tw: '語言', en: 'Language' }, prop: 'lang', attr: true, def: 'zh-Hans',
+    values: [['zh-Hans', { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文', en: 'Simplified Chinese' }], ['zh-Hant-TW', { zh: '繁體中文（台灣）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）', en: 'Traditional Chinese (Taiwan)' }], ['zh-Hant-HK', { zh: '繁體中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）', en: 'Traditional Chinese (Hong Kong)' }], ['ja', { zh: '日本語', ja: '日本語', tw: '日本語', en: 'Japanese' }], ['ko', { zh: '한국어', ja: '韓国語', tw: '한국어', en: 'Korean' }], ['en', { zh: 'English', ja: '英語', tw: 'English', en: 'English' }]],
+    note: { zh: 'HTML 的 lang 属性，不是 CSS。它决定字形的地区变体、禁则规则，word-break: auto-phrase 也依赖它。', ja: 'HTML の lang 属性で、CSS ではありません。字形の地域差や禁則を決め、word-break: auto-phrase もこれに依存します。', tw: 'HTML 的 lang 屬性，不是 CSS。它決定字形的地區變體、禁則規則，word-break: auto-phrase 也依賴它。', en: 'The HTML lang attribute, not CSS. It sets regional glyph variants and line-breaking rules, and word-break: auto-phrase depends on it.' } },
+  { key: 'autospace', label: { zh: '中西间距', ja: '和欧間のアキ', tw: '中西文間距', en: 'CJK–Latin spacing' }, prop: 'text-autospace', def: 'normal', always: true, tiles: '字Ab字12字', tileW: 112, tileFs: 18, tileCode: true,
     sup: { chrome: '140', firefox: '145', safari: '18.4' },
-    values: [['normal', { zh: '加 1/8 em', ja: '1/8 em 空ける', tw: '加 1/8 em' }], ['no-autospace', { zh: '不加', ja: '空けない', tw: '不加' }]],
-    note: { zh: '只在没有空格的地方加，已经手动敲了空格的不会再加。Chrome 实测初始值是 no-autospace，所以导出时总会写出这一行。', ja: 'スペースのない箇所にだけ入り、手で入れたスペースには追加されません。Chrome の実際の初期値は no-autospace なので、書き出しでは常にこの行を出力します。', tw: '只在沒有空格的地方加，已經手動敲了空格的不會再加。Chrome 實測初始值是 no-autospace，所以匯出時總會寫出這一行。' } },
-  { key: 'trim', label: { zh: '标点挤压', ja: '約物の詰め', tw: '標點擠壓' }, prop: 'text-spacing-trim', def: 'trim-start', init: 'normal', tiles: true, tileHtml: tBox('text-spacing-trim', '「甲乙」「丙丁」'), tileW: 112, tileCode: true,
+    values: [['normal', { zh: '加 1/8 em', ja: '1/8 em 空ける', tw: '加 1/8 em', en: 'Add 1/8 em' }], ['no-autospace', { zh: '不加', ja: '空けない', tw: '不加', en: 'None' }]],
+    note: { zh: '只在没有空格的地方加，已经手动敲了空格的不会再加。Chrome 实测初始值是 no-autospace，所以导出时总会写出这一行。', ja: 'スペースのない箇所にだけ入り、手で入れたスペースには追加されません。Chrome の実際の初期値は no-autospace なので、書き出しでは常にこの行を出力します。', tw: '只在沒有空格的地方加，已經手動敲了空格的不會再加。Chrome 實測初始值是 no-autospace，所以匯出時總會寫出這一行。', en: 'Added only where there is no space; spaces you typed get nothing extra. Chrome\'s actual initial value is no-autospace, so the export always writes this line.' } },
+  { key: 'trim', label: { zh: '标点挤压', ja: '約物の詰め', tw: '標點擠壓', en: 'Punctuation trimming' }, prop: 'text-spacing-trim', def: 'trim-start', init: 'normal', tiles: true, tileHtml: tBox('text-spacing-trim', '「甲乙」「丙丁」'), tileW: 112, tileCode: true,
     sup: { chrome: '123', firefox: '—', safari: '—' },
-    values: [['normal', { zh: '相邻标点挤压，行首不挤', ja: '隣接する約物を詰める。行頭は詰めない', tw: '相鄰標點擠壓，行首不擠' }], ['space-all', { zh: '全部保持全角', ja: 'すべて全角のまま', tw: '全部保持全形' }], ['space-first', { zh: '行首也挤压，段首行除外', ja: '行頭も詰める（段落の 1 行目を除く）', tw: '行首也擠壓，段首行除外' }], ['trim-start', { zh: '行首也挤压，包括段首行', ja: '行頭も詰める（1 行目を含む）', tw: '行首也擠壓，包括段首行' }]],
-    note: { zh: '例如「。」」连在一起时，其中一个收成半角。目前只有 Chromium 实现。', ja: 'たとえば「。」」が続くと片方が半角になります。現在は Chromium だけが実装しています。', tw: '例如「。」」連在一起時，其中一個收成半形。目前只有 Chromium 實作。' } },
-  { key: 'wordBreak', label: { zh: '换行单位', ja: '改行の単位', tw: '換行單位' }, prop: 'word-break', def: 'normal', tiles: true, tileHtml: tBox('word-break', '美しい日本語の文章', 'ja'), tileW: 112, tileCode: true,
+    values: [['normal', { zh: '相邻标点挤压，行首不挤', ja: '隣接する約物を詰める。行頭は詰めない', tw: '相鄰標點擠壓，行首不擠', en: 'Trim adjacent, not at line start' }], ['space-all', { zh: '全部保持全角', ja: 'すべて全角のまま', tw: '全部保持全形', en: 'Keep all full-width' }], ['space-first', { zh: '行首也挤压，段首行除外', ja: '行頭も詰める（段落の 1 行目を除く）', tw: '行首也擠壓，段首行除外', en: 'Also at line start, except first line' }], ['trim-start', { zh: '行首也挤压，包括段首行', ja: '行頭も詰める（1 行目を含む）', tw: '行首也擠壓，包括段首行', en: 'Also at line start, incl. first line' }]],
+    note: { zh: '例如「。」」连在一起时，其中一个收成半角。目前只有 Chromium 实现。', ja: 'たとえば「。」」が続くと片方が半角になります。現在は Chromium だけが実装しています。', tw: '例如「。」」連在一起時，其中一個收成半形。目前只有 Chromium 實作。', en: 'For example, when 「。」」 run together, one of them becomes half-width. Currently only Chromium implements this.' } },
+  { key: 'wordBreak', label: { zh: '换行单位', ja: '改行の単位', tw: '換行單位', en: 'Break unit' }, prop: 'word-break', def: 'normal', tiles: true, tileHtml: tBox('word-break', '美しい日本語の文章', 'ja'), tileW: 112, tileCode: true,
     sup: { chrome: '119', firefox: '—', safari: '—' },
-    values: [['normal', { zh: '逐字', ja: '1 文字ずつ', tw: '逐字' }], ['auto-phrase', { zh: '按词组', ja: '文節単位', tw: '按詞組' }]],
-    note: { zh: 'auto-phrase 只对 lang="ja" 和 lang="ko" 生效，适合标题和短文。', ja: 'auto-phrase は lang="ja" と lang="ko" でのみ有効で、見出しや短い文に向いています。', tw: 'auto-phrase 只對 lang="ja" 和 lang="ko" 生效，適合標題和短文。' } },
-  { key: 'lineBreak', label: { zh: '禁则', ja: '禁則', tw: '禁則' }, prop: 'line-break', def: 'strict', init: 'auto', tiles: true, tileHtml: tBox('line-break', 'まあ時々、ちょっと', 'ja', ' tt-lb'), tileW: 88, tileCode: true,      /* 这句在 4 字宽里，5 个值各断在不同的地方（auto 在 Chrome 里和 normal 一样） */
+    values: [['normal', { zh: '逐字', ja: '1 文字ずつ', tw: '逐字', en: 'Per character' }], ['auto-phrase', { zh: '按词组', ja: '文節単位', tw: '按詞組', en: 'By phrase' }]],
+    note: { zh: 'auto-phrase 只对 lang="ja" 和 lang="ko" 生效，适合标题和短文。', ja: 'auto-phrase は lang="ja" と lang="ko" でのみ有効で、見出しや短い文に向いています。', tw: 'auto-phrase 只對 lang="ja" 和 lang="ko" 生效，適合標題和短文。', en: 'auto-phrase only works with lang="ja" and lang="ko"; good for headings and short text.' } },
+  { key: 'lineBreak', label: { zh: '禁则', ja: '禁則', tw: '禁則', en: 'Line-breaking rules' }, prop: 'line-break', def: 'strict', init: 'auto', tiles: true, tileHtml: tBox('line-break', 'まあ時々、ちょっと', 'ja', ' tt-lb'), tileW: 88, tileCode: true,      /* 这句在 4 字宽里，5 个值各断在不同的地方（auto 在 Chrome 里和 normal 一样） */
     sup: { chrome: '58', firefox: '69', safari: '11' },
-    values: [['auto', { zh: '由浏览器决定', ja: 'ブラウザに任せる', tw: '由瀏覽器決定' }], ['loose', { zh: '宽松', ja: 'ゆるい', tw: '寬鬆' }], ['normal', { zh: '标准', ja: '標準', tw: '標準' }], ['strict', { zh: '严格', ja: '厳しい', tw: '嚴格' }], ['anywhere', { zh: '任意处断行', ja: 'どこでも改行', tw: '任意處斷行' }]],
-    note: { zh: '哪些字不能放在行首或行尾，例如句号、逗号不放在行首。auto 由浏览器按语言决定；strict 更严格，小写假名（っ、ゃ）和长音「ー」也不放行首，日文正文常用；loose 更宽松，适合窄栏；anywhere 在任何地方都可以断行。', ja: '行頭・行末に置けない文字の規則です（句読点を行頭に置かないなど）。auto はブラウザが言語に応じて決めます。strict はより厳しく、小書きのかな（っ・ゃ）や長音記号「ー」も行頭に置きません（日本語の本文でよく使います）。loose はゆるく、狭い段組み向けです。anywhere はどこでも改行します。', tw: '哪些字不能放在行首或行尾，例如句號、逗號不放在行首。auto 由瀏覽器按語言決定；strict 更嚴格，小寫假名（っ、ゃ）和長音「ー」也不放行首，日文內文常用；loose 更寬鬆，適合窄欄；anywhere 在任何地方都可以斷行。' } },
+    values: [['auto', { zh: '由浏览器决定', ja: 'ブラウザに任せる', tw: '由瀏覽器決定', en: 'Browser decides' }], ['loose', { zh: '宽松', ja: 'ゆるい', tw: '寬鬆', en: 'Loose' }], ['normal', { zh: '标准', ja: '標準', tw: '標準', en: 'Normal' }], ['strict', { zh: '严格', ja: '厳しい', tw: '嚴格', en: 'Strict' }], ['anywhere', { zh: '任意处断行', ja: 'どこでも改行', tw: '任意處斷行', en: 'Break anywhere' }]],
+    note: { zh: '哪些字不能放在行首或行尾，例如句号、逗号不放在行首。auto 由浏览器按语言决定；strict 更严格，小写假名（っ、ゃ）和长音「ー」也不放行首，日文正文常用；loose 更宽松，适合窄栏；anywhere 在任何地方都可以断行。', ja: '行頭・行末に置けない文字の規則です（句読点を行頭に置かないなど）。auto はブラウザが言語に応じて決めます。strict はより厳しく、小書きのかな（っ・ゃ）や長音記号「ー」も行頭に置きません（日本語の本文でよく使います）。loose はゆるく、狭い段組み向けです。anywhere はどこでも改行します。', tw: '哪些字不能放在行首或行尾，例如句號、逗號不放在行首。auto 由瀏覽器按語言決定；strict 更嚴格，小寫假名（っ、ゃ）和長音「ー」也不放行首，日文內文常用；loose 更寬鬆，適合窄欄；anywhere 在任何地方都可以斷行。', en: 'Which characters may not start or end a line, e.g. periods and commas never start a line. auto lets the browser decide by language; strict also keeps small kana (っ, ゃ) and the long vowel mark 「ー」 off line starts, common in Japanese body text; loose is more relaxed, suited to narrow columns; anywhere can break at any point.' } },
   /* 段落换行、对齐、对齐方式（grp: 'view'）是页面版式，不属于字体：只用来看校样，不写进导出的 CSS，放在校样工具条的「显示」菜单里 */
-  { key: 'wrap', grp: 'view', label: { zh: '段落换行', ja: '段落の折り返し', tw: '段落換行' }, prop: 'text-wrap', def: 'wrap', init: 'wrap', tiles: true, tileHtml: tSvgTile('wrap'), tileW: 96, tileCode: true,
+  { key: 'wrap', grp: 'view', label: { zh: '段落换行', ja: '段落の折り返し', tw: '段落換行', en: 'Paragraph wrap' }, prop: 'text-wrap', def: 'wrap', init: 'wrap', tiles: true, tileHtml: tSvgTile('wrap'), tileW: 96, tileCode: true,
     sup: { chrome: 'balance 114 · pretty 117', firefox: 'balance 121', safari: 'balance 17.5 · pretty 26' },
-    values: [['wrap', null], ['pretty', { zh: '避免末行孤字', ja: '最終行の孤立を避ける', tw: '避免末行孤字' }], ['balance', { zh: '各行等长（标题）', ja: '行長をそろえる（見出し）', tw: '各行等長（標題）' }]],
-    note: { zh: 'Chrome 的 pretty 只调整段落最后四行。Safari 的 pretty 会重排整段：每行排得更短，两端对齐时字距被拉开，标点悬挂也会失效，所以正文默认不用。', ja: 'Chrome の pretty は段落の最後の 4 行だけを調整します。Safari の pretty は段落全体を組み直すため、行が短くなって両端揃えでは字間が空き、ぶら下がりも効かなくなります。そのため本文の初期値にはしていません。', tw: 'Chrome 的 pretty 只調整段落最後四行。Safari 的 pretty 會重排整段：每行排得更短，左右對齊時字距被拉開，標點懸掛也會失效，所以正文預設不用。' } },
-  { key: 'align', grp: 'view', label: { zh: '对齐', ja: '揃え', tw: '對齊' }, prop: 'text-align', def: 'justify', tiles: true, tileHtml: tSvgTile('align'), tileW: 96, tileCode: true,
-    values: [['justify', { zh: '两端对齐', ja: '両端揃え', tw: '兩端對齊' }], ['start', { zh: '齐头', ja: '行頭揃え', tw: '靠行首對齊' }], ['center', { zh: '居中', ja: '中央揃え', tw: '置中' }]] },
-  { key: 'justify', grp: 'view', label: { zh: '对齐方式', ja: '両端揃えの方法', tw: '對齊方式' }, prop: 'text-justify', def: 'auto', tiles: true, tileHtml: tSvgTile('justify'), tileW: 96, tileCode: true,
+    values: [['wrap', null], ['pretty', { zh: '避免末行孤字', ja: '最終行の孤立を避ける', tw: '避免末行孤字', en: 'Avoid orphans' }], ['balance', { zh: '各行等长（标题）', ja: '行長をそろえる（見出し）', tw: '各行等長（標題）', en: 'Even lines (headings)' }]],
+    note: { zh: 'Chrome 的 pretty 只调整段落最后四行。Safari 的 pretty 会重排整段：每行排得更短，两端对齐时字距被拉开，标点悬挂也会失效，所以正文默认不用。', ja: 'Chrome の pretty は段落の最後の 4 行だけを調整します。Safari の pretty は段落全体を組み直すため、行が短くなって両端揃えでは字間が空き、ぶら下がりも効かなくなります。そのため本文の初期値にはしていません。', tw: 'Chrome 的 pretty 只調整段落最後四行。Safari 的 pretty 會重排整段：每行排得更短，左右對齊時字距被拉開，標點懸掛也會失效，所以正文預設不用。', en: 'Chrome\'s pretty only adjusts the last four lines of a paragraph. Safari\'s pretty reflows the whole paragraph: lines get shorter, justified text gets loose letter spacing, and hanging punctuation stops working, so body text doesn\'t use it by default.' } },
+  { key: 'align', grp: 'view', label: { zh: '对齐', ja: '揃え', tw: '對齊', en: 'Alignment' }, prop: 'text-align', def: 'justify', tiles: true, tileHtml: tSvgTile('align'), tileW: 96, tileCode: true,
+    values: [['justify', { zh: '两端对齐', ja: '両端揃え', tw: '兩端對齊', en: 'Justify' }], ['start', { zh: '齐头', ja: '行頭揃え', tw: '靠行首對齊', en: 'Start' }], ['center', { zh: '居中', ja: '中央揃え', tw: '置中', en: 'Center' }]] },
+  { key: 'justify', grp: 'view', label: { zh: '对齐方式', ja: '両端揃えの方法', tw: '對齊方式', en: 'Justify method' }, prop: 'text-justify', def: 'auto', tiles: true, tileHtml: tSvgTile('justify'), tileW: 96, tileCode: true,
     sup: { chrome: '145', firefox: '55', safari: '—' },
-    values: [['auto', null], ['inter-character', { zh: '字间分配', ja: '字間で調整', tw: '字間分配' }], ['inter-word', { zh: '只在词间', ja: '語間のみ', tw: '只在詞間' }], ['none', null]],
-    note: { zh: '配合 text-align: justify 使用。', ja: 'text-align: justify と組み合わせて使います。', tw: '配合 text-align: justify 使用。' } },
-  { key: 'hang', label: { zh: '标点悬挂', ja: 'ぶら下がり', tw: '標點懸掛' }, prop: 'hanging-punctuation', def: 'allow-end', init: 'none', tiles: true, tileHtml: tSvgTile('hang'), tileW: 112, tileCode: true,
+    values: [['auto', null], ['inter-character', { zh: '字间分配', ja: '字間で調整', tw: '字間分配', en: 'Between characters' }], ['inter-word', { zh: '只在词间', ja: '語間のみ', tw: '只在詞間', en: 'Between words only' }], ['none', null]],
+    note: { zh: '配合 text-align: justify 使用。', ja: 'text-align: justify と組み合わせて使います。', tw: '配合 text-align: justify 使用。', en: 'Use with text-align: justify.' } },
+  { key: 'hang', label: { zh: '标点悬挂', ja: 'ぶら下がり', tw: '標點懸掛', en: 'Hanging punctuation' }, prop: 'hanging-punctuation', def: 'allow-end', init: 'none', tiles: true, tileHtml: tSvgTile('hang'), tileW: 112, tileCode: true,
     sup: { chrome: '—', firefox: '—', safari: '10' },
-    values: [['none', null], ['allow-end', { zh: '行尾句读可悬挂', ja: '行末の句読点をぶら下げる', tw: '行尾句讀可懸掛' }], ['first allow-end last', { zh: '段首段尾的引号括号也悬挂', ja: '段落の最初と最後の括弧も', tw: '段首段尾的引號括號也懸掛' }]],
-    note: { zh: '让行尾的句号、逗号伸出版心，右边缘看起来更齐。目前只有 Safari 支持，其他浏览器照常排；段落换行设成 pretty 时，Safari 也不悬挂。first / last 让段落开头、结尾的引号和括号也悬挂。', ja: '行末の句読点を版面の外にはみ出させ、右端をそろえて見せます。現在対応しているのは Safari だけで、ほかのブラウザでは通常どおり組まれます。段落の折り返しを pretty にすると、Safari でもぶら下がりません。first / last は段落の最初・最後の括弧や引用符もぶら下げます。', tw: '讓行尾的句號、逗號伸出版心，右邊緣看起來更齊。目前只有 Safari 支援，其他瀏覽器照常排；段落換行設成 pretty 時，Safari 也不懸掛。first / last 讓段落開頭、結尾的引號和括號也懸掛。' } },
-  { key: 'feat', grp: 'font', label: { zh: '字距特性', ja: '字詰めの機能', tw: '字距特性' }, prop: 'font-feature-settings', def: 'normal', tiles: '「アイ」、ウ。', tileW: 112, tileFs: 17, tileCode: true,
+    values: [['none', null], ['allow-end', { zh: '行尾句读可悬挂', ja: '行末の句読点をぶら下げる', tw: '行尾句讀可懸掛', en: 'Hang line-end punctuation' }], ['first allow-end last', { zh: '段首段尾的引号括号也悬挂', ja: '段落の最初と最後の括弧も', tw: '段首段尾的引號括號也懸掛', en: 'Also quotes and brackets at paragraph start and end' }]],
+    note: { zh: '让行尾的句号、逗号伸出版心，右边缘看起来更齐。目前只有 Safari 支持，其他浏览器照常排；段落换行设成 pretty 时，Safari 也不悬挂。first / last 让段落开头、结尾的引号和括号也悬挂。', ja: '行末の句読点を版面の外にはみ出させ、右端をそろえて見せます。現在対応しているのは Safari だけで、ほかのブラウザでは通常どおり組まれます。段落の折り返しを pretty にすると、Safari でもぶら下がりません。first / last は段落の最初・最後の括弧や引用符もぶら下げます。', tw: '讓行尾的句號、逗號伸出版心，右邊緣看起來更齊。目前只有 Safari 支援，其他瀏覽器照常排；段落換行設成 pretty 時，Safari 也不懸掛。first / last 讓段落開頭、結尾的引號和括號也懸掛。', en: 'Lets periods and commas at line end extend past the text block, so the right edge looks straighter. Only Safari supports it for now; other browsers set text as usual. When paragraph wrap is pretty, Safari doesn\'t hang either. first / last also hang quotes and brackets at the start and end of a paragraph.' } },
+  { key: 'feat', grp: 'font', label: { zh: '字距特性', ja: '字詰めの機能', tw: '字距特性', en: 'Spacing features' }, prop: 'font-feature-settings', def: 'normal', tiles: '「アイ」、ウ。', tileW: 112, tileFs: 17, tileCode: true,
     sup: { chrome: '48', firefox: '34', safari: '9.1' },
-    values: [['normal', null], ['"palt"', { zh: '假名标点比例宽', ja: 'かなと約物をプロポーショナルに', tw: '假名標點比例寬' }], ['"halt"', { zh: '标点半角', ja: '約物を半角に', tw: '標點半形' }]],
-    note: { zh: '日文排版常用的 OpenType 特性。palt 让假名和标点按字形本身的宽度排，字距更紧，适合标题；halt 只把标点压成半宽。正文一般保持 normal。字体没有这些特性时不起作用；思源 / Noto CJK 等字体的标点也支持。', ja: '和文組版でよく使う OpenType 機能です。palt はかなや約物を字形そのものの幅で組み、字間が詰まるので見出し向きです。halt は約物だけを半角にします。本文はふつう normal のままです。フォントにこれらの機能がなければ効きません。源ノ / Noto CJK などのフォントは約物も対応しています。', tw: '日文排版常用的 OpenType 特性。palt 讓假名和標點按字形本身的寬度排，字距更緊，適合標題；halt 只把標點壓成半寬。內文一般保持 normal。字型沒有這些特性時不起作用；思源 / Noto CJK 等字型的標點也支援。' } },
+    values: [['normal', null], ['"palt"', { zh: '假名标点比例宽', ja: 'かなと約物をプロポーショナルに', tw: '假名標點比例寬', en: 'Proportional kana and punctuation' }], ['"halt"', { zh: '标点半角', ja: '約物を半角に', tw: '標點半形', en: 'Half-width punctuation' }]],
+    note: { zh: '日文排版常用的 OpenType 特性。palt 让假名和标点按字形本身的宽度排，字距更紧，适合标题；halt 只把标点压成半宽。正文一般保持 normal。字体没有这些特性时不起作用；思源 / Noto CJK 等字体的标点也支持。', ja: '和文組版でよく使う OpenType 機能です。palt はかなや約物を字形そのものの幅で組み、字間が詰まるので見出し向きです。halt は約物だけを半角にします。本文はふつう normal のままです。フォントにこれらの機能がなければ効きません。源ノ / Noto CJK などのフォントは約物も対応しています。', tw: '日文排版常用的 OpenType 特性。palt 讓假名和標點按字形本身的寬度排，字距更緊，適合標題；halt 只把標點壓成半寬。內文一般保持 normal。字型沒有這些特性時不起作用；思源 / Noto CJK 等字型的標點也支援。', en: 'OpenType features common in Japanese typesetting. palt sets kana and punctuation at their own glyph widths for tighter spacing, good for headings; halt only narrows punctuation to half width. Body text usually stays normal. No effect if the font lacks these features; punctuation in Source Han / Noto CJK fonts supports them too.' } },
   /* 数字样式：和 InDesign 的「数字样式」一样的五种。斜线零单独一行，导出时两行合成一条 font-variant-numeric。
      tiles：用字样卡片选（每张卡片用当前的数字字体排出这个样式），第三项是用途提示 */
-  { key: 'num', grp: 'font', label: { zh: '数字样式', ja: '数字のスタイル', tw: '數字樣式' }, prop: 'font-variant-numeric', def: 'normal', tiles: '11,980', hint: 'numHint',
+  { key: 'num', grp: 'font', label: { zh: '数字样式', ja: '数字のスタイル', tw: '數字樣式', en: 'Figure style' }, prop: 'font-variant-numeric', def: 'normal', tiles: '11,980', hint: 'numHint',
     sup: { chrome: '52', firefox: '34', safari: '9.1' },
-    values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設' }],
-      ['lining-nums tabular-nums', { zh: '等高等宽', ja: 'ライニング・等幅', tw: '等高等寬' }, { zh: '表格、金额', ja: '表・金額', tw: '表格、金額' }],
-      ['lining-nums proportional-nums', { zh: '等高比例', ja: 'ライニング・プロポーショナル', tw: '等高比例' }],
-      ['oldstyle-nums proportional-nums', { zh: '旧式比例', ja: 'オールドスタイル・プロポーショナル', tw: '舊式比例' }, { zh: '西文正文', ja: '欧文の本文', tw: '西文內文' }],
-      ['oldstyle-nums tabular-nums', { zh: '旧式等宽', ja: 'オールドスタイル・等幅', tw: '舊式等寬' }]],
-    note: { zh: '和 InDesign 的「数字样式」一样的五种。等高 / 旧式是数字的高低，比例 / 等宽是数字的宽度。效果取决于显示数字的那个字体有没有这些 OpenType 特性；Google Fonts 的网页字体删掉了旧式数字和斜线零。写在使用规则里，页面上可以按元素改，例如只让表格用等宽数字。', ja: 'InDesign の「数字スタイル」と同じ 5 種類です。ライニング / オールドスタイルは数字の高さ、プロポーショナル / 等幅は数字の幅です。効果は数字を表示するフォントにこれらの OpenType 機能があるかどうかで決まります。Google Fonts の Web フォントではオールドスタイル数字とスラッシュ付きゼロが削られています。使用側の規則に書かれるので、表だけ等幅数字にするなど、要素ごとに変えられます。', tw: '和 InDesign 的「數字樣式」一樣的五種。等高 / 舊式是數字的高低，比例 / 等寬是數字的寬度。效果取決於顯示數字的那個字型有沒有這些 OpenType 特性；Google Fonts 的網頁字型刪掉了舊式數字和斜線零。寫在使用規則裡，頁面上可以按元素改，例如只讓表格用等寬數字。' } },
-  { key: 'zero', grp: 'font', label: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零' }, prop: 'font-variant-numeric', def: 'normal', tiles: '100',
+    values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設', en: 'Font default' }],
+      ['lining-nums tabular-nums', { zh: '等高等宽', ja: 'ライニング・等幅', tw: '等高等寬', en: 'Tabular lining' }, { zh: '表格、金额', ja: '表・金額', tw: '表格、金額', en: 'Tables, amounts' }],
+      ['lining-nums proportional-nums', { zh: '等高比例', ja: 'ライニング・プロポーショナル', tw: '等高比例', en: 'Proportional lining' }],
+      ['oldstyle-nums proportional-nums', { zh: '旧式比例', ja: 'オールドスタイル・プロポーショナル', tw: '舊式比例', en: 'Proportional oldstyle' }, { zh: '西文正文', ja: '欧文の本文', tw: '西文內文', en: 'Latin body text' }],
+      ['oldstyle-nums tabular-nums', { zh: '旧式等宽', ja: 'オールドスタイル・等幅', tw: '舊式等寬', en: 'Tabular oldstyle' }]],
+    note: { zh: '和 InDesign 的「数字样式」一样的五种。等高 / 旧式是数字的高低，比例 / 等宽是数字的宽度。效果取决于显示数字的那个字体有没有这些 OpenType 特性；Google Fonts 的网页字体删掉了旧式数字和斜线零。写在使用规则里，页面上可以按元素改，例如只让表格用等宽数字。', ja: 'InDesign の「数字スタイル」と同じ 5 種類です。ライニング / オールドスタイルは数字の高さ、プロポーショナル / 等幅は数字の幅です。効果は数字を表示するフォントにこれらの OpenType 機能があるかどうかで決まります。Google Fonts の Web フォントではオールドスタイル数字とスラッシュ付きゼロが削られています。使用側の規則に書かれるので、表だけ等幅数字にするなど、要素ごとに変えられます。', tw: '和 InDesign 的「數字樣式」一樣的五種。等高 / 舊式是數字的高低，比例 / 等寬是數字的寬度。效果取決於顯示數字的那個字型有沒有這些 OpenType 特性；Google Fonts 的網頁字型刪掉了舊式數字和斜線零。寫在使用規則裡，頁面上可以按元素改，例如只讓表格用等寬數字。', en: 'The same five options as InDesign\'s figure style. Lining / oldstyle is the height of the figures, proportional / tabular their width. The effect depends on whether the font that shows the digits has these OpenType features; Google Fonts web fonts drop oldstyle figures and slashed zero. It is written into the usage rules, so the page can change it per element, e.g. tabular figures only in tables.' } },
+  { key: 'zero', grp: 'font', label: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零', en: 'Slashed zero' }, prop: 'font-variant-numeric', def: 'normal', tiles: '100',
     sup: { chrome: '52', firefox: '34', safari: '9.1' },
-    values: [['normal', { zh: '不用', ja: '使わない', tw: '不用' }], ['slashed-zero', { zh: '斜线零', ja: 'スラッシュ付き', tw: '斜線零' }, { zh: '和字母 O 区分', ja: 'O と区別', tw: '和字母 O 區分' }]] },
+    values: [['normal', { zh: '不用', ja: '使わない', tw: '不用', en: 'Off' }], ['slashed-zero', { zh: '斜线零', ja: 'スラッシュ付き', tw: '斜線零', en: 'Slashed zero' }, { zh: '和字母 O 区分', ja: 'O と区別', tw: '和字母 O 區分', en: 'Distinct from letter O' }]] },
   /* 东亚字形：字形标准（JIS 各版、旧字形 / 简化字形）和假名标点的宽度，两行合成一条 font-variant-east-asian */
-  { key: 'eaVar', grp: 'font', label: { zh: '字形标准', ja: '字形の規格', tw: '字形標準' }, prop: 'font-variant-east-asian', def: 'normal', tiles: '辻葛飴鴎国', tileW: 128, hint: 'eaHint',
+  { key: 'eaVar', grp: 'font', label: { zh: '字形标准', ja: '字形の規格', tw: '字形標準', en: 'Glyph standard' }, prop: 'font-variant-east-asian', def: 'normal', tiles: '辻葛飴鴎国', tileW: 128, hint: 'eaHint',
     sup: { chrome: '63', firefox: '34', safari: '9.1' },
-    values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設' }], ['jis04', { zh: 'JIS2004', ja: 'JIS2004', tw: 'JIS2004' }, { zh: '现行标准', ja: '現行の規格', tw: '現行標準' }], ['jis90', { zh: 'JIS90', ja: 'JIS90', tw: 'JIS90' }, { zh: '2004 年以前', ja: '2004 年より前', tw: '2004 年以前' }], ['jis83', { zh: 'JIS83', ja: 'JIS83', tw: 'JIS83' }], ['jis78', { zh: 'JIS78', ja: 'JIS78', tw: 'JIS78' }], ['traditional', { zh: '旧字形', ja: '旧字体', tw: '舊字形' }], ['simplified', { zh: '简化字形', ja: '簡略字形', tw: '簡化字形' }]],
-    note: { zh: '日文汉字有几版字形标准：JIS2004 是现行标准，例如「辻」的走之是两点、「飴」的食字旁是新写法；JIS90 是 2004 年以前 Windows XP 等使用的写法，JIS83、JIS78 更早。旧字形把字换成传统写法（例如国 → 國），简化字形相反。需要字体本身带有这些字形：冬青黑体（Hiragino）、游明朝等本机字体通常有，Google Fonts 的网页字体把这些特性删掉了。和校样的语言无关，中文字体如果带有这些特性也会生效。', ja: '日本語の漢字には字形の規格がいくつかあります。JIS2004 は現行の規格で、たとえば「辻」のしんにょうは 2 点、「飴」の食偏は新しい形です。JIS90 は 2004 年より前（Windows XP など）の形で、JIS83・JIS78 はさらに古い形です。旧字体は字を伝統的な形に（国 → 國）、簡略字形はその逆にします。フォント自体がこれらの字形を持っている必要があり、ヒラギノや游明朝などのローカルフォントにはたいていありますが、Google Fonts の Web フォントではこれらの機能が削られています。校正刷りの言語とは関係なく、中国語フォントでも機能があれば効きます。', tw: '日文漢字有幾版字形標準：JIS2004 是現行標準，例如「辻」的辶是兩點、「飴」的食字旁是新寫法；JIS90 是 2004 年以前 Windows XP 等使用的寫法，JIS83、JIS78 更早。舊字形把字換成傳統寫法（例如国 → 國），簡化字形相反。需要字型本身帶有這些字形：冬青黑體（Hiragino）、游明朝等本機字型通常有，Google Fonts 的網頁字型把這些特性刪掉了。和校樣的語言無關，中文字型如果帶有這些特性也會生效。' } },
-  { key: 'eaWidth', grp: 'font', label: { zh: '假名与标点宽度', ja: 'かなと約物の幅', tw: '假名與標點寬度' }, prop: 'font-variant-east-asian', def: 'normal', tiles: 'イリ「ア」ﾃｽ', tileW: 150, tileFs: 18, hint: 'eaWHint',      /* 「」：比例宽也会收窄括号；ﾃｽ：全角会把半角片假名变成全角 */
+    values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設', en: 'Font default' }], ['jis04', { zh: 'JIS2004', ja: 'JIS2004', tw: 'JIS2004', en: 'JIS2004' }, { zh: '现行标准', ja: '現行の規格', tw: '現行標準', en: 'Current standard' }], ['jis90', { zh: 'JIS90', ja: 'JIS90', tw: 'JIS90', en: 'JIS90' }, { zh: '2004 年以前', ja: '2004 年より前', tw: '2004 年以前', en: 'Before 2004' }], ['jis83', { zh: 'JIS83', ja: 'JIS83', tw: 'JIS83', en: 'JIS83' }], ['jis78', { zh: 'JIS78', ja: 'JIS78', tw: 'JIS78', en: 'JIS78' }], ['traditional', { zh: '旧字形', ja: '旧字体', tw: '舊字形', en: 'Traditional forms' }], ['simplified', { zh: '简化字形', ja: '簡略字形', tw: '簡化字形', en: 'Simplified forms' }]],
+    note: { zh: '日文汉字有几版字形标准：JIS2004 是现行标准，例如「辻」的走之是两点、「飴」的食字旁是新写法；JIS90 是 2004 年以前 Windows XP 等使用的写法，JIS83、JIS78 更早。旧字形把字换成传统写法（例如国 → 國），简化字形相反。需要字体本身带有这些字形：冬青黑体（Hiragino）、游明朝等本机字体通常有，Google Fonts 的网页字体把这些特性删掉了。和校样的语言无关，中文字体如果带有这些特性也会生效。', ja: '日本語の漢字には字形の規格がいくつかあります。JIS2004 は現行の規格で、たとえば「辻」のしんにょうは 2 点、「飴」の食偏は新しい形です。JIS90 は 2004 年より前（Windows XP など）の形で、JIS83・JIS78 はさらに古い形です。旧字体は字を伝統的な形に（国 → 國）、簡略字形はその逆にします。フォント自体がこれらの字形を持っている必要があり、ヒラギノや游明朝などのローカルフォントにはたいていありますが、Google Fonts の Web フォントではこれらの機能が削られています。校正刷りの言語とは関係なく、中国語フォントでも機能があれば効きます。', tw: '日文漢字有幾版字形標準：JIS2004 是現行標準，例如「辻」的辶是兩點、「飴」的食字旁是新寫法；JIS90 是 2004 年以前 Windows XP 等使用的寫法，JIS83、JIS78 更早。舊字形把字換成傳統寫法（例如国 → 國），簡化字形相反。需要字型本身帶有這些字形：冬青黑體（Hiragino）、游明朝等本機字型通常有，Google Fonts 的網頁字型把這些特性刪掉了。和校樣的語言無關，中文字型如果帶有這些特性也會生效。', en: 'Japanese kanji have several glyph standards: JIS2004 is the current one, e.g. the 辶 radical in 「辻」 has two dots and the 食 radical in 「飴」 uses the new form; JIS90 is the form used before 2004 by Windows XP and others; JIS83 and JIS78 are older still. Traditional forms switch characters to their traditional shapes (e.g. 国 → 國); simplified forms do the opposite. The font itself must contain these glyphs: installed fonts such as Hiragino and Yu Mincho usually do, while Google Fonts web fonts drop these features. This doesn\'t depend on the proof language; Chinese fonts with these features are affected too.' } },
+  { key: 'eaWidth', grp: 'font', label: { zh: '假名与标点宽度', ja: 'かなと約物の幅', tw: '假名與標點寬度', en: 'Kana and punctuation width' }, prop: 'font-variant-east-asian', def: 'normal', tiles: 'イリ「ア」ﾃｽ', tileW: 150, tileFs: 18, hint: 'eaWHint',      /* 「」：比例宽也会收窄括号；ﾃｽ：全角会把半角片假名变成全角 */
     sup: { chrome: '63', firefox: '34', safari: '9.1' },
-    values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設' }], ['proportional-width', { zh: '比例宽', ja: 'プロポーショナル', tw: '比例寬' }, { zh: '按字形本身的宽度', ja: '字形そのものの幅', tw: '按字形本身的寬度' }], ['full-width', { zh: '全角', ja: '全角', tw: '全形' }, { zh: '半角假名也变全角', ja: '半角カナも全角に', tw: '半形假名也變全形' }]] },
+    values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設', en: 'Font default' }], ['proportional-width', { zh: '比例宽', ja: 'プロポーショナル', tw: '比例寬', en: 'Proportional' }, { zh: '按字形本身的宽度', ja: '字形そのものの幅', tw: '按字形本身的寬度', en: 'Each glyph\'s own width' }], ['full-width', { zh: '全角', ja: '全角', tw: '全形', en: 'Full-width' }, { zh: '半角假名也变全角', ja: '半角カナも全角に', tw: '半形假名也變全形', en: 'Half-width kana become full-width too' }]] },
 ];
 /* 几行合成一条 CSS 属性：数字样式 + 斜线零 → font-variant-numeric；字形标准 + 宽度 → font-variant-east-asian */
 /* grp: 'font' 的几行是字体的事（用哪个字形），放在「字体」页签；其余是排版的事，放在「排版」页签 */
@@ -531,7 +531,7 @@ export const typoSupported = (t, v) => t.attr || CSS.supports(t.prop, v);
    下面是各个值对应的 OpenType 特性：检查显示数字的字体有没有这些特性时用 */
 export const NUM_FEAT = { 'lining-nums': 'lnum', 'oldstyle-nums': 'onum', 'proportional-nums': 'pnum', 'tabular-nums': 'tnum', 'slashed-zero': 'zero' };
 export const NUM_TAGS = Object.values(NUM_FEAT);
-export const NUM_LABEL = { lnum: { zh: '等高数字', ja: 'ライニング数字', tw: '等高數字' }, onum: { zh: '旧式数字', ja: 'オールドスタイル数字', tw: '舊式數字' }, pnum: { zh: '比例数字', ja: 'プロポーショナル数字', tw: '比例數字' }, tnum: { zh: '等宽数字', ja: '等幅数字', tw: '等寬數字' }, zero: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零' } };
+export const NUM_LABEL = { lnum: { zh: '等高数字', ja: 'ライニング数字', tw: '等高數字', en: 'Lining figures' }, onum: { zh: '旧式数字', ja: 'オールドスタイル数字', tw: '舊式數字', en: 'Oldstyle figures' }, pnum: { zh: '比例数字', ja: 'プロポーショナル数字', tw: '比例數字', en: 'Proportional figures' }, tnum: { zh: '等宽数字', ja: '等幅数字', tw: '等寬數字', en: 'Tabular figures' }, zero: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零', en: 'Slashed zero' } };
 export const numValue = () => typoValue(TYPO.find(t => t.key === 'num'));
 export const numTags = () => numValue().split(' ').map(v => NUM_FEAT[v]).filter(Boolean);
 export const numLabel = t => tr(NUM_LABEL[t]);
@@ -541,21 +541,21 @@ export const numLabel = t => tr(NUM_LABEL[t]);
    latinShift 是基线（大写中线和汉字字面中线相差 2% em 以上时才有，导出时需要 JS）。 */
 /* style：汉字字体是宋体 / 明朝（serif）还是黑体 / ゴシック（sans），用于预设筛选 */
 export const PRESETS = [
-  { id: 'serif-sc', style: 'serif', region: 'sc', name: { zh: '宋体 × Garamond', ja: '宋体 × Garamond', tw: '宋體 × Garamond' }, tag: { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文' }, han: G('Noto Serif SC'), latin: G('EB Garamond'), latinSize: 115, latinW: { 100: 114, 200: 114, 300: 114.5, 500: 115.5, 600: 116, 700: 116.5, 800: 117, 900: 117.5 }, sample: 'zh' },
-  { id: 'sans-sc', style: 'sans', region: 'sc', name: { zh: '黑体 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter' }, tag: { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文' }, han: G('Noto Sans SC'), latin: G('Inter'), latinSize: 100, latinW: { 100: 98, 200: 98.5, 300: 99, 500: 101, 600: 101.5, 700: 102, 800: 102.5, 900: 103.5 }, sample: 'zh' },
-  { id: 'mincho-jp', style: 'serif', region: 'jp', name: { zh: '明朝 × Cormorant', ja: '明朝 × Cormorant', tw: '明朝 × Cormorant' }, tag: { zh: '日文', ja: '日本語', tw: '日文' }, han: G('Shippori Mincho'), latin: G('Cormorant Garamond', 500), latinSize: 120, latinW: { 500: 120.5, 600: 121, 700: 121.5, 800: 122, 900: 122 }, sample: 'ja' },
-  { id: 'gothic-jp', style: 'sans', region: 'jp', name: { zh: 'ゴシック × Jost', ja: 'ゴシック × Jost', tw: 'ゴシック × Jost' }, tag: { zh: '日文', ja: '日本語', tw: '日文' }, han: G('Noto Sans JP'), latin: G('Jost'), latinSize: 108, latinW: { 100: 107, 200: 107, 300: 107.5, 500: 108.5, 600: 108.5, 700: 109, 800: 109.5, 900: 109.5 }, latinShift: -2, sample: 'ja' },
+  { id: 'serif-sc', style: 'serif', region: 'sc', name: { zh: '宋体 × Garamond', ja: '宋体 × Garamond', tw: '宋體 × Garamond', en: 'Song × Garamond' }, tag: { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文', en: 'Simplified' }, han: G('Noto Serif SC'), latin: G('EB Garamond'), latinSize: 115, latinW: { 100: 114, 200: 114, 300: 114.5, 500: 115.5, 600: 116, 700: 116.5, 800: 117, 900: 117.5 }, sample: 'zh' },
+  { id: 'sans-sc', style: 'sans', region: 'sc', name: { zh: '黑体 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter', en: 'Hei × Inter' }, tag: { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文', en: 'Simplified' }, han: G('Noto Sans SC'), latin: G('Inter'), latinSize: 100, latinW: { 100: 98, 200: 98.5, 300: 99, 500: 101, 600: 101.5, 700: 102, 800: 102.5, 900: 103.5 }, sample: 'zh' },
+  { id: 'mincho-jp', style: 'serif', region: 'jp', name: { zh: '明朝 × Cormorant', ja: '明朝 × Cormorant', tw: '明朝 × Cormorant', en: 'Mincho × Cormorant' }, tag: { zh: '日文', ja: '日本語', tw: '日文', en: 'Japanese' }, han: G('Shippori Mincho'), latin: G('Cormorant Garamond', 500), latinSize: 120, latinW: { 500: 120.5, 600: 121, 700: 121.5, 800: 122, 900: 122 }, sample: 'ja' },
+  { id: 'gothic-jp', style: 'sans', region: 'jp', name: { zh: 'ゴシック × Jost', ja: 'ゴシック × Jost', tw: 'ゴシック × Jost', en: 'Gothic × Jost' }, tag: { zh: '日文', ja: '日本語', tw: '日文', en: 'Japanese' }, han: G('Noto Sans JP'), latin: G('Jost'), latinSize: 108, latinW: { 100: 107, 200: 107, 300: 107.5, 500: 108.5, 600: 108.5, 700: 109, 800: 109.5, 900: 109.5 }, latinShift: -2, sample: 'ja' },
   /* アンチゴチ：漢字はゴシック体、かなはアンチック体。欧文と約物はゴシックに従う。Zen Antique のかなは太いので、漢字は 500 で釣り合う */
-  { id: 'antigochi', style: 'sans', region: 'jp', name: { zh: 'アンチゴチ', ja: 'アンチゴチ', tw: 'アンチゴチ' }, tag: { zh: '漫画对白', ja: 'マンガの台詞', tw: '漫畫對白' }, han: G('Zen Kaku Gothic New', 500), latin: null, latinShift: 3, classes: { kana: { font: G('Zen Antique') } }, sample: 'manga', vertical: true },
+  { id: 'antigochi', style: 'sans', region: 'jp', name: { zh: 'アンチゴチ', ja: 'アンチゴチ', tw: 'アンチゴチ', en: 'Antigochi' }, tag: { zh: '漫画对白', ja: 'マンガの台詞', tw: '漫畫對白', en: 'Manga dialogue' }, han: G('Zen Kaku Gothic New', 500), latin: null, latinShift: 3, classes: { kana: { font: G('Zen Antique') } }, sample: 'manga', vertical: true },
   /* macOS：SF Pro 不能用 local() 引用（系统界面字体对网页隐藏），西文用每台 Mac 都自带的 Avenir Next */
-  { id: 'mac', style: 'sans', region: 'sc', name: { zh: '苹方 × Avenir Next', ja: 'PingFang × Avenir Next', tw: '蘋方-簡 × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 简体中文', ja: 'macOS 標準・簡体字', tw: 'macOS 系統字型 · 簡體中文' }, han: L('PingFang SC Regular', ['PingFangSC-Regular']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 104, latinW: { 700: 102.5, 800: 99.5, 900: 99.5 }, latinShift: -3,
+  { id: 'mac', style: 'sans', region: 'sc', name: { zh: '苹方 × Avenir Next', ja: 'PingFang × Avenir Next', tw: '蘋方-簡 × Avenir Next', en: 'PingFang SC × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 简体中文', ja: 'macOS 標準・簡体字', tw: 'macOS 系統字型 · 簡體中文', en: 'macOS · Simplified' }, han: L('PingFang SC Regular', ['PingFangSC-Regular']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 104, latinW: { 700: 102.5, 800: 99.5, 900: 99.5 }, latinShift: -3,
     classes: { kana: { font: L('Hiragino Sans W3', ['HiraginoSans-W3']) } }, sample: 'zh' },   /* 苹方也有假名，但日文里用冬青黑体为日文设计的假名 */
-  { id: 'mac-jp', style: 'sans', region: 'jp', name: { zh: 'ヒラギノ角ゴ × Avenir Next', ja: 'ヒラギノ角ゴ × Avenir Next', tw: 'ヒラギノ角ゴ × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 日文', ja: 'macOS 標準・日本語', tw: 'macOS 系統字型 · 日文' }, han: L('Hiragino Sans W3', ['HiraginoSans-W3']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 111.5, latinW: { 100: 108.5, 200: 110.5, 300: 111, 500: 112, 600: 112.5, 700: 112, 800: 110 }, latinShift: -3.5, sample: 'ja' },
+  { id: 'mac-jp', style: 'sans', region: 'jp', name: { zh: 'ヒラギノ角ゴ × Avenir Next', ja: 'ヒラギノ角ゴ × Avenir Next', tw: 'ヒラギノ角ゴ × Avenir Next', en: 'Hiragino Sans × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 日文', ja: 'macOS 標準・日本語', tw: 'macOS 系統字型 · 日文', en: 'macOS · Japanese' }, han: L('Hiragino Sans W3', ['HiraginoSans-W3']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 111.5, latinW: { 100: 108.5, 200: 110.5, 300: 111, 500: 112, 600: 112.5, 700: 112, 800: 110 }, latinShift: -3.5, sample: 'ja' },
   /* 台湾、香港：思源（Noto CJK）的繁中版和简中版共用同一套西文，西文大小沿用对应的简中预设 */
-  { id: 'ming-tw', style: 'serif', region: 'tc', name: { zh: '明體 × Garamond', ja: '明体 × Garamond', tw: '明體 × Garamond' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）' }, han: G('Noto Serif TC'), latin: G('EB Garamond'), latinSize: 115, latinW: { 100: 114, 200: 114, 300: 114.5, 500: 115.5, 600: 116, 700: 116.5, 800: 117, 900: 117.5 }, sample: 'tw' },
-  { id: 'hei-tw', style: 'sans', region: 'tc', name: { zh: '黑體 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）' }, han: G('Noto Sans TC'), latin: G('Inter'), latinSize: 100, latinW: { 100: 98, 200: 98.5, 300: 99, 500: 101, 600: 101.5, 700: 102, 800: 102.5, 900: 103.5 }, sample: 'tw' },
-  { id: 'hei-hk', style: 'sans', region: 'hk', name: { zh: '香港黑體 × Inter', ja: '香港の黒体 × Inter', tw: '香港黑體 × Inter' }, tag: { zh: '繁体中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）' }, han: G('Noto Sans HK'), latin: G('Inter'), latinSize: 100, latinW: { 100: 98, 200: 98.5, 300: 99, 500: 101, 600: 101.5, 700: 102, 800: 102.5, 900: 103.5 }, sample: 'hk' },
-  { id: 'mac-tw', style: 'sans', region: 'tc', name: { zh: '蘋方-繁 × Avenir Next', ja: 'PingFang TC × Avenir Next', tw: '蘋方-繁 × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 繁体中文', ja: 'macOS 標準・繁体字', tw: 'macOS 系統字型 · 繁體中文' }, han: L('PingFang TC Regular', ['PingFangTC-Regular']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 104, latinW: { 700: 102.5, 800: 99.5, 900: 99.5 }, latinShift: -3, sample: 'tw' },
+  { id: 'ming-tw', style: 'serif', region: 'tc', name: { zh: '明體 × Garamond', ja: '明体 × Garamond', tw: '明體 × Garamond', en: 'Ming × Garamond' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）', en: 'Traditional (TW)' }, han: G('Noto Serif TC'), latin: G('EB Garamond'), latinSize: 115, latinW: { 100: 114, 200: 114, 300: 114.5, 500: 115.5, 600: 116, 700: 116.5, 800: 117, 900: 117.5 }, sample: 'tw' },
+  { id: 'hei-tw', style: 'sans', region: 'tc', name: { zh: '黑體 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter', en: 'Hei × Inter' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）', en: 'Traditional (TW)' }, han: G('Noto Sans TC'), latin: G('Inter'), latinSize: 100, latinW: { 100: 98, 200: 98.5, 300: 99, 500: 101, 600: 101.5, 700: 102, 800: 102.5, 900: 103.5 }, sample: 'tw' },
+  { id: 'hei-hk', style: 'sans', region: 'hk', name: { zh: '香港黑體 × Inter', ja: '香港の黒体 × Inter', tw: '香港黑體 × Inter', en: 'HK Hei × Inter' }, tag: { zh: '繁体中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）', en: 'Traditional (HK)' }, han: G('Noto Sans HK'), latin: G('Inter'), latinSize: 100, latinW: { 100: 98, 200: 98.5, 300: 99, 500: 101, 600: 101.5, 700: 102, 800: 102.5, 900: 103.5 }, sample: 'hk' },
+  { id: 'mac-tw', style: 'sans', region: 'tc', name: { zh: '蘋方-繁 × Avenir Next', ja: 'PingFang TC × Avenir Next', tw: '蘋方-繁 × Avenir Next', en: 'PingFang TC × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 繁体中文', ja: 'macOS 標準・繁体字', tw: 'macOS 系統字型 · 繁體中文', en: 'macOS · Traditional' }, han: L('PingFang TC Regular', ['PingFangTC-Regular']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 104, latinW: { 700: 102.5, 800: 99.5, 900: 99.5 }, latinShift: -3, sample: 'tw' },
 ];
 
 /* ================= 状态 ================= */

@@ -4,7 +4,7 @@
 
 Build a composite font the way InDesign does: a separate font, size and baseline for CJK ideographs, kana, punctuation, Latin and digits, tuned for every weight, proofed live, and exported as CSS for the web or as font files for apps that have no composite fonts.
 
-**Try it: <https://charlie5188.github.io/css-composite-font/>**
+**Try it: <https://charlie5188.github.io/css-composite-font/>** The interface is in English, 简体中文, 繁體中文 and 日本語.
 
 [日本語](#日本語) · [中文](#中文)
 
