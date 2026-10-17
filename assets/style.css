@@ -325,12 +325,19 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .tip{position:fixed;inset:auto;margin:0;padding:5px 9px;white-space:pre-line;border:0;border-radius:var(--r);background:var(--ink);color:var(--sheet);font:var(--fs-s)/1.45 var(--ui);max-width:min(280px,calc(100vw - 8px));pointer-events:none;box-shadow:0 6px 16px -6px rgba(0,0,0,.35);animation:tipin .12s ease-out}
 @keyframes tipin{from{opacity:0;transform:translateY(-2px)}}
 @media (prefers-reduced-motion:reduce){.tip{animation:none}}
-.info-pop .ip-tech{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
-.info-pop .ip-tech code{font-family:var(--mono);font-size:var(--fs-s);color:var(--ink)}
-.info-pop .ip-sup{display:flex;flex-wrap:wrap;gap:0 12px;margin:4px 0 0;font-family:var(--mono);font-size:var(--fs-xs);color:var(--muted);font-variant-numeric:tabular-nums}
-.info-pop .ip-sup .ip-lab{flex-basis:100%;font-family:var(--ui);font-size:var(--fs-s)}
-.info-pop .ip-sup .cur{color:var(--ink);font-weight:500}
-.info-pop .ip-now{margin:6px 0 0;font-size:var(--fs-s)}
+.info-pop .ip-tech{margin-top:var(--sp-3);padding:var(--sp-2) var(--sp-3) var(--sp-3);background:var(--bg);border-radius:var(--r)}      /* 技术细节：用底色和正文分开，不画线 */
+.info-pop .ip-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-2);margin:0}
+.info-pop .ip-head code{font-family:var(--mono);font-size:var(--fs-s);font-weight:600;color:var(--ink);background:none;padding:0}
+.info-pop .ip-head span{font-size:var(--fs-xs);color:var(--muted)}
+.info-pop .ip-sup{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--sp-2);margin-top:var(--sp-2)}
+.info-pop .ip-b{display:grid;gap:1px;font-family:var(--mono);font-size:var(--fs-m);color:var(--ink-2);font-variant-numeric:tabular-nums}
+.info-pop .ip-b small{font-family:var(--ui);font-size:var(--fs-xs);color:var(--muted)}
+.info-pop .ip-b.none{color:var(--faint)}
+.info-pop .ip-b.cur{color:var(--ink);font-weight:600}
+.info-pop .ip-b.cur small{color:var(--ink);font-weight:500}
+.info-pop .ip-all{margin:var(--sp-1) 0 0;font-size:var(--fs-s);color:var(--ink-2)}
+.info-pop .ip-now{display:flex;align-items:center;gap:6px;margin:var(--sp-2) 0 0;font-size:var(--fs-s)}
+.info-pop .ip-now::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
 .info-pop .ip-now.ok{color:var(--ok)}
 .info-pop .ip-now.no{color:var(--caution)}
 .info-pop dl{margin:10px 0 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px}

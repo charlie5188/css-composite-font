@@ -632,9 +632,10 @@ export const infoButton = key => `<button type="button" class="info" data-info="
 /* (i) 里的技术细节：CSS 属性名，以及各浏览器从哪个版本开始支持（标出当前浏览器，和它支不支持所选的值） */
 export function techHtml(prop, sup, ok) {
   const names = { chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' };
-  const list = sup ? Object.keys(names).map(b => `<span${b === ENGINE.id ? ' class="cur"' : ''}>${names[b]} ${esc(sup[b])}</span>`).join('') : `<span>${esc(T('allBrowsers'))}</span>`;
+  // 浏览器名一行、版本一行，排成三列；当前浏览器那一列加粗
+  const grid = sup ? `<div class="ip-sup">${Object.keys(names).map(b => `<span class="ip-b${b === ENGINE.id ? ' cur' : ''}${sup[b] === '—' ? ' none' : ''}"><small>${names[b]}</small>${esc(sup[b])}</span>`).join('')}</div>` : `<p class="ip-all">${esc(T('allBrowsers'))}</p>`;
   const now = ENGINE.name ? `<p class="ip-now ${ok ? 'ok' : 'no'}">${esc(T(ok ? 'supNowOk' : 'supNowNo', { b: `${ENGINE.name} ${ENGINE.v}` }))}</p>` : '';
-  return `<div class="ip-tech"><code>${esc(prop)}</code><p class="ip-sup"><span class="ip-lab">${esc(T('supSince'))}</span>${list}</p>${now}</div>`;
+  return `<div class="ip-tech"><p class="ip-head"><code>${esc(prop)}</code><span>${esc(T('supSince'))}</span></p>${grid}${now}</div>`;
 }
 export function renderTypoStatus() {
   document.querySelectorAll('#typoRows [data-typo], #featRows [data-typo]').forEach(b => b.setAttribute('aria-checked', state.typo[b.dataset.typo] === b.dataset.v));
