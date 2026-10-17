@@ -16,7 +16,8 @@ export const I18N = { zh, ja, tw };
 
 export const LS_UI = 'composite-font:ui';
 export const NAV_LANG = navigator.language || '';
-export let UI = lsGet(LS_UI) || (/^ja/i.test(NAV_LANG) ? 'ja' : /^zh-(TW|HK|MO|Hant)/i.test(NAV_LANG) ? 'tw' : 'zh');
+export const NAV_UI = /^ja/i.test(NAV_LANG) ? 'ja' : /^zh-(TW|HK|MO|Hant)/i.test(NAV_LANG) ? 'tw' : 'zh';      // 浏览器的语言对应的界面语言
+export let UI = lsGet(LS_UI) || NAV_UI;      // 没选过就跟随浏览器
 if (!['zh', 'ja', 'tw'].includes(UI)) UI = 'zh';
 export function setUI(u) { UI = u; }      // 各语言的文字这时还没加载，按名字判断
 export const T = (k, p) => {

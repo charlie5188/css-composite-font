@@ -661,7 +661,33 @@ export function initState() {
   state = validState(lsGet(LS_STATE)) ? lsGet(LS_STATE) : stateFromPreset(PRESETS.find(p => p.id === defaultPresetId()));
   normalizeState();
 }
-export const saveState = debounce(() => lsSet(LS_STATE, state), 400);
+export const saveState = debounce(() => { lsSet(LS_STATE, state); recordHistory(); }, 400);
+/* ================= 撤销 / 重做 =================
+   每次保存时记下设定的快照：不含校样的视图状态（预览的字重、示例文字、只改校样的对齐等）。
+   保存本来就有 400ms 的防抖，连续输入、拖动合成一步 */
+export const HIST_MAX = 100, hist = { list: [], i: -1, onChange: null };
+export const histSnap = () => JSON.stringify(state, function (k, v) { return this === state && k === 'view' || this === state.typo && VIEW_TYPO.has(k) ? undefined : v; });
+export function recordHistory() {
+  const snap = histSnap();
+  if (hist.list[hist.i] === snap) return;
+  hist.list.splice(hist.i + 1, Infinity, snap);
+  if (hist.list.length > HIST_MAX) hist.list.shift();
+  hist.i = hist.list.length - 1;
+  hist.onChange?.();
+}
+export const canUndo = () => hist.i > 0, canRedo = () => hist.i < hist.list.length - 1;
+/* 走一步：换成那一步的设定，视图状态保留现在的。规范化以后的样子替换那一步，免得保存时又记成新的一步 */
+export function stepHistory(d) {
+  recordHistory();      // 防抖里还没记下的改动先记下
+  const j = hist.i + d; if (j < 0 || j >= hist.list.length) return false;
+  hist.i = j;
+  const s = JSON.parse(hist.list[j]), keep = Object.fromEntries([...VIEW_TYPO].map(k => [k, state.typo[k]]));
+  state = { ...s, view: state.view, typo: { ...s.typo, ...keep } };
+  normalizeState();
+  hist.list[j] = histSnap();
+  hist.onChange?.();
+  return true;
+}
 
 /* ================= 字重：工具里设定的字体对应 400，其他字重自动换算 ================= */
 export const BASE_W = 400;

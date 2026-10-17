@@ -1,8 +1,8 @@
 import { refresh } from './refresh.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, inRanges, rebuildClassRanges } from './unicode.js';
-import { BASE_W, ENGINE, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, ownSize, presetDirty, presetSnap, rebuild, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, userPresets, vfAxis, vfCache } from './core.js';
-import { PUNCT_CENTER, REGION_OF_LANG, drawSpecimen, lastMeasure, lastRef, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
+import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, objByKey, ownSize, presetDirty, presetSnap, rebuild, canRedo, canUndo, hist, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, userPresets, vfAxis, vfCache } from './core.js';
+import { PUNCT_CENTER, REGION_OF_LANG, drawSpecimen, markPreviewRow, renderClassRows, lastMeasure, lastRef, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { cssFamilyName, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
 /* ================= 交互：字符类别表 ================= */
@@ -24,7 +24,7 @@ export function markCustomPreset() {
 export const LIMITS = { size: [20, 300], shift: [-60, 60] };
 /* 写入一格：空 = 恢复继承；commit 为 false 时（还在输入）忽略超出范围的中间值 */
 export function setNum(inp, commit) {
-  const t = targetOf(inp.closest('.ct-row')), key = keyOf(t), field = inp.dataset.field, W = state.view.weight;
+  const t = targetOf(inp.closest('.ct-row')), key = keyOf(t), field = inp.dataset.field, W = BASE_W;
   const raw = inp.value.trim();
   let v = raw === '' ? null : parseFloat(raw);
   if (v !== null && !Number.isFinite(v)) { if (commit) inp.value = (field === 'size' ? ownSize(key, W) : objOf(t).shift) ?? ''; return; }
@@ -32,7 +32,6 @@ export function setNum(inp, commit) {
   if (v !== null && (v < lo || v > hi)) { if (!commit) return; v = Math.min(hi, Math.max(lo, v)); inp.value = v; }
   if (field === 'size') setSizeAt(key, W, v); else objOf(t).shift = v;
   inp.classList.toggle('own', v !== null);
-  inp.classList.toggle('wov', v !== null && field === 'size' && W !== BASE_W);
   changed({ fonts: field === 'size', editor: false });
 }
 $('#editor').addEventListener('click', e => {
@@ -43,41 +42,17 @@ $('#editor').addEventListener('click', e => {
     const inputs = document.querySelectorAll('#customRows .chars'); inputs[inputs.length - 1]?.focus();
     return;
   }
-  if (b.dataset.act === 'wback') { setPreviewWeight(BASE_W); return; }
-  if (b.dataset.act === 'wclear') {      // 清除当前字重的单独调整（大小、粗细、本机字体名）
-    const W = state.view.weight;
-    delete state.wOver[W];
-    for (const k of Object.keys(state.weightNames)) if (k.endsWith('|' + W)) delete state.weightNames[k];
-    changed({ fonts: true }); saveState();
-    return;
-  }
   const row = b.closest('.ct-row'); if (!row) return;
   if (b.dataset.act === 'remove') { state.custom.splice(targetOf(row).i, 1); changed({ fonts: true }); }
 });
 $('#editor').addEventListener('change', e => {
   const el = e.target, row = el.closest('.ct-row'); if (!row) return;
-  const t = targetOf(row), o = objOf(t), W = state.view.weight;
+  const t = targetOf(row), o = objOf(t);
   if (el.classList.contains('num')) { setNum(el, true); return; }
   if (el.dataset.act === 'fsel') {
     if (el.value === 'pick') { el.value = o.follow || 'own'; openPicker(t); return; }
     o.follow = el.value === 'own' ? null : el.value;
     changed({ fonts: true });
-  } else if (el.dataset.act === 'wnum') {      // 可变字体的任意粗细
-    const raw = el.value.trim(), ov = W === BASE_W ? null : ((state.wOver[W] ||= {})[keyOf(t)] ||= {});
-    const lo = +el.min, hi = +el.max, v = raw === '' ? null : Math.min(hi, Math.max(lo, Math.round(+raw)));
-    if (W === BASE_W) { if (v != null) o.font = o.font.kind === 'google' ? G(o.font.family, v) : { ...o.font, weight: v }; }
-    else if (ov.font) { if (v != null) ov.font = ov.font.kind === 'google' ? G(ov.font.family, v) : { ...ov.font, weight: v }; }
-    else if (v == null) delete ov.weight; else ov.weight = v;
-    changed({ fonts: true }); saveState();
-  } else if (el.dataset.act === 'wsel') {
-    const v = +el.value;
-    if (W === BASE_W) o.font = G(o.font.family, v);
-    else {
-      const ov = ((state.wOver[W] ||= {})[keyOf(t)] ||= {});
-      if (ov.font) ov.font = G(ov.font.family, v);          // 单独换过字体时，改的是那个字体的粗细
-      else if (v) ov.weight = v; else delete ov.weight;
-    }
-    changed({ fonts: true }); saveState();
   }
 });
 $('#editor').addEventListener('input', e => {
@@ -93,21 +68,263 @@ $('#editor').addEventListener('keydown', e => {
   inp.value = round(base + (e.key === 'ArrowUp' ? 1 : -1) * (e.shiftKey ? 5 : 0.5));
   setNum(inp, true);
 });
+/* ================= 交互：各字重 ================= */
+export const keyTarget = k => k[0] === '#' ? { type: 'custom', i: +k.slice(1) } : { type: 'class', id: k };
+export const stepOf = w => Math.min(900, Math.max(100, Math.round((w - 1) / 100) * 100));      // 连续模式里这个粗细归哪一档（和 stepSpan 一致）
+/* 清掉空了的单独调整，免得「预设已修改」误判 */
+export function pruneOv(W, k) {
+  if (state.wOver[W]?.[k] && !Object.keys(state.wOver[W][k]).length) delete state.wOver[W][k];
+  if (state.wOver[W] && !Object.keys(state.wOver[W]).length) delete state.wOver[W];
+}
+/* 某个字重的粗细：可变字体是任意值，静态的 Google Fonts 是一档。400 改的是字体本身；单独换过字体时改的是那个字体 */
+export function setWeightAt(k, W, el) {
+  const o = objByKey(k), withW = (f, v) => f.kind === 'google' ? G(f.family, v) : { ...f, weight: v };
+  const raw = el.value.trim(), v = el.dataset.act === 'wnum' ? (raw === '' ? null : Math.min(+el.max, Math.max(+el.min, Math.round(+raw)))) : +el.value || null;
+  if (W === BASE_W) { if (v != null) o.font = withW(o.font, v); }
+  else {
+    const ov = ((state.wOver[W] ||= {})[k] ||= {});
+    if (ov.font) { if (v != null) ov.font = withW(ov.font, v); }
+    else if (v == null) delete ov.weight; else ov.weight = v;
+    pruneOv(W, k);
+  }
+  renderClassRows();      // 「随汉字 · …」里写的粗细可能变了；各字重就地更新，不重建（保持焦点，↑↓ 可以连续调）
+  changed({ fonts: true, editor: false });
+}
+export function setMatrixSize(inp, commit) {
+  const k = inp.dataset.k, W = +inp.dataset.w, raw = inp.value.trim();
+  let v = raw === '' ? null : parseFloat(raw);
+  if (v !== null && !Number.isFinite(v)) { if (commit) inp.value = ownSize(k, W) ?? ''; return; }
+  const [lo, hi] = LIMITS.size;
+  if (v !== null && (v < lo || v > hi)) { if (!commit) return; v = Math.min(hi, Math.max(lo, v)); inp.value = v; }
+  setSizeAt(k, W, v);
+  inp.classList.toggle('own', v !== null && W === BASE_W); inp.classList.toggle('set', v !== null && W !== BASE_W);
+  changed({ fonts: true, editor: false });
+}
+/* 在某一行里编辑时，校样跟着换到这个字重：只换高亮，不重画表格（保持输入焦点） */
+export function previewSoft(W) {
+  const v = state.view, cont = state.wmode === 'cont';
+  if (cont ? stepOf(v.wcont) === W : W === v.weight) return;
+  v.weight = W;
+  markPreviewRow();
+  if (cont) { v.wcont = W; root.style.setProperty('--fw', W); drawSpecimen(); } else rebuild();
+  syncToolbar(); saveState();
+}
+/* 校样的字重：分档时取最接近的导出字重；连续时是范围里的任意值，各字重里高亮它所在的那一档 */
+export function setPreviewW(x) {
+  const v = state.view;
+  if (state.wmode !== 'cont') { setPreviewWeight(state.weights.reduce((a, b) => Math.abs(b - x) < Math.abs(a - x) ? b : a)); return; }
+  const [lo, hi] = state.wrange, w = Math.min(hi, Math.max(lo, Math.round(x)));
+  if (document.activeElement !== $('#vWn')) $('#vWn').value = w;
+  if (w === v.wcont) return;
+  v.wcont = w; root.style.setProperty('--fw', w);
+  if (stepOf(w) !== v.weight) { v.weight = stepOf(w); markPreviewRow(); drawSpecimen(); }
+  saveState();
+}
+/* 导出哪些字重（分档）：各字重里的勾选和导出对话框里的按钮是同一个设定 */
+export function setWeights(ws) {
+  const v = state.view, prevW = v.weight;
+  state.weights = [...new Set(ws)].sort((a, c) => a - c);
+  if (!state.weights.includes(prevW)) v.weight = state.weights.includes(BASE_W) ? BASE_W : state.weights[0];
+  refresh('toolbar', 'editor', 'export', ...(v.weight !== prevW ? ['fonts'] : []));
+}
+/* 连续模式的导出范围：各字重里和导出对话框里各有一组，校样的字重也只走这个范围 */
+export function setWRange(lo, hi) {
+  if (!Number.isFinite(lo) || !Number.isFinite(hi)) { renderExport(); return; }
+  if (lo > hi) [lo, hi] = [hi, lo];
+  lo = Math.min(899, Math.max(100, Math.round(lo))); hi = Math.min(900, Math.max(lo + 1, Math.round(hi)));
+  state.wrange = [lo, hi];
+  for (const [a, b] of [['exWLo', 'wLo'], ['exWHi', 'wHi']]) { const x = a === 'exWLo' ? lo : hi; $('#' + a).value = x; if ($('#' + b)) $('#' + b).value = x; }
+  const v = state.view;
+  v.wcont = Math.min(hi, Math.max(lo, v.wcont));
+  v.weight = stepOf(v.wcont);
+  refresh('toolbar', 'editor', 'fonts', 'export');
+}
+$('#wMatrix').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.pw) { const W = +b.dataset.pw; if (state.wmode === 'cont') setPreviewW(W); else setPreviewWeight(W); return; }
+  const W = +b.dataset.w;
+  if (b.dataset.act === 'wclear') {      // 清除这个字重的单独调整：大小、粗细、换的字体、本机字体名
+    delete state.wOver[W];
+    for (const k of Object.keys(state.weightNames)) if (k.endsWith('|' + W)) delete state.weightNames[k];
+    changed({ fonts: true });
+    return;
+  }
+  if (b.dataset.act === 'wpick') openPicker(keyTarget(b.dataset.k), W);
+});
+$('#wMatrix').addEventListener('change', e => {
+  const el = e.target;
+  if (el.dataset.wx) {
+    const W = +el.dataset.wx, set = new Set(state.weights);
+    if (el.checked) set.add(W); else if (set.size > 1) set.delete(W); else { el.checked = true; return; }
+    setWeights([...set]);
+    return;
+  }
+  if (el.classList.contains('mnum')) { setMatrixSize(el, true); return; }
+  if (el.dataset.act === 'wnum' || el.dataset.act === 'wsel') setWeightAt(el.dataset.k, +el.dataset.w, el);
+});
+$('#wMatrix').addEventListener('input', e => { if (e.target.classList.contains('mnum')) setMatrixSize(e.target, false); });
+/* ↑↓：大小每次 0.5（Shift 5），粗细每次 10（Shift 100）。空着的格子从灰色的推算值开始，而不是从 0 或轴的下限 */
+$('#wMatrix').addEventListener('keydown', e => {
+  const inp = e.target, up = e.key === 'ArrowUp';
+  if (!up && e.key !== 'ArrowDown') return;
+  if (inp.classList?.contains('mnum')) {
+    e.preventDefault();
+    const base = parseFloat(inp.value === '' ? inp.placeholder : inp.value) || 0;
+    inp.value = round(base + (up ? 1 : -1) * (e.shiftKey ? 5 : 0.5));
+    setMatrixSize(inp, true);
+  } else if (inp.classList?.contains('mw')) {
+    e.preventDefault();
+    const base = parseFloat(inp.value === '' ? inp.placeholder : inp.value) || 400;
+    inp.value = Math.min(+inp.max, Math.max(+inp.min, Math.round(base + (up ? 1 : -1) * (e.shiftKey ? 100 : 10))));
+    setWeightAt(inp.dataset.k, +inp.dataset.w, inp);
+  }
+});
+/* 清除所有字重的单独调整：点一次变成确认，3 秒内再点才执行 */
+let wResetT = null;
+$('#wReset').addEventListener('click', e => {
+  const b = e.currentTarget, lab = b.querySelector('.wr-lab');
+  if (!b.classList.contains('armed')) {
+    b.classList.add('armed'); lab.textContent = T('wResetConfirm');
+    wResetT = setTimeout(() => { b.classList.remove('armed'); lab.textContent = ''; }, 3000);
+    return;
+  }
+  clearTimeout(wResetT); b.classList.remove('armed'); lab.textContent = '';
+  state.wOver = {}; state.weightNames = {};
+  changed({ fonts: true });
+  toast(T('tWReset'));
+});
+/* ================= 撤销 / 重做 =================
+   按钮在左窗格页签那一排的右端；快捷键 ⌘Z / ⇧⌘Z（Windows：Ctrl+Z / Ctrl+Y）。在输入框里时交给输入框自己撤销 */
+export const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+export function syncHistory() {
+  for (const [id, ok, key, keys] of [['undoBtn', canUndo(), 'undo', IS_MAC ? '⌘Z' : 'Ctrl+Z'], ['redoBtn', canRedo(), 'redo', IS_MAC ? '⇧⌘Z' : 'Ctrl+Y']]) {
+    const b = $('#' + id); b.setAttribute('aria-disabled', !ok);
+    b.dataset.tip = `${T(key)} (${keys})`; b.setAttribute('aria-label', T(key));
+  }
+}
+export function goHistory(d) {
+  if (!stepHistory(d)) return;
+  refresh('ranges', 'toolbar', 'typoRows', 'editor', 'preview', 'presets', 'fonts', 'export');
+}
+export function initHistory() {
+  hist.onChange = syncHistory;
+  recordHistory(); syncHistory();
+  $('#undoBtn').addEventListener('click', () => goHistory(-1));
+  $('#redoBtn').addEventListener('click', () => goHistory(1));
+  document.addEventListener('keydown', e => {
+    if (!(IS_MAC ? e.metaKey : e.ctrlKey) || e.altKey) return;
+    const k = e.key.toLowerCase(), redo = k === 'z' && e.shiftKey || k === 'y' && !IS_MAC;
+    if (k !== 'z' && !redo) return;
+    const el = e.target;
+    if (el.isContentEditable || el.matches?.('textarea, input:not([type=checkbox]):not([type=radio]):not([type=range]), select')) return;
+    if (document.querySelector('dialog[open]')) return;      // 对话框里不撤销背后的设定
+    e.preventDefault(); goHistory(redo ? 1 : -1);
+  });
+}
+/* ================= 悬停提示 =================
+   有 title（或 data-tip）的元素：鼠标停 0.35 秒、或用键盘聚焦时，在下面显示黑底白字的提示，代替浏览器自己那个要等一秒多的提示。
+   第一次悬停时把 title 挪到 data-tip，免得两个提示一起出现；代码之后再写 title 也照样接管。
+   刚收起一个提示后马上指到别的元素，新提示立刻出现（在一排按钮上扫过去时不用每个都等） */
+export function initTips() {
+  const tip = document.createElement('div');
+  tip.className = 'tip'; tip.id = 'tip'; tip.setAttribute('popover', 'manual'); tip.setAttribute('role', 'tooltip');
+  document.body.append(tip);
+  let cur = null, timer = 0, warm = 0;
+  const take = el => {
+    if (el.hasAttribute('title')) {
+      if (el.title) el.dataset.tip = el.title;
+      if (!el.hasAttribute('aria-label') && !el.textContent.trim() && el.title) el.setAttribute('aria-label', el.title);
+      el.removeAttribute('title');
+    }
+    return el.dataset.tip || '';
+  };
+  const find = t => t?.closest?.('[title], [data-tip]') || null;
+  const open = () => tip.matches(':popover-open');
+  const show = el => {
+    const text = take(el); if (!text || !el.isConnected || el !== cur) return;
+    const host = el.closest('dialog[open]') || document.body;      // 模态对话框打开时，放进对话框里
+    if (tip.parentNode !== host) { if (open()) tip.hidePopover(); host.append(tip); }
+    tip.textContent = text;
+    if (!open()) tip.showPopover();
+    const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+    const below = r.bottom + 6 + h <= innerHeight - 4;
+    tip.style.top = (below ? r.bottom + 6 : Math.max(4, r.top - h - 6)) + 'px';
+    tip.style.left = Math.max(4, Math.min(innerWidth - w - 4, r.left + r.width / 2 - w / 2)) + 'px';
+  };
+  const hide = () => {
+    clearTimeout(timer);
+    if (open()) { warm = performance.now() + 500; tip.hidePopover(); }
+    cur = null;
+  };
+  const arm = (el, delay) => { hide(); cur = el; take(el); timer = setTimeout(() => show(el), performance.now() < warm ? 0 : delay); };
+  document.addEventListener('pointerover', e => {
+    if (e.pointerType === 'touch') return;
+    const el = find(e.target);
+    if (el === cur) return;
+    if (el) arm(el, 350); else hide();
+  });
+  document.addEventListener('pointerout', e => { if (cur && !cur.contains(e.relatedTarget)) hide(); });
+  document.addEventListener('pointerdown', hide, true);
+  document.addEventListener('scroll', hide, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' || e.key === 'Enter') hide(); });
+  document.addEventListener('focusin', e => { const el = find(e.target); if (el && e.target.matches(':focus-visible')) arm(el, 350); });
+  document.addEventListener('focusout', hide);
+}
+/* ================= 左右两栏的分界 =================
+   拖动（或聚焦后按 ←→）调整编辑栏的宽度，双击恢复默认。窄屏一次只显示一栏，没有分界 */
+export const LEFT_MIN = 400, RIGHT_MIN = 420;
+export function applySplit() {
+  const bench = $('.bench'), sp = $('#split'), w = state.view.leftW;
+  if (w) {
+    const x = Math.min(Math.max(LEFT_MIN, bench.clientWidth - RIGHT_MIN), Math.max(LEFT_MIN, w));
+    bench.style.setProperty('--left-w', x + 'px');
+  } else bench.style.removeProperty('--left-w');
+  sp.setAttribute('aria-valuemin', LEFT_MIN); sp.setAttribute('aria-valuemax', Math.max(LEFT_MIN, bench.clientWidth - RIGHT_MIN));
+  sp.setAttribute('aria-valuenow', Math.round($('#editor').getBoundingClientRect().width));
+}
+export function initSplit() {
+  const sp = $('#split');
+  sp.addEventListener('pointerdown', e => {
+    e.preventDefault(); sp.setPointerCapture(e.pointerId); document.body.classList.add('splitting');
+    const left = $('.bench').getBoundingClientRect().left;
+    const move = ev => { state.view.leftW = Math.round(ev.clientX - left); applySplit(); };
+    const up = () => {
+      sp.removeEventListener('pointermove', move); sp.removeEventListener('pointerup', up); sp.removeEventListener('pointercancel', up);
+      document.body.classList.remove('splitting'); saveState();
+    };
+    sp.addEventListener('pointermove', move); sp.addEventListener('pointerup', up); sp.addEventListener('pointercancel', up);
+  });
+  sp.addEventListener('dblclick', () => { delete state.view.leftW; applySplit(); saveState(); });
+  sp.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    state.view.leftW = Math.round($('#editor').getBoundingClientRect().width + (e.key === 'ArrowRight' ? 1 : -1) * (e.shiftKey ? 64 : 16));
+    applySplit(); saveState();
+  });
+  addEventListener('resize', debounce(applySplit, 100));
+  applySplit();
+}
+$('#wMatrix').addEventListener('focusin', e => { const el = e.target; if (el.matches('input[data-w], select[data-w]')) previewSoft(+el.dataset.w); });
+$('#wSub').addEventListener('change', e => { if (e.target.id === 'wLo' || e.target.id === 'wHi') setWRange(parseFloat($('#wLo').value), parseFloat($('#wHi').value)); });
+$('#wSub').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('input')) e.target.blur(); });
 /* (i) 说明：所有说明文字共用一个弹层，打开时按 data-info 填入内容 */
 export const INFO = {
   presetInfo: () => esc(T('presetInfo')),
   classInfo: () => `<p>${esc(T('inheritHint'))}</p><dl>${CLASSES.map(c => `<dt>${esc(tr(c.name))}</dt><dd>${esc(tr(c.desc))}</dd>`).join('')}</dl>`,
   customInfo: () => T('customIntro'),
   metricsInfo: () => `<p>${esc(T('metricsHint'))}</p><p>${esc(T('mixInfo'))}</p><p>${T('refNote')}</p>`,
-  typoInfo: () => T('typoFoot'),
+  typoInfo: () => T('typoFoot') + (ENGINE.name ? `<p>${esc(T('browserNow', { b: `${ENGINE.name} ${ENGINE.v}` }))}</p>` : ''),
   italicInfo: () => T('italicInfo'),
-  lmInfo: () => T('lmInfo'), wmodeInfo: () => T('wmodeInfo'), sizeInfo: () => T('sizeInfo'), shiftInfo: () => T('shiftInfo'),
+  lmInfo: () => T('lmInfo') + techHtml('ascent-override', LM_SUP, lmSupported()), wmodeInfo: () => T('wmodeInfo'), sizeInfo: () => T('sizeInfo'), shiftInfo: () => T('shiftInfo'),
   nameInfo: () => T('nameInfo'), weightsInfo: () => T('weightsInfo'), wrangeInfo: () => T('wrangeInfo'),
   baseInfo: () => T('baseInfo'), genericInfo: () => T('genericInfo'), scopeInfo: () => T('scopeInfo'),
   otfInfo: () => `<p>${esc(T('fxOtfHint'))}</p>`,
 };
 export function infoHtml(key) {
-  if (key.startsWith('typo:')) { const t = TYPO.find(x => x.key === key.slice(5)); return t?.note ? esc(tr(t.note)) : ''; }
+  if (key.startsWith('typo:')) {
+    const t = TYPO.find(x => x.key === key.slice(5)); if (!t) return '';
+    return (t.note ? `<p>${esc(tr(t.note))}</p>` : '') + techHtml(t.attr ? T('langAttr') : t.prop, t.sup, typoSupported(t, state.typo[t.key]));
+  }
   return INFO[key] ? INFO[key]() : '';
 }
 export function placePop(pop, btn) {
@@ -222,10 +439,11 @@ export function initToolbar() {
     el.addEventListener('keydown', e => { if (e.key === 'Enter') el.blur(); });
   }
   /* 左右拖动图标调整：字号每 2px 变 1，行高每 1px 变 0.01 */
+  const SCRUB = { ...NUM, w: { el: '#vWn', px: 1, get: () => state.wmode === 'cont' ? v().wcont : v().weight, set: setPreviewW } };      // 字重每 1px 变 1（分档时落到最接近的一档）
   document.querySelectorAll('[data-scrub]').forEach(ic => ic.addEventListener('pointerdown', e => {
-    const k = ic.dataset.scrub, n = NUM[k], x0 = e.clientX, v0 = v()[k];
+    const k = ic.dataset.scrub, n = SCRUB[k], x0 = e.clientX, v0 = n.get ? n.get() : v()[k];
     e.preventDefault(); ic.setPointerCapture(e.pointerId); document.body.classList.add('scrubbing');
-    const move = ev => setNum(k, v0 + (ev.clientX - x0) * n.px * (ev.shiftKey ? 10 : 1));
+    const move = ev => { const x = v0 + (ev.clientX - x0) * n.px * (ev.shiftKey ? 10 : 1); if (n.set) n.set(x); else setNum(k, x); };
     const up = ev => {
       ic.removeEventListener('pointermove', move); ic.removeEventListener('pointerup', up); ic.removeEventListener('pointercancel', up);
       document.body.classList.remove('scrubbing');
@@ -249,14 +467,17 @@ export function initToolbar() {
   for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vRules', 'rules'], ['vMiss', 'miss'], ['vItalic', 'italic']])
     $('#' + id).addEventListener('click', () => { v()[key] = !v()[key]; refresh('toolbar', 'preview', 'export'); });
   $('#viewTypo').addEventListener('change', e => { const k = e.target.dataset.vtypo; if (k) { state.typo[k] = e.target.value; syncViewTypo(); refresh('preview'); } });
-  $('#vWeight').addEventListener('click', e => { const b = e.target.closest('[data-w]'); if (b) setPreviewWeight(+b.dataset.w); });
-  /* 连续模式：滑块直接改校样的粗细（所有分段的规则都已建好）；表格编辑最接近的那一档 */
-  $('#vWcont').addEventListener('input', e => {
-    const w = +e.target.value, step = Math.min(900, Math.max(100, Math.round(w / 100) * 100));
-    v().wcont = w; $('#vWcontOut').textContent = w;
-    root.style.setProperty('--fw', w);
-    if (step !== v().weight) { v().weight = step; renderEditor(); drawSpecimen(); }
-    saveState();
+  /* 校样的字重：分档时只在导出的字重之间换（↑↓ 跳一档），连续时是导出范围里的任意值 */
+  const wn = $('#vWn');
+  wn.addEventListener('input', () => { if (state.wmode !== 'cont') return; const x = parseFloat(wn.value); if (x >= state.wrange[0] && x <= state.wrange[1]) setPreviewW(x); });
+  wn.addEventListener('change', () => { const x = parseFloat(wn.value); if (isFinite(x)) setPreviewW(x); wn.value = state.wmode === 'cont' ? v().wcont : v().weight; });
+  wn.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { wn.blur(); return; }
+    if (state.wmode === 'cont' || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+    e.preventDefault();
+    const ws = state.weights, i = Math.max(0, ws.indexOf(v().weight));
+    setPreviewWeight(ws[Math.min(ws.length - 1, Math.max(0, i + (e.key === 'ArrowUp' ? 1 : -1)))]);
+    wn.value = v().weight;
   });
   const reloadForText = debounce(() => rebuild(), 600);
   $('#proofText').addEventListener('pointermove', e => missTipAt(e.clientX, e.clientY));
@@ -269,12 +490,13 @@ export function initToolbar() {
   });
   for (const box of ['#typoRows', '#featRows']) {      // 排版页签、字体页签里的字体特性：同一套卡片和下拉
   $(box).addEventListener('click', e => {
+    const lm = e.target.closest('[data-lm]');
+    if (lm) { state.lineMetrics = lm.dataset.lm; refresh('typoStatus', 'fonts', 'export'); return; }
     const b = e.target.closest('[data-typo]'); if (!b) return;
     state.typo[b.dataset.typo] = b.dataset.v;
     refresh('typoStatus', 'preview', 'export');
   });
   $(box).addEventListener('change', e => {
-    if (e.target.id === 'exLm') { state.lineMetrics = e.target.value; refresh('typoStatus', 'fonts', 'export'); return; }
     const t = TYPO.find(x => 'ty-' + x.key === e.target.id); if (!t) return;
     state.typo[t.key] = e.target.value;
     refresh('typoStatus', 'preview', 'export');
@@ -284,13 +506,6 @@ export function initToolbar() {
   $('#autoAdj').addEventListener('click', autoAdjust);
 
   $('#exName').addEventListener('input', e => { state.name = e.target.value; refresh('export'); });
-  const setWeights = ws => {
-    state.weights = [...new Set(ws)].sort((a, c) => a - c);
-    const prevW = state.view.weight;
-    if (!state.weights.includes(prevW)) state.view.weight = state.weights.includes(BASE_W) ? BASE_W : state.weights[0];
-    refresh('toolbar', 'export');
-    if (state.view.weight !== prevW) { renderEditor(); rebuild(); }
-  };
   $('#exWeights').addEventListener('click', e => {
     const b = e.target.closest('[data-w]'); if (!b) return;
     const w = +b.dataset.w, set = new Set(state.weights);
@@ -305,17 +520,6 @@ export function initToolbar() {
     if (state.wmode === 'cont') { state.weights = [...WEIGHTS]; v().wcont = Math.min(state.wrange[1], Math.max(state.wrange[0], v().weight)); }
     refresh('toolbar', 'editor', 'fonts', 'export');
   });
-  /* 连续模式的导出范围：校样的滑块也只走这个范围 */
-  const setWRange = (lo, hi) => {
-    if (!Number.isFinite(lo) || !Number.isFinite(hi)) return renderExport();
-    if (lo > hi) [lo, hi] = [hi, lo];
-    lo = Math.min(899, Math.max(100, Math.round(lo))); hi = Math.min(900, Math.max(lo + 1, Math.round(hi)));
-    state.wrange = [lo, hi];
-    $('#exWLo').value = lo; $('#exWHi').value = hi;
-    v().wcont = Math.min(hi, Math.max(lo, v().wcont));
-    v().weight = Math.min(900, Math.max(100, Math.round(v().wcont / 100) * 100));
-    refresh('toolbar', 'editor', 'fonts', 'export');
-  };
   $('#exWPresets').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b) setWRange(...b.dataset.r.split(',').map(Number)); });
   for (const id of ['exWLo', 'exWHi']) $('#' + id).addEventListener('change', () => setWRange(parseFloat($('#exWLo').value), parseFloat($('#exWHi').value)));
   $('#exBase').addEventListener('change', e => { state.baseMode = e.target.value; refresh('export'); });
@@ -360,26 +564,22 @@ export function initToolbar() {
   });
 }
 export function renderTypoRows() {
-  $('#browserName').textContent = ENGINE.name ? T('browserNow', { b: `${ENGINE.name} ${ENGINE.v}` }) : '';
   const row = t => {
     const opts = t.values.map(([v, d]) => `<option value="${esc(v)}">${esc(v)}${d ? ' · ' + esc(tr(d)) : ''}${typoSupported(t, v) ? '' : esc(T('unsupported'))}</option>`).join('');
-    const sup = t.sup ? ['chrome', 'firefox', 'safari'].map(b =>
-      `<span class="${b === ENGINE.id ? 'cur' : ''}">${{ chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' }[b]} ${esc(t.sup[b])}</span>`).join('') : `<span>${esc(T('allBrowsers'))}</span>`;
     /* 数字样式这类：一排字样卡片，每张用当前的数字字体排出这个样式 */
     const ctl = t.tiles ? `<div class="typo-tiles" role="radiogroup" aria-labelledby="tyl-${t.key}"${t.tileW ? ` style="--tile-w:${t.tileW}px${t.tileFs ? `;--tile-fs:${t.tileFs}px` : ''}"` : ''}>${t.values.map(([v, d, tip]) =>
-      `<button type="button" role="radio" data-typo="${t.key}" data-v="${esc(v)}" aria-checked="${state.typo[t.key] === v}" title="${esc(v)}">${t.tileHtml ? t.tileHtml(v) : `<span class="tt-s" style="${t.prop}:${esc(v)}" aria-hidden="true">${esc(t.tiles)}</span>`}<span class="tt-l">${esc(d ? tr(d) : v)}${tip ? `<small>${esc(tr(tip))}</small>` : t.tileCode && d ? `<code>${esc(v)}</code>` : ''}</span></button>`).join('')}</div>`
+      `<button type="button" role="radio" data-typo="${t.key}" data-v="${esc(v)}" aria-checked="${state.typo[t.key] === v}"${!tip && t.tileCode && d ? '' : ` title="${esc(v)}"`}>${t.tileHtml ? t.tileHtml(v) : `<span class="tt-s" style="${t.prop}:${esc(v)}" aria-hidden="true">${esc(t.tiles)}</span>`}<span class="tt-l">${esc(d ? tr(d) : v)}${tip ? `<small>${esc(tr(tip))}</small>` : t.tileCode && d ? `<code>${esc(v)}</code>` : ''}</span></button>`).join('')}</div>`
       : `<select id="ty-${t.key}">${opts}</select>`;
     return `<div class="typo-row${t.tiles ? ' tiles' : ''}">
-      <span class="typo-name">${t.tiles ? `<b id="tyl-${t.key}">${esc(tr(t.label))}</b>` : `<label for="ty-${t.key}"><b>${esc(tr(t.label))}</b></label>`}<span class="lab-i"><code>${t.attr ? esc(T('langAttr')) : t.prop}</code>${t.note ? `<button type="button" class="info" data-info="typo:${t.key}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}">i</button>` : ''}</span></span>
+      <span class="typo-name lab-i">${t.tiles ? `<b id="tyl-${t.key}">${esc(tr(t.label))}</b>` : `<label for="ty-${t.key}"><b>${esc(tr(t.label))}</b></label>`}${infoButton('typo:' + t.key)}</span>
       ${ctl}
-      <div class="typo-sup" data-key="${t.key}">${sup}</div>${t.hint ? `<p class="typo-note" id="${t.hint}" hidden></p>` : ''}
+      <p class="typo-unsup" data-key="${t.key}" hidden>${esc(T('supNo'))}</p>${t.hint ? `<p class="typo-note" id="${t.hint}" hidden></p>` : ''}
     </div>`;
   };
   const rows = TYPO.filter(t => !t.attr && !isViewTypo(t));
   $('#typoRows').innerHTML = rows.filter(t => !isFontTypo(t)).map(row).join('');
   $('#featRows').innerHTML = rows.filter(isFontTypo).map(row).join('') + lmRow();
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }
-  $('#exLm').value = state.lineMetrics;
   renderViewTypo();
   renderTypoStatus();
 }
@@ -397,17 +597,35 @@ export function syncViewTypo() {
 }
 /* 行高度量：写在 @font-face 的 ascent-override 等描述符里，几乎都用推荐值，所以放在高级排版属性的最后 */
 export const LM_SUP = { chrome: '87', firefox: '89', safari: '—' };
+export const lmSupported = () => typeof FontFace !== 'undefined' && 'ascentOverride' in FontFace.prototype;
+/* 行高度量的图：三行字，第二行只有西文；虚线是行框。
+   对齐汉字字体：三行一样高，汉字在行里居中。不调整：行框按西文字体算，只有西文的那行变矮，汉字偏下 */
+const lmPic = (edges, rows) => tSvg(rows.map(([kind, x, y, w]) => kind === 'h' ? `<rect x="${x}" y="${y}" width="5" height="5" rx=".5"/>` : `<rect x="${x}" y="${y}" width="${w}" height="3" rx=".6"/>`).join('') +
+  edges.map(y => `<path d="M2 ${y}H46" class="tt-edge"/>`).join(''));
+export const LM_PIC = {      // 只是数据：图在渲染时才画（模块顶层不能调用别的模块的函数）
+  han: [[1.5, 10.5, 19.5, 28.5], [['h', 4, 3.5], ['h', 10, 3.5], ['l', 16, 5, 10], ['h', 28, 3.5], ['h', 34, 3.5], ['l', 4, 14, 14], ['l', 20, 14, 12], ['h', 4, 21.5], ['h', 10, 21.5], ['h', 16, 21.5], ['l', 22, 23, 9]]],
+  off: [[1.5, 10.5, 16, 25], [['h', 4, 4.7], ['h', 10, 4.7], ['l', 16, 6.2, 10], ['h', 28, 4.7], ['h', 34, 4.7], ['l', 4, 11.75, 14], ['l', 20, 11.75, 12], ['h', 4, 19.2], ['h', 10, 19.2], ['h', 16, 19.2], ['l', 22, 20.7, 9]]],
+};
 export function lmRow() {
-  const ok = typeof FontFace !== 'undefined' && 'ascentOverride' in FontFace.prototype;
-  const sup = ['chrome', 'firefox', 'safari'].map(b => `<span class="${b === ENGINE.id ? `cur ${ok ? 'ok' : 'no'}` : ''}"${b === ENGINE.id ? ` title="${esc(T(ok ? 'supOk' : 'supNo'))}"` : ''}>${{ chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' }[b]} ${LM_SUP[b]}</span>`).join('');
-  return `<div class="typo-row">
-      <span class="typo-name"><label for="exLm"><b>${esc(T('exLm'))}</b></label><span class="lab-i"><code>ascent-override</code><button type="button" class="info" data-info="lmInfo" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}">i</button></span></span>
-      <select id="exLm"><option value="han">${esc(T('exLmHan'))}</option><option value="off">${esc(T('exLmOff'))}</option></select>
-      <div class="typo-sup">${sup}</div>
+  const tile = (v, label, tip) => `<button type="button" role="radio" data-lm="${v}" aria-checked="${state.lineMetrics === v}"><span class="tt-s tt-pic lm-pic" aria-hidden="true">${lmPic(...LM_PIC[v])}</span><span class="tt-l">${esc(T(label))}<small>${esc(T(tip))}</small></span></button>`;
+  return `<div class="typo-row tiles">
+      <span class="typo-name lab-i"><b id="tyl-lm">${esc(T('exLm'))}</b>${infoButton('lmInfo')}</span>
+      <div class="typo-tiles" role="radiogroup" aria-labelledby="tyl-lm" style="--tile-w:128px">${tile('han', 'exLmHan', 'exLmHanTip')}${tile('off', 'exLmOff', 'exLmOffTip')}</div>
+      ${lmSupported() ? '' : `<p class="typo-unsup">${esc(T('supNo'))}</p>`}
     </div>`;
+}
+/* (i) 按钮：悬停时也有提示 */
+export const infoButton = key => `<button type="button" class="info" data-info="${esc(key)}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}" title="${esc(T('infoAria'))}">i</button>`;
+/* (i) 里的技术细节：CSS 属性名，以及各浏览器从哪个版本开始支持（标出当前浏览器，和它支不支持所选的值） */
+export function techHtml(prop, sup, ok) {
+  const names = { chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' };
+  const list = sup ? Object.keys(names).map(b => `<span${b === ENGINE.id ? ' class="cur"' : ''}>${names[b]} ${esc(sup[b])}</span>`).join('') : `<span>${esc(T('allBrowsers'))}</span>`;
+  const now = ENGINE.name ? `<p class="ip-now ${ok ? 'ok' : 'no'}">${esc(T(ok ? 'supNowOk' : 'supNowNo', { b: `${ENGINE.name} ${ENGINE.v}` }))}</p>` : '';
+  return `<div class="ip-tech"><code>${esc(prop)}</code><p class="ip-sup"><span class="ip-lab">${esc(T('supSince'))}</span>${list}</p>${now}</div>`;
 }
 export function renderTypoStatus() {
   document.querySelectorAll('#typoRows [data-typo], #featRows [data-typo]').forEach(b => b.setAttribute('aria-checked', state.typo[b.dataset.typo] === b.dataset.v));
+  document.querySelectorAll('#featRows [data-lm]').forEach(b => b.setAttribute('aria-checked', state.lineMetrics === b.dataset.lm));
   renderNumHint(); renderEaMarks();
   const changed = TYPO.filter(t => !t.attr && !isViewTypo(t) && state.typo[t.key] !== typoDef(t));
   const n = changed.filter(t => !isFontTypo(t)).length, nf = changed.filter(isFontTypo).length + (state.lineMetrics === 'off' ? 1 : 0);
@@ -416,13 +634,7 @@ export function renderTypoStatus() {
   $('#typoReset').hidden = !n;
   $('#featChanged').textContent = nf ? T('typoChanged', { n: nf }) : '';
   $('#featReset').hidden = !nf;
-  for (const t of TYPO) {
-    const cur = document.querySelector(`.typo-sup[data-key="${t.key}"] .cur`);
-    if (!cur) continue;
-    const ok = typoSupported(t, state.typo[t.key]);
-    cur.classList.toggle('ok', ok); cur.classList.toggle('no', !ok);
-    cur.title = ok ? T('supOk') : T('supNo');
-  }
+  for (const t of TYPO) { const el = document.querySelector(`.typo-unsup[data-key="${t.key}"]`); if (el) el.hidden = typoSupported(t, state.typo[t.key]); }
 }
 
 /* ================= 预设卡片：每张卡片用它自己的字体排「永」「あ／字」「Ag」 ================= */
@@ -447,7 +659,7 @@ export function presetCard({ id, name, tag, cls, script, user, active }) {
       <span class="ptag" title="${esc(tag)}">${esc(tag)}</span>
       <span class="pname">${esc(name)}</span>
       ${miss ? `<span class="pmiss">${esc(T('presetMissing'))}</span>` : ''}
-    </button>${user ? `<button type="button" class="pdel" data-del="${esc(id.slice(5))}" aria-label="${esc(T('presetDelete'))} ${esc(name)}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M6.3 4.5V2.8h3.4v1.7M4 4.5l.7 8.7c.04.5.45.8.95.8h4.7c.5 0 .9-.3.95-.8L12 4.5M6.6 7v4.4M9.4 7v4.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : ''}</div>`;
+    </button>${user ? `<button type="button" class="pdel" data-del="${esc(id.slice(5))}" aria-label="${esc(T('presetDelete'))} ${esc(name)}" title="${esc(T('presetDelete'))}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M6.3 4.5V2.8h3.4v1.7M4 4.5l.7 8.7c.04.5.45.8.95.8h4.7c.5 0 .9-.3.95-.8L12 4.5M6.6 7v4.4M9.4 7v4.4" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : ''}</div>`;
 }
 /* 内置预设按界面语言排：这个语言的预设在前，其他语言的排在后面 */
 export const PRESET_ORDER = {
@@ -828,9 +1040,9 @@ export function gfWeightVal() {
   if (num.value.trim() === '') return 0;          // 空着 = 自动（按字重设定时）或 400
   return Math.min(+num.max || 900, Math.max(+num.min || 100, Math.round(+num.value)));
 }
-export function openPicker(t) {
+export function openPicker(t, W = BASE_W) {      // W：从「各字重」的某一行打开时是那个字重
   pickTarget = t;
-  const o = objOf(t), W = state.view.weight, key = keyOf(t);
+  const o = objOf(t), key = keyOf(t);
   pickVary = { ...(o.vary || {}) };
   $('#pkAxes').open = Object.keys(pickVary).length > 0;      // 调过轴时展开，否则收起
   pickW = W !== BASE_W && !o.follow && o.font ? W : null;
@@ -840,7 +1052,7 @@ export function openPicker(t) {
   const cur = resolvedOf(t).font, k = pickW ? fontKey(o.font) + '|' + W : '';
   const ovf = pickW ? state.wOver[W]?.[key]?.font : null;      // 这个字重已经单独换过的字体
   $('#pkScopeW').textContent = T('pkScopeW', { w: W });
-  picker.querySelector(`[name="pkScope"][value="${ovf ? 'w' : 'all'}"]`).checked = true;
+  picker.querySelector(`[name="pkScope"][value="${pickW ? 'w' : 'all'}"]`).checked = true;      // 从某个字重打开：默认只换这个字重
   /* Google Fonts：平时选具体粗细；按字重指定时第一项是「自动」，字体名固定 */
   let wOpts = WEIGHTS.map(w => `<option value="${w}">${w}</option>`).join('');
   if (pickW && o.font.kind === 'google') {
@@ -975,17 +1187,19 @@ export function renderAboutToc() {
 }
 export function applyUI() {
   root.lang = UI === 'ja' ? 'ja' : UI === 'tw' ? 'zh-Hant-TW' : 'zh-Hans';
+  document.title = `${T('title')} · Composite Font Workshop`;
   document.querySelectorAll('[data-t]').forEach(el => { el.textContent = T(el.dataset.t); });
   document.querySelectorAll('[data-th]').forEach(el => { el.innerHTML = T(el.dataset.th); });
   document.querySelectorAll('[data-ta]').forEach(el => el.dataset.ta.split(';').forEach(p => { const [a, k] = p.split(':'); el.setAttribute(a, T(k)); }));
   document.querySelectorAll('[data-ui]').forEach(el => { el.hidden = el.dataset.ui !== UI; });
   renderAboutToc();
-  document.querySelectorAll('#uiSeg [data-ui-lang]').forEach(b => b.setAttribute('aria-checked', b.dataset.uiLang === UI));
+  document.querySelectorAll('#moreMenu [data-ui-lang]').forEach(b => b.setAttribute('aria-checked', b.dataset.uiLang === UI));
   renderLangOptions(); renderPresetCards(); renderTypoRows(); renderEditor();
   syncToolbar(); renderPreview(); drawSpecimen(); renderExport();
 }
-$('#uiSeg').addEventListener('click', e => {
-  const b = e.target.closest('[data-ui-lang]'); if (!b || b.dataset.uiLang === UI) return;
+$('#moreMenu').addEventListener('click', e => {
+  const b = e.target.closest('[data-ui-lang]'); if (!b) return;
+  $('#moreMenu').hidePopover();
   setUI(b.dataset.uiLang); lsSet(LS_UI, UI); applyUI();
 });
 
@@ -1046,6 +1260,7 @@ export function init() {
   });
   for (const d of ['#aboutDlg', '#exDlg']) $(d).addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });      // 点对话框外面（背景）关闭
   applyUI();
+  initSplit(); initHistory(); initTips();
   rebuildNow();
   new ResizeObserver(debounce(drawSpecimen, 100)).observe($('#spec'));
   new ResizeObserver(debounce(refreshVAutospace, 100)).observe($('#proofText'));      // 直排校样的高度跟着窗口变

@@ -1,7 +1,7 @@
 {
   "name": "css-composite-font",
   "private": true,
-  "description": "Tests and checks for the CSS Composite Font tool. The site itself has no build step.",
+  "description": "Tests and checks for Composite Font Workshop (复合字体工坊). The site itself has no build step.",
   "scripts": {
     "setup": "npm ci && npx playwright install chromium && python3 -m venv .venv && .venv/bin/pip install -q -r tests/requirements.txt",
     "rehash": "python3 tools/rehash.py .",

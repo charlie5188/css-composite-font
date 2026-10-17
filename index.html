@@ -3,27 +3,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>复合字体 · CSS Composite Font</title>
-<meta name="description" content="像 InDesign 的复合字体一样，为汉字、假名和西文分别指定字体与大小，导出纯 CSS（@font-face + unicode-range + size-adjust）。">
+<title>复合字体工坊 · Composite Font Workshop</title>
+<meta name="description" content="像 InDesign 的复合字体一样，为汉字、假名和西文分别指定字体与大小，导出 CSS（@font-face + unicode-range + size-adjust）或字体文件。">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=d95c9d57">
+<link rel="stylesheet" href="assets/style.css?v=a2b47ba0">
 <!-- 模块的缓存版本号：模块之间互相 import 时不带 ?v=，靠 import map 换成带版本号的地址（tools/rehash.py 生成） -->
 <script type="importmap">{
  "imports": {
   "./assets/js/bake.js": "./assets/js/bake.js?v=c373ddc0",
-  "./assets/js/core.js": "./assets/js/core.js?v=11e23971",
+  "./assets/js/core.js": "./assets/js/core.js?v=2edc50ea",
   "./assets/js/export.js": "./assets/js/export.js?v=0ad91cd8",
   "./assets/js/gfmeta.js": "./assets/js/gfmeta.js?v=9a213e0f",
-  "./assets/js/i18n.js": "./assets/js/i18n.js?v=7e4dac47",
-  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=f7041c7e",
-  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=ff49e747",
-  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=6ef2651e",
+  "./assets/js/i18n.js": "./assets/js/i18n.js?v=6e75ec0f",
+  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=4a9a4f10",
+  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=de3b3fcc",
+  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=1dc03995",
   "./assets/js/main.js": "./assets/js/main.js?v=77ec7ac1",
   "./assets/js/refresh.js": "./assets/js/refresh.js?v=4dffc5b8",
-  "./assets/js/render.js": "./assets/js/render.js?v=0eaf0ed3",
-  "./assets/js/ui.js": "./assets/js/ui.js?v=7f3e854d",
+  "./assets/js/render.js": "./assets/js/render.js?v=eb600a67",
+  "./assets/js/ui.js": "./assets/js/ui.js?v=f07998bc",
   "./assets/js/unicode.js": "./assets/js/unicode.js?v=f50d2344"
  }
 }</script>
@@ -33,18 +33,21 @@
 <!-- 整个页面固定一屏、本身不滚动：顶栏 + 工作区（编辑 | 校样），每一栏自己滚动。窄屏时一次显示一栏，底部页签切换。导出和说明是对话框 -->
 <div class="app" data-mview="edit">
   <header class="topbar">
-    <h1 class="brand" data-t="title">纯 CSS 复合字体</h1>
+    <h1 class="brand" data-t="title">复合字体工坊</h1>
     <div class="top-right">
       <button type="button" class="top-link" id="aboutBtn" aria-haspopup="dialog" aria-controls="aboutDlg" data-t="aboutTitle"></button>
-      <div class="seg" role="radiogroup" aria-label="界面语言 / 介面語言 / 表示言語" id="uiSeg">
-        <button type="button" role="radio" data-ui-lang="zh" aria-checked="true" aria-label="简体"><span class="l-long">简体</span><span class="l-short" aria-hidden="true">简</span></button>
-        <button type="button" role="radio" data-ui-lang="tw" aria-checked="false" aria-label="繁體"><span class="l-long">繁體</span><span class="l-short" aria-hidden="true">繁</span></button>
-        <button type="button" role="radio" data-ui-lang="ja" aria-checked="false" aria-label="日本語"><span class="l-long">日本語</span><span class="l-short" aria-hidden="true">日</span></button>
-      </div>
       <button type="button" class="btn primary ex-toggle" id="exToggle" aria-haspopup="dialog" aria-controls="exDlg"><span data-t="exportTitle"></span></button>
       <!-- 「⋯」菜单：不常用的操作。重置会改动所有设置（字体、排版、校样），所以放在全局的顶栏里，而不是某个页签里 -->
       <button type="button" class="top-more" id="moreBtn" popovertarget="moreMenu" aria-haspopup="menu" data-ta="aria-label:moreAria;title:moreAria"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="3.2" cy="8" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="12.8" cy="8" r="1.3"/></svg></button>
       <div class="more-menu" id="moreMenu" popover role="menu">
+        <!-- 界面语言：没选过时跟随浏览器，选了就记下来。语言名总是用它自己的文字写 -->
+        <div class="mm-group" role="group" aria-labelledby="uiLangLab">
+          <p class="mm-lab" id="uiLangLab" data-t="uiLang"></p>
+          <button type="button" class="mm-item mm-radio" role="menuitemradio" data-ui-lang="zh" aria-checked="false" lang="zh-Hans">简体中文</button>
+          <button type="button" class="mm-item mm-radio" role="menuitemradio" data-ui-lang="tw" aria-checked="false" lang="zh-Hant-TW">繁體中文</button>
+          <button type="button" class="mm-item mm-radio" role="menuitemradio" data-ui-lang="ja" aria-checked="false" lang="ja">日本語</button>
+        </div>
+        <hr>
         <button type="button" class="mm-item mm-about" role="menuitem" id="aboutItem" data-t="aboutTitle"></button>
         <a class="mm-item" role="menuitem" href="https://github.com/charlie5188/css-composite-font" target="_blank" rel="noopener" data-ta="aria-label:ghAria">GitHub <span aria-hidden="true">↗</span></a>
         <hr>
@@ -58,15 +61,16 @@
 
   <main class="bench">
     <section class="compose" id="editor" data-ta="aria-label:classes">
-      <!-- 左窗格顶上是「预设 / 字体 / 排版」三个页签：字体页签里的设定分字重（第一行选字重），排版页签里的不分字重 -->
+      <!-- 左窗格顶上是「预设 / 字体 / 排版」三个页签：字体页签是基础设定，下面「各字重」按字重调整；排版页签里的不分字重 -->
       <div class="pane-bar" role="tablist">
         <button type="button" role="tab" id="ltabPresets" data-ltab="presets" aria-controls="panePresets" aria-selected="false" data-t="preset"></button>
         <button type="button" role="tab" id="ltabFonts" data-ltab="fonts" aria-controls="paneFonts" aria-selected="true" data-t="tabFonts"></button>
         <button type="button" role="tab" id="ltabTypo" data-ltab="typo" aria-controls="paneTypo" aria-selected="false"><span data-t="typoTitle"></span><span class="ltab-n" id="typoCount"></span></button>
         <span class="busy" id="busy" aria-live="polite"></span>
+        <span class="hist"><button type="button" class="icon-btn" id="undoBtn" aria-disabled="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.6 6.4h7.1a3.6 3.6 0 0 1 0 7.2H6.5" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M5.4 3.4 2.4 6.4l3 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button><button type="button" class="icon-btn" id="redoBtn" aria-disabled="true"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.4 6.4H6.3a3.6 3.6 0 0 0 0 7.2h3.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M10.6 3.4l3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg></button></span>
       </div>
       <div class="pane-sec presets" id="panePresets" role="tabpanel" aria-labelledby="ltabPresets" hidden>
-        <div class="sec-row preset-head"><h2 class="label lab-i" id="presetsLabel"><span data-t="preset"></span><button type="button" class="info" data-info="presetInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></h2>
+        <div class="sec-row preset-head"><h2 class="label lab-i" id="presetsLabel"><span data-t="preset"></span><button type="button" class="info" data-info="presetInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></h2>
           <div class="preset-acts">
             <button type="button" class="tbtn" id="savePresetBtn"><span aria-hidden="true">+ </span><span data-t="presetSaveAs"></span></button>
             <div class="save-form" id="saveRow" hidden>
@@ -78,31 +82,32 @@
         <div class="pgrid" id="presetCards"></div>
       </div>
       <div class="pane-sec" id="paneFonts" role="tabpanel" aria-labelledby="ltabFonts">
-      <div class="weight-bar">
-        <div class="w-row">
-        <label class="ctl" id="vWcontLab" for="vWcont" hidden><span data-t="previewWeight"></span><input type="range" id="vWcont" min="100" max="900" step="1"><output id="vWcontOut" for="vWcont"></output></label>
-        <span class="ctl" id="vWeightLab" hidden><span data-t="previewWeight"></span><span class="seg mono" id="vWeight" role="radiogroup" data-ta="aria-label:previewWeight"></span></span>
-        </div>
-      </div>
-      <div class="wmode-note" id="vWNote" hidden></div>
-      <div class="sec-row wand-row"><span class="lab-i"><span class="seg" id="vWMode" role="radiogroup" data-ta="aria-label:exWMode"><button type="button" role="radio" data-m="steps" data-t="wmStepsShort" data-ta="title:wmStepsTip"></button><button type="button" role="radio" data-m="cont" data-t="wmContShort" data-ta="title:wmContTip"></button></span><button type="button" class="info" data-info="wmodeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><button type="button" class="tbtn wand" id="autoAdj" data-ta="title:autoAdjTip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.2 13.8 9.6 6.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8.7 5.5l1.8 1.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12.2 1.4v2.4M11 2.6h2.4M14.4 6v1.8M13.5 6.9h1.8M6.6 1.6v1.6M5.8 2.4h1.6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg><span class="spin" aria-hidden="true"></span><span class="ok-mark" aria-hidden="true">✓</span><span class="wand-lab" data-t="autoAdj"></span></button></div>
-      <div class="wbanner" id="wBanner" hidden></div>
+      <!-- 表格只管基础设定（400，其他字重按它推算）；按字重的差异在下面的「各字重」里 -->
+      <div class="sec-row sub base-head"><h3 class="label" data-t="baseTitle"></h3><button type="button" class="tbtn wand" id="autoAdj" data-ta="title:autoAdjTip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.2 13.8 9.6 6.4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M8.7 5.5l1.8 1.8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M12.2 1.4v2.4M11 2.6h2.4M14.4 6v1.8M13.5 6.9h1.8M6.6 1.6v1.6M5.8 2.4h1.6" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg><span class="spin" aria-hidden="true"></span><span class="ok-mark" aria-hidden="true">✓</span><span class="wand-lab" data-t="autoAdj"></span></button></div>
+      <div class="ct-row ct-head"><span class="ct-glyph"></span><span class="lab-i"><span data-t="colClass"></span><button type="button" class="info" data-info="classInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><span data-t="colFont"></span><span class="r lab-i"><span data-t="colSize"></span><button type="button" class="info" data-info="sizeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><span class="r lab-i"><span data-t="colShift"></span><button type="button" class="info" data-info="shiftInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><span></span></div>
       <div id="classRows"></div>
       <div id="customRows"></div>
       <!-- 表格最后一行：添加例外字符（例外字符一行行接在类别后面，所以不另设标题） -->
-      <div class="ct-add-row"><button type="button" class="ct-add" id="addCustom"><span class="plus" aria-hidden="true">+</span><span data-t="addCustomRow"></span></button><button type="button" class="info" data-info="customInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></div>
+      <div class="ct-add-row"><button type="button" class="ct-add" id="addCustom"><span class="plus" aria-hidden="true">+</span><span data-t="addCustomRow"></span></button><button type="button" class="info" data-info="customInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></div>
+      <!-- 各字重：行是字重、列是有自己字体的类别。分档 / 连续决定有哪些行、粗细能不能单独设定 -->
+      <div class="sec-row sub w-head"><h3 class="label lab-i"><span data-t="wTitle"></span><button type="button" class="info" data-info="wmodeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></h3><span class="w-acts"><button type="button" class="wreset" id="wReset" hidden data-ta="title:wResetTip;aria-label:wResetTip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3 8a5 5 0 1 0 1.5-3.6" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M4.3 1.8v2.8h2.8" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="wr-lab"></span></button><span class="seg" id="vWMode" role="radiogroup" data-ta="aria-label:exWMode"><button type="button" role="radio" data-m="steps" data-t="wmStepsShort" data-ta="title:wmStepsTip"></button><button type="button" role="radio" data-m="cont" data-t="wmContShort" data-ta="title:wmContTip"></button></span></span></div>
+      <div class="w-sub" id="wSub"></div>
+      <div class="wmode-note" id="vWNote" hidden></div>
+      <div class="wm" id="wMatrix" role="group" data-ta="aria-label:wTitle"></div>
       <!-- 字体特性：选哪个字形（OpenType 特性）和行高度量，属于字体，但不分字重 -->
-      <div class="sec-row sub feat-head"><h3 class="label lab-i"><span data-t="featTitle"></span></h3><span class="feat-scope" data-t="featScope"></span><span class="typo-changed" id="featChanged"></span><button type="button" class="tbtn typo-reset" id="featReset" data-t="typoReset" hidden></button></div>
+      <div class="sec-row sub feat-head"><h3 class="label lab-i"><span data-t="featTitle"></span></h3><span class="typo-changed" id="featChanged"></span><button type="button" class="tbtn typo-reset" id="featReset" data-t="typoReset" hidden></button></div>
       <div class="typo-body" id="featRows"></div>
       </div>
       <div class="pane-sec typo" id="paneTypo" role="tabpanel" aria-labelledby="ltabTypo" hidden>
-        <div class="typo-head"><span class="typo-scope" data-t="typoScope"></span><span class="typo-changed" id="typoChanged"></span><button type="button" class="tbtn typo-reset" id="typoReset" data-t="typoReset" hidden></button></div>
+        <div class="typo-head"><span class="typo-scope lab-i"><span data-t="typoScope"></span><button type="button" class="info" data-info="typoInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><span class="typo-changed" id="typoChanged"></span><button type="button" class="tbtn typo-reset" id="typoReset" data-t="typoReset" hidden></button></div>
         <div class="typo-body">
-          <div class="hint lab-i"><span id="browserName"></span><button type="button" class="info" data-info="typoInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></div>
           <div id="typoRows"></div>
         </div>
       </div>
     </section>
+
+    <!-- 左右两栏的分界：拖动调整宽度 -->
+    <div class="split" id="split" role="separator" aria-orientation="vertical" tabindex="0" data-ta="aria-label:splitAria;title:splitAria"></div>
 
     <section class="tester" data-ta="aria-label:proof">
       <!-- 校样在上面自己滚动；参考图固定在这一栏的底部，一直看得到 -->
@@ -113,8 +118,9 @@
           <div class="sheet-bar">
             <div class="sample-tabs" id="sampleTabs" role="tablist" data-ta="aria-label:sample"></div>
             <div class="bar-ctrl">
-            <label class="nf" for="vSize" data-ta="title:fontSize"><span class="nf-ic" data-scrub="size" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M1.2 13 4.6 3.5 8 13M2.4 9.8h4.4M9.4 13l2.4-6.4 2.4 6.4M10.2 11h3.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></span><input type="number" id="vSize" min="12" max="160" step="1" inputmode="numeric" data-ta="aria-label:fontSize"><span class="unit">px</span></label>
-            <label class="nf" for="vLh" data-ta="title:lineHeight"><span class="nf-ic" data-scrub="lh" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M7 3.5h8M7 8h8M7 12.5h8M3 2.5v11M1.4 4.2 3 2.5l1.6 1.7M1.4 11.8 3 13.5l1.6-1.7" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><input type="number" id="vLh" min="1" max="2.6" step="0.05" inputmode="decimal" data-ta="aria-label:lineHeight"><output class="unit" id="vLhOut" for="vLh"></output></label>
+            <label class="nf nf-w" id="vWnLab" for="vWn" data-ta="title:tipWeight"><span class="nf-ic" data-scrub="w" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M2.5 3v10" stroke="currentColor" stroke-width="1"/><path d="M7 3v10" stroke="currentColor" stroke-width="2.2"/><path d="M12.2 3v10" stroke="currentColor" stroke-width="3.6"/></svg></span><input type="number" id="vWn" min="100" max="900" step="100" inputmode="numeric" data-ta="aria-label:previewWeight"></label>
+            <label class="nf" for="vSize" data-ta="title:tipSize"><span class="nf-ic" data-scrub="size" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M1.2 13 4.6 3.5 8 13M2.4 9.8h4.4M9.4 13l2.4-6.4 2.4 6.4M10.2 11h3.2" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg></span><input type="number" id="vSize" min="12" max="160" step="1" inputmode="numeric" data-ta="aria-label:fontSize"><span class="unit">px</span></label>
+            <label class="nf" for="vLh" data-ta="title:tipLh"><span class="nf-ic" data-scrub="lh" aria-hidden="true"><svg viewBox="0 0 16 16"><path d="M7 3.5h8M7 8h8M7 12.5h8M3 2.5v11M1.4 4.2 3 2.5l1.6 1.7M1.4 11.8 3 13.5l1.6-1.7" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><input type="number" id="vLh" min="1" max="2.6" step="0.05" inputmode="decimal" data-ta="aria-label:lineHeight"><output class="unit" id="vLhOut" for="vLh"></output></label>
             <span class="bar-sep" aria-hidden="true"></span>
             <button class="tog view-btn" type="button" id="viewBtn" popovertarget="viewPop" aria-haspopup="true"><svg class="vb-ic" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.4 8S3.8 3.6 8 3.6 14.6 8 14.6 8 12.2 12.4 8 12.4 1.4 8 1.4 8Z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/><circle cx="8" cy="8" r="2" fill="none" stroke="currentColor" stroke-width="1.2"/></svg><span data-t="viewMenu"></span></button>
             <div class="view-pop" id="viewPop" popover role="group" data-ta="aria-label:viewMenu">
@@ -175,21 +181,21 @@
         <button role="tab" type="button" id="kindFont" data-kind="font" aria-selected="false" aria-controls="exBody"><b data-t="kindFont"></b><span data-t="kindFontSub"></span></button>
       </div>
       <div class="ex-fields">
-        <div class="field"><span class="lab-i"><label for="exName"><span class="kind-css" data-t="exName"></span><span class="kind-font" data-t="fxNameLabel"></span></label><button type="button" class="info" data-info="nameInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><input id="exName" type="text" spellcheck="false"></div>
+        <div class="field"><span class="lab-i"><label for="exName"><span class="kind-css" data-t="exName"></span><span class="kind-font" data-t="fxNameLabel"></span></label><button type="button" class="info" data-info="nameInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><input id="exName" type="text" spellcheck="false"></div>
         <div class="ex-fields kind-css">
-        <div class="field" id="exContField" hidden><span class="lab-i"><span class="flabel" data-t="exWRange"></span><button type="button" class="info" data-info="wrangeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><div class="wrange"><input type="number" id="exWLo" min="100" max="900" step="1" data-ta="aria-label:wrLo"><span class="wr-dash" aria-hidden="true">–</span><input type="number" id="exWHi" min="100" max="900" step="1" data-ta="aria-label:wrHi"><div class="chips wr-chips" id="exWPresets" role="group" data-ta="aria-label:exWRange"></div></div><p class="wr-note" id="exWNote" data-t="wrFaux" hidden></p></div>
-        <div class="field" id="exWeightsField"><span class="lab-i"><span class="flabel" data-t="exWeights"></span><button type="button" class="info" data-info="weightsInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><div class="chips" id="exWeights" role="group" data-ta="aria-label:exWeights"></div><p class="w-hint warn" id="exWHint" hidden></p></div>
-        <div class="field" id="exBaseField"><span class="lab-i"><label for="exBase" data-t="exBase"></label><button type="button" class="info" data-info="baseInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exBase"><option value="link" data-t="exBaseLink"></option><option value="expand" data-t="exBaseExpand"></option></select></div>
-        <div class="field"><span class="lab-i"><label for="exGeneric" data-t="exGeneric"></label><button type="button" class="info" data-info="genericInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exGeneric"><option value="auto" data-t="auto"></option><option value="serif">serif</option><option value="sans-serif">sans-serif</option></select></div>
-        <div class="field"><span class="lab-i"><label for="exLang" data-t="exLang"></label><button type="button" class="info" data-info="scopeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exLang"></select></div>
+        <div class="field" id="exContField" hidden><span class="lab-i"><span class="flabel" data-t="exWRange"></span><button type="button" class="info" data-info="wrangeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><div class="wrange"><input type="number" id="exWLo" min="100" max="900" step="1" data-ta="aria-label:wrLo"><span class="wr-dash" aria-hidden="true">–</span><input type="number" id="exWHi" min="100" max="900" step="1" data-ta="aria-label:wrHi"><div class="chips wr-chips" id="exWPresets" role="group" data-ta="aria-label:exWRange"></div></div><p class="wr-note" id="exWNote" data-t="wrFaux" hidden></p></div>
+        <div class="field" id="exWeightsField"><span class="lab-i"><span class="flabel" data-t="exWeights"></span><button type="button" class="info" data-info="weightsInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><div class="chips" id="exWeights" role="group" data-ta="aria-label:exWeights"></div><p class="w-hint warn" id="exWHint" hidden></p></div>
+        <div class="field" id="exBaseField"><span class="lab-i"><label for="exBase" data-t="exBase"></label><button type="button" class="info" data-info="baseInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><select id="exBase"><option value="link" data-t="exBaseLink"></option><option value="expand" data-t="exBaseExpand"></option></select></div>
+        <div class="field"><span class="lab-i"><label for="exGeneric" data-t="exGeneric"></label><button type="button" class="info" data-info="genericInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><select id="exGeneric"><option value="auto" data-t="auto"></option><option value="serif">serif</option><option value="sans-serif">sans-serif</option></select></div>
+        <div class="field"><span class="lab-i"><label for="exLang" data-t="exLang"></label><button type="button" class="info" data-info="scopeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><select id="exLang"></select></div>
         <p class="ex-warn" id="exLangWarn" hidden></p>
-        <div class="field"><span class="lab-i"><label for="exItalic" data-t="exItalic"></label><button type="button" class="info" data-info="italicInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span><select id="exItalic"><option value="1" data-t="exItalicOn"></option><option value="0" data-t="exItalicOff"></option></select></div>
+        <div class="field"><span class="lab-i"><label for="exItalic" data-t="exItalic"></label><button type="button" class="info" data-info="italicInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span><select id="exItalic"><option value="1" data-t="exItalicOn"></option><option value="0" data-t="exItalicOff"></option></select></div>
         </div>
         <!-- 字体文件自己的字重和斜体：生成很慢，不跟网页导出的 9 个字重绑在一起 -->
         <div class="ex-fields kind-font">
         <div class="field" id="fxWeightsField"><span class="lab-i"><span class="flabel" data-t="fxWeightsLabel"></span></span><div class="chips" id="fxWeights" role="group" data-ta="aria-label:fxWeightsLabel"></div><p class="hint" data-t="fxWeightsHint"></p></div>
         <div class="field"><span class="flabel" data-t="fxStyleLabel"></span><label class="fx-chk"><input type="checkbox" id="fxItalic"> <span data-t="fxItalicOpt"></span></label></div>
-        <div class="field"><span class="flabel" data-t="fxFormatLabel"></span><label class="fx-chk"><input type="checkbox" checked disabled> <span data-t="fxTtf"></span></label><label class="fx-chk"><input type="checkbox" id="fxWoff2"> <span data-t="fxWoff2"></span></label><span class="fx-opt"><label class="fx-chk"><input type="checkbox" id="fxOtf"> <span data-t="fxOtf"></span></label><button type="button" class="info" data-info="otfInfo" popovertarget="infoPop" data-ta="aria-label:infoAria">i</button></span></div>
+        <div class="field"><span class="flabel" data-t="fxFormatLabel"></span><label class="fx-chk"><input type="checkbox" checked disabled> <span data-t="fxTtf"></span></label><label class="fx-chk"><input type="checkbox" id="fxWoff2"> <span data-t="fxWoff2"></span></label><span class="fx-opt"><label class="fx-chk"><input type="checkbox" id="fxOtf"> <span data-t="fxOtf"></span></label><button type="button" class="info" data-info="otfInfo" popovertarget="infoPop" data-ta="aria-label:infoAria;title:infoAria">i</button></span></div>
         </div>
       </div>
     </div>
@@ -210,7 +216,7 @@
       <!-- 字体文件：把合成字体做成 TTF / WOFF2（assets/js/bake.js） -->
       <div class="kind-font"><div class="fx" id="fontPane" aria-live="polite"></div></div>
     </div>
-    <button type="button" class="x-btn dlg-x" id="exClose" data-ta="aria-label:closeAria">×</button>
+    <button type="button" class="x-btn dlg-x" id="exClose" data-ta="aria-label:closeAria;title:closeAria">×</button>
   </section>
 </dialog>
 
@@ -230,12 +236,14 @@
         <p><code>size-adjust</code> 按百分比缩放一个字体的字形和度量。Chrome/Edge 92+、Firefox 92+、Safari 17+ 支持。它也会放大这个字体的上伸、下伸度量，<code>line-height: normal</code> 时行距可能不均匀，建议写固定的 <code>line-height</code>。</p>
         <h3>基线偏移需要 JS</h3>
         <p><code>@font-face</code> 没有基线描述符。同一行里所有字形都对齐在字母基线上，CSS 无法按字体单独移动。工具里的「基线」会在导出时附带一段脚本，把对应字符包进 <code>&lt;span&gt;</code> 用相对定位移动，不影响行高。想要纯 CSS，就把所有基线保持为 0。</p>
+        <h3>自动调整西文</h3>
+        <p>「基础设定」右上角的「自动调整西文」做两件事。先按每个导出的字重分别量出合适的西文大小：汉字越粗，笔画往外扩，字面看起来越大，合适的西文大小也跟着变（各预设实测相差 2–5%）。400 的结果写进基础设定，其他字重和 400 相差 0.5 以上的才单独写进「各字重」。再按 400 量大写字母的中线和汉字字面中线的差：差在 2% em 以内肉眼看不出来，基线保持 0，导出仍是纯 CSS；超过时才写入基线（导出会附带 JS）。</p>
         <h3>本机字体：local()</h3>
         <p><code>local()</code> 按字体的完整名或 PostScript 名匹配，而不是字族名。例如写 <code>Hiragino Sans GB W3</code> 或 <code>HiraginoSansGB-W3</code>，而不是 <code>Hiragino Sans GB</code>。字体卡片上的绿点表示当前浏览器找到了它。Safari 只允许网页使用系统预装字体，自己安装的字体在 Safari 里不生效。访客电脑上没有这个字体时，会回退到前面一条规则。</p>
         <h3>Google Fonts</h3>
         <p>中日韩字体在 Google Fonts 上被切成上百个分片，每片有自己的 <code>unicode-range</code>。导出时工具会把分片范围和类别范围求交集，只保留需要的分片，所以西文类别通常只剩一两条。url 指向 fonts.gstatic.com，正式项目建议下载后自托管。</p>
         <h3>导出多个字重</h3>
-        <p>在「字重」里多选，会为每个字重各生成一组规则。工具里设定的字体对应 400；其他字重里，Google Fonts 的字体按同样的差值换算（例如 500 的字体在 700 时取 800），没有这个字重就取最接近的；本机字体会按名称推测粗体（例如 W3 → W6、Regular → Bold），并在这台电脑上检测。各字体的粗细分布并不一致：在校样上方切换到某个字重后，可以单独调整这个字重下各类别的大小，并在「选择字体…」里指定用的粗细、本机字体名或文件。</p>
+        <p>在「各字重」里勾选要导出的字重（导出对话框里也能选），每个字重各生成一组规则。工具里设定的字体对应 400；其他字重里，Google Fonts 的字体按同样的差值换算（例如 500 的字体在 700 时取 800），没有这个字重就取最接近的；本机字体会按名称推测粗体（例如 W3 → W6、Regular → Bold），并在这台电脑上检测。各字体的粗细分布并不一致：「各字重」一览表里可以按字重单独调整各类别的大小和粗细；本机字体名、字体文件，或者只给这个字重换的字体，点那一格（或悬停时出现的「⋯」）在「选择字体」里指定。</p>
         <p>各字重的规则没法合并。CSS 变量（<code>var()</code>）在 <code>@font-face</code> 里无效，浏览器会直接丢掉这条描述。同一个 font-family 里，如果有的规则写 <code>font-weight: 700</code>、有的写 <code>400 700</code>，实测 Chrome 会把它们分成两组，只用其中一组，合成就失效了。</p>
         <p>真正占体积的是汉字字体在 Google Fonts 上的上百个分片。「基础字体：引用 Google Fonts」会用 <code>@import</code> 直接引用 Google 的 CSS，把这个字体排在 font-family 的第二位，自己只写需要覆盖它的类别，导出的 CSS 通常只有几 KB。服务器一般会用 gzip 压缩 CSS，导出区显示的 gzip 体积更接近实际传输量。字体文件只按页面用到的字符下载，与 CSS 长度无关。</p>
         <h3>斜体</h3>
@@ -279,12 +287,14 @@
         <p><code>size-adjust</code> 按百分比縮放一個字型的字形和度量。Chrome/Edge 92+、Firefox 92+、Safari 17+ 支援。它也會放大這個字型的上伸、下伸度量，<code>line-height: normal</code> 時行距可能不均勻，建議寫固定的 <code>line-height</code>。</p>
         <h3>基線偏移需要 JS</h3>
         <p><code>@font-face</code> 沒有基線描述子。同一行裡所有字形都對齊在字母基線上，CSS 無法按字型單獨移動。工具裡的「基線」會在匯出時附帶一段 JS，把對應字元包進 <code>&lt;span&gt;</code> 用相對定位移動，不影響行高。想要純 CSS，就把所有基線保持為 0。</p>
+        <h3>自動調整西文</h3>
+        <p>「基礎設定」右上角的「自動調整西文」做兩件事。先按每個匯出的字重分別量出合適的西文大小：漢字越粗，筆畫往外擴，字面看起來越大，合適的西文大小也跟著變（各預設實測相差 2–5%）。400 的結果寫進基礎設定，其他字重和 400 相差 0.5 以上的才單獨寫進「各字重」。再按 400 量大寫字母的中線和漢字字面中線的差：差在 2% em 以內肉眼看不出來，基線保持 0，匯出仍是純 CSS；超過時才寫入基線（匯出會附帶 JS）。</p>
         <h3>本機字型：local()</h3>
         <p><code>local()</code> 按字型的完整名或 PostScript 名比對，而不是字族名。例如寫 <code>Hiragino Sans GB W3</code> 或 <code>HiraginoSansGB-W3</code>，而不是 <code>Hiragino Sans GB</code>。字型卡片上的綠點表示目前瀏覽器找到了它。Safari 只允許網頁使用系統預裝字型，自己安裝的字型在 Safari 裡不生效。訪客電腦上沒有這個字型時，會改用前面一條規則。</p>
         <h3>Google Fonts</h3>
         <p>中日韓字型在 Google Fonts 上被切成上百個分片，每片有自己的 <code>unicode-range</code>。匯出時工具會把分片範圍和類別範圍求交集，只保留需要的分片，所以西文類別通常只剩一兩條。url 指向 fonts.gstatic.com，正式專案建議下載後自行託管。</p>
         <h3>匯出多個字重</h3>
-        <p>在「字重」裡多選，會為每個字重各生成一組規則。工具裡設定的字型對應 400；其他字重裡，Google Fonts 的字型按同樣的差值換算（例如 500 的字型在 700 時取 800），沒有這個字重就取最接近的；本機字型會按名稱推測粗體（例如 W3 → W6、Regular → Bold），並在這台電腦上檢測。各字型的粗細分布並不一致：在校樣上方切換到某個字重後，可以單獨調整這個字重下各類別的大小，並在「選擇字型…」裡指定用的粗細、本機字型名或檔案。</p>
+        <p>在「各字重」裡勾選要匯出的字重（匯出對話框裡也能選），每個字重各生成一組規則。工具裡設定的字型對應 400；其他字重裡，Google Fonts 的字型按同樣的差值換算（例如 500 的字型在 700 時取 800），沒有這個字重就取最接近的；本機字型會按名稱推測粗體（例如 W3 → W6、Regular → Bold），並在這台電腦上檢測。各字型的粗細分布並不一致：「各字重」一覽表裡可以按字重單獨調整各類別的大小和粗細；本機字型名、字型檔案，或者只給這個字重換的字型，點那一格（或懸停時出現的「⋯」）在「選擇字型」裡指定。</p>
         <p>各字重的規則沒法合併。CSS 變數（<code>var()</code>）在 <code>@font-face</code> 裡無效，瀏覽器會直接丟掉這條描述。同一個 font-family 裡，如果有的規則寫 <code>font-weight: 700</code>、有的寫 <code>400 700</code>，實測 Chrome 會把它們分成兩組，只用其中一組，合成就失效了。</p>
         <p>真正佔體積的是漢字字型在 Google Fonts 上的上百個分片。「基礎字型：引用 Google Fonts」會用 <code>@import</code> 直接引用 Google 的 CSS，把這個字型排在 font-family 的第二位，自己只寫需要覆蓋它的類別，匯出的 CSS 通常只有幾 KB。伺服器一般會用 gzip 壓縮 CSS，匯出區顯示的 gzip 體積更接近實際傳輸量。字型檔案只按頁面用到的字元下載，與 CSS 長度無關。</p>
         <h3>斜體</h3>
@@ -328,12 +338,14 @@
         <p><code>size-adjust</code> はフォントのグリフとメトリクスをパーセントで拡大縮小します。Chrome/Edge 92+、Firefox 92+、Safari 17+ が対応しています。アセンダーとディセンダーも拡大されるため、<code>line-height: normal</code> では行送りが不揃いになることがあります。<code>line-height</code> は固定値で指定するのがおすすめです。</p>
         <h3>ベースラインシフトには JS が必要</h3>
         <p><code>@font-face</code> にはベースラインの記述子がありません。同じ行のグリフはすべて欧文ベースラインにそろうため、CSS だけではフォントごとに上下させられません。ツールの「ベースライン」を使うと、書き出し時に小さなスクリプトが付きます。対象の文字を <code>&lt;span&gt;</code> で包んで相対位置で動かすので、行の高さは変わりません。CSS だけで済ませたい場合は、すべてのベースラインを 0 にしてください。</p>
+        <h3>欧文の自動調整</h3>
+        <p>「基本設定」の右上にある「欧文を自動調整」は 2 つのことをします。まず、書き出すウェイトごとに合う欧文のサイズを測ります。漢字は太いほど画が外に広がって字面が大きく見えるので、合う欧文のサイズも変わります（プリセットの実測で 2〜5% の差）。400 の結果は基本設定に入れ、ほかのウェイトは 400 と 0.5 以上違うときだけ「ウェイト別」に個別に入れます。次に、400 で大文字の中心線と漢字の字面の中心線の差を測ります。差が 2% em 以内なら目では分からないのでベースラインは 0 のままで、書き出しは CSS だけです。それを超えるときだけベースラインを入れます（書き出しに JS が付きます）。</p>
         <h3>ローカルフォント：local()</h3>
         <p><code>local()</code> はファミリー名ではなく、フルネームか PostScript 名で照合します。たとえば <code>Hiragino Sans GB</code> ではなく、<code>Hiragino Sans GB W3</code> または <code>HiraginoSansGB-W3</code> と書きます。フォントカードの緑の点は、現在のブラウザがそのフォントを見つけたことを示します。Safari はシステムにプリインストールされたフォントしか Web で使わせないため、自分でインストールしたフォントは Safari では効きません。閲覧者の環境にフォントがない場合は、ひとつ前の規則にフォールバックします。</p>
         <h3>Google Fonts</h3>
         <p>CJK フォントは Google Fonts で 100 以上のサブセットに分割され、それぞれに <code>unicode-range</code> があります。書き出し時にサブセットの範囲とクラスの範囲の共通部分を取り、必要なサブセットだけを残すので、欧文クラスは通常 1〜2 件になります。url は fonts.gstatic.com を指しています。本番ではダウンロードしてセルフホストすることをおすすめします。</p>
         <h3>複数のウェイトを書き出す</h3>
-        <p>「ウェイト」で複数を選ぶと、ウェイトごとに規則を 1 組ずつ生成します。ツールで設定したフォントは 400 に対応します。ほかのウェイトでは、Google Fonts のフォントは同じ差分で換算し（500 のフォントなら 700 のとき 800）、そのウェイトがなければ最も近いものを使います。ローカルフォントは名前から太字の名前を推測し（W3 → W6、Regular → Bold など）、このデバイスで確認します。フォントごとにウェイトの分布は異なるので、校正刷りの上でウェイトを切り替えると、そのウェイトでの各クラスのサイズを個別に調整でき、「フォントを選択…」で使う太さ・ローカルフォント名・ファイルを指定できます。</p>
+        <p>「ウェイト別」で書き出すウェイトにチェックを入れると（書き出しダイアログでも選べます）、ウェイトごとに規則を 1 組ずつ生成します。ツールで設定したフォントは 400 に対応します。ほかのウェイトでは、Google Fonts のフォントは同じ差分で換算し（500 のフォントなら 700 のとき 800）、そのウェイトがなければ最も近いものを使います。ローカルフォントは名前から太字の名前を推測し（W3 → W6、Regular → Bold など）、このデバイスで確認します。フォントごとにウェイトの分布は異なるので、「ウェイト別」の表でウェイトごとに各クラスのサイズと太さを個別に調整できます。ローカルフォント名やファイル、そのウェイトだけ別のフォントにする場合は、そのセル（またはホバー時に出る「⋯」）から「フォントを選択」で指定します。</p>
         <p>ウェイトごとの規則はまとめられません。CSS 変数（<code>var()</code>）は <code>@font-face</code> の中では無効で、ブラウザはその記述を捨てます。同じ font-family の中に <code>font-weight: 700</code> の規則と <code>400 700</code> の規則が混ざると、Chrome は実測で別のグループとして扱い、片方しか使わないため、合成が効かなくなります。</p>
         <p>容量の大半は、Google Fonts で 100 以上に分割された漢字フォントの規則です。「ベースフォント：Google Fonts を参照」では Google の CSS を <code>@import</code> で直接参照し、そのフォントを font-family の 2 番目に置いて、上書きするクラスだけを書き出します。書き出す CSS は通常数 KB です。サーバーは CSS を gzip で圧縮するのが一般的なので、書き出し欄の gzip 後のサイズが実際の転送量に近い値です。フォントファイルはページで使う文字の分だけダウンロードされ、CSS の長さとは関係ありません。</p>
         <h3>イタリック</h3>
@@ -376,7 +388,7 @@
         <a class="gh" href="https://github.com/charlie5188/css-composite-font" target="_blank" rel="noopener" data-ta="aria-label:ghAria">GitHub <span aria-hidden="true">↗</span></a>
       </footer>
     </div>
-    <button type="button" class="x-btn dlg-x" id="aboutClose" data-ta="aria-label:closeAria">×</button>
+    <button type="button" class="x-btn dlg-x" id="aboutClose" data-ta="aria-label:closeAria;title:closeAria">×</button>
   </div>
 </dialog>
 

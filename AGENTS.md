@@ -5,7 +5,7 @@ README.md describes the product; this file is about working on the code.
 
 ## What this is
 
-A single-page tool that builds an InDesign-style composite font (different fonts and sizes for Han, kana,
+Composite Font Workshop (复合字体工坊 / 複合字型工坊 / 合成フォント工房) is a single-page tool that builds an InDesign-style composite font (different fonts and sizes for Han, kana,
 punctuation, Latin, digits) and exports it as CSS (`@font-face` + `unicode-range` + `size-adjust`) or as real
 font files (TTF / OTF / WOFF2, baked in the browser with fontTools on Pyodide).
 
@@ -93,6 +93,11 @@ tests/e2e/               Playwright: CSS snapshots per preset, UI, layout, font-
   Pyodide 0.27.7 and runs `bake_core.run_all`. `bake_core` subsets each source to the characters it owns,
   scales/shifts, merges, copies line metrics from the Han base font, and trims the Han font if the 65,535-glyph
   limit is exceeded. The wheel in `assets/py` and `tests/requirements.txt` must stay on the same fontTools version.
+- **Tooltips.** Give icon-only controls a `title` (or `data-tip`). `initTips()` in `ui.js` takes it over on first hover
+  and shows the app's own tooltip after ~0.35 s; don't build per-control tooltips.
+- **Undo / redo.** Every debounced `saveState()` records a snapshot of `state` without `view` and the preview-only
+  typography keys. Anything that changes settings through `refresh()` / `changed()` is undoable for free; keep
+  preview-only state in `state.view` so it stays out of the history.
 - **UI shell.** The page never scrolls; `.bench` holds the editor (Presets / Fonts / Typography tabs) and the
   tester, each scrolling on its own. Export and About are `<dialog class="side-dlg">`. Below 1000 px one pane
   is shown at a time (`.app[data-mview]`, bottom tabs).

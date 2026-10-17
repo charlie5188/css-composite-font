@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { open, pick, showExport } = require('./helpers');
+const { open, pick, showExport, setLang } = require('./helpers');
 
 test('页面加载、切换预设、切语言都没有脚本错误', async ({ page }) => {
   const errors = [];
@@ -8,7 +8,7 @@ test('页面加载、切换预设、切语言都没有脚本错误', async ({ pa
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|net::|CORS policy/.test(m.text())) errors.push(m.text()); });
   await open(page);
   for (const id of ['gothic-jp', 'antigochi', 'serif-sc']) { await pick(page, id); await page.waitForTimeout(300); }
-  await page.click('[data-ui-lang="ja"]'); await page.click('[data-ui-lang="tw"]'); await page.click('[data-ui-lang="zh"]');
+  for (const l of ['ja', 'tw', 'zh']) await setLang(page, l);
   await showExport(page);
   await page.click('#kindFont'); await page.click('#kindCss'); await page.click('#tabJs');
   await page.waitForTimeout(500);
@@ -35,7 +35,7 @@ test('导出：切换网页 / 字体文件，左栏的设置跟着换', async ({
 test('原理与限制：对话框、目录和语言切换', async ({ page }) => {
   await open(page);
   expect(await page.locator('#aboutToc a').count()).toBeGreaterThan(5);
-  await page.click('[data-ui-lang="ja"]');
+  await setLang(page, 'ja');
   await expect(page.locator('#export .ex-title')).toHaveText('書き出し');
   await expect(page.locator('#aboutToc a').first()).toBeHidden();
   await page.click('#aboutBtn');
@@ -113,4 +113,37 @@ test('对齐、段落换行只改校样，不写进导出的 CSS', async ({ page
   expect(css).not.toContain('text-align');
   expect(css).not.toContain('text-wrap');
   expect(css).toContain('line-break: strict');      // 排版页签里的照常导出
+});
+
+test('各字重：改某个字重的大小只写进那个字重，勾选和导出对话框同步', async ({ page }) => {
+  await open(page);
+  await page.click('#ltabFonts');
+  const cell = page.locator('#wMatrix .mnum[data-k="latin"][data-w="700"]');
+  await cell.fill('121'); await cell.press('Tab');
+  await expect(page.locator('#wMatrix [data-row="700"]')).toHaveClass(/cur/);      // 编辑哪一行，校样就预览哪个字重
+  await expect(page.locator('#vWn')).toHaveValue('700');
+  expect(await page.inputValue('#classRows .ct-row[data-id="latin"] .num[data-field="size"]')).not.toBe('121');      // 上面的表格是 400，不受影响
+  await page.click('#wMatrix input[data-wx="300"]');
+  await showExport(page);
+  await expect(page.locator('#exWeights [data-w="300"]')).toHaveAttribute('aria-pressed', 'false');
+  const css = await page.textContent('#codeOut');
+  expect(css).toContain('size-adjust: 121%');
+  expect(css).not.toMatch(/font-weight: 300;/);
+});
+
+test('撤销 / 重做：按钮和快捷键，输入框里的 ⌘Z 不抢', async ({ page }) => {
+  await open(page);
+  await page.click('#ltabFonts');
+  const size = page.locator('#classRows .ct-row[data-id="latin"] .num[data-field="size"]');
+  const before = await size.inputValue();
+  await expect(page.locator('#undoBtn')).toHaveAttribute('aria-disabled', 'true');
+  await size.fill('131'); await size.press('Tab');
+  await expect(page.locator('#undoBtn')).toHaveAttribute('aria-disabled', 'false');      // 保存有 400ms 防抖，记下以后才能撤销
+  await page.click('#undoBtn');
+  await expect(size).toHaveValue(before);
+  await page.click('#redoBtn');
+  await expect(size).toHaveValue('131');
+  await page.click('#proofText');      // 焦点不在输入框里：⌘Z 撤销设定
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z');
+  await expect(size).toHaveValue(before);
 });

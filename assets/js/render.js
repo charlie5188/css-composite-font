@@ -1,71 +1,45 @@
 import { $, T, UI, debounce, esc, root, tr } from './i18n.js';
 import { CLASSES, CLS, GROUPS, classOf, fmtRanges, inRanges, isMoved } from './unicode.js';
-import { BASE_W, EA_FEAT, NUM_FEAT, NUM_TAGS, SAMPLES, TYPO, WEIGHTS, anyShift, axisLabel, axisOf, finalFont, fontAtWeight, fontKey, fontLabel, inheritedShift, inheritedSize, liveFamily, numLabel, numTags, objByKey, ownFontAt, ownSize, ownerOf, resolveCls, resolveCustom, settingOf, sources, srcError, state, typoValue, usedFont, vfAxisNow } from './core.js';
+import { BASE_W, EA_FEAT, autoNames, clampW, stepSpan, NUM_FEAT, NUM_TAGS, SAMPLES, TYPO, WEIGHTS, anyShift, axisLabel, axisOf, finalFont, fontAtWeight, fontKey, fontLabel, inheritedShift, inheritedSize, liveFamily, numLabel, numTags, objByKey, ownFontAt, ownSize, ownerOf, resolveCls, resolveCustom, settingOf, sources, srcError, state, typoValue, usedFont, vfAxisNow } from './core.js';
 import { loadBlank, missingIn, renderTypoStatus, syncViewTypo } from './ui.js';
 /* ================= 渲染：字符类别表（对应 InDesign 的复合字体对话框） ================= */
 export const GLYPH = { han: '永', latin: 'Ag', digit: '01', kana: 'あ', bopo: 'ㄅ', punct: '」、', symbol: '※', shared: '“…' };
-export const visibleClasses = () => CLASSES;
+/* 表格的显示顺序：基础字体，然后是西文一侧（西文、数字、中西共用标点），再是汉字一侧（假名、全角标点、全角符号、注音），
+   每一侧按常调整的程度排。只是显示顺序：导出的规则仍按 CLASSES 的顺序 */
+export const CLASS_ORDER = ['han', 'latin', 'digit', 'shared', 'kana', 'punct', 'symbol', 'bopo'];
+const clsRank = id => { const i = CLASS_ORDER.indexOf(id); return i < 0 ? CLASS_ORDER.length : i; };
+export const visibleClasses = () => [...CLASSES].sort((a, b) => clsRank(a.id) - clsRank(b.id));
 export const shortName = f => !f ? '' : f.kind === 'google' ? f.family : f.kind === 'local' ? f.name : f.kind === 'path' ? f.path : f.fileName;
 export const keyName = key => key[0] === '#' ? T('customName', { c: state.custom[+key.slice(1)]?.chars || '…' }) : tr(CLS[key].name);
-/* 这个类别在某个字重下有没有单独设定的粗细 / 字体名 / 文件 */
-export function hasWeightOverride(key, W) {
-  if (W === BASE_W) return false;
-  const o = objByKey(key);
-  return !!state.wOver[W]?.[key]?.weight || !!state.wOver[W]?.[key]?.font || (!!o?.font && (fontKey(o.font) + '|' + W) in state.weightNames);
-}
+/* 表格里是基础设定：400 用的字体，其他字重从它推算。按字重的粗细、单独换的字体在「各字重」里。
+   状态点看校样正在用的那个字体（当前预览的字重） */
 export function fontCell(key, o, isHan, allowLatin) {
-  const W = state.view.weight, ov = W !== BASE_W ? state.wOver[W]?.[key] : null;
   const opts = [];
   if (!isHan) {
-    opts.push(['han', T('optFollow', { c: tr(CLS.han.name), f: fontLabel(resolveCls('han', W, true).font) })]);
-    if (allowLatin) opts.push(['latin', T('optFollow', { c: tr(CLS.latin.name), f: fontLabel(resolveCls('latin', W, true).font) })]);
+    opts.push(['han', T('optFollow', { c: tr(CLS.han.name), f: fontLabel(resolveCls('han', BASE_W, true).font) })]);
+    if (allowLatin) opts.push(['latin', T('optFollow', { c: tr(CLS.latin.name), f: fontLabel(resolveCls('latin', BASE_W, true).font) })]);
   }
-  /* 每个字重都是同一个下拉菜单：这一项显示该字重实际用的字体，单独设定通过「选择字体…」 */
-  const own = o.font ? ownFontAt(o, ov, W, true) : null, shown = o.font ? ownFontAt(o, ov, W, false) : null;
-  const eff = ov?.font || o.font;                          // 这个字重实际用的字体（可能单独换成了别的字体）
-  const gw = !o.follow && eff?.kind === 'google';      // Google Fonts：粗细放在旁边的小菜单里，菜单项只写字体名
-  if (own) opts.push(['own', (gw ? eff.family : fontLabel(shown)) + (hasWeightOverride(key, W) ? ' · ' + T('ownSet') : '')]);
+  if (o.font) opts.push(['own', o.font.kind === 'google' ? o.font.family : fontLabel(ownFontAt(o, null, BASE_W, false))]);
   opts.push(['pick', T('optPick')]);
-  const cur = o.follow || 'own';
-  const ownKey = own ? fontKey(finalFont(own, o.vary).font) : '', s = !o.follow && own ? sources.get(ownKey) : null;     // 带上轴之后实际加载的那个
-  let html = `<span class="status ${o.follow ? 'none' : (s ? s.status : 'loading')}"${o.follow ? '' : ` data-key="${esc(ownKey)}"`}></span>` +
+  const cur = o.follow || 'own', PW = state.view.weight;
+  const live = !o.follow && o.font ? ownFontAt(o, PW !== BASE_W ? state.wOver[PW]?.[key] : null, PW, true) : null;
+  const liveKey = live ? fontKey(finalFont(live, o.vary).font) : '', s = live ? sources.get(liveKey) : null;
+  return `<span class="status ${o.follow ? 'none' : (s ? s.status : 'loading')}"${o.follow ? '' : ` data-key="${esc(liveKey)}"`}></span>` +
     `<select class="fsel${o.follow ? ' follow' : ''}" data-act="fsel" title="${esc((opts.find(([v]) => v === cur) || [])[1] || '')}" aria-label="${esc(T('fontAria', { c: keyName(key) }))}">` +
     opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select>';
-  /* 可变字体：粗细是可以填任意值的数字框（范围限制在 wght 轴内）；空着表示自动 */
-  const axis = !o.follow ? vfAxisNow(eff) : null;
-  if (axis && state.wmode === 'cont') {      // 连续模式：可变字体的粗细直接跟随页面的 font-weight，没有可调的值
-    html += `<span class="vf-tag" title="${esc(T('vfContTitle', { a: axis[0], b: axis[1] }))}">VF ${axis[0]}–${axis[1]}</span>`;
-    return html;
-  }
-  if (axis) {
-    const cur = W === BASE_W ? (eff.weight || 400) : ov?.font ? (ov.font.weight || 400) : ov?.weight;
-    const auto = W === BASE_W ? '' : (eff.kind === 'google' ? fontAtWeight(o.font, W).weight : fontAtWeight(o.font, W).weight);
-    html += `<span class="wnum-wrap"><span class="vf-tag" aria-hidden="true">VF</span><input class="wnum" type="number" data-act="wnum" min="${axis[0]}" max="${axis[1]}" step="10" value="${cur ?? ''}" placeholder="${auto}"
-      title="${esc(T('vfTitle', { a: axis[0], b: axis[1] }))}" aria-label="${esc(T('wselAria', { w: W }))}"></span>`;
-    return html;
-  }
-  /* 每个字重都有同一个粗细菜单：400 时改的是字体本身，其他字重时第一项是「自动」 */
-  if (gw) {
-    const autoF = fontAtWeight(o.font, W), auto = sources.get(fontKey(autoF))?.actualWeight || autoF.weight;
-    const val = W === BASE_W ? o.font.weight : ov?.font ? ov.font.weight : (ov?.weight || 0);
-    html += `<select class="wsel" data-act="wsel" aria-label="${esc(T('wselAria', { w: W }))}">` +
-      (W === BASE_W || ov?.font ? '' : `<option value="0">${esc(T('wAuto', { w: auto }))}</option>`) +
-      WEIGHTS.map(w => `<option value="${w}"${val === w ? ' selected' : ''}>${w}</option>`).join('') + '</select>';
-  }
-  return html;
 }
 export function numCell(field, key) {
-  const W = state.view.weight, o = objByKey(key);
-  const own = field === 'size' ? ownSize(key, W) : o.shift;
-  const inh = field === 'size' ? inheritedSize(key, W) : inheritedShift(key);
-  const cls = own == null ? '' : (field === 'size' && W !== BASE_W ? ' own wov' : ' own');
+  const o = objByKey(key);
+  const own = field === 'size' ? ownSize(key, BASE_W) : o.shift;
+  const inh = field === 'size' ? inheritedSize(key, BASE_W) : inheritedShift(key);
+  const cls = own == null ? '' : ' own';
   return `<input class="num${cls}" type="text" inputmode="decimal" autocomplete="off" data-field="${field}" value="${own ?? ''}" placeholder="${inh}"
     aria-label="${esc(T(field === 'size' ? 'sizeAria' : 'shiftAria', { c: keyName(key) }))}">`;
 }
 /* 调过的可变轴：写在这一行下面，例如「宽度 80 · 光学尺寸 跟随字号」 */
 export function axRow(key, o) {
   if (o.follow || !o.vary) return '';
-  const W = state.view.weight, f = ownFontAt(o, W !== BASE_W ? state.wOver[W]?.[key] : null, W, true);
+  const f = ownFontAt(o, null, BASE_W, true);
   const list = Object.entries(o.vary).filter(([t]) => axisOf(f, t));
   return list.length ? `<span class="ct-ax">${list.map(([t, v]) => `<span>${esc(axisLabel(t))} <b>${esc(v === 'auto' ? T('axOpszAuto') : String(v))}</b></span>`).join('')}</span>` : '';
 }
@@ -142,21 +116,16 @@ export function renderLangWarn() {
   el.hidden = !list.length;
   if (list.length) el.textContent = T('exRegWarn', { lang: langName(lang), list: list.join(T('joiner')) });
 }
-export function renderEditor() {
-  const W = state.view.weight, banner = $('#wBanner');
-  banner.hidden = W === BASE_W;
-  const wAdj = W !== BASE_W && (Object.keys(state.wOver[W] || {}).some(k => Object.keys(state.wOver[W][k]).length) || Object.keys(state.weightNames).some(k => k.endsWith('|' + W)));
-  if (W !== BASE_W) banner.innerHTML = `<span>${esc(T('wBanner', { w: W }))}</span><span class="wb-act">${wAdj ? `<button type="button" class="tbtn" data-act="wclear">${esc(T('wClear'))}</button>` : ''}${state.weights.includes(BASE_W) ? `<button type="button" class="tbtn" data-act="wback">${esc(T('wBack'))}</button>` : ''}</span>`;
-  const info = k => `<button type="button" class="info" data-info="${k}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}">i</button>`;
-  const head = `<div class="ct-row ct-head"><span class="ct-glyph"></span><span class="lab-i">${esc(T('colClass'))}${info('classInfo')}</span><span>${esc(T('colFont'))}</span><span class="r lab-i">${esc(T('colSize'))}${info('sizeInfo')}</span><span class="r lab-i">${esc(T('colShift'))}${info('shiftInfo')}</span><span></span></div>`;
-  $('#classRows').innerHTML = head + visibleClasses().map(c => {
+export function renderEditor() { renderClassRows(); renderWeights(); }
+export function renderClassRows() {
+  $('#classRows').innerHTML = visibleClasses().map(c => {
     const o = state.classes[c.id];
     const tip = c.id === 'shared' ? T('sharedHint') : '';
     const groups = GROUPS[c.id] || [];
     const nMoved = groups.filter(g => isMoved(c.id, g)).length;
     const nIn = c.id === 'latin' ? Object.entries(GROUPS).reduce((n, [cid, gs]) => n + gs.filter(g => isMoved(cid, g)).length, 0) : 0;
     const note = [c.note ? tr(c.note) : '', nMoved ? T('movedNote', { n: nMoved }) : '', nIn ? T('movedIn', { n: nIn }) : ''].filter(Boolean).join(' · ');
-    const gear = groups.length ? `<button type="button" class="gear${nMoved ? ' on' : ''}" data-act="groups" data-cls="${c.id}" popovertarget="grpPop" aria-label="${esc(T('gearAria', { c: tr(c.name) }))}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.76 2.85L6.8 0.8L9.2 0.8L9.24 2.85A5.3 5.3 0 0 1 10.77 3.48L12.24 2.06L13.94 3.76L12.52 5.23A5.3 5.3 0 0 1 13.15 6.76L15.2 6.8L15.2 9.2L13.15 9.24A5.3 5.3 0 0 1 12.52 10.77L13.94 12.24L12.24 13.94L10.77 12.52A5.3 5.3 0 0 1 9.24 13.15L9.2 15.2L6.8 15.2L6.76 13.15A5.3 5.3 0 0 1 5.23 12.52L3.76 13.94L2.06 12.24L3.48 10.77A5.3 5.3 0 0 1 2.85 9.24L0.8 9.2L0.8 6.8L2.85 6.76A5.3 5.3 0 0 1 3.48 5.23L2.06 3.76L3.76 2.06L5.23 3.48A5.3 5.3 0 0 1 6.76 2.85Z" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.25"/></svg></button>` : '';
+    const gear = groups.length ? `<button type="button" class="gear${nMoved ? ' on' : ''}" data-act="groups" data-cls="${c.id}" popovertarget="grpPop" aria-label="${esc(T('gearAria', { c: tr(c.name) }))}" title="${esc(T('gearAria', { c: tr(c.name) }))}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6.76 2.85L6.8 0.8L9.2 0.8L9.24 2.85A5.3 5.3 0 0 1 10.77 3.48L12.24 2.06L13.94 3.76L12.52 5.23A5.3 5.3 0 0 1 13.15 6.76L15.2 6.8L15.2 9.2L13.15 9.24A5.3 5.3 0 0 1 12.52 10.77L13.94 12.24L12.24 13.94L10.77 12.52A5.3 5.3 0 0 1 9.24 13.15L9.2 15.2L6.8 15.2L6.76 13.15A5.3 5.3 0 0 1 5.23 12.52L3.76 13.94L2.06 12.24L3.48 10.77A5.3 5.3 0 0 1 2.85 9.24L0.8 9.2L0.8 6.8L2.85 6.76A5.3 5.3 0 0 1 3.48 5.23L2.06 3.76L3.76 2.06L5.23 3.48A5.3 5.3 0 0 1 6.76 2.85Z" fill="none" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/><circle cx="8" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="1.25"/></svg></button>` : '';
     return `<div class="ct-row" data-id="${c.id}" style="--c:var(--c-${c.id})">
       <span class="ct-glyph" aria-hidden="true">${esc(GLYPH[c.id])}</span>
       <span class="ct-name"${tip ? ` title="${esc(tip)}"` : ''}><span class="nm"><i class="dot"></i>${esc(tr(c.name))}${gear}</span>${note ? `<small>${esc(note)}</small>` : ''}</span>
@@ -169,9 +138,116 @@ export function renderEditor() {
       <input class="chars" type="text" value="${esc(cu.chars)}" placeholder="${esc(T('customPh'))}" aria-label="${esc(T('custom'))}" spellcheck="false">
       <span class="ct-font">${fontCell('#' + i, cu, false, true)}</span>
       ${numCell('size', '#' + i)}${numCell('shift', '#' + i)}
-      <button class="x" type="button" data-act="remove" aria-label="${esc(T('customRemove'))}">×</button>${axRow('#' + i, cu)}${errRow('#' + i, cu)}
+      <button class="x" type="button" data-act="remove" aria-label="${esc(T('customRemove'))}" title="${esc(T('customRemove'))}">×</button>${axRow('#' + i, cu)}${errRow('#' + i, cu)}
     </div>`).join('')
     : '';
+}
+/* ================= 各字重：每个字重的粗细和大小 =================
+   行是字重（分档：9 档，勾上的才导出；连续：导出范围里的各档），列是有自己字体的类别。
+   400 这一行就是上面表格的基础设定；其他字重灰色的是按 400 推算或沿用的值，自己填的是蓝色。点字重 = 预览这个字重 */
+export function wKeys() {
+  const own = o => o && !o.follow && o.font, keys = ['han'];
+  for (const c of visibleClasses()) if (c.id !== 'han' && own(state.classes[c.id])) keys.push(c.id);
+  state.custom.forEach((cu, i) => { if (own(cu)) keys.push('#' + i); });
+  /* 跟随别的类别、但在某个字重单独调过大小的，也列出来，免得设定看不到 */
+  for (const W of WEIGHTS) for (const [k, ov] of Object.entries(state.wOver[W] || {})) if (!keys.includes(k) && ov.size != null && objByKey(k)) keys.push(k);
+  return keys;
+}
+export const wRowAdjusted = W => W !== BASE_W && (Object.values(state.wOver[W] || {}).some(ov => Object.keys(ov).length) || Object.keys(state.weightNames).some(k => k.endsWith('|' + W)));
+/* 名称只写和 400 不同的那一段：「Hiragino Mincho ProN W6」→「…W6」 */
+export function nameTail(base, name) {
+  const bw = base.split(/(?=[ _-])/), nw = name.split(/(?=[ _-])/);
+  let i = 0; while (i < nw.length - 1 && bw[i] === nw[i]) i++;
+  return i ? '…' + nw.slice(i).join('').replace(/^[ _-]/, '') : name;
+}
+/* 某一格的粗细：kind = vf（任意值）/ gsel（Google 静态字体选一档）/ name（本机字体、文件的名称）；val 是自己设定的值，auto 是推算的值 */
+export function wInfo(k, o, W) {
+  const base = W === BASE_W, ov = base ? null : state.wOver[W]?.[k], eff = ov?.font || o.font, axis = vfAxisNow(eff);
+  if (Array.isArray(axis)) {
+    const val = base ? (eff.weight || 400) : ov?.font ? (ov.font.weight || 400) : ov?.weight;
+    return { kind: 'vf', ov, axis, val, set: !base && val != null, auto: base ? '' : clampW(fontAtWeight(o.font, W).weight || W, axis) };
+  }
+  if (eff.kind === 'google') {
+    const autoF = fontAtWeight(o.font, W), val = base ? eff.weight : ov?.font ? ov.font.weight : (ov?.weight || 0);
+    return { kind: 'gsel', ov, val, set: !base && !!val, auto: sources.get(fontKey(autoF))?.actualWeight || autoF.weight, noAuto: base || !!ov?.font };
+  }
+  const f = base ? o.font : ov?.font || fontAtWeight(o.font, W), set = !base && (!!ov?.font || (fontKey(o.font) + '|' + W) in state.weightNames);
+  return { kind: 'name', ov, name: shortName(f), set, guess: !base && !set && o.font.kind === 'local' && autoNames.get(fontKey(o.font) + '|' + W)?.status === 'guess' };
+}
+export function wCell(k, o, W) {
+  const base = W === BASE_W, i = wInfo(k, o, W), d = `data-k="${esc(k)}" data-w="${W}"`, aria = esc(T('wWeightAria', { c: keyName(k), w: W }));
+  if (i.kind === 'name') return `<span class="wm-c"><button type="button" class="wm-name${i.set ? ' set' : ''}${i.guess ? ' guess' : ''}" data-act="wpick" ${d} title="${esc(T('wNameTip', { w: W, name: i.name }) + (i.guess ? ' ' + T('wNameGuess') : ''))}">${esc(nameTail(shortName(o.font), i.name))}</button></span>`;
+  const swap = i.ov?.font ? ` title="${esc(T('wSwapped', { font: fontLabel(i.ov.font) }))}"` : '';
+  const pick = base ? '' : `<button type="button" class="wm-pick" data-act="wpick" ${d} title="${esc(T('wPickTip', { w: W }))}" aria-label="${esc(T('wPickTip', { w: W }))}">⋯</button>`;
+  const ctl = i.kind === 'vf'
+    ? `<input class="mw${i.set ? ' set' : ''}" type="number" data-act="wnum" ${d} min="${i.axis[0]}" max="${i.axis[1]}" step="10" value="${i.val ?? ''}" placeholder="${i.auto}" aria-label="${aria}"${swap}>`
+    : `<select class="msel${i.set ? ' set' : ''}" data-act="wsel" ${d} aria-label="${aria}"${swap}>` + (i.noAuto ? '' : `<option value="0">${esc(T('wAuto', { w: i.auto }))}</option>`) +
+      WEIGHTS.map(w => `<option value="${w}"${i.val === w ? ' selected' : ''}>${w}</option>`).join('') + '</select>';
+  return `<span class="wm-c${i.ov?.font ? ' swapped' : ''}">${ctl}${pick}</span>`;
+}
+export function sizeCell(k, W) {
+  const own = ownSize(k, W);
+  return `<input class="mnum${own == null ? '' : W === BASE_W ? ' own' : ' set'}" type="text" inputmode="decimal" autocomplete="off" data-k="${esc(k)}" data-w="${W}" value="${own ?? ''}" placeholder="${inheritedSize(k, W)}" aria-label="${esc(T('wSizeAria', { c: keyName(k), w: W }))}">`;
+}
+export const wAnyAdjusted = () => WEIGHTS.some(wRowAdjusted);
+export function renderWeights() {
+  const cont = state.wmode === 'cont', PW = state.view.weight, box = $('#wMatrix');
+  const cols = wKeys().map(k => { const o = objByKey(k), own = !o.follow && !!o.font, vf = own && Array.isArray(vfAxisNow(o.font)); return { k, o, vf, w: own && !(cont && vf) }; });
+  const rows = cont ? WEIGHTS.filter(W => stepSpan(W)) : WEIGHTS;
+  const n = cols.reduce((a, c) => a + (c.w ? 2 : 1), 0), lead = cont ? 1 : 2;      // 前面几列：分档时是「导出」勾选 + 字重，连续时只有字重
+  box.style.setProperty('--wm-cols', `${cont ? '' : 'max-content '}${cont ? 58 : 70}px repeat(${n}, minmax(52px, 1fr))`);
+  /* 重画以后把焦点放回原来那一格（勾选导出、字体加载完重画时） */
+  const act = box.contains(document.activeElement) ? document.activeElement : null;
+  const keep = act && (act.classList[0] ? '.' + CSS.escape(act.classList[0]) : act.tagName.toLowerCase()) + ['k', 'w', 'wx', 'pw'].filter(a => act.dataset[a] != null).map(a => `[data-${a}="${CSS.escape(act.dataset[a])}"]`).join('');
+  const clsHead = `<div class="wm-row wm-cls">${'<span></span>'.repeat(lead)}${cols.map(c => `<span style="grid-column:span ${c.w ? 2 : 1};--c:var(--c-${c.k[0] === '#' ? 'custom' : c.k})"><i class="dot"></i>${esc(keyName(c.k))}</span>`).join('')}</div>`;
+  const subHead = `<div class="wm-row wm-sub">${cont ? '' : `<span class="wm-xh">${esc(T('wColExport'))}</span>`}<span class="wm-wh">${esc(T('wColWeight'))}</span>${cols.map(c => (c.w ? `<span${c.vf ? ` title="VF ${vfAxisNow(c.o.font).join('–')}"` : ''}>${esc(T('wColW'))}</span>` : '') + `<span>${esc(T('colSize'))}</span>`).join('')}</div>`;
+  const body = rows.map(W => {
+    const on = cont || state.weights.includes(W), cur = on && W === PW;
+    const tag = W === BASE_W ? T('wBase') : W === 700 ? T('w700') : '';
+    const lab = `${W}${tag ? `<small>${esc(tag)}</small>` : ''}`;
+    const cells = on ? cols.map(c => (c.w ? wCell(c.k, c.o, W) : '') + sizeCell(c.k, W)).join('') : '<span></span>'.repeat(n);
+    return `<div class="wm-row${on ? '' : ' off'}${cur ? ' cur' : ''}" data-row="${W}"${cur ? ' aria-current="true"' : ''}>
+      ${cont ? '' : `<span class="wm-x"><input type="checkbox" data-wx="${W}"${on ? ' checked' : ''} aria-label="${esc(T('wExportAria', { w: W }))}" title="${esc(T('wExportAria', { w: W }))}"></span>`}<span class="wm-w">${on ? `<button type="button" class="wm-pw" data-pw="${W}" title="${esc(T('wPreviewTip', { w: W }))}">${lab}</button>` : `<span class="wm-pw">${lab}</span>`}</span>${cells}
+    </div>`;
+  }).join('');
+  box.innerHTML = clsHead + subHead + body;
+  if (keep) box.querySelector(keep)?.focus({ preventScroll: true });
+  $('#wReset').hidden = !wAnyAdjusted();
+  /* 连续模式：导出范围，以及哪些可变字体的粗细跟随页面 */
+  const sub = $('#wSub');
+  sub.hidden = !cont;
+  if (!cont || sub.contains(document.activeElement)) return;      // 正在改范围：不重画
+  const vfs = cols.filter(c => c.vf).map(c => `${keyName(c.k)} VF ${vfAxisNow(c.o.font).join('–')}`);
+  sub.innerHTML = `<span class="wr-in"><span>${esc(T('wSubCont'))}</span><input type="number" id="wLo" min="100" max="900" step="1" value="${state.wrange[0]}" aria-label="${esc(T('wrLo'))}"><span aria-hidden="true">–</span><input type="number" id="wHi" min="100" max="900" step="1" value="${state.wrange[1]}" aria-label="${esc(T('wrHi'))}"></span>${vfs.length ? `<span>${esc(T('wFollowPage', { list: vfs.join(T('joiner')) }))}</span>` : ''}`;
+}
+/* 改了数值以后就地更新各格（不重建表格，保持输入焦点和键盘连续调整） */
+export function syncMatrix() {
+  const act = document.activeElement;
+  document.querySelectorAll('#wMatrix [data-k][data-w]').forEach(el => {
+    const k = el.dataset.k, W = +el.dataset.w, o = objByKey(k); if (!o) return;
+    if (el.classList.contains('mnum')) {
+      const own = ownSize(k, W);
+      el.placeholder = inheritedSize(k, W);
+      if (el !== act) el.value = own ?? '';
+      el.classList.toggle('own', own != null && W === BASE_W); el.classList.toggle('set', own != null && W !== BASE_W);
+      return;
+    }
+    if (!o.font || o.follow) return;
+    const i = wInfo(k, o, W);
+    if (el.classList.contains('mw') && i.kind === 'vf') {
+      el.placeholder = i.auto; if (el !== act) el.value = i.val ?? '';
+      el.classList.toggle('set', i.set);
+    } else if (el.classList.contains('msel') && i.kind === 'gsel') {
+      const a = el.querySelector('option[value="0"]'); if (a) a.textContent = T('wAuto', { w: i.auto });
+      el.value = String(i.val); el.classList.toggle('set', i.set);
+    }
+  });
+  $('#wReset').hidden = !wAnyAdjusted();
+}
+/* 只换高亮的那一行（编辑某一行时预览跟过去，不重画表格，保持输入焦点） */
+export function markPreviewRow() {
+  const PW = state.view.weight;
+  document.querySelectorAll('#wMatrix [data-row]').forEach(r => { const c = +r.dataset.row === PW && !r.classList.contains('off'); r.classList.toggle('cur', c); if (c) r.setAttribute('aria-current', 'true'); else r.removeAttribute('aria-current'); });
 }
 /* 直排 + 中西间距：Chrome 在元素边界上加 1/8 em 时，会把边界后面的字画到前面去（叠字）。
    所以直排时 span 自己不加间距，边界上该加的 1/8 em 改用 margin 补上（汉字假名和字母数字之间才加）。
@@ -332,11 +408,16 @@ export function renderEaMarks() {
 }
 /* 改了某一格后，只更新其他格的继承值，不重绘表格（保持输入焦点） */
 export function refreshInherited() {
-  const W = state.view.weight;
+  const act = document.activeElement;
   document.querySelectorAll('#editor .ct-row[data-id], #editor .ct-row[data-ci]').forEach(row => {
     const key = row.dataset.id || '#' + row.dataset.ci;
-    row.querySelectorAll('.num').forEach(inp => { inp.placeholder = inp.dataset.field === 'size' ? inheritedSize(key, W) : inheritedShift(key); });
+    row.querySelectorAll('.num').forEach(inp => {
+      const size = inp.dataset.field === 'size';
+      inp.placeholder = size ? inheritedSize(key, BASE_W) : inheritedShift(key);
+      if (size && inp !== act) { const own = ownSize(key, BASE_W); inp.value = own ?? ''; inp.classList.toggle('own', own != null); }      // 可能在「各字重」的 400 那一行改了
+    });
   });
+  syncMatrix();
 }
 export function renderChipsStatus() {
   document.querySelectorAll('.status[data-key]').forEach(el => {
@@ -574,14 +655,10 @@ export function syncToolbar() {
   $('#exWeights').innerHTML = WEIGHTS.map(w => `<button type="button" data-w="${w}" aria-pressed="${state.weights.includes(w)}" title="${esc(wTip(w))}"${wTag(w) ? ' class="wl"' : ''}>${w}${wTag(w)}</button>`).join('');
   renderWHint();
   $('#exBase').value = state.baseMode;
-  $('#vWeight').innerHTML = state.weights.map(w => `<button type="button" role="radio" data-w="${w}" aria-checked="${w === state.view.weight}" title="${esc(wTip(w))}"${wTag(w) ? ' class="wl"' : ''}>${w}${wTag(w)}</button>`).join('');
-  const cont = state.wmode === 'cont';
-  $('#vWeightLab').hidden = cont || state.weights.length < 2;
-  { const c = $('#vWeight'), sel = c.querySelector('[aria-checked="true"]');      // 放不下时，把选中的字重滚到看得见的地方
-    if (sel && c.scrollWidth > c.clientWidth) { const cr = c.getBoundingClientRect(), r = sel.getBoundingClientRect(); c.scrollLeft += (r.left + r.width / 2) - (cr.left + cr.width / 2); } }
-  $('#vWcontLab').hidden = !cont;
-  $('#vWcont').min = state.wrange[0]; $('#vWcont').max = state.wrange[1];       // 滑块只走导出的范围
-  $('#vWcont').value = v.wcont; $('#vWcontOut').textContent = v.wcont;
+  const cont = state.wmode === 'cont', wn = $('#vWn');
+  $('#vWnLab').hidden = !cont && state.weights.length < 2;
+  wn.min = cont ? state.wrange[0] : 100; wn.max = cont ? state.wrange[1] : 900; wn.step = cont ? 10 : 100;
+  if (document.activeElement !== wn) wn.value = cont ? v.wcont : v.weight;
   document.querySelectorAll('#vWMode [data-m]').forEach(b => b.setAttribute('aria-checked', b.dataset.m === state.wmode));
   $('#exContField').hidden = !cont;
   const ign = cont ? contIgnored() : [];
@@ -590,7 +667,6 @@ export function syncToolbar() {
   $('#exWeightsField').hidden = cont;
   $('#exGeneric').value = state.generic;
   $('#exItalic').value = state.italic ? '1' : '0';
-  const lm = $('#exLm'); if (lm) lm.value = state.lineMetrics;
   $('#exLang').value = state.scope;
 }
 

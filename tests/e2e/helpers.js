@@ -9,4 +9,9 @@ const pick = (page, id) => page.evaluate(id => document.querySelector(`.pcard[da
 async function showExport(page) {
   if (!await page.evaluate(() => document.querySelector('#exDlg').open)) await page.click('#exToggle');
 }
-module.exports = { open, pick, showExport };
+// 切换界面语言：在「⋯」菜单里
+async function setLang(page, l) {
+  await page.click('#moreBtn');
+  await page.click(`#moreMenu [data-ui-lang="${l}"]`);
+}
+module.exports = { open, pick, showExport, setLang };

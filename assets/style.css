@@ -117,6 +117,11 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .mm-item:hover{background:var(--rule)}
 .mm-item.danger{color:var(--warn)}
 .mm-item.danger.armed{background:var(--warn);color:#fff}
+.mm-lab{margin:4px 10px 2px;font-size:11px;color:var(--muted)}
+/* 语言：选中的那一项前面打勾；没选的留出同样的位置，文字才对齐 */
+.mm-radio::before{content:"";flex:none;width:14px;height:14px;background:no-repeat center/12px url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 6.2 5 8.6l4.5-5' fill='none' stroke='%23888884' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");opacity:0}
+.mm-radio[aria-checked="true"]::before{opacity:1}
+.mm-radio[aria-checked="true"]{font-weight:600}
 .mm-note{margin:2px 10px 6px;font-size:11.5px;line-height:1.55;color:var(--muted)}
 .ex-toggle{position:relative;overflow:hidden}
 .ex-toggle.running::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:var(--pct,0%);background:var(--accent);transition:width .3s}
@@ -158,13 +163,20 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 /* ---------- bench ---------- */
 /* 工作区占满顶栏下面的空间：左窗格编辑、右窗格校样和参考图，中间细线隔开。
    每个窗格顶上一条一样高的工具条，底线连成一条；所有控件都用同一套扁平样子 */
-.bench{position:relative;display:grid;grid-template-columns:minmax(400px,520px) minmax(0,1fr);min-height:0;background:var(--sheet)}
+.bench{position:relative;display:grid;grid-template-columns:var(--left-w,minmax(400px,520px)) 0 minmax(0,1fr);min-height:0;background:var(--sheet)}      /* 中间 0 宽的一列是分界线，--left-w 是拖动后的宽度 */
 .bench>*{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain}      /* 每栏自己滚动，滚到底也不带动别的 */
 .compose{--px:16px;padding:0 var(--px) 20px;border-right:1px solid var(--line)}
+/* 分界线：看不见的 9px 拖动区，悬停、拖动、键盘聚焦时显示一条线 */
+.bench>.split{position:relative;z-index:3;overflow:visible;cursor:col-resize;touch-action:none;outline:none}
+.split::before{content:"";position:absolute;inset:0 -5px 0 -4px}
+.split::after{content:"";position:absolute;top:0;bottom:0;left:-2px;width:3px;background:transparent;transition:background .12s}
+.split:hover::after,.split:focus-visible::after,.splitting .split::after{background:var(--accent)}
+.splitting,.splitting *{cursor:col-resize!important;user-select:none}
 /* 窄屏：一次只显示一栏，底部页签切换 */
 .mtabs{display:none}
 @media (max-width:1000px){
   .bench{grid-template-columns:minmax(0,1fr)}
+  .bench>.split{display:none}
   .bench>.compose,.bench>.tester{display:none}
   .app[data-mview="edit"] .bench>.compose{display:block}
   .app[data-mview="preview"] .bench>.tester{display:flex}
@@ -173,18 +185,17 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
   .mtabs button{flex:1;border:0;background:none;padding:12px 0 13px;font-size:13px;color:var(--muted);border-top:2px solid transparent;margin-top:-1px}
   .mtabs button[aria-selected="true"]{color:var(--ink);font-weight:600;border-top-color:var(--ink)}
 }
-.l-short{display:none}
 @media (max-width:640px){.topbar{gap:10px;padding:0 12px}.top-right{gap:12px}.brand{font-size:18px}}
 .mm-about{display:none}
-@media (max-width:480px){.l-long{display:none}.l-short{display:inline}.ex-toggle{padding:5px 12px}.top-right{gap:10px}.brand{font-size:18px}#aboutBtn{display:none}.mm-about{display:flex}}      /* 手机：语言只写一个字，给标题留地方 */
+@media (max-width:480px){.ex-toggle{padding:5px 12px}.top-right{gap:10px}.brand{font-size:18px}#aboutBtn{display:none}.mm-about{display:flex}}      /* 手机：语言只写一个字，给标题留地方 */
 .bench .seg{border-radius:6px}
 .bench .seg button{border-radius:4px}
 /* 窗格顶上的工具条：一样高 */
 .bench{--bar-h:54px}
 @media (max-width:560px){.compose{--px:8px}}      /* 手机上表格本来就挤：窗格左右留白减半 */
 .compose .sec-row{border-top:1px solid var(--ink);padding-top:14px;margin-bottom:0}
-/* 字符类别旁的魔法棒：一键调整大小和基线 */
-.tbtn.wand{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 9px 0 7px;border:1px solid transparent;border-radius:4px;font-size:12px;color:var(--ink);text-decoration:none}
+/* 表头「字体」旁的魔法棒：一键调整西文的大小和基线。表头是等宽小字，按钮用正常的界面字 */
+.tbtn.wand{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 9px 0 7px;border:1px solid transparent;border-radius:4px;font-size:12px;color:var(--ink);text-decoration:none}
 .tbtn.wand:hover{border-color:var(--line)}
 .tbtn.wand svg{width:15px;height:15px;flex:none}
 .tbtn.wand:disabled{opacity:1;cursor:progress}
@@ -198,10 +209,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .tbtn.wand .wand-lab{font-variant-numeric:tabular-nums}
 @keyframes wandspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.tbtn.wand[aria-busy="true"] .spin{animation-duration:2.4s}}
-.compose .sec-row.wand-row{border-top:0;padding-top:8px;justify-content:space-between;align-items:center;margin:0 -9px 0 0}
 .compose .sec-row.sub{border-top:0;margin-top:22px;padding-top:0;margin-bottom:6px}
-.wb-act{display:flex;gap:14px;flex-wrap:wrap}
-.wbanner{margin:10px 0 4px;padding:10px 12px;border-radius:3px;background:var(--sheet);border:1px solid var(--accent);font-size:12px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 
 /* 类别名短、字体名长：类别列固定为最长类别名（加齿轮）的宽度，其余都给字体列；类别下的小字说明可以折行 */
 .ct-row{--name-w:108px;display:grid;grid-template-columns:28px var(--name-w) minmax(0,1fr) 48px 48px 14px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule);--c:var(--c-custom)}
@@ -226,7 +234,6 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .fsel:hover,.fsel:focus{border-color:var(--line);background-color:var(--sheet)}
 .num.own{color:var(--ink);font-weight:500}
 .num::placeholder{color:var(--faint);opacity:1}
-.num.wov{color:var(--accent)}
 .status{flex:none;width:6px;height:6px;border-radius:50%;background:var(--faint)}
 /* 字体加载状态：只在加载中（闪烁）和失败（红）时出现；加载好、或跟随别的类别时不占位置，把宽度留给字体名 */
 .status.ok{display:none}
@@ -263,6 +270,17 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .info-pop p{margin:0 0 8px}
 .info-pop p:last-child{margin-bottom:0}
 .info-pop b{color:var(--ink)}
+.tip{position:fixed;inset:auto;margin:0;padding:5px 9px;white-space:pre-line;border:0;border-radius:4px;background:var(--ink);color:var(--sheet);font:12px/1.45 var(--ui);max-width:min(280px,calc(100vw - 8px));pointer-events:none;box-shadow:0 6px 16px -6px rgba(0,0,0,.35);animation:tipin .12s ease-out}
+@keyframes tipin{from{opacity:0;transform:translateY(-2px)}}
+@media (prefers-reduced-motion:reduce){.tip{animation:none}}
+.info-pop .ip-tech{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.info-pop .ip-tech code{font-family:var(--mono);font-size:12px;color:var(--ink)}
+.info-pop .ip-sup{display:flex;flex-wrap:wrap;gap:0 12px;margin:4px 0 0;font-family:var(--mono);font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.info-pop .ip-sup .ip-lab{flex-basis:100%;font-family:var(--ui);font-size:11.5px}
+.info-pop .ip-sup .cur{color:var(--ink);font-weight:500}
+.info-pop .ip-now{margin:6px 0 0;font-size:12px}
+.info-pop .ip-now.ok{color:var(--ok)}
+.info-pop .ip-now.no{color:var(--caution)}
 .info-pop dl{margin:10px 0 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px}
 .info-pop dt{font-weight:600;color:var(--ink);white-space:nowrap}
 .info-pop dd{margin:0}
@@ -289,12 +307,13 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .ltab-n{display:inline-grid;place-items:center;min-width:16px;height:16px;padding:0 4px;border-radius:999px;background:var(--accent);color:var(--sheet);font-size:10.5px;font-weight:500;font-family:var(--mono)}      /* 排版改了几项 */
 .ltab-n:empty{display:none}
 .pane-bar .busy{align-self:center;margin-left:auto;flex:none}
-/* 字重：字体页签的第一行。表格编辑的、校样显示的都是这一档 */
-.weight-bar{display:flex;align-items:center;gap:12px;padding:16px 0 6px}
-.weight-bar .w-row{flex:1 1 auto;flex-basis:auto}
-.weight-bar #vWeightLab>span:first-child,.weight-bar #vWcontLab>span:first-child{font-size:13px;font-weight:600;color:var(--ink)}
-.weight-bar #vWeight button{padding:4px 7px;font-size:12.5px}
-#vWNote{margin-top:10px}
+/* 撤销 / 重做：页签那一排的右端。不能用时变淡，但照样有提示 */
+.pane-bar .hist{display:flex;align-self:center;gap:2px;margin-right:-6px}
+.icon-btn{display:grid;place-items:center;width:30px;height:30px;padding:0;border:0;border-radius:4px;background:none;color:var(--ink)}
+.icon-btn svg{width:16px;height:16px}
+.icon-btn:hover{background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.icon-btn[aria-disabled="true"]{color:var(--faint);cursor:default}
+.icon-btn[aria-disabled="true"]:hover{background:none}
 /* 页签的下划线要压在分隔线上：整排往下挪 1px，而不是让按钮超出容器（那样会出现 1px 的垂直滚动） */
 .sample-tabs{display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;min-width:0;margin-bottom:-1px}
 .sample-tabs::-webkit-scrollbar{display:none}
@@ -308,13 +327,6 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .sample-tabs .tab-add{color:var(--muted);font-size:18px;line-height:1;min-width:32px;padding:11px 8px 9px;text-align:center}      /* 「+」本身很小：把可点的范围放大 */
 .sample-tabs .tab-add:hover{color:var(--ink)}
 .ctl{display:inline-flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);white-space:nowrap}
-/* 字重一组（字重按钮 / 滑块 + 分档 / 连续）总是单独占一行，不在中途换行；放不下时字重按钮横向滚动 */
-.w-row{display:flex;flex-basis:100%;flex-wrap:nowrap;align-items:center;gap:16px;min-width:0}
-.w-row>.lab-i{flex:none}
-.w-row #vWeight button{padding:3px 7px}      /* 左栏较窄：9 个字重尽量一排放下 */
-.w-row{gap:12px}
-#vWeightLab{max-width:100%;min-width:0;flex:0 1 auto}
-#vWeight{flex:0 1 auto;min-width:0;overflow-x:auto;scrollbar-width:none}      /* 窄屏上 9 个字重放不下时横向滚动 */
 .ctl input[type=range]{width:120px}
 .ctl output{display:inline-block;font-family:var(--mono);font-size:11.5px;color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap;width:4ch}
 .ctl #vSizeOut{width:5ch}
@@ -350,7 +362,7 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .nf:hover .nf-ic{color:var(--ink)}
 .nf input{width:4ch;border:0;padding:0;background:none;font:inherit;color:var(--ink);font-variant-numeric:tabular-nums;-moz-appearance:textfield;appearance:textfield}
 .nf input:focus{outline:none}
-.nf #vSize{width:3ch}
+.nf #vSize,.nf #vWn{width:3ch}
 .nf input::-webkit-inner-spin-button,.nf input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 .nf .unit{margin-left:2px;color:var(--faint);font-variant-numeric:tabular-nums}
 .nf output.unit::before{content:"· ";white-space:pre}
@@ -455,6 +467,57 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .typo{min-width:0}
 .typo-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:14px 0 2px}
 .typo-scope{flex:1 1 220px;font-size:12px;line-height:1.55;color:var(--muted)}
+/* 各字重：标题一行（右边是分档 / 连续），一行说明，下面是字重 × 类别的表。行和上面的类别表一样用细线隔开 */
+.compose .sec-row.base-head{margin-top:16px;margin-bottom:0;align-items:center}
+.base-head .tbtn.wand{margin:-6px -9px -6px 0}
+.compose .sec-row.w-head{align-items:center;margin-top:26px}
+.w-acts{display:inline-flex;align-items:center;gap:6px}
+.wreset{display:inline-flex;align-items:center;gap:6px;height:28px;min-width:28px;justify-content:center;padding:0 6px;border:0;border-radius:4px;background:none;color:var(--muted);font-size:12px;white-space:nowrap}
+.wreset svg{width:15px;height:15px;flex:none}
+.wreset:hover{color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent)}
+.wreset.armed{color:var(--warn);background:color-mix(in srgb,var(--warn) 8%,transparent);padding:0 9px}
+.wr-lab:empty{display:none}
+.w-sub{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;font-size:12px;line-height:1.55;color:var(--muted);margin:0 0 6px}
+.wr-in{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
+.wr-in input{width:62px;font-family:var(--mono);font-size:12px;padding:3px 6px}
+#vWNote{margin:0 0 8px}
+.wm{--wm-cols:80px 1fr;display:grid;grid-template-columns:var(--wm-cols);column-gap:8px;overflow-x:auto}      /* 各行用 subgrid 共用同一套列宽，表头和数字才对得齐 */
+.wm-row{grid-column:1/-1;display:grid;grid-template-columns:subgrid;align-items:center;min-height:34px;border-bottom:1px solid var(--rule)}
+.wm-row>:first-child{padding-left:8px}
+.wm-cls{min-height:0;padding:10px 0 2px;border-bottom:0;font-size:12px;color:var(--ink)}
+.wm-cls>span{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;padding-bottom:4px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}      /* 类别名盖在它的几列上面 */
+.wm-cls>span:empty{border-bottom:0}
+.wm-sub{min-height:0;padding:0 0 6px;border-bottom-color:var(--line);font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.wm-sub>span{text-align:right;padding-right:4px}
+.wm-sub>.wm-xh,.wm-sub>.wm-wh{text-align:left;padding-right:0}
+.wm-x{display:flex;align-items:center}
+.wm-w{display:flex;align-items:center;gap:6px;min-width:0}
+.wm-x input[type=checkbox]{margin:0;accent-color:var(--ink)}
+.wm-pw{border:0;background:none;padding:6px 0;font:12.5px/1 var(--mono);color:var(--ink);text-align:left;white-space:nowrap}
+button.wm-pw:hover{text-decoration:underline;text-underline-offset:3px}
+.wm-pw small{margin-left:5px;font-family:var(--ui);font-size:10.5px;color:var(--muted)}
+.wm-row.off .wm-pw{color:var(--faint)}
+.wm-row.cur{background:color-mix(in srgb,var(--accent) 7%,transparent);box-shadow:inset 2px 0 var(--accent)}
+.wm-row.cur .wm-pw{color:var(--accent);font-weight:600}
+.wm-c{position:relative;display:flex;align-items:center;min-width:0}
+/* 格子里的数字：和类别表的数字框一样，灰色是推算 / 沿用的值，基础设定是黑色，各字重自己填的是蓝色 */
+.wm .mnum,.wm .mw,.wm .msel,.wm .wm-name{width:100%;min-width:0;text-align:right;font-family:var(--mono);font-size:12px;padding:5px 4px 4px;border:0;border-bottom:1px solid transparent;border-radius:0;background-color:transparent;color:var(--ink)}
+.wm .mnum:hover,.wm .mw:hover,.wm .msel:hover{border-bottom-color:var(--line)}
+.wm .mnum:focus,.wm .mw:focus{border-bottom-color:var(--ink);outline:none;background-color:var(--sheet)}
+.mnum::placeholder,.mw::placeholder{color:var(--faint);opacity:1}
+.mnum.own{font-weight:500}
+.mnum.set,.mw.set,.msel.set,.wm-name.set{color:var(--accent);font-weight:500}
+.mw{-moz-appearance:textfield;appearance:textfield}
+.mw::-webkit-inner-spin-button,.mw::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.wm .msel{padding-right:16px;background-position:right 2px center;background-size:10px 10px;text-align-last:right}
+.wm-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer}
+.wm-name:hover{border-bottom-color:var(--line)}
+.wm-name.guess{color:var(--caution)}
+.wm-c.swapped .mw,.wm-c.swapped .msel{color:var(--accent);font-style:italic}
+/* 单独换字体：悬停这一行时出现在格子左边 */
+.wm-pick{position:absolute;left:-2px;top:50%;transform:translateY(-50%);border:0;background:none;padding:0 2px;font-size:13px;line-height:1;color:var(--faint);opacity:0}
+.wm-row:hover .wm-pick,.wm-pick:focus-visible,.wm-c.swapped .wm-pick{opacity:1}
+.wm-pick:hover{color:var(--ink)}
 /* 字体页签最后的「字体特性」：标题和例外字符一样，后面一句说明不分字重 */
 .compose .sec-row.feat-head{align-items:center;justify-content:flex-start;gap:6px 12px;margin-top:26px}
 .feat-scope{flex:1 1 auto;font-size:12px;color:var(--muted)}
@@ -464,7 +527,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .typo-body{display:grid;gap:4px;padding:6px 0 12px}
 /* 左列较窄：名称和选项并排，浏览器支持另起一行 */
 .typo-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:4px 12px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
-.typo-row .typo-sup{grid-column:1/-1}
+.typo-unsup{grid-column:1/-1;margin:0;font-size:12px;line-height:1.5;color:var(--caution)}
 /* 数字样式的字样卡片：标题在上，卡片占整行 */
 .typo-row.tiles{grid-template-columns:minmax(0,1fr)}
 .typo-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(var(--tile-w,86px),100%),1fr));gap:6px}
@@ -481,6 +544,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .tt-pic{line-height:0;color:var(--faint)}
 .typo-tiles button[aria-checked="true"] .tt-pic,.typo-tiles button:hover .tt-pic{color:var(--ink)}
 .tt-svg{width:58px;height:36px;fill:currentColor}
+.lm-pic .tt-svg{width:84px;height:52px}      /* 行高度量：要看出行距是不是均匀，图大一点 */
 .tt-svg .tt-edge{stroke:var(--accent);stroke-width:.6;stroke-dasharray:1.5 1.5;fill:none}
 .tt-svg .tt-mark{stroke:currentColor;stroke-width:1.1;fill:none}
 /* 真的排一段：窄框（4 个字宽），左边一条线是版心边缘，看行首有没有缩进 */
@@ -490,15 +554,9 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .tt-box.tt-lb{width:4em;min-height:4.05em;text-spacing-trim:space-all;text-autospace:no-autospace;font-feature-settings:normal}
 .typo-note{grid-column:1/-1;margin:2px 0 0;font-size:12px;line-height:1.55;color:var(--muted)}
 .typo-note.warn{color:var(--caution);background:var(--caution-bg);padding:6px 10px;border-radius:3px}
-.typo-name{display:grid;line-height:1.35}
+.typo-name{display:flex;align-items:center;gap:7px;line-height:1.35}
 .typo-name b{font-weight:600}
-.typo-name code{font-family:var(--mono);font-size:11px;color:var(--muted)}
 .typo-row select{width:100%}
-.typo-sup{display:flex;flex-wrap:wrap;gap:2px 12px;font-family:var(--mono);font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.typo-sup .cur{color:var(--ink);font-weight:500}
-.typo-sup .cur::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:1px;background:var(--faint)}
-.typo-sup .cur.ok::before{background:var(--ok)}
-.typo-sup .cur.no::before{background:var(--warn)}
 .typo-foot{font-size:12px;color:var(--muted);margin:8px 0 0}
 @media (max-width:700px){.typo-row{grid-template-columns:minmax(0,1fr)}}
 
