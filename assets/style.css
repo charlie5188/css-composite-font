@@ -463,14 +463,13 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* 参考图的「显示」放在白色区域右上角，和校样纸面上的一样 */
 .spec-wrap{position:relative}
 /* 参考图的工具条：和校样的工具条一样贴着顶边通栏。每个开关前面是那一组参考线的样子（颜色、虚实），兼作图例 */
-.spec-bar{display:flex;flex-wrap:wrap;align-items:center;gap:2px;min-height:40px;padding:4px 10px 4px 16px;border-bottom:1px solid var(--line);line-height:1.4;font-family:var(--ui)}
-.bar-lab{font-size:var(--fs-s);color:var(--muted);margin-right:8px}
+.spec-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:2px;min-height:40px;padding:4px 10px 4px 16px;border-bottom:1px solid var(--line);line-height:1.4;font-family:var(--ui)}
 .sg-tog{gap:7px;color:var(--faint)}      /* 外观见 .btn-ghost */
 .sg-tog[aria-pressed="true"]{color:var(--ink)}
 .sg-tog .sg-line{display:block;flex:none;width:16px;border-top:2px solid var(--line)}
 .sg-tog.dash .sg-line{border-top-style:dashed}
 .sg-tog[aria-pressed="true"] .sg-line{border-top-color:var(--c)}
-@media (max-width:560px){.spec-bar{padding-left:8px}.spec-bar .bar-lab{display:none}.sg-tog{padding:0 7px;gap:6px}}
+@media (max-width:560px){.spec-bar{padding-left:8px}.sg-tog{padding:0 7px;gap:6px}}
 #spec{display:block;width:100%;height:160px}
 
 /* 排版页签：开头一句说明这些设定不分字重 */
