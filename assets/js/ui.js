@@ -359,11 +359,40 @@ document.addEventListener('click', e => {
   if (pop.parentNode !== host) host.append(pop);
 }, true);
 $('#infoPop').addEventListener('toggle', e => {
-  if (e.newState !== 'open') return;
+  if (e.newState !== 'open') { hovOpen = null; return; }
   const pop = $('#infoPop');
   pop.innerHTML = infoHtml(pop.dataset.key || '');
   placePop(pop, infoBtn);
 });
+/* (i)：鼠标停一会儿直接打开说明（不再先出「说明」小提示），移开就关；悬停打开后再点一下，就固定打开 */
+let hovT = 0, hovOpen = null;
+const infoOpen = () => $('#infoPop').matches(':popover-open');
+document.addEventListener('pointerover', e => {
+  if (e.pointerType !== 'mouse') return;
+  const b = e.target.closest?.('.info');
+  if (b) {
+    clearTimeout(hovT);
+    if (infoOpen() && infoBtn === b) return;
+    hovT = setTimeout(() => {
+      if (!b.matches(':hover')) return;
+      if (infoOpen()) { if (!hovOpen) return; $('#infoPop').hidePopover(); }      // 点开的说明不被悬停顶掉
+      b.click(); hovOpen = b;
+    }, 350);
+  } else if (e.target.closest?.('#infoPop')) clearTimeout(hovT);
+});
+document.addEventListener('pointerout', e => {
+  if (e.pointerType !== 'mouse') return;
+  const to = e.relatedTarget;
+  if (e.target.closest?.('.info') && !hovOpen) { if (!to?.closest?.('.info')) clearTimeout(hovT); return; }      // 还没打开就移开了
+  if (!hovOpen || to?.closest?.('#infoPop') || to?.closest?.('.info') === hovOpen) return;
+  clearTimeout(hovT);
+  hovT = setTimeout(() => { if (hovOpen && !$('#infoPop').matches(':hover') && !hovOpen.matches(':hover')) $('#infoPop').hidePopover(); }, 250);
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('.info'); if (!b) return;
+  clearTimeout(hovT);      // 点了就以点击为准，不再等悬停
+  if (b === hovOpen && infoOpen()) { e.preventDefault(); hovOpen = null; }      // 悬停打开的：取消 popovertarget 的切换，留着不关
+}, true);
 export let gearBtn = null;
 $('#editor').addEventListener('click', e => {
   const g = e.target.closest('[data-act="groups"]');
@@ -628,7 +657,7 @@ export function lmRow() {
     </div>`;
 }
 /* (i) 按钮：悬停时也有提示 */
-export const infoButton = key => `<button type="button" class="info" data-info="${esc(key)}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}" title="${esc(T('infoAria'))}"><svg class="ic" aria-hidden="true"><use href="#i-info-circle"/></svg></button>`;
+export const infoButton = key => `<button type="button" class="info" data-info="${esc(key)}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}"><svg class="ic" aria-hidden="true"><use href="#i-info-circle"/></svg></button>`;
 /* (i) 里的技术细节：CSS 属性名，以及各浏览器从哪个版本开始支持（标出当前浏览器，和它支不支持所选的值） */
 export function techHtml(prop, sup, ok) {
   const names = { chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' };

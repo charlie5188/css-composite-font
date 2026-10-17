@@ -177,3 +177,20 @@ test('保存预设用对话框：地区和风格预先推算好、可以改，�
   await page.click('[data-pf="style:other"]');
   await expect(page.locator('#presetCards .pname')).toHaveText(['测试']);
 });
+
+test('(i)：鼠标停一会儿就打开说明，移开关掉；悬停后再点就固定打开', async ({ page }) => {
+  await open(page);
+  await page.click('#ltabFonts');
+  const pop = page.locator('#infoPop'), info = page.locator('.ct-head .info').first();
+  await info.hover();
+  await expect(pop).toBeVisible();
+  await expect(page.locator('#tip')).toBeHidden();      // 不再先出「说明」小提示
+  await page.mouse.move(5, 5);
+  await expect(pop).toBeHidden();
+  await info.hover();
+  await expect(pop).toBeVisible();
+  await info.click();
+  await page.mouse.move(5, 5);
+  await page.waitForTimeout(500);
+  await expect(pop).toBeVisible();
+});
