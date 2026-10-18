@@ -122,3 +122,58 @@ test('导入字体：支持拖入，手机深色可选用；重新载入不假�
   await page.locator('#picker [data-src="file"]').click();
   await expect(page.locator('#ffLibrary')).toBeHidden();
 });
+
+
+test('预览字重不保存：连续字重可单独试粗体，静态字体只列真实档位，应用仍用所选映射', async ({ page }) => {
+  await fixture(page);
+  const original = await page.evaluate(async () => JSON.stringify((await import('./assets/js/core.js')).state.classes.han));
+  await page.locator('#pkProofWeightNum').fill('700');
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  await expect(page.locator('#gfWeightNum')).toHaveValue('400');
+  expect(await page.locator('#pkSample').evaluate(el => el.style.fontVariationSettings)).toContain('700');
+  expect(await page.evaluate(async () => JSON.stringify((await import('./assets/js/core.js')).state.classes.han))).toBe(original);
+  await page.locator('#gfSearch').fill('Shippori'); await page.locator('#gfOptions [data-family]').click();
+  await expect(page.locator('#pkProofWeightSelect option')).toHaveCount(5);
+  await expect(page.locator('#gfWeight option')).toHaveCount(5);
+  await page.locator('#pkProofWeightSelect').selectOption('700');
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  await expect(page.locator('#gfWeight')).toHaveValue('400');
+  await page.locator('#pkOk').click();
+  expect(await page.evaluate(async () => (await import('./assets/js/core.js')).state.classes.han.font.weight)).toBe(400);
+});
+
+test('上传的连续字体：预览与应用字重各自保存到正确位置', async ({ page }) => {
+  await fixture(page); await page.locator('#picker [data-src="file"]').click();
+  await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
+  await expect(page.locator('#ffWeightField')).toBeVisible();
+  await page.locator('#ffWeightNum').fill('450'); await page.locator('#ffWeightNum').dispatchEvent('change');
+  await page.locator('#pkProofWeightNum').fill('700');
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  await expect(page.locator('#pkWeightMapping')).toContainText('450');
+  await expect(page.locator('#pkWeightMapping')).toContainText('400');
+  await page.locator('#pkOk').click();
+  expect(await page.evaluate(async () => (await import('./assets/js/core.js')).state.classes.han.font.weight)).toBe(450);
+});
+
+
+test('逐档选择：自动字重随应用范围改变，应用全部时明确回到 400 的映射', async ({ page }) => {
+  await fixture(page); await page.locator('#pkCancel').click();
+  await page.evaluate(async () => (await import('./assets/js/ui.js')).openPicker({ type: 'class', id: 'han' }, 700));
+  await page.locator('#gfSearch').fill('Noto Sans SC'); await page.locator('#gfOptions [data-family="Noto Sans SC"]').click();
+  await expect(page.locator('#pkWeightMapping')).toHaveText('字体的 700 将用于组合的 700。');
+  await page.locator('#pkScope [value="all"]').check();
+  await expect(page.locator('#pkWeightMapping')).toHaveText('字体的 400 将用于组合的 400。');
+  await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
+  expect(await page.evaluate(async () => (await import('./assets/js/core.js')).state.classes.han.font.weight)).toBe(400);
+});
+
+test('逐档上传字体：读取该档实际粗细，保存单档映射不改基础粗细', async ({ page }) => {
+  await fixture(page); await page.locator('#picker [data-src="file"]').click();
+  await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
+  await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
+  await page.evaluate(async () => (await import('./assets/js/ui.js')).openPicker({ type: 'class', id: 'han' }, 700));
+  await expect(page.locator('#ffWeightNum')).toHaveValue('700');
+  await page.locator('#ffWeightNum').fill('450'); await page.locator('#ffWeightNum').dispatchEvent('change');
+  await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
+  expect(await page.evaluate(async () => { const c = await import('./assets/js/core.js'); return [c.state.classes.han.font.weight, c.state.wOver[700].han.weight]; })).toEqual([400, 450]);
+});

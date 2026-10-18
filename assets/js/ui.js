@@ -1234,6 +1234,7 @@ export function initPresets() {
 }
 /* ================= Font picker dialog ================= */
 export let pickTarget = null, pickCand = null, pickTab = 'google';
+let pickerProofWeight = 400, pickerProofKey = '', pickerPreviewToken = 0;
 export let pickW = null;   // When editing a non-400 row with its own font, choose a weight, font name or file only for that step.
 export const picker = $('#picker');
 let pickCatalog = [], catalogObserver;
@@ -1310,6 +1311,7 @@ function chooseImported(id) {
   const entry = importedFonts.get(id); if (!entry || !files.has(id)) return;
   pickCand = { ...entry.font };
   if (pickCand.axis) pickCand.weight = Math.max(pickCand.axis[0], Math.min(pickCand.axis[1], pickW || 400));
+  $('#ffWeightNum').value = pickCand.weight || 400;
   updateCand();
   $('#ffOptions').querySelectorAll('[data-imported]').forEach(el => el.setAttribute('aria-selected', el.dataset.imported === id));
 }
@@ -1353,7 +1355,11 @@ export function candFromFields() {
   const base = pickW ? objOf(pickTarget).font : null;
   if (pickTab === 'google') {
     const fam = $('#gfFamily').value.trim(), w = gfWeightVal();
-    return fam ? G(fam, w || (base?.kind === 'google' && base.family === fam ? fontAtWeight(base, pickW).weight : 400)) : null;
+    const automatic = pickW && base?.kind === 'google' && base.family === fam ? fontAtWeight(base, pickW).weight : pickW && picker.querySelector('[name="pkScope"]:checked')?.value !== 'all' ? pickW : 400;
+    const available = fam && gfWeights(fam);
+    const actualAuto = available?.length && !pickerWeightAxis(G(fam)) ? available.reduce((a, b) => Math.abs(b - automatic) < Math.abs(a - automatic) ? b : a) : automatic;
+    const axis = fam && pickerWeightAxis(G(fam)), chosen = w || actualAuto;
+    return fam ? G(fam, axis ? Math.max(axis[0], Math.min(axis[1], chosen)) : chosen) : null;
   }
   if (pickTab === 'local') {
     const n = $('#lfName').value.trim() || (base ? $('#lfName').placeholder : ''); if (!n) return null;
@@ -1364,9 +1370,10 @@ export function candFromFields() {
     else if (!localData.has(n) && $('#lfVar').checked) { f.axis = [100, 900]; f.weight = pickW || 400; }      // For manually declared variable fonts, let the font clamp to its own range.
     return f;
   }
-  if (pickCand?.kind === 'file' && pickCand !== base) return pickCand;
-  if (pickW && base.kind === 'file') return base;      // Without a new upload, keep the original file for preview and edit only the export filename here.
-  return null;
+  const file = pickCand?.kind === 'file' && pickCand !== base ? pickCand : pickW && base.kind === 'file' ? base : null;
+  if (!file) return null;
+  const value = $('#ffWeightNum').value.trim();
+  return file.axis && !$('#ffWeightField').hidden && value && Number.isFinite(+value) ? { ...file, weight: Math.max(file.axis[0], Math.min(file.axis[1], Math.round(+value))) } : file;
 }
 /* Read local-font axes after permission to enumerate local fonts grants access to their files. */
 export const localData = new Map(), localAxes = new Map(), localStyle = new Map();      // Full font name -> FontData; -> detected axes (undefined = reading); -> OS/2 style.
@@ -1428,7 +1435,10 @@ export function applySampleAxes() {
     if (typeof v === 'number') parts.push(`"${t}" ${v}`);
     else if (t === 'opsz' && f.kind === 'google' && v !== 'auto') parts.push(`"opsz" ${def}`);
   }
+  if (pickerWeightAxis(f)) parts.unshift(`"wght" ${pickerProofWeight}`);
   $('#pkSample').style.fontVariationSettings = parts.join(', ');
+  $('#pkSample').style.fontWeight = String(pickerProofWeight);
+  $('#pkSample').style.fontSynthesis = 'none';
 }
 export const previewFont = f => f?.kind === 'google' && extraAxes(f).length ? { ...f, xa: extraAxes(f).map(a => a[0]).sort() } : f;
 export const cleanVary = f => { const o = Object.fromEntries(Object.entries(pickVary).filter(([t]) => axisOf(f, t))); return Object.keys(o).length ? o : undefined; };
@@ -1511,23 +1521,57 @@ export function resetCoverage() {
   const sample = $('#pkSample');
   if (sample.dataset.text) sample.textContent = sample.dataset.text;
 }
+function pickerWeightAxis(f) { return f && (f.kind === 'google' ? f.family in vfCache ? Array.isArray(vfCache[f.family]) ? vfCache[f.family] : null : axisOf(f, 'wght')?.slice(1, 3) : f.axis); }
+function syncPickerProof(f) {
+  const axis = pickerWeightAxis(f), weights = f?.kind === 'google' ? gfWeights(f.family) : null;
+  const key = f ? fontKey(f) + '|' + (f.weight || 400) : '';
+  if (key !== pickerProofKey) { pickerProofKey = key; pickerProofWeight = f?.weight || 400; }
+  if (axis) pickerProofWeight = Math.max(axis[0], Math.min(axis[1], pickerProofWeight));
+  else if (weights?.length) pickerProofWeight = weights.reduce((a, b) => Math.abs(b - pickerProofWeight) < Math.abs(a - pickerProofWeight) ? b : a);
+  $('#pkPreviewTools').hidden = !f;
+  $('#pkProofWeight').hidden = !axis; $('#pkProofWeightNum').hidden = !axis;
+  $('#pkProofWeightSelect').hidden = !!axis || !weights?.length;
+  $('#pkProofStyle').hidden = !!axis || !!weights?.length;
+  if (axis) for (const el of [$('#pkProofWeight'), $('#pkProofWeightNum')]) { el.min = axis[0]; el.max = axis[1]; el.value = pickerProofWeight; }
+  if (weights?.length) { $('#pkProofWeightSelect').innerHTML = weights.map(w => `<option value="${w}">${w}</option>`).join(''); $('#pkProofWeightSelect').value = pickerProofWeight; }
+  picker.querySelectorAll('[data-proof-weight]').forEach(el => { const w = +el.dataset.proofWeight; el.hidden = axis ? w < axis[0] || w > axis[1] : !weights?.includes(w); });
+  $('#ffWeightField').hidden = f?.kind !== 'file' || !f.axis;
+  if (f?.kind === 'file' && f.axis) { const input = $('#ffWeightNum'); input.min = f.axis[0]; input.max = f.axis[1]; input.value = f.weight || 400; }
+  const target = pickW && (sameFontAs(f, objOf(pickTarget).font) || picker.querySelector('[name="pkScope"]:checked')?.value === 'w') ? pickW : 400;
+  $('#pkWeightMapping').textContent = f && (f.kind === 'google' || axis) ? T('pkWeightMapping', { weight: f.weight || 400, target }) : '';
+}
+function setPickerProof(value) {
+  if (!pickCand || !Number.isFinite(value)) return;
+  const axis = pickerWeightAxis(pickCand);
+  if (axis && (value < axis[0] || value > axis[1])) return;
+  pickerProofWeight = value; syncPickerProof(pickCand); applySampleAxes(); paintPickerCandidate();
+}
 export function updateCand() {
   const f = candFromFields();
   pickCand = f;
-  updateScope();
+  updateScope(); syncPickerProof(f);
   renderAxes(); renderItal();
   $('#ffItalField').hidden = f?.kind !== 'file';
   $('#ffName').textContent = f?.kind === 'file' ? f.fileName : T('ffHint');
   $('#ffItalName').textContent = f?.italic?.fileName || '';
+  paintPickerCandidate();
+}
+function paintPickerCandidate() {
+  const f = pickCand, token = ++pickerPreviewToken;
   const ok = $('#pkOk'), st = $('#pkStatus'), sample = $('#pkSample');
   /* Show specimens only when the font is available. Rendering complete UI-font text before selection, during checks or after failure would imply false coverage. */
   st.classList.remove('caution'); sample.hidden = true; showVfTag(null); resetCoverage();
   if (!f) { ok.disabled = true; st.textContent = T('pkEmpty'); sample.style.fontFamily = 'var(--ui)'; return; }
-  const s = source(previewFont(f), { retry: true });
+  const axis = pickerWeightAxis(f);
+  const viewed = f.kind === 'google' ? { ...f, ...(axis ? { vf: true } : gfWeights(f.family) ? { weight: pickerProofWeight } : {}) } : f;
+  const s = source(previewFont(viewed), { retry: true });
   ok.disabled = true; st.textContent = T('pkChecking'); sample.style.fontFamily = 'var(--ui)';
-  s.promise.then(() => {
-    if (pickCand !== f) return;
+  s.promise.then(async () => {
+    if (pickCand !== f || token !== pickerPreviewToken) return;
     if (s.status === 'ok') {
+      try { await document.fonts.load(`32px "${s.family}"`, sample.dataset.text || sample.textContent); }
+      catch (error) { if (token === pickerPreviewToken) { st.textContent = T('pkPreviewUnavailable'); st.classList.add('caution'); } return; }
+      if (pickCand !== f || token !== pickerPreviewToken) return;
       sample.style.fontFamily = `"${s.family}", var(--ui)`;
       sample.hidden = false;
       st.textContent = f.kind === 'google' ? T('pkGoogleOk', { n: s.faces.length }) : f.kind === 'local' ? T('pkLocalOk') : T('pkFileOk');
@@ -1563,11 +1607,22 @@ export function showVfTag(axis) {
 export function syncGfWeight() {
   const fam = $('#gfFamily').value.trim(), sel = $('#gfWeight'), num = $('#gfWeightNum');
   const axis = fam && fam in vfCache ? vfCache[fam] || null : null;
-  if (fam && !(fam in vfCache)) vfAxis(fam).then(() => { if ($('#gfFamily').value.trim() === fam) syncGfWeight(); });
-  if (axis && num.hidden) num.value = +sel.value ? sel.value : num.value;                       // Carry the current value into the numeric field when switching controls.
-  if (!axis && sel.hidden) { const v = +num.value; sel.value = v ? Math.min(900, Math.max(100, Math.round(v / 100) * 100)) : (sel.querySelector('option[value="0"]') ? 0 : 400); }
+  if (fam && !(fam in vfCache)) vfAxis(fam).then(() => { if ($('#gfFamily').value.trim() !== fam) return; const before = gfWeightVal(); syncGfWeight(); if (picker.open && pickTab === 'google' && before !== gfWeightVal()) updateCand(); });
+  const raw = num.hidden ? sel.value : num.value, wanted = +raw || 400;
+  if (axis) {
+    num.value = pickW && (!raw || +raw === 0) ? '' : Math.max(axis[0], Math.min(axis[1], wanted));
+    num.min = axis[0]; num.max = axis[1]; num.title = T('vfTitle', { a: axis[0], b: axis[1] });
+    if (pickW) { const base = objOf(pickTarget).font, auto = base?.family === fam ? fontAtWeight(base, pickW).weight : picker.querySelector('[name="pkScope"]:checked')?.value === 'all' ? 400 : pickW; num.placeholder = Math.max(axis[0], Math.min(axis[1], auto)); }
+  } else {
+    const available = gfWeights(fam) || WEIGHTS, base = pickTarget && objOf(pickTarget).font;
+    const hasAuto = !!pickW && base?.kind === 'google';
+    const automatic = pickW && base?.family === fam ? fontAtWeight(base, pickW).weight : picker.querySelector('[name="pkScope"]:checked')?.value === 'all' ? 400 : pickW || 400;
+    const nearest = value => available.reduce((a, b) => Math.abs(b - value) < Math.abs(a - value) ? b : a);
+    const auto = nearest(automatic);
+    sel.innerHTML = available.map(w => `<option value="${hasAuto && w === auto ? 0 : w}">${w}${hasAuto && w === auto ? ' · ' + esc(T('wAutoTag')) : ''}</option>`).join('');
+    sel.value = hasAuto && (!raw || +raw === 0 || nearest(wanted) === auto) ? '0' : String(nearest(wanted));
+  }
   num.hidden = !axis; sel.hidden = !!axis;
-  if (axis) { num.min = axis[0]; num.max = axis[1]; num.title = T('vfTitle', { a: axis[0], b: axis[1] }); }
 }
 export function gfWeightVal() {
   const num = $('#gfWeightNum');
@@ -1578,6 +1633,7 @@ export function gfWeightVal() {
 export function openPicker(t, W = BASE_W) {      // W is the target weight when opening from a weight row.
   pickTarget = t;
   const o = objOf(t), key = keyOf(t);
+  pickerProofKey = ''; $('#ffWeightField').hidden = true;
   pickVary = { ...(o.vary || {}) };
   $('#pkAxes').open = Object.keys(pickVary).length > 0;      // Expand axes when customized; otherwise collapse them.
   pickW = W !== BASE_W && !o.follow && o.font ? W : null;
@@ -1611,7 +1667,8 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   $('#ffFile').value = ''; $('#ffItal').value = '';
   $('#lfFamilySearch').value = ''; $('#lfManual').open = false;
   $('#lfMsg').hidden = true; $('#lfMsg').classList.remove('caution');
-  pickCand = ovf?.kind === 'file' ? ovf : cur?.kind === 'file' ? cur : null;
+  const rowFont = pickW ? (t.type === 'class' ? resolveCls(t.id, W, true) : resolveCustom(o, W, true)).font : cur;
+  pickCand = ovf?.kind === 'file' ? ovf : rowFont?.kind === 'file' ? rowFont : null;
   $('#pkSample').textContent = $('#pkSample').dataset.text = `${t.type === 'class' ? CLS[t.id].sample : (state.custom[t.i].chars || '')} · 永国字體 あア Hamburg 0123`;
   pickCatalog = catalogOrder(t.type === 'class' ? t.id : 'custom', state.typo.lang, cur?.kind === 'google' ? cur.family : '');
   $('#gfSearch').value = ''; $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog();
@@ -1620,6 +1677,11 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   if (pickTab === 'google') $('#gfSearch').focus();
 }
 export function initPicker() {
+  for (const id of ['pkProofWeight', 'pkProofWeightNum', 'pkProofWeightSelect']) $('#'+id).addEventListener('input', e => { if (e.target.value !== '') setPickerProof(+e.target.value); });
+  $('#pkProofWeightNum').addEventListener('blur', () => syncPickerProof(pickCand));
+  picker.querySelectorAll('[data-proof-weight]').forEach(el => el.addEventListener('click', () => setPickerProof(+el.dataset.proofWeight)));
+  $('#ffWeightNum').addEventListener('change', updateCand);
+  $('#pkScope').addEventListener('change', () => { syncGfWeight(); updateCand(); });
   $('#lfFamilySearch').addEventListener('input', renderLocalFonts);
   $('#lfOptions').addEventListener('click', e => { const el = e.target.closest('[data-local-family]'); if (el) selectLocalFamily(el.dataset.localFamily); });
   $('#lfOptions').addEventListener('keydown', e => { if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return; e.preventDefault(); const els = [...e.currentTarget.querySelectorAll('[data-local-family]')], i = els.indexOf(e.target.closest('[data-local-family]')), n = e.key === 'Home' ? 0 : e.key === 'End' ? els.length - 1 : Math.max(0, Math.min(els.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1))); els.forEach((el, j) => { el.tabIndex = j === n ? 0 : -1; }); els[n]?.focus(); });
@@ -1637,11 +1699,10 @@ export function initPicker() {
   picker.addEventListener('close', () => { fileImportToken++; catalogObserver?.disconnect(); localObserver?.disconnect(); fileObserver?.disconnect(); });
   picker.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => setPickTab(b.dataset.src)));
   $('#gfFamily').addEventListener('input', updateCandSoon);
-  $('#gfFamily').addEventListener('change', updateCand);
+  $('#gfFamily').addEventListener('change', () => { syncGfWeight(); updateCand(); });
   $('#gfWeight').addEventListener('change', updateCand);
   $('#gfWeightNum').addEventListener('input', updateCandSoon);
-  $('#gfWeightNum').addEventListener('change', updateCand);
-  $('#gfFamily').addEventListener('change', syncGfWeight);
+  $('#gfWeightNum').addEventListener('change', () => { if ($('#gfWeightNum').value.trim()) $('#gfWeightNum').value = gfWeightVal(); updateCand(); });
   $('#lfName').addEventListener('input', updateCandSoon);
   $('#lfName').addEventListener('change', updateCand);
   $('#lfVar').addEventListener('change', updateCand);
@@ -1716,9 +1777,9 @@ export function initPicker() {
     if (sameFont) {       // Store only this step's weight/name/file; clear the override when it matches the automatic result.
       const k = fontKey(o.font) + '|' + pickW;
       o.vary = cleanVary(o.font);
-      if (o.font.kind === 'google') {
-        const v = gfWeightVal(), ov = ((state.wOver[pickW] ||= {})[key] ||= {});
-        if (v) ov.weight = v; else delete ov.weight;
+      if (o.font.kind === 'google' || o.font.kind === 'file' && o.font.axis) {
+        const v = o.font.kind === 'google' ? gfWeightVal() : c.weight, ov = ((state.wOver[pickW] ||= {})[key] ||= {});
+        if (v && (o.font.kind === 'google' || v !== fontAtWeight(o.font, pickW, true).weight)) ov.weight = v; else delete ov.weight;
       } else {
         const el = o.font.kind === 'local' ? $('#lfName') : $('#ffPath'), v = el.value.trim();
         if (v && v !== el.placeholder) state.weightNames[k] = v; else delete state.weightNames[k];

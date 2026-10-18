@@ -1,5 +1,9 @@
 /* UI text: Japanese. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkWeightMapping: "フォントの {weight} を合成フォントの {target} に対応させます。",
+  pkCurrentStyle: "現在のスタイルを表示",
+  pkAppliedWeight: "適用する太さ",
+  pkPreviewWeight: "プレビューの太さ",
   pkFileInvalid: "フォントを読み込めません：{names}。元の選択は保持します。",
   pkFilesSession: "このページ内で再利用できます。再読み込み後はファイルを再指定してください。",
   pkImportedFonts: "読み込み済みフォント",

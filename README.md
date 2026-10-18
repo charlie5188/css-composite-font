@@ -21,7 +21,7 @@ A plain `font-family` fallback picks fonts, but it can't make the Western font a
 - **Appearance and preview colors.** Settings offers Light, Dark and System modes. The proof toolbar’s View menu lets you customize the proof background and text colors. Changes apply immediately to the proof and metric chart, can be reset to theme defaults, and stay in this browser across preset changes. They are excluded from presets, share links and all exports. Settings and View group related controls and share consistent label alignment and spacing.
 - **Share a configuration.** Copy a snapshot link from Share, beside Export. Recipients can preview, edit and save the configuration without an account. Links exclude font files, custom proof text, history and other saved presets. Google Fonts reload; local fonts and uploaded files must be available on the receiving computer. Imports can be undone.
 - **Three outputs.** Paste-ready CSS (usually a few KB, the CJK font linked from Google Fonts); TTF / OTF / WOFF2 files baked in the browser for Figma, Keynote, Word and the like; and, experimentally, Swift / Kotlin / Flutter code that applies the same rules in native apps.
-- **Any font.** Google Fonts, installed fonts or uploaded files, with coverage checks and missing glyphs marked in the proof. Font names show “Continuous weights” or “Stepped weights” alongside their known range or fixed values. Browse real specimens ordered for the class and proof language, search aliases and filter known styles or bold support; unknown metadata stays eligible and checks never reorder results. Installed fonts are grouped by family and style after permission, with automatic axis detection and exact-name entry as a fallback. Imported files can be searched and reused in this page, with drag-and-drop and duplicate detection; reload requires the files again.
+- **Any font.** Google Fonts, installed fonts or uploaded files, with coverage checks and missing glyphs marked in the proof. Font names show “Continuous weights” or “Stepped weights” alongside their known range or fixed values. Browse real specimens ordered for the class and proof language, search aliases and filter known styles or bold support; unknown metadata stays eligible and checks never reorder results. Installed fonts are grouped by family and style after permission, with automatic axis detection and exact-name entry as a fallback. Imported files can be searched and reused in this page, with drag-and-drop and duplicate detection; reload requires the files again. Picker preview weights are independent of applied settings, with explicit weight mappings.
 - **Regionally correct.** Checks glyph forms and punctuation position for Simplified, Taiwan, Hong Kong and Japanese text, can scope the CSS to one language, and exports native CSS properties from the Text layout tab, such as `text-autospace` and `line-break`. Preset names describe font pairings; labels identify the script and region.
 
 
@@ -40,7 +40,7 @@ No build step: `python3 tools/serve.py` serves the page at http://127.0.0.1:8765
 - **外観とプレビューの色。** 設定でライト・ダーク・システム設定を選べます。校正刷りのツールバーの「表示」で背景色と文字色を指定できます。校正刷りとメトリクス図にすぐ反映され、テーマの標準色に戻せます。このブラウザに保存し、プリセット変更後も維持します。プリセット・共有リンク・書き出しには含みません。 設定と表示のポップオーバーは機能ごとにまとめ、ラベル、操作部品、説明の位置と間隔を揃えています。
 - **設定を共有。** 「書き出し」横の「共有」で、その時点の設定のリンクをコピーできます。受信側はアカウントなしでプレビュー・編集・プリセット保存ができます。フォントファイル、独自の校正テキスト、履歴、ほかの保存済みプリセットは含まず、ローカルフォントとアップロードファイルは受信側で用意します。読み込みは取り消せます。
 - **3 種類の書き出し。** そのまま貼れる CSS（漢字フォントを Google Fonts から読み込めば通常数 KB）、ブラウザ内で生成する TTF / OTF / WOFF2（Figma、Keynote、Word など向け）、そして試験的に、同じ規則をネイティブアプリで使うための Swift / Kotlin / Flutter のコード。
-- **どのフォントでも。** Google Fonts、ローカルフォント、アップロードしたファイルに対応し、収録範囲の確認と、校正刷りでの欠け字の表示があります。フォント名の下に「連続ウェイト」「段階ウェイト」と、既知の範囲や固定ウェイトを表示します。 フォント一覧はクラスと言語に合わせて並び、実際の見本、別名検索、種類・太字の絞り込みに対応します。不明な情報の候補は残し、検査後も並び順を維持します。 ローカルフォントはファミリーとスタイルで選び、許可後に可変軸を自動検出します。正式名の入力も残します。 読み込んだファイルをページ内で検索・再利用でき、ドロップと重複検出に対応します。再読み込み後は再指定が必要です。
+- **どのフォントでも。** Google Fonts、ローカルフォント、アップロードしたファイルに対応し、収録範囲の確認と、校正刷りでの欠け字の表示があります。フォント名の下に「連続ウェイト」「段階ウェイト」と、既知の範囲や固定ウェイトを表示します。 フォント一覧はクラスと言語に合わせて並び、実際の見本、別名検索、種類・太字の絞り込みに対応します。不明な情報の候補は残し、検査後も並び順を維持します。 ローカルフォントはファミリーとスタイルで選び、許可後に可変軸を自動検出します。正式名の入力も残します。 読み込んだファイルをページ内で検索・再利用でき、ドロップと重複検出に対応します。再読み込み後は再指定が必要です。 ダイアログのプレビューの太さと適用する太さを分け、ウェイトの対応を表示します。
 - **地域ごとの正しさ。** 簡体字・台湾・香港・日本語の字形と約物の位置を確認し、CSS を言語で限定したり、`text-autospace` や `line-break` などの CJK 組版プロパティも書き出したりできます。 プリセット名はフォントの組み合わせを示し、簡体字・繁体字や地域はラベルで区別します。
 
 ## 简体中文
@@ -54,7 +54,7 @@ No build step: `python3 tools/serve.py` serves the page at http://127.0.0.1:8765
 - **外观与校样颜色。** 设置中可选浅色、深色或跟随系统；校样工具栏的「显示」菜单可自定义背景色与文字颜色，即时应用到校样与度量图，可恢复主题默认颜色。这些偏好只存在当前浏览器，换预设时保留，不进入预设、分享链接或任何导出。 设置与显示弹层按功能分组，标签、控件和说明使用统一的对齐与间距。
 - **分享配置。** 点击「导出」旁的「分享」复制当前配置的链接，接收方无需账号即可预览、编辑或存为预设。链接不包含字体文件、自定义校样正文、历史记录或其他已存预设。Google Fonts 会重新加载，本机字体与上传文件需接收方补齐；导入可撤销。
 - **三种导出。** 可以直接粘贴的 CSS（汉字字体从 Google Fonts 引用时通常只有几 KB）；在浏览器里生成的 TTF / OTF / WOFF2 字体文件，给 Figma、Keynote、Word 等软件用；以及实验性的 Swift / Kotlin / Flutter 代码，在原生 App 里按同样的规则排字。
-- **什么字体都能用。** Google Fonts、本机字体、上传的字体文件都可以，会检查字符覆盖范围，并在校样里标出缺字。字体名下用「连续字重」「分档字重」标注已知范围或固定档位。 选字体时可浏览真实字样，按类别与校样语言排序，搜索别名并筛选已知风格或粗体能力；未知资料保留，检查后不重排。 本机字体按家族和样式选择，授权读取后自动识别可变属性，完整名输入作为备用。 导入的文件可在本页搜索复用，支持拖入与重复文件去重；重新载入后需重新提供。
+- **什么字体都能用。** Google Fonts、本机字体、上传的字体文件都可以，会检查字符覆盖范围，并在校样里标出缺字。字体名下用「连续字重」「分档字重」标注已知范围或固定档位。 选字体时可浏览真实字样，按类别与校样语言排序，搜索别名并筛选已知风格或粗体能力；未知资料保留，检查后不重排。 本机字体按家族和样式选择，授权读取后自动识别可变属性，完整名输入作为备用。 导入的文件可在本页搜索复用，支持拖入与重复文件去重；重新载入后需重新提供。 对话框的预览字重独立于应用设置，应用时明确显示粗细映射。
 - **照顾地区差异。** 检查简体、台湾、香港、日文的字形和标点位置，可以把 CSS 限定在某个语言，也会导出 `text-autospace`、`line-break` 等 CJK 排版属性。 预设名称描述字体搭配，简繁与地区由卡片标签区分。
 
 ## 繁體中文
@@ -68,7 +68,7 @@ No build step: `python3 tools/serve.py` serves the page at http://127.0.0.1:8765
 - **外觀與校樣顏色。** 設定中可選擇淺色、深色或跟隨系統；校樣工具列的「顯示」選單可自訂背景色與文字顏色，即時套用到校樣與度量圖，可恢復主題預設顏色。這些偏好只儲存在目前瀏覽器，切換預設集時保留，不包含在預設集、分享連結或任何匯出內容中。 設定與顯示選單依功能分組，標籤、控制項與說明使用一致的對齊與間距。
 - **分享設定。** 點選「匯出」旁的「分享」複製目前設定的連結，接收方無須帳號即可預覽、編輯或存為預設。連結不包含字型檔案、自訂校樣內文、歷程紀錄或其他已存預設。Google Fonts 會重新載入，本機字型與上傳檔案需由接收方補齊；導入可復原。
 - **三種匯出。** 可直接貼上的 CSS（漢字字型從 Google Fonts 引用時通常只有幾 KB）；在瀏覽器裡產生的 TTF / OTF / WOFF2 字型檔案，供 Figma、Keynote、Word 等軟體使用；以及實驗性的 Swift / Kotlin / Flutter 程式碼，在原生 App 裡依相同規則排字。
-- **各種字型都能用。** 支援 Google Fonts、本機字型與上傳的字型檔案，會檢查字元涵蓋範圍，並在校樣中標示缺字。字型名下使用「連續字重」「分段字重」標示已知範圍或固定檔位。 選字型時可瀏覽實際字樣，依類別與校樣語言排序，搜尋別名並篩選已知風格或粗體支援；未知資料保留，檢查後不重新排序。 本機字型依字族與樣式選擇，授權讀取後自動辨識可變屬性，完整名稱輸入作為備用。 匯入檔案可在本頁搜尋並重複使用，支援拖入與相同檔案去重；重新載入後須重新提供。
+- **各種字型都能用。** 支援 Google Fonts、本機字型與上傳的字型檔案，會檢查字元涵蓋範圍，並在校樣中標示缺字。字型名下使用「連續字重」「分段字重」標示已知範圍或固定檔位。 選字型時可瀏覽實際字樣，依類別與校樣語言排序，搜尋別名並篩選已知風格或粗體支援；未知資料保留，檢查後不重新排序。 本機字型依字族與樣式選擇，授權讀取後自動辨識可變屬性，完整名稱輸入作為備用。 匯入檔案可在本頁搜尋並重複使用，支援拖入與相同檔案去重；重新載入後須重新提供。 對話框的預覽字重獨立於套用設定，套用時明確顯示粗細對應。
 - **照顧地區差異。** 檢查簡體、臺灣、香港、日文的字形與標點位置，可以將 CSS 限定為特定語言，也會匯出 `text-autospace`、`line-break` 等 CJK 排版屬性。 預設名稱描述字型搭配，簡繁與地區由卡片標籤區分。
 
 ## License

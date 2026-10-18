@@ -1,5 +1,9 @@
 /* UI text: Simplified Chinese. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkWeightMapping: "字体的 {weight} 将用于组合的 {target}。",
+  pkCurrentStyle: "预览当前样式",
+  pkAppliedWeight: "应用字重",
+  pkPreviewWeight: "预览字重",
   pkFileInvalid: "无法读取字体文件：{names}。保留原来的选择。",
   pkFilesSession: "本页内可重复使用；重新载入后需再次提供文件。",
   pkImportedFonts: "已导入字体",

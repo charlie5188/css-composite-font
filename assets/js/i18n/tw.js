@@ -1,5 +1,9 @@
 /* UI text: Traditional Chinese (Taiwan). Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkWeightMapping: "字型的 {weight} 會用於組合的 {target}。",
+  pkCurrentStyle: "預覽目前樣式",
+  pkAppliedWeight: "套用字重",
+  pkPreviewWeight: "預覽字重",
   pkFileInvalid: "無法讀取字型檔案：{names}。保留原本的選擇。",
   pkFilesSession: "可在本頁重複使用；重新載入後須再次提供檔案。",
   pkImportedFonts: "已匯入字型",

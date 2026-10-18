@@ -1,5 +1,9 @@
 /* UI text: English. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkWeightMapping: "Font weight {weight} maps to composite weight {target}.",
+  pkCurrentStyle: "Previewing the current style",
+  pkAppliedWeight: "Applied weight",
+  pkPreviewWeight: "Preview weight",
   pkFileInvalid: "Could not read these font files: {names}. Your previous choice is kept.",
   pkFilesSession: "Reusable in this page. Provide the files again after reloading.",
   pkImportedFonts: "Imported fonts",
