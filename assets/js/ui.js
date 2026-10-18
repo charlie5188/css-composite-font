@@ -1399,6 +1399,7 @@ export function renderImportedFonts() {
   const query = searchKey($('#ffSearch').value), box = $('#ffOptions');
   const all = [...importedFonts.values()].filter(entry => files.has(entry.font.fileId));
   const entries = all.filter(entry => searchKey(`${entry.family} ${entry.style} ${entry.font.fileName}`).includes(query));
+  $('#ffDrop').parentElement.classList.toggle('is-empty', !all.length);
   $('#ffLibrary').hidden = !all.length; fileObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
   $('#ffResults').textContent = T('pkResults', { n: entries.length });
   box.innerHTML = entries.length ? entries.map((entry, i) => `<button class="font-option" type="button" role="option" tabindex="${i ? -1 : 0}" aria-selected="${pickCand?.fileId === entry.font.fileId}" data-imported="${esc(entry.font.fileId)}"><span class="font-option-name">${esc(entry.family)}${entry.style ? ' · ' + esc(entry.style) : ''}</span><span class="font-option-sample" hidden>${esc(catalogSample(catalogInfo(entry.family)))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoImportedResults'))}</p>`;
@@ -1475,12 +1476,12 @@ export let pickVary = {};
 export const axStep = (lo, hi) => hi - lo <= 2 ? 0.01 : hi - lo <= 30 ? 0.1 : 1;
 export function renderAxes() {
   const box = $('#pkAxes'), f = pickCand, ax = f ? extraAxes(f) : [];
-  box.hidden = !ax.length && !f?.axesUnknown;
+  box.hidden = !ax.length && !f?.axesUnknown; syncPickerUseLabel();
   if (box.hidden) return applySampleAxes();
   let body = `<p class="hint">${esc(T('axUnknown'))}</p>`;
   if (ax.length) {
     const g = f.kind === 'google';
-    /* Keep common axes first; all axes are direct settings below the specimen. */
+    /* Keep common axes first; all axis settings live together above the footer actions. */
     const MAIN = ['wdth', 'opsz', 'GRAD', 'slnt'], rank = t => MAIN.includes(t) ? MAIN.indexOf(t) : 9;
     const sorted = [...ax].sort((x, y) => rank(x[0]) - rank(y[0]) || (x[0] < y[0] ? -1 : 1));
     const row = ([t, lo, hi, def]) => {
@@ -1608,8 +1609,16 @@ function syncPickerMetadata(f) {
   $('#pkInfoSource').textContent = !f ? '' : f.kind === 'google' ? 'Google Fonts' : f.kind === 'local' ? T('srcLocal') : f.fileName || T('srcFile');
   $('#pkInfoScript').textContent = labels[script] ? T(labels[script]) : T('pkNotProvided');
 }
+function syncPickerUseLabel() {
+  const key = pickerApplyBusy ? 'pkMatching' : pickCand && (pickerWeightAxis(pickCand) || extraAxes(pickCand).length) ? 'pkUseConfig' : 'pkUse';
+  $('#pkOk').dataset.t = key; $('#pkOk').textContent = T(key);
+}
 function syncPickerProof(f, { preserveInput = false } = {}) {
   syncPickerMetadata(f);
+  // Keep the mounted editor draft, but expose only one empty state until a candidate exists.
+  $('#pkEmptyState').hidden = !!f; $('#pkDetailContent').hidden = !f;
+  picker.querySelector('.pk-detail').classList.toggle('is-empty', !f);
+  syncPickerUseLabel();
   const axis = pickerWeightAxis(f), weights = f?.kind === 'google' ? gfWeights(f.family) : null;
   const key = f ? fontKey(f) + '|' + (f.weight || 400) : '';
   if (key !== pickerProofKey) { pickerProofKey = key; pickerProofWeight = f?.weight || 400; }
@@ -1618,7 +1627,7 @@ function syncPickerProof(f, { preserveInput = false } = {}) {
   $('#pkWeightControl').hidden = !f;
   $('#gfApplyField').hidden = !pickW || f?.kind !== 'google';
   $('#lfVarField').hidden = f?.kind !== 'local' || localData.has(f.name);
-  $('#pkSelectedName').textContent = f?.kind === 'file' ? importedFonts.get(f.fileId)?.family || f.fileName : f?.kind === 'google' ? f.family : f?.name || T('pkEmpty');
+  $('#pkSelectedName').textContent = f?.kind === 'file' ? importedFonts.get(f.fileId)?.family || f.fileName : f?.kind === 'google' ? f.family : f?.name || '';
   $('#lfFaceField').hidden = f?.kind !== 'local' || !localGroups().some(([, faces]) => faces.length > 1 && faces.some(face => face.fullName === f.name));
   syncWeightControl({ input: $('#pkProofWeightNum'), slider: $('#pkProofWeight'), ticks: $('#pkProofTicks') }, { ...pickerWeightDomain(), value: pickerProofWeight, label: wTip, locale: UI, preserveInput });
   $('#ffWeightField').hidden = !pickW || f?.kind !== 'file' || !f.axis;
@@ -1719,7 +1728,7 @@ export function syncGfWeight() {
     sel.innerHTML = available.map(w => `<option value="${hasAuto && w === auto ? 0 : w}">${w}${hasAuto && w === auto ? ' · ' + esc(T('wAutoTag')) : ''}</option>`).join('');
     sel.value = hasAuto && (!raw || +raw === 0 || nearest(wanted) === auto) ? '0' : String(nearest(wanted));
   }
-  num.hidden = !axis; sel.hidden = !!axis;
+  num.hidden = !axis; sel.hidden = !!axis; syncPickerUseLabel();
 }
 export function gfWeightVal() {
   const num = $('#gfWeightNum');
@@ -1813,8 +1822,8 @@ function resolvePickerDraft(st, key, W, depth = 0) {
 }
 function setPickerApplyBusy(busy) {
   pickerApplyBusy = busy;
-  picker.querySelector('.pk-sources').inert = busy; picker.querySelector('.pk-detail').inert = busy; picker.querySelector('.tabs').inert = busy; $('#pkScope').inert = busy;
-  $('#pkAutoFit').disabled = busy; $('#pkOk').disabled = busy; $('#pkOk').textContent = T(busy ? 'pkMatching' : 'pkUse');
+  picker.querySelector('.pk-sources').inert = busy; picker.querySelector('.pk-detail').inert = busy; picker.querySelector('.tabs').inert = busy; $('#pkScope').inert = busy; $('#pkAxes').inert = busy;
+  $('#pkAutoFit').disabled = busy; $('#pkOk').disabled = busy; syncPickerUseLabel();
   if (busy) $('#pkOk').setAttribute('aria-busy', 'true'); else $('#pkOk').removeAttribute('aria-busy');
 }
 async function applyPicker() {
@@ -2009,7 +2018,7 @@ export function applyUI() {
   document.querySelectorAll('[data-th]').forEach(el => { el.innerHTML = T(el.dataset.th); });
   document.querySelectorAll('[data-ta]').forEach(el => el.dataset.ta.split(';').forEach(p => { const [a, k] = p.split(':'); el.setAttribute(a, T(k)); }));
   document.querySelectorAll('[data-ui]').forEach(el => { el.hidden = el.dataset.ui !== UI; });
-  syncPickerNumbers();
+  syncPickerNumbers(); syncPickerUseLabel();
   if (picker.open && pickTab !== 'file') { renderCatalog(); showLocalReadState(); }
   renderAboutToc();
   document.querySelectorAll('#moreMenu [data-ui-lang]').forEach(b => { b.setAttribute('aria-checked', b.dataset.uiLang === UI); b.tabIndex = b.dataset.uiLang === UI ? 0 : -1; });

@@ -988,9 +988,51 @@ test('选字标题关闭不保存；可变轴展开后没有第二层折叠', as
   for (const axis of ['SOFT', 'WONK']) await expect(page.locator(`#pkAxes input[type=number][data-ax="${axis}"]`)).toBeVisible();
   await expect(page.locator('#pkAxes details')).toHaveCount(0);
   await expect(page.locator('#pkAxes')).toHaveJSProperty('tagName', 'SECTION');
-  expect(await page.locator('#pkAxes').evaluate(el => el.parentElement.classList.contains('pk-detail'))).toBe(true);
+  expect(await page.locator('#pkAxes').evaluate(el => el.parentElement.classList.contains('pk-footer'))).toBe(true);
   await page.locator('#pkAxes input[type=number][data-ax=SOFT]').fill('37');
   await page.locator('#pkClose').click();
   await expect(page.locator('#picker')).not.toBeVisible();
   expect(await matchSettings(page)).toEqual(before);
+});
+
+
+test('未选字体只显示空状态：大拖放区导入后收紧，失败与切换保留正确状态', async ({ page }) => {
+  await fixture(page); await page.locator('#pkSample').fill('Draft 永国字体');
+  await page.locator('#picker [data-src="file"]').click();
+  await expect(page.locator('#pkEmptyState')).toBeVisible();
+  await expect(page.locator('#pkDetailContent')).toBeHidden();
+  await expect(page.locator('#pkAxes')).toBeHidden(); await expect(page.locator('#pkOk')).toBeDisabled();
+  expect(await page.locator('#ffDrop').evaluate(el => { const drop = el.getBoundingClientRect(), pane = el.parentElement.getBoundingClientRect(); return drop.height > pane.height * .8 && Math.abs(drop.width - pane.width) < 2; })).toBe(true);
+  await page.locator('#picker [data-src="library"]').click();
+  await expect(page.locator('#pkEmptyState')).toBeHidden(); await expect(page.locator('#pkSample')).toHaveValue('Draft 永国字体');
+  await page.locator('#picker [data-src="file"]').click();
+  await page.locator('#ffFile').setInputFiles({ name:'broken.ttf', mimeType:'font/ttf', buffer:Buffer.from('invalid') });
+  await expect(page.locator('#ffError')).toContainText('broken.ttf');
+  await expect(page.locator('#pkEmptyState')).toBeVisible(); await expect(page.locator('#pkOk')).toBeDisabled();
+  await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
+  await expect(page.locator('#pkEmptyState')).toBeHidden(); await expect(page.locator('#pkDetailContent')).toBeVisible();
+  await expect(page.locator('#pkOk')).toBeEnabled(); await expect(page.locator('#pkOk')).toHaveText('使用此配置');
+  expect(await page.locator('#ffDrop').evaluate(el => el.getBoundingClientRect().height < 100)).toBe(true);
+  await expect(page.locator('#pkSample')).toHaveValue('Draft 永国字体');
+});
+
+test('可变轴位于 footer，确认文案随字体变化，窄屏仍可操作与确认', async ({ page }) => {
+  await fixture(page);
+  await page.locator('#gfSearch').fill('Fraunces'); await page.locator('#gfOptions [data-family="Fraunces"]').click();
+  await expect(page.locator('#pkOk')).toBeEnabled(); await expect(page.locator('#pkOk')).toHaveText('使用此配置');
+  expect(await page.locator('#pkAxes').evaluate(el => { const footer = el.closest('footer'), axes = el.getBoundingClientRect(), actions = footer.querySelector('.pk-actions').getBoundingClientRect(); return !!footer && axes.bottom <= actions.top + 1; })).toBe(true);
+  await page.locator('#pkSample').fill('Hamburg '.repeat(180));
+  await expect(page.locator('#pkAxes input[type=number][data-ax=SOFT]')).toBeInViewport();
+  await page.locator('#pkInfoTab').click(); await expect(page.locator('#pkAxes')).toBeVisible();
+  for (const [lang, label] of [['en','Use this configuration'],['ja','この設定を使う'],['tw','使用此設定'],['zh','使用此配置']]) {
+    await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
+    await expect(page.locator('#pkOk')).toHaveText(label);
+  }
+  await page.setViewportSize({width:390,height:844}); await page.emulateMedia({colorScheme:'dark'});
+  await page.locator('#pkAxes input[type=number][data-ax=SOFT]').fill('37');
+  await expect(page.locator('#pkOk')).toBeInViewport();
+  expect(await page.locator('#picker').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await page.evaluate(async () => (await import('./assets/js/core.js')).seedVf('Shippori Mincho'));
+  await page.locator('#gfSearch').fill('Shippori Mincho'); await page.locator('#gfOptions [data-family="Shippori Mincho"]').click();
+  await expect(page.locator('#pkAxes')).toBeHidden(); await expect(page.locator('#pkOk')).toHaveText('使用这个字体');
 });

@@ -226,6 +226,10 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 /* Yellow notices for font/browser/setting conflicts; remaining selectors are legacy elements toggling .warn / .caution. */
 .file-drop{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-3);padding:var(--sp-4);border:1px dashed var(--line);border-radius:var(--r)}
 .file-drop.dragging{border-color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent)}
+/* Empty surfaces show one visual, title and short prompt instead of disabled controls. */
+.empty-state{display:grid;justify-items:center;align-content:center;gap:var(--sp-3);padding:var(--sp-5);text-align:center;color:var(--muted)}
+.empty-state .empty-title{margin:0;font-size:var(--fs-xl);font-weight:600;color:var(--ink)}
+.empty-state p{margin:0;font-size:var(--fs-m);line-height:1.6}
 /* Font choices share one stable name/specimen layout across font sources. */
 .font-options{container-type:inline-size;display:grid;align-content:start;overflow:auto;min-height:84px;height:min(var(--font-choice-max,320px),calc(var(--font-choice-count,4)*var(--font-choice-row,80px) + 8px));gap:var(--sp-1);padding:var(--sp-1);border:1px solid var(--line);border-radius:var(--r)}
 .font-option{display:grid;grid-template-rows:auto 32px;gap:var(--sp-1);text-align:left;width:100%;min-height:76px;padding:var(--sp-2) var(--sp-3);border:1px solid transparent;border-radius:var(--r);background:transparent;color:var(--ink);cursor:pointer}
@@ -833,10 +837,20 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 /* Give browsing most of the workspace; its scroll position is independent of the selected font's details. */
 .pk-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;column-gap:0;overflow:hidden;min-height:0}
 .pk-sources,.pk-detail{display:grid;align-content:start;gap:var(--sp-4);min-width:0}
-.pk-sources{grid-column:1;grid-row:1 / -1;min-height:0;overflow:hidden;padding-inline-end:var(--sp-5)}
+.pk-sources{grid-template-rows:minmax(0,1fr);grid-column:1;grid-row:1 / -1;min-height:0;overflow:hidden;padding-inline-end:var(--sp-5)}
 .pk-detail{grid-column:2;grid-row:1;grid-auto-rows:max-content;min-height:0;overflow:auto;padding:var(--sp-3) 0 var(--sp-4) var(--sp-5);border-inline-start:1px solid var(--line);scrollbar-gutter:stable}
-.pk-sources>[data-pane="library"]{height:100%;min-height:0;grid-template-rows:minmax(0,1fr)}
-.pk-sources>[data-pane="file"]{min-height:0;max-height:100%;overflow:auto}
+.pk-sources>[data-pane="library"]{display:grid;height:100%;min-height:0;grid-template-rows:minmax(0,1fr)}
+.pk-sources>[data-pane="file"]{display:flex;flex-direction:column;height:100%;min-height:0;max-height:100%;overflow:auto}
+.pk-sources>[data-pane="file"].is-empty #ffDrop{flex:1;min-height:240px;flex-direction:column;justify-content:center;text-align:center}
+.pk-sources>[data-pane="file"]>#ffName,.pk-sources>[data-pane="file"]>#ffError{flex:none}
+.pk-detail-content{display:grid;gap:var(--sp-4);min-width:0}
+.pk-detail.is-empty{align-content:center}
+.font-empty-visual{position:relative;display:grid;place-items:center;width:140px;height:140px;margin-bottom:var(--sp-4);border:1px solid var(--line);color:var(--faint);background:linear-gradient(var(--line),var(--line)) center/1px 100% no-repeat,linear-gradient(var(--line),var(--line)) center/100% 1px no-repeat;font-family:var(--generic)}
+.font-empty-visual>span{font-size:100px;line-height:1}
+.font-empty-visual>i{position:absolute;right:-20px;bottom:-16px;padding-inline:var(--sp-1);font:italic 48px/1 Georgia,serif;background:var(--sheet)}
+/* Keep axis settings above confirmation on desktop; long axis lists never push actions out of view. */
+.pk-footer{grid-column:2;grid-row:2;min-height:0;min-width:0;padding-inline-start:var(--sp-5);border-inline-start:1px solid var(--line)}
+.pk-footer>.pk-axes{max-height:40dvh;overflow:auto;padding:var(--sp-3) var(--sp-2) var(--sp-3) 0;scrollbar-gutter:stable}
 .pk-sources>[data-pane="library"]>.pk-browse{display:flex;flex-direction:column;min-height:0}
 #gfOptions{flex:1 1 auto;height:auto;max-height:calc(var(--font-choice-count,4)*96px)}
 .pk .font-options{--font-choice-max:520px;--font-choice-row:96px}
@@ -860,15 +874,19 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
   #picker{--picker-gap:16px;width:calc(100vw - 32px)}
   .pk{padding:var(--sp-4)}
   /* Use one workspace scroll on narrow screens so neither pane becomes a tiny nested viewport. */
-  .pk-workspace{grid-template-columns:minmax(0,1fr);grid-template-rows:max-content max-content auto;overflow:auto;align-content:start;gap:var(--sp-4)}
+  .pk-workspace{grid-template-columns:minmax(0,1fr);grid-template-rows:max-content max-content;grid-auto-rows:max-content;overflow:auto;align-content:start;gap:var(--sp-4)}
   .pk-sources,.pk-detail{grid-column:1;min-height:auto;overflow:visible;scrollbar-gutter:auto}
-  .pk-sources{grid-row:1;padding-inline-end:0}
+  .pk-sources{grid-template-rows:auto;grid-row:1;padding-inline-end:0}
   .pk-detail{grid-row:2}
   .pk-sources>[data-pane="library"]{height:auto;grid-template-rows:auto}
-  .pk-sources>[data-pane="file"]{max-height:none;overflow:visible}
+  .pk-sources>[data-pane="file"]{height:auto;max-height:none;overflow:visible}
+  .pk-sources>[data-pane="file"].is-empty #ffDrop{min-height:min(32dvh,240px)}
   #gfOptions{flex:none;height:min(220px,calc(var(--font-choice-count,4)*96px))}
   .pk-detail{padding:var(--sp-4) 0 0;border-inline-start:0;border-block-start:1px solid var(--line)}
-  .pk-workspace>.pk-actions{grid-column:1;grid-row:3;position:sticky;bottom:0;z-index:2;padding:var(--sp-3) 0 0;border-inline-start:0;background:var(--sheet)}
+  /* The footer remains one semantic group, while axes join the single workspace scroller on narrow screens. */
+  .pk-footer{display:contents}
+  .pk-footer>.pk-axes{grid-column:1;max-height:none;overflow:visible;padding:0;scrollbar-gutter:auto}
+  .pk-footer>.pk-actions{grid-column:1;grid-row:auto;position:sticky;bottom:0;z-index:2;padding:var(--sp-3) 0 0;border-inline-start:0;background:var(--sheet)}
   .pk .font-options{--font-choice-max:220px}
 }
 .pk-header{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3)}
@@ -899,7 +917,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-punct.bad{color:var(--caution);background:var(--caution-bg);padding:2px 7px;border-radius:var(--r)}
 #pkSample:not([hidden])+.pk-meta{border-top:1px solid var(--rule);padding-top:10px}
 .pk .settings-pop{max-width:calc(100vw - 64px)}
-.pk-actions{grid-column:2;grid-row:2;padding-inline-start:var(--sp-5);border-inline-start:1px solid var(--line);display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:var(--sp-3);padding-top:var(--sp-4)}
+.pk-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:var(--sp-3);padding-top:var(--sp-4)}
 #lfMsg{margin-top:8px}
 .pk-file{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px}
 .pk-file+.pk-file,.pk-file+.field{margin-top:12px}
@@ -911,7 +929,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-selected h5{margin:0;font-size:var(--fs-xl);font-weight:600;overflow-wrap:anywhere}
 .pk-apply{display:grid;gap:var(--sp-3)}
 .pk-apply>.field{max-width:180px}
-.pk-sources>[data-pane]{display:grid;gap:var(--sp-3)}
+.pk-sources>[data-pane]{gap:var(--sp-3)}
 .pk-browse{margin-bottom:0}
 .pk input[type=checkbox],.pk input[type=radio]{accent-color:var(--ink)}
 .pk .pk-auto-fit{flex-basis:100%;margin:0 auto 0 0}
