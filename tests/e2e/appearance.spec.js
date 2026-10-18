@@ -41,7 +41,13 @@ test('外观：手动浅深色覆盖系统，跟随系统实时更新并在重�
 test('校样颜色：即时预览、有效色码与恢复默认；预设、撤销、分享及导出保持独立', async ({ page }) => {
   await page.emulateMedia({ colorScheme: 'light' }); await open(page);
   await expect.poll(() => page.evaluate(async () => (await import('./assets/js/core.js')).hist.list.length)).toBeGreaterThan(0);
-  const before = await config(page);
+  // Font downloads and measured metrics also update export output. Settle those before testing color isolation.
+  let before, same = 0;
+  await expect.poll(async () => {
+    const current = await config(page);
+    same = before && JSON.stringify(current) === JSON.stringify(before) && !/正在|加载中/.test(current.output) ? same + 1 : 0;
+    before = current; return same;
+  }, { intervals: [500], timeout: 20_000 }).toBeGreaterThanOrEqual(3);
   await colors(page);
   await page.fill('#proofBgHex', '#F5F0E8'); await page.locator('#proofBgHex').press('Enter');
   await page.locator('[data-appearance-color="text"]').fill('#234567');

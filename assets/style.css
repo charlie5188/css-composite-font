@@ -936,7 +936,6 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 #pkSample:hover{border-color:var(--line)}
 #pkSample:focus{border-color:var(--ink);outline:none}
 .pk-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:var(--fs-s);color:var(--muted)}
-.pk-punct.bad{color:var(--caution);background:var(--caution-bg);padding:2px 7px;border-radius:var(--r)}
 #pkSample:not([hidden])+.pk-meta{border-top:1px solid var(--rule);padding-top:10px}
 .pk .settings-pop{max-width:calc(100vw - 64px)}
 .pk-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:var(--sp-3);padding-top:var(--sp-4)}

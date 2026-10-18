@@ -10,7 +10,7 @@ import { FIT_SAMPLES, chooseFits, createFitter } from './autofit.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, classOf, inRanges, parseChars, rebuildClassRanges } from './unicode.js';
 import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownFontAt, ownSize, presetDirty, presetSnap, rebuild, fileStyle, fileWeight, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
-import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, wTip, MISS_SKIP, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, stepperCell, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
+import { REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, wTip, MISS_SKIP, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, stepperCell, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
 /* ================= Interaction: character-class table ================= */
@@ -1256,7 +1256,7 @@ function libraryChoices() {
     // Names can establish a positive match, but absence of a named bold face cannot rule out an unread variable font.
     const style = known.style || (named !== 'other' ? named : /script|hand|callig|brush/i.test(family) ? 'other' : null);
     const weightInfo = localWeightInfo(faces, localAxes, localWeights);
-    const face = faces.find(f => /regular|normal|book/i.test(f.style))?.fullName || faces[0].fullName;
+    const face = faces.find(f => /regular|normal|book|plain/i.test(f.style))?.fullName || faces[0].fullName;
     choices.push({ ...known, ...weightInfo, italic: localItalicInfo(faces, localAxes), family, coverage: catalogCoverageByFace.get(face) || null, styles: catalogStyles(family, style), aliases: known.aliases + ' ' + faces.map(f => f.fullName + ' ' + f.postscriptName).join(' '), style,
       kind: 'local', id: 'local:' + family, face });
   }
@@ -1292,7 +1292,7 @@ function syncLocalWeightLabels() {
 }
 // Weight previews can switch installed binaries within the selected width/slant variant, without changing the pending choice.
 function localVariant(style) {
-  return style.toLowerCase().replace(/extra[ -]?light|ultra[ -]?light|semi[ -]?bold|demi[ -]?bold|extra[ -]?bold|ultra[ -]?bold|hairline|thin|light|regular|normal|roman|book|medium|bold|black|heavy|\b[1-9]00\b|\bw\d+\b/g, '').replace(/[\s_-]/g, '');
+  return style.toLowerCase().replace(/extra[ -]?light|ultra[ -]?light|semi[ -]?bold|demi[ -]?bold|extra[ -]?bold|ultra[ -]?bold|hairline|thin|light|regular|normal|roman|book|plain|medium|bold|black|heavy|\b[1-9]00\b|\bw\d+\b/g, '').replace(/[\s_-]/g, '');
 }
 function localPickerFaces(f) {
   if (f?.kind !== 'local') return [];
@@ -1330,7 +1330,7 @@ function selectLocalFamily(family, keepFace = false) {
   const faces = localGroups().find(([name]) => name === family)?.[1]; if (!faces?.length) return;
   const current = $('#lfName').value, query = searchKey($('#gfSearch').value);
   const exact = faces.find(f => searchKey(f.fullName) === query || searchKey(f.postscriptName) === query);
-  const face = (keepFace && faces.find(f => f.fullName === current)) || exact || faces.find(f => /regular|normal|book/i.test(f.style)) || faces[0];
+  const face = (keepFace && faces.find(f => f.fullName === current)) || exact || faces.find(f => /regular|normal|book|plain/i.test(f.style)) || faces[0];
   $('#lfFaceField').hidden = !needsLocalFaceSelection(faces);
   $('#lfFace').innerHTML = faces.map(f => `<option value="${esc(f.fullName)}">${esc(f.style)}</option>`).join('');
   $('#lfFace').value = face.fullName; $('#lfName').value = face.fullName;
@@ -1612,19 +1612,7 @@ export async function renderCoverage(s, f) {
     return `<dt>${esc(T(k))}</dt><dd class="cov-result ${cls}">${esc(T('pkCoverageResult', { have, total: list.length }))}</dd>`;
   }).join('');
 }
-/* Also show whether picker punctuation is centered (Taiwan/Hong Kong) or lower-left (Mainland/Japan); warn when it differs from the current language. */
-export function renderPunct(s, f, token = pickerPreviewToken, attempts = 0) {
-  const el = $('#pkPunct'), lang = state.typo.lang, want = REGION_OF_LANG[lang], pos = punctPos(s, lang);
-  if (pos === undefined) { el.hidden = true; if (attempts < 20) setTimeout(() => { if (picker.open && pickCand === f && token === pickerPreviewToken) renderPunct(s, f, token, attempts + 1); }, 300); return; }
-  el.hidden = !pos;
-  if (!pos) return;
-  el.textContent = T(pos === 'center' ? 'pkPunctCenter' : 'pkPunctCorner');
-  el.classList.toggle('bad', want in PUNCT_CENTER && (pos === 'center') !== PUNCT_CENTER[want]);
-  // Keep matching punctuation information in details; only mismatches interrupt the specimen.
-  (el.classList.contains('bad') ? picker.querySelector('.pk-preview') : $('#pkDetails .ax-body')).append(el);
-}
 export function resetCoverage() {
-  $('#pkPunct').hidden = true;
   covTok++;
   $('#pkCov').innerHTML = ''; $('#pkCovStatus').textContent = ''; pickerMissing = null; syncPickerMirror();
 }
@@ -1666,8 +1654,22 @@ function syncPickerMetadata(f) {
   put('pkInfoSource', !f ? '' : f.kind === 'google' ? 'Google Fonts' : f.kind === 'local' ? T('srcLocal') : f.fileName || T('srcFile'));
   put('pkInfoScript', labels[script] ? T(labels[script]) : '', 'pkMetaUnavailable');
   const locale = UI === 'en' ? 'en' : UI;
-  put('pkMetaLocalized', names?.localized[locale] || (UI === 'tw' ? names?.localized.zh : UI === 'zh' ? names?.localized.tw : ''));
+  const primaryLocale = names?.localized[locale] ? locale : UI === 'tw' ? 'zh' : UI === 'zh' ? 'tw' : locale;
+  const localizedName = names?.localized[primaryLocale];
+  put('pkMetaLocalized', localizedName);
   put('pkMetaEnglish', names?.localized.en);
+  const familyLabel = $('#pkMetaFamilyLabel'), nameList = familyLabel.parentElement;
+  nameList.querySelectorAll('[data-pk-name]').forEach(el => el.remove());
+  const languages = new Intl.DisplayNames([UI === 'tw' ? 'zh-TW' : UI], { type: 'language' });
+  for (const [language, value] of Object.entries(names?.localized || {})) {
+    // The primary and English rows already show these names; expose other embedded language names once.
+    if (language === primaryLocale || language === 'en') continue;
+    const code = language === 'tw' ? 'zh-Hant' : language;
+    const label = language.startsWith('und-') ? T('pkMetaOtherLanguage', { code: language.split('-').slice(2).join('-') }) : languages.of(code);
+    const dt = document.createElement('dt'), dd = document.createElement('dd');
+    dt.dataset.pkName = dd.dataset.pkName = ''; dt.textContent = T('pkMetaLanguageName', { language: label }); dd.textContent = value;
+    nameList.insertBefore(dt, familyLabel); nameList.insertBefore(dd, familyLabel);
+  }
   put('pkMetaFamily', family);
   put('pkMetaStyle', names?.style || record?.style || (f?.kind === 'file' ? importedFonts.get(f.fileId)?.style : ''));
   put('pkMetaPostscript', names?.postscript || record?.postscriptName);
@@ -1771,7 +1773,7 @@ async function paintPickerCandidate() {
     st.parentElement.classList.toggle('vh', visible);
     $('#pkLocalFallback').hidden = f.kind !== 'local' || !src.faces[0]?.buffer;
     showVfTag(pickerWeightAxis(f)); renderItal();
-    renderCoverage(src, f); renderPunct(src, f); ok.disabled = false;
+    renderCoverage(src, f); ok.disabled = false;
   } catch (error) {
     if (!current()) return;
     const slow = error.message === 'picker-timeout';

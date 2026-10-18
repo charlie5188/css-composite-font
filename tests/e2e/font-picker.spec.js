@@ -1096,7 +1096,7 @@ test('信息面板：统一字段、实际字符数与命名资料，来源缺�
   await expect(page.locator('#pkMetaLicenseUrl a')).toHaveCount(0);
 });
 
-test('字体资料解析：TTF、OTF、WOFF 与 WOFF2 限制，保留中文及英文命名', async ({ page }) => {
+test('字体资料解析：TTF、OTF、WOFF 与 WOFF2 限制，保留多语言命名', async ({ page }) => {
   await fixture(page);
   const result = await page.evaluate(async () => {
     const { readFontMetadata } = await import('./assets/js/font-metadata.js');
@@ -1113,7 +1113,7 @@ test('字体资料解析：TTF、OTF、WOFF 与 WOFF2 限制，保留中文及�
     const woff = await readFontMetadata(out.buffer);
     const unsupported = new ArrayBuffer(48); new DataView(unsupported).setUint32(0, 0x774f4632);
     const woff2 = await readFontMetadata(unsupported);
-    const entries = [[4, 0x804, '测试字体 常规'], [4, 0x409, 'Example Regular'], [6, 0x409, 'Example-Regular']];
+    const entries = [[4, 0x804, '测试字体 常规'], [4, 0x409, 'Example Regular'], [4, 0x411, 'テストフォント 標準'], [4, 0x401, 'خط الاختبار'], [6, 0x409, 'Example-Regular']];
     const nameSize = 6 + entries.length * 12 + entries.reduce((sum, [, , value]) => sum + value.length * 2, 0);
     const named = new ArrayBuffer(28 + nameSize), namedView = new DataView(named); namedView.setUint32(0, 0x00010000); namedView.setUint16(4, 1);
     namedView.setUint32(12, 0x6e616d65); namedView.setUint32(20, 28); namedView.setUint32(24, nameSize);
@@ -1129,6 +1129,7 @@ test('字体资料解析：TTF、OTF、WOFF 与 WOFF2 限制，保留中文及�
     return { jp, woff, woff2, names };
   });
   expect(result.names.localized.zh).toBe('测试字体 常规'); expect(result.names.localized.en).toBe('Example Regular'); expect(result.names.postscript).toBe('Example-Regular');
+  expect(result.names.localized.ja).toBe('テストフォント 標準'); expect(result.names.localized.ar).toBe('خط الاختبار');
   expect(result.jp.names.style).toBe('Thin'); expect(result.jp.characterCount).toBe(52);
   expect(result.woff.names.postscript).toBe('Jost-Regular'); expect(result.woff.characterCount).toBe(524);
   expect(result.woff2.supported).toBe(false); expect(result.woff2.names).toBe(null); expect(result.woff2.characterCount).toBe(null); expect(result.woff2.variable).toBe(null);
@@ -1137,7 +1138,7 @@ test('字体资料解析：TTF、OTF、WOFF 与 WOFF2 限制，保留中文及�
 test('本机分档字体：预览字重切换家族的真实文件，不改变所选款式或应用配置', async ({ page }) => {
   await page.addInitScript(() => {
     // Reuse a licensed static font with explicit weight metadata to model named installed faces.
-    window.queryLocalFonts = async () => [['Fixture Static','Regular',400], ['Fixture Static','Bold',700], ['Fixture Variants','Regular',400], ['Fixture Variants','Bold',700], ['Fixture Variants','Italic',400], ['Fixture Variants','Condensed Bold',700]].map(([family,style,weight]) => ({ family, fullName:family+' '+style, postscriptName:(family+'-'+style).replaceAll(' ',''), style,
+    window.queryLocalFonts = async () => [['Fixture Static','Regular',400], ['Fixture Static','Bold',700], ['Fixture Plain','Plain',400], ['Fixture Plain','Bold',700], ['Fixture Variants','Regular',400], ['Fixture Variants','Bold',700], ['Fixture Variants','Italic',400], ['Fixture Variants','Condensed Bold',700]].map(([family,style,weight]) => ({ family, fullName:family+' '+style, postscriptName:(family+'-'+style).replaceAll(' ',''), style,
       blob: async () => {
         const buffer = await (await fetch('/tests/fixtures/NotoSansJP-Subset.ttf')).arrayBuffer(), v = new DataView(buffer);
         for (let j = 0; j < v.getUint16(4); j++) { const q = 12 + j * 16; if (v.getUint32(q) === 0x4f532f32) v.setUint16(v.getUint32(q + 8) + 4, weight); }
@@ -1164,7 +1165,13 @@ test('本机分档字体：预览字重切换家族的真实文件，不改变�
   await page.locator('#pkProofWeightNum').press('ArrowUp'); await expect.poll(shown).toBe('Fixture Static Bold');
   await page.locator('#pkOk').click();
   expect(await page.evaluate(async () => (await import('./assets/js/core.js')).state.classes.han.font.name)).toBe('Fixture Static Regular');
-  await openClassPicker(page,'han'); await page.locator('#gfSearch').fill('Fixture Variants'); await page.locator('#gfOptions [data-local-family]').click();
+  await openClassPicker(page,'han'); await page.locator('#gfSearch').fill('Fixture Plain'); await page.locator('#gfOptions [data-local-family]').click();
+  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state','ready');
+  await expect(page.locator('#lfFaceField')).toBeHidden(); await expect.poll(shown).toBe('Fixture Plain Plain');
+  await page.locator('#pkProofWeightNum').fill('700'); await expect.poll(shown).toBe('Fixture Plain Bold');
+  await page.locator('#pkProofWeightNum').fill('400'); await expect.poll(shown).toBe('Fixture Plain Plain');
+  await expect(page.locator('#lfName')).toHaveValue('Fixture Plain Plain');
+  await page.locator('#gfSearch').fill('Fixture Variants'); await page.locator('#gfOptions [data-local-family]').click();
   await page.locator('#lfFace').selectOption('Fixture Variants Italic');
   await expect(page.locator('#pkStatus')).toHaveAttribute('data-state','ready');
   await page.locator('#pkProofWeightNum').fill('700'); await page.locator('#pkProofWeightNum').press('Enter'); await expect.poll(shown).toBe('Fixture Variants Italic');
@@ -1214,4 +1221,37 @@ test('配套斜体：只在适用的导出配置区出现，导入失败保留�
   await expect(page.locator('#ffItalName')).toHaveText('Jost-Italic[wght].ttf');
   await page.locator('#pkAutoFit').uncheck(); await page.locator('#pkOk').click();
   expect(await page.evaluate(async () => { const c = await import('./assets/js/core.js'); return c.italOf(c.state.classes.latin.font)?.fileName; })).toBe('Jost-Italic[wght].ttf');
+});
+
+
+test('信息页显示其他内嵌语言名称，说明合并且不再显示标点位置', async ({ page }) => {
+  await fixture(page);
+  const fs = require('fs'), path = require('path'), source = fs.readFileSync(path.resolve(__dirname, '../fixtures/Jost[wght].ttf'));
+  let directory;
+  for (let i = 0; i < source.readUInt16BE(4); i++) { const at = 12 + i * 16; if (source.toString('ascii',at,at+4) === 'name') directory = at; }
+  const start = source.readUInt32BE(directory + 8), count = source.readUInt16BE(start + 2), strings = source.readUInt16BE(start + 4), entries = [];
+  for (let i = 0; i < count; i++) {
+    const at = start + 6 + i * 12, size = source.readUInt16BE(at+8), offset = source.readUInt16BE(at+10);
+    entries.push({ header: Buffer.from(source.subarray(at,at+8)), value:source.subarray(start+strings+offset,start+strings+offset+size) });
+  }
+  for (const [language, text] of [[0x411,'テストフォント 標準'],[0x401,'خط الاختبار']]) {
+    const header = Buffer.alloc(8), value = Buffer.from(text,'utf16le'); value.swap16();
+    header.writeUInt16BE(3,0); header.writeUInt16BE(1,2); header.writeUInt16BE(language,4); header.writeUInt16BE(4,6); entries.push({header,value});
+  }
+  const table = Buffer.alloc(6 + entries.length*12 + entries.reduce((sum,e)=>sum+e.value.length,0)), storage = 6 + entries.length*12;
+  table.writeUInt16BE(entries.length,2); table.writeUInt16BE(storage,4); let offset=0;
+  entries.forEach((entry,i) => { const at=6+i*12; entry.header.copy(table,at); table.writeUInt16BE(entry.value.length,at+8); table.writeUInt16BE(offset,at+10); entry.value.copy(table,storage+offset); offset+=entry.value.length; });
+  const aligned = (source.length+3)&~3, font = Buffer.concat([source,Buffer.alloc(aligned-source.length),table]);
+  font.writeUInt32BE(aligned,directory+8); font.writeUInt32BE(table.length,directory+12);
+  await page.locator('#picker [data-src="file"]').click(); await page.locator('#ffFile').setInputFiles({ name:'Multilingual.ttf', mimeType:'font/ttf', buffer:font });
+  await page.locator('#pkInfoTab').click();
+  await expect(page.locator('#pkDetails [data-pk-name]')).toHaveText(['日语显示名','テストフォント 標準','阿拉伯语显示名','خط الاختبار']);
+  await expect(page.locator('#pkPunct')).toHaveCount(0);
+  await expect(page.locator('[data-t="pkMetaNameNote"], [data-t="pkMetaReferenceNote"]')).toHaveCount(0);
+  await expect(page.locator('[data-t="pkMetaSourceNote"]')).toContainText('授权使用范围');
+  await page.evaluate(async () => { const i=await import('./assets/js/i18n.js'), u=await import('./assets/js/ui.js'); i.setUI('ja'); u.applyUI(); });
+  await expect(page.locator('#pkMetaLocalized')).toHaveText('テストフォント 標準');
+  await expect(page.locator('#pkDetails [data-pk-name]')).toHaveText(['アラビア語表示名','خط الاختبار']);
+  await page.locator('#picker [data-src="library"]').click();
+  await expect(page.locator('#pkDetails [data-pk-name]')).toHaveCount(0);
 });
