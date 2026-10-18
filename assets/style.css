@@ -204,6 +204,8 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 .dlg-form .field input{width:100%}
 .dlg-act{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:10px;padding-top:var(--sp-1)}
 /* Yellow notices for font/browser/setting conflicts; remaining selectors are legacy elements toggling .warn / .caution. */
+.file-drop{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-3);padding:var(--sp-4);border:1px dashed var(--line);border-radius:var(--r)}
+.file-drop.dragging{border-color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent)}
 /* Font choices share one stable name/specimen layout across font sources. */
 .font-options{display:grid;align-content:start;overflow:auto;min-height:120px;height:320px;gap:var(--sp-1);padding:var(--sp-1);border:1px solid var(--line);border-radius:var(--r)}
 .font-option{display:grid;grid-template-rows:auto 32px;gap:var(--sp-1);text-align:left;width:100%;min-height:76px;padding:var(--sp-2) var(--sp-3);border:1px solid transparent;border-radius:var(--r);background:transparent;color:var(--ink);cursor:pointer}

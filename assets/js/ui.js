@@ -1,5 +1,6 @@
 import { refresh } from './refresh.js';
 import { catalogOrder, filterCatalog } from './font-catalog.js';
+import { importFontFile, importedFonts, rememberImportedFont } from './font-files.js';
 import { initShare } from './share.js';
 import { initAppearance } from './appearance.js';
 import { FIT_SAMPLES, chooseFits, createFitter } from './autofit.js';
@@ -1304,11 +1305,48 @@ export function renderLocalFonts() {
   $('#lfFaceField').hidden = !selected;
   if (selected) selectLocalFamily(selected[0], true);
 }
+let fileObserver, fileImportToken = 0;
+function chooseImported(id) {
+  const entry = importedFonts.get(id); if (!entry || !files.has(id)) return;
+  pickCand = { ...entry.font };
+  if (pickCand.axis) pickCand.weight = Math.max(pickCand.axis[0], Math.min(pickCand.axis[1], pickW || 400));
+  updateCand();
+  $('#ffOptions').querySelectorAll('[data-imported]').forEach(el => el.setAttribute('aria-selected', el.dataset.imported === id));
+}
+export function renderImportedFonts() {
+  const query = $('#ffSearch').value.trim().toLowerCase(), box = $('#ffOptions');
+  const all = [...importedFonts.values()].filter(entry => files.has(entry.font.fileId));
+  const entries = all.filter(entry => `${entry.family} ${entry.style} ${entry.font.fileName}`.toLowerCase().includes(query));
+  $('#ffLibrary').hidden = !all.length; fileObserver?.disconnect();
+  box.innerHTML = entries.length ? entries.map((entry, i) => `<button class="font-option" type="button" role="option" tabindex="${i ? -1 : 0}" aria-selected="${pickCand?.fileId === entry.font.fileId}" data-imported="${esc(entry.font.fileId)}"><span class="font-option-name">${esc(entry.family)}${entry.style ? ' · ' + esc(entry.style) : ''}</span><span class="font-option-sample" hidden>Ag 0123</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
+  fileObserver = new IntersectionObserver(events => events.forEach(async entry => {
+    if (!entry.isIntersecting) return; const el = entry.target; fileObserver.unobserve(el);
+    const font = importedFonts.get(el.dataset.imported)?.font; if (!font) return;
+    const src = source(font); await src.promise;
+    if (!el.isConnected) return;
+    const sample = el.querySelector('.font-option-sample'), status = el.querySelector('[data-font-state]');
+    if (src.status !== 'ok') { status.textContent = T('pkPreviewUnavailable'); return; }
+    sample.style.fontFamily = `"${src.family}", var(--ui)`; sample.hidden = false; status.hidden = true;
+  }), { root: box });
+  box.querySelectorAll('[data-imported]').forEach(el => fileObserver.observe(el));
+}
+async function acceptFontFiles(list) {
+  const target = pickTarget, token = ++fileImportToken, entries = [], failed = [];
+  $('#ffError').textContent = ''; $('#ffError').hidden = true; $('#pkOk').disabled = true;
+  for (const file of list) {
+    try { entries.push(await importFontFile(file)); } catch (error) { failed.push(file.name); }
+  }
+  if (token !== fileImportToken || pickTarget !== target || !picker.open || pickTab !== 'file') return;
+  renderImportedFonts();
+  if (entries.length) chooseImported(entries[0].font.fileId); else updateCand();
+  $('#ffError').textContent = failed.length ? T('pkFileInvalid', { names: failed.join(T('joiner')) }) : ''; $('#ffError').hidden = !failed.length;
+}
 export function setPickTab(tab) {
   pickTab = tab;
   picker.querySelectorAll('[data-src]').forEach(b => b.setAttribute('aria-selected', b.dataset.src === tab));
   picker.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== tab; });
   if (tab === 'local') renderLocalFonts();
+  if (tab === 'file') renderImportedFonts();
   updateCand();
 }
 export function candFromFields() {
@@ -1448,7 +1486,7 @@ export async function renderCoverage(s, f) {
   if (tok !== covTok || pickCand !== f) return;
   const targetMissing = targetChars.filter(ch => miss.has(ch)), targetNote = $('#pkTargetCoverage');
   targetNote.textContent = targetChars.length ? targetMissing.length ? T('pkTargetMissing', { n: targetMissing.length, chars: targetMissing.slice(0, 20).join('') + (targetMissing.length > 20 ? '…' : '') }) : T('pkTargetOk', { n: targetChars.length }) : '';
-  targetNote.classList.toggle('caution', targetMissing.length > 0);
+  targetNote.className = targetMissing.length ? 'callout' : 'hint';
   box.innerHTML = COV_SETS.map(([k, cs]) => {
     const list = [...cs], have = list.filter(c => !miss.has(c)).length;
     const cls = have === list.length ? 'ok' : have ? 'part' : 'none';
@@ -1510,7 +1548,7 @@ export const updateCandSoon = debounce(updateCand, 700);
 /* Strip weight suffixes, such as W3 or Bold, from local names when checking family identity. */
 export const localStem = n => n.replace(/\bW\d$/, '').replace(WORD_RE, '').trim().toLowerCase();
 /* Check whether this is the row's original font, possibly at another weight, name or file. */
-export const sameFontAs = (c, base) => !!c && !!base && c.kind === base.kind && (c.kind === 'google' ? c.family === base.family : c.kind === 'local' ? localStem(c.name) === localStem(base.name) : c === base);
+export const sameFontAs = (c, base) => !!c && !!base && c.kind === base.kind && (c.kind === 'google' ? c.family === base.family : c.kind === 'local' ? localStem(c.name) === localStem(base.name) : c === base || !!c.fileId && c.fileId === base.fileId);
 export function updateScope() {
   const show = !!pickW && !!pickCand && !sameFontAs(pickCand, objOf(pickTarget).font);
   $('#pkScope').hidden = !show;
@@ -1569,6 +1607,7 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   $('#lfName').value = ovf?.kind === 'local' ? ovf.name : pickW ? (state.weightNames[k] || autoName) : cur?.kind === 'local' ? cur.name : '';
   $('#ffPathField').hidden = !(pickW && o.font.kind === 'file');
   if (pickW && o.font.kind === 'file') { const g = guessPath(o.font.fileName, W); $('#ffPath').placeholder = g; $('#ffPath').value = state.weightNames[k] || g; }
+  fileImportToken++; $('#ffSearch').value = ''; $('#ffError').textContent = ''; $('#ffError').hidden = true;
   $('#ffFile').value = ''; $('#ffItal').value = '';
   $('#lfFamilySearch').value = ''; $('#lfManual').open = false;
   $('#lfMsg').hidden = true; $('#lfMsg').classList.remove('caution');
@@ -1595,7 +1634,7 @@ export function initPicker() {
     if (next != null) { e.preventDefault(); options.forEach((el, j) => { el.tabIndex = j === next ? 0 : -1; }); options[next]?.focus(); }
   });
   $('#gfTry').addEventListener('click', () => chooseCatalog($('#gfSearch').value.trim()));
-  picker.addEventListener('close', () => { catalogObserver?.disconnect(); localObserver?.disconnect(); });
+  picker.addEventListener('close', () => { fileImportToken++; catalogObserver?.disconnect(); localObserver?.disconnect(); fileObserver?.disconnect(); });
   picker.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => setPickTab(b.dataset.src)));
   $('#gfFamily').addEventListener('input', updateCandSoon);
   $('#gfFamily').addEventListener('change', updateCand);
@@ -1606,21 +1645,20 @@ export function initPicker() {
   $('#lfName').addEventListener('input', updateCandSoon);
   $('#lfName').addEventListener('change', updateCand);
   $('#lfVar').addEventListener('change', updateCand);
-  $('#ffFile').addEventListener('change', async e => {
-    const file = e.target.files[0]; if (!file) return;
-    const id = 'f' + Date.now().toString(36);
-    files.set(id, { name: file.name, buffer: await file.arrayBuffer() });
-    pickCand = setFontAxes({ kind: 'file', fileId: id, fileName: file.name }, await fileAxes(files.get(id).buffer), pickW || 400);
-    const cls = await fileStyle(files.get(id).buffer); if (cls) pickCand.cls = cls;      // Font-declared serif / sans / other style, used for preset filtering.
-    updateCand();
-  });
+  $('#ffFile').addEventListener('change', e => acceptFontFiles([...e.target.files]));
+  $('#ffSearch').addEventListener('input', renderImportedFonts);
+  $('#ffOptions').addEventListener('click', e => { const el = e.target.closest('[data-imported]'); if (el) chooseImported(el.dataset.imported); });
+  $('#ffOptions').addEventListener('keydown', e => { if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return; e.preventDefault(); const els = [...e.currentTarget.querySelectorAll('[data-imported]')], i = els.indexOf(e.target.closest('[data-imported]')), n = e.key === 'Home' ? 0 : e.key === 'End' ? els.length - 1 : Math.max(0, Math.min(els.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1))); els.forEach((el, j) => { el.tabIndex = j === n ? 0 : -1; }); els[n]?.focus(); });
+  $('#ffDrop').addEventListener('dragover', e => { e.preventDefault(); e.currentTarget.classList.add('dragging'); });
+  $('#ffDrop').addEventListener('dragleave', e => { if (!e.currentTarget.contains(e.relatedTarget)) e.currentTarget.classList.remove('dragging'); });
+  $('#ffDrop').addEventListener('drop', e => { e.preventDefault(); e.currentTarget.classList.remove('dragging'); acceptFontFiles([...e.dataTransfer.files]); });
   /* Attach the italic file to this uploaded font; italic export uses it for this class, deriving other weights by filename. */
   $('#ffItal').addEventListener('change', async e => {
     const file = e.target.files[0]; if (!file || pickCand?.kind !== 'file') return;
     const id = 'f' + Date.now().toString(36) + 'i', buffer = await file.arrayBuffer();
     files.set(id, { name: file.name, buffer });
     pickCand = { ...pickCand, italic: setFontAxes({ fileId: id, fileName: file.name }, await fileAxes(buffer), pickCand.weight) };
-    updateCand();
+    rememberImportedFont(pickCand); updateCand();
   });
   const axBox = $('#pkAxes');
   axBox.addEventListener('input', e => {

@@ -82,3 +82,43 @@ test('本机字体：按家族和样式选择，自动读取可变属性，拒�
   await expect(page.locator('#lfManual')).toHaveAttribute('open', '');
   await expect(page.locator('#lfMsg')).toBeVisible();
 });
+
+
+test('导入字体：重复文件去重，取消后可跨类别复用，无效文件保留原候选', async ({ page }) => {
+  await fixture(page);
+  await page.locator('#picker [data-src="file"]').click();
+  const font = require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf');
+  await page.locator('#ffFile').setInputFiles([font, font]);
+  await expect(page.locator('#ffOptions [data-imported]')).toHaveCount(1);
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  await expect(page.locator('#pkTargetCoverage')).toContainText('缺少');
+  const id = await page.locator('#ffOptions [data-imported]').getAttribute('data-imported');
+  await page.locator('#pkCancel').click();
+  await expect(page.locator('.ct-row[data-id="han"] .fsel')).toHaveValue('own');
+  await page.locator('.ct-row[data-id="latin"] .fsel').selectOption('pick');
+  await page.locator('#picker [data-src="file"]').click();
+  await page.locator('#ffOptions [data-imported]').click();
+  await page.locator('#ffFile').setInputFiles({ name: 'broken.ttf', mimeType: 'font/ttf', buffer: Buffer.from('invalid') });
+  await expect(page.locator('#ffError')).toContainText('broken.ttf');
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  expect(await page.evaluate(async () => (await import('./assets/js/ui.js')).pickCand.fileId)).toBe(id);
+  await page.locator('#pkOk').click();
+  expect(await page.evaluate(async () => { const c = await import('./assets/js/core.js'); return [c.state.classes.latin.font.fileId, c.files.has(c.state.classes.latin.font.fileId)]; })).toEqual([id, true]);
+});
+
+test('导入字体：支持拖入，手机深色可选用；重新载入不假装保留文件', async ({ page }) => {
+  await fixture(page);
+  await page.locator('#picker [data-src="file"]').click();
+  const transfer = await page.evaluateHandle(async () => {
+    const data = new DataTransfer(); data.items.add(new File([await (await fetch('/tests/fixtures/Jost%5Bwght%5D.ttf')).arrayBuffer()], 'Jost.ttf', { type: 'font/ttf' })); return data;
+  });
+  await page.locator('#ffDrop').dispatchEvent('drop', { dataTransfer: transfer });
+  await expect(page.locator('#ffOptions [data-imported]')).toHaveCount(1);
+  await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
+  await expect(page.locator('#pkOk')).toBeInViewport();
+  expect(await page.locator('#picker').evaluate(el => el.scrollWidth <= el.clientWidth)).toBeTruthy();
+  await page.reload(); await page.click('#ltabFonts');
+  await page.locator('.ct-row[data-id="han"] .fsel').selectOption('pick');
+  await page.locator('#picker [data-src="file"]').click();
+  await expect(page.locator('#ffLibrary')).toBeHidden();
+});

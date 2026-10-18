@@ -146,6 +146,7 @@ test('各字重：点击行间距或空白预览，保留导出勾选和输入�
   await expect(page.locator('#wMatrix input[data-wx="700"]')).toBeChecked();
   // Export checkboxes and row-end menus must not also select their row for preview.
   await page.click('#wMatrix input[data-wx="300"]');
+  await expect(page.locator('#wMatrix input[data-wx="300"]')).not.toBeChecked();
   await expect(page.locator('#vWn')).toHaveValue('700');
   await page.locator('#wMatrix [data-row="500"]').hover();
   await page.click('#wMatrix [data-wmenu="500"]');
@@ -158,6 +159,8 @@ test('各字重：点击行间距或空白预览，保留导出勾选和输入�
   await expect(page.locator('#wMatrix [data-pw="300"]')).toBeDisabled();
   await expect(page.locator('#vWn')).toHaveValue('700');
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('composite-font:state:v1'))?.view.weight)).toBe(700);
+  // Preview weight may already be saved; wait for the later checkbox change too before testing reload restoration.
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('composite-font:state:v1'))?.weights.includes(300))).toBe(false);
   await page.reload(); await page.click('#ltabFonts');
   await expect(page.locator('#wMatrix [data-row="700"]')).toHaveAttribute('aria-current', 'true');
   await expect(page.locator('#wMatrix input[data-wx="300"]')).not.toBeChecked();
