@@ -2,7 +2,7 @@ const { test, expect } = require('@playwright/test');
 const { open } = require('./helpers');
 
 async function selectFilter(page, id, values) {
-  const wanted = Array.isArray(values) ? values : [values], button = id === 'pkSource' ? '#pkSourceBtn' : '#gfStyleBtn';
+  const wanted = Array.isArray(values) ? values : [values], button = '#'+(id === 'gfStyle' ? 'gfStyleBtn' : id+'Btn');
   await page.locator(button).click();
   for (const input of await page.locator('#'+id+' input').all()) await input.setChecked(wanted.includes(await input.inputValue()));
   await page.locator(button).click();
@@ -87,6 +87,55 @@ test('字体排序：名称、已知范围和常用优先，保留搜索筛选�
     await expect(page.locator('#pkSort label')).toHaveCount(4);
     await page.keyboard.press('Escape'); await expect(page.locator('#picker')).toBeVisible();
   }
+});
+
+test('新增筛选：字重类型、全选类别覆盖和中日文风格联合筛选，清除不改搜索排序', async ({ page }) => {
+  await fixture(page);
+  await selectFilter(page, 'pkSource', 'google');
+  await selectFilter(page, 'pkWeightType', 'continuous');
+  await expect(page.locator('#gfOptions [data-family="Inter"]')).toHaveCount(1);
+  await expect(page.locator('#gfOptions [data-family="Klee One"]')).toHaveCount(0);
+  await selectFilter(page, 'pkWeightType', 'stepped');
+  await expect(page.locator('#gfOptions [data-family="Inter"]')).toHaveCount(0);
+  await expect(page.locator('#gfOptions [data-family="Klee One"]')).toHaveCount(1);
+  await selectFilter(page, 'pkCoverage', ['han', 'kana']);
+  await selectFilter(page, 'gfStyle', 'handwriting');
+  await expect(page.locator('#gfOptions [data-family="Klee One"]')).toHaveCount(1);
+  await expect(page.locator('#gfOptions [data-family="Inter"]')).toHaveCount(0);
+  await expect(page.locator('#pkCoverageBtn')).toContainText('2');
+  await selectFilter(page, 'gfStyle', ['kai', 'rounded']);
+  await expect(page.locator('#gfOptions [data-family="Ma Shan Zheng"]')).toHaveCount(1);
+  await expect(page.locator('#gfOptions [data-family="Zen Maru Gothic"]')).toHaveCount(1);
+  await selectFilter(page, 'pkCoverage', ['han', 'bopo']);
+  await expect(page.locator('#gfOptions [data-family="Ma Shan Zheng"]')).toHaveCount(0);
+  await expect(page.locator('#gfOptions [data-family="Zen Maru Gothic"]')).toHaveCount(1);
+  await page.locator('#pkSortBtn').click(); await page.locator('#pkSort input[value="name"]').check();
+  await page.locator('#gfSearch').fill('Zen'); await page.locator('#pkFilterClear').click();
+  await expect(page.locator('#gfSearch')).toHaveValue('Zen'); await expect(page.locator('#pkSort input[value="name"]')).toBeChecked();
+  await expect(page.locator('#pkWeightType input:checked')).toHaveCount(0); await expect(page.locator('#pkCoverage input:checked')).toHaveCount(0);
+  await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
+  for (const lang of ['zh', 'tw', 'ja', 'en']) {
+    await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
+    for (const [button, pop] of [['pkWeightTypeBtn', 'pkWeightTypePop'], ['pkCoverageBtn', 'pkCoveragePop'], ['gfStyleBtn', 'gfStylePop']]) {
+      await page.locator('#'+button).click();
+      expect(await page.locator('#'+pop).evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && r.top >= 0 && r.bottom <= innerHeight && el.scrollWidth <= el.clientWidth; })).toBeTruthy();
+      await page.keyboard.press('Escape'); await expect(page.locator('#picker')).toBeVisible();
+    }
+  }
+});
+
+test('字体资料：仿宋楷体教科书体独立，圆体兼属黑体，未知字重和覆盖保留', async ({ page }) => {
+  await fixture(page);
+  const result = await page.evaluate(async () => {
+    const { catalogStyles, catalogInfo, filterCatalog } = await import('./assets/js/font-catalog.js');
+    const styles = ['STFangsong', 'Kaiti SC', 'DFKai-SB', 'UD Digi Kyokasho', 'Kaisei Tokumin', 'Maruburi', 'Rounded Serif'].map(f => catalogStyles(f, 'serif'));
+    styles.splice(4, 0, catalogStyles('Hiragino Maru Gothic ProN', 'sans'));
+    const fonts = [{ family: 'Unknown', aliases: '', styles: null, weightType: null, coverage: null }, { family: 'Known no kana', aliases: '', styles: ['sans'], weightType: 'continuous', coverage: { han: true, kana: false } }, { family: 'Both', aliases: '', styles: ['kai'], weightType: 'stepped', coverage: { han: true, kana: true } }];
+    return { styles, matches: filterCatalog(fonts, '', ['kai'], false, ['stepped'], ['han', 'kana']).map(f => f.family), google: ['Inter', 'Klee One', 'Zen Maru Gothic'].map(f => ({ type: catalogInfo(f).weightType, styles: catalogInfo(f).styles })) };
+  });
+  expect(result.styles).toEqual([['fangsong'], ['kai'], ['kai'], ['textbook'], ['sans', 'rounded'], ['serif'], ['serif'], ['serif', 'rounded']]);
+  expect(result.matches).toEqual(['Unknown', 'Both']);
+  expect(result.google).toEqual([{ type: 'continuous', styles: ['sans'] }, { type: 'stepped', styles: ['handwriting'] }, { type: 'stepped', styles: ['sans', 'rounded'] }]);
 });
 
 test('多选筛选与本机预览：组内任选、组间同时满足，名称加载失败后用授权文件预览，款式属于右侧候选', async ({ page }) => {

@@ -1,4 +1,5 @@
 import { G, GF_LIST, axisOf, gfWeights } from './core.js';
+import { CATALOG_COVERAGE } from './font-catalog-data.js';
 import { GF_STYLE } from './gfmeta.js';
 import { searchKey } from './ui-controls.js';
 
@@ -32,13 +33,26 @@ const COMMON = new Set(['Noto Sans SC', 'Noto Serif SC', 'Noto Sans TC', 'Noto S
 const SERIFS = new Set(['IBM Plex Serif', 'Source Serif 4', 'EB Garamond', 'Cormorant Garamond', 'Libre Caslon Text', 'Libre Baskerville', 'Crimson Pro', 'Lora', 'Newsreader', 'Literata', 'Spectral', 'Fraunces', 'Playfair Display', 'Instrument Serif', 'Roboto Serif']);
 const SANS = new Set(['Inter', 'IBM Plex Sans', 'Source Sans 3', 'DM Sans', 'Work Sans', 'Manrope', 'Instrument Sans', 'Roboto', 'Lato', 'Open Sans', 'Montserrat', 'Jost']);
 const STYLES = new Map(Object.entries(GF_STYLE).flatMap(([style, list]) => list.split(',').map(name => [name, style])));
+// Refine browsing tags only; font composition keeps its existing coarse style model.
+// Match explicit names, not vague syllables (for example Kaisei is not a Kai face).
+export function catalogStyles(family, style) {
+  if (/Fang\s?Song|仿宋/i.test(family)) return ['fangsong'];
+  if (/楷|(?:^|[ -])(?:KaiTi|Kaiti|BiauKai|BiaoKai|DFKai|STKaiti|Kai)(?:$|[ -])/i.test(family) || family === 'LXGW WenKai TC') return ['kai'];
+  if (/教科書|教科书|Kyokasho|Kyoukasho/i.test(family)) return ['textbook'];
+  if (/(?:^|[ -])Maru(?:[ -]|$)|MaruGothic|Rounded|YuanTi|圆体|圓體|丸ゴ/i.test(family)) return [style === 'serif' ? 'serif' : 'sans', 'rounded'];
+  if (family === 'Ma Shan Zheng') return ['kai', 'brush'];
+  if (/Brush|毛筆|毛笔|行書|行书|隷書|隶书|Gyosho|Reisho|Kantei|勘亭|Yuji (Boku|Mai|Syuku)/i.test(family)) return ['brush'];
+  if (/Handwriting|手書|手写|手寫/i.test(family) || ['Klee One', 'Zen Kurenaido'].includes(family)) return ['handwriting'];
+  return style ? [style] : null;
+}
 export function catalogInfo(family) {
   const axis = axisOf(G(family), 'wght'), weights = gfWeights(family);
   const region = /\bSC$/.test(family) || ['ZCOOL XiaoWei', 'Ma Shan Zheng'].includes(family) ? 'sc'
     : /\bTC$/.test(family) ? 'tw' : /\bHK$/.test(family) ? 'hk' : /\bKR$/.test(family) ? 'kr'
     : /\bJP$|Mincho|Gothic|^Zen |^BIZ |^M PLUS|^Klee/.test(family) ? 'jp' : STYLES.has(family) || !GF_LIST.includes(family) ? null : 'latin';
   const style = STYLES.get(family) || (SERIFS.has(family) ? 'serif' : SANS.has(family) ? 'sans' : null);
-  return { family, nativeName: NATIVE_NAMES[family] || '', nameIsAlias: family.startsWith('Noto '), aliases: (ALIASES[family] || '') + ' ' + (NATIVE_NAMES[family] || ''), region, style,
+  return { family, nativeName: NATIVE_NAMES[family] || '', nameIsAlias: family.startsWith('Noto '), aliases: (ALIASES[family] || '') + ' ' + (NATIVE_NAMES[family] || ''), region, style, styles: catalogStyles(family, style),
+    weightType: axis ? 'continuous' : weights?.length ? 'stepped' : null, coverage: CATALOG_COVERAGE[family] || null,
     weightRange: axis ? [axis[1], axis[2]] : weights?.length ? [weights[0], weights.at(-1)] : null,
     bold: axis ? axis[2] >= 700 : weights ? weights.some(w => w >= 700) : null };
 }
@@ -55,9 +69,12 @@ export function sortCatalog(items, category, lang, mode = 'recommended') {
 export function catalogOrder(category, lang, current) {
   return sortCatalog([...new Set([...GF_LIST, ...(current ? [current] : [])])].map(catalogInfo), category, lang);
 }
-export function filterCatalog(items, query, style, bold) {
+export function filterCatalog(items, query, style, bold, weightTypes = [], coverage = []) {
   const q = searchKey(query.trim());
   const styles = Array.isArray(style) ? style : style ? [style] : [];
+  const matchesStyle = item => { const tags = item.styles || (item.style ? [item.style] : null); return !styles.length || !tags || styles.some(tag => tags.includes(tag)); };
   return items.filter(item => (!q || searchKey(item.family + item.aliases).includes(q))
-    && (!styles.length || item.style == null || styles.includes(item.style)) && (!bold || item.bold !== false));
+    && matchesStyle(item) && (!bold || item.bold !== false)
+    && (!weightTypes.length || item.weightType == null || weightTypes.includes(item.weightType))
+    && coverage.every(key => item.coverage?.[key] !== false));
 }
