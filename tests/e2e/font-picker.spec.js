@@ -54,6 +54,41 @@ test('字体列表：按校样语言和类别初排，别名搜索、已知筛�
   expect(await options.first().getAttribute('data-family')).not.toMatch(/Noto.*(?:SC|TC|HK|JP|KR)/);
 });
 
+test('字体排序：名称、已知范围和常用优先，保留搜索筛选与候选且加载后顺序不变', async ({ page }) => {
+  await fixture(page, 'latin');
+  const options = page.locator('#gfOptions [data-choice]');
+  await page.locator('#gfOptions [data-family="Inter"]').click();
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  await selectFilter(page, 'pkSource', 'google');
+  const chooseSort = async mode => { await page.locator('#pkSortBtn').click(); await page.locator(`#pkSort input[value="${mode}"]`).check(); };
+  await chooseSort('name');
+  const names = await options.evaluateAll(els => els.map(el => el.dataset.family));
+  expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' })));
+  await expect(page.locator('#pkSelectedName')).toHaveText('Inter');
+  await expect(page.locator('#pkSource input[value="google"]')).toBeChecked();
+  await page.locator('#gfSearch').fill('Noto'); await chooseSort('weights');
+  await expect(page.locator('#gfSearch')).toHaveValue('Noto');
+  await expect(page.locator('#gfOptions .font-option-source').first()).toContainText('–');
+  const order = await options.evaluateAll(els => els.map(el => el.dataset.choice));
+  await page.evaluate(async () => { const u = await import('./assets/js/ui.js'); u.renderCatalog(); });
+  expect(await options.evaluateAll(els => els.map(el => el.dataset.choice))).toEqual(order);
+  const sorted = await page.evaluate(async () => {
+    const { sortCatalog } = await import('./assets/js/font-catalog.js');
+    const items = [{ family: 'Unknown', region: 'latin', weightRange: null }, { family: 'Narrow', region: 'latin', weightRange: [400, 700] }, { family: 'Single', region: 'latin', weightRange: [400, 400] }, { family: 'Wide', region: 'latin', weightRange: [100, 900] }];
+    return { ranges: sortCatalog(items, 'latin', 'en', 'weights').map(x => x.family), common: sortCatalog([{ family: 'A Custom' }, { family: 'Inter' }], 'latin', 'en', 'common').map(x => x.family) };
+  });
+  expect(sorted.ranges).toEqual(['Wide', 'Narrow', 'Single', 'Unknown']); expect(sorted.common).toEqual(['Inter', 'A Custom']);
+  await chooseSort('common'); await expect(page.locator('#pkSortBtn')).toBeFocused();
+  await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
+  for (const lang of ['zh', 'tw', 'ja', 'en']) {
+    await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
+    await page.locator('#pkSortBtn').click();
+    expect(await page.locator('#pkSortPop').evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && el.scrollWidth <= el.clientWidth; })).toBeTruthy();
+    await expect(page.locator('#pkSort label')).toHaveCount(4);
+    await page.keyboard.press('Escape'); await expect(page.locator('#picker')).toBeVisible();
+  }
+});
+
 test('多选筛选与本机预览：组内任选、组间同时满足，名称加载失败后用授权文件预览，款式属于右侧候选', async ({ page }) => {
   await page.addInitScript(() => {
     window.queryLocalFonts = async () => ['Regular', 'Bold'].map(style => ({ family: 'Inter', fullName: 'Fixture Inter '+style, postscriptName: 'FixtureInter-'+style, style,
@@ -78,6 +113,8 @@ test('多选筛选与本机预览：组内任选、组间同时满足，名称�
     const src = core.source(core.L('Fixture Inter Regular'));
     return src.status === 'ok' && src.faces[0].buffer instanceof ArrayBuffer;
   })).toBeTruthy();
+  await page.locator('#pkSortBtn').click(); await page.locator('#pkSort input[value="weights"]').check();
+  await expect(page.locator('#gfOptions [data-local-family="Inter"] .font-option-source')).toContainText('100–900');
   await page.locator('#lfFace').selectOption('Fixture Inter Bold');
   await expect(page.locator('#pkSelectedName')).toHaveText('Fixture Inter Bold');
   await page.locator('#pkFilterClear').click();

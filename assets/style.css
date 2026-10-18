@@ -202,6 +202,7 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 /* Always-visible filters sit below search; multi-choice menus use the shared popover surface. */
 .filter-bar{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp-2);min-width:0}
 .filter-trigger,.filter-toggle{height:var(--ctl-h);border:1px solid var(--line);border-radius:var(--r-pill);background-color:transparent;font-size:var(--fs-s);color:var(--muted);max-width:100%}
+.filter-sort{margin-inline-start:auto}
 .filter-toggle{display:inline-flex;align-items:center;gap:var(--sp-2);padding:0 var(--sp-3);cursor:pointer}
 .filter-toggle input{margin:0;accent-color:var(--ink)}
 .filter-trigger[data-active="true"],.filter-toggle:has(:checked){color:var(--ink);border-color:var(--ink);background-color:color-mix(in srgb,var(--ink) 5%,transparent)}

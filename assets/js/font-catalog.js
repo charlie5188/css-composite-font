@@ -27,6 +27,8 @@ const NATIVE_NAMES = {
   'Hiragino Mincho ProN': 'ヒラギノ明朝', 'Microsoft YaHei': '微软雅黑', 'Microsoft JhengHei': '微軟正黑體',
   'SimSun': '宋体', 'Yu Gothic': '游ゴシック', 'Yu Mincho': '游明朝', 'Meiryo': 'メイリオ',
 };
+// Editorial shortcuts, not usage measurements or a live popularity ranking.
+const COMMON = new Set(['Noto Sans SC', 'Noto Serif SC', 'Noto Sans TC', 'Noto Serif TC', 'Noto Sans HK', 'Noto Sans JP', 'Noto Serif JP', 'Noto Sans KR', 'Noto Serif KR', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Source Sans 3', 'Source Serif 4', 'EB Garamond', 'PingFang SC', 'PingFang TC', 'PingFang HK', 'Arial', 'Georgia', 'Times New Roman', 'Microsoft YaHei', 'Microsoft JhengHei', 'Meiryo', 'Yu Gothic']);
 const SERIFS = new Set(['IBM Plex Serif', 'Source Serif 4', 'EB Garamond', 'Cormorant Garamond', 'Libre Caslon Text', 'Libre Baskerville', 'Crimson Pro', 'Lora', 'Newsreader', 'Literata', 'Spectral', 'Fraunces', 'Playfair Display', 'Instrument Serif', 'Roboto Serif']);
 const SANS = new Set(['Inter', 'IBM Plex Sans', 'Source Sans 3', 'DM Sans', 'Work Sans', 'Manrope', 'Instrument Sans', 'Roboto', 'Lato', 'Open Sans', 'Montserrat', 'Jost']);
 const STYLES = new Map(Object.entries(GF_STYLE).flatMap(([style, list]) => list.split(',').map(name => [name, style])));
@@ -37,13 +39,18 @@ export function catalogInfo(family) {
     : /\bJP$|Mincho|Gothic|^Zen |^BIZ |^M PLUS|^Klee/.test(family) ? 'jp' : STYLES.has(family) || !GF_LIST.includes(family) ? null : 'latin';
   const style = STYLES.get(family) || (SERIFS.has(family) ? 'serif' : SANS.has(family) ? 'sans' : null);
   return { family, nativeName: NATIVE_NAMES[family] || '', nameIsAlias: family.startsWith('Noto '), aliases: (ALIASES[family] || '') + ' ' + (NATIVE_NAMES[family] || ''), region, style,
+    weightRange: axis ? [axis[1], axis[2]] : weights?.length ? [weights[0], weights.at(-1)] : null,
     bold: axis ? axis[2] >= 700 : weights ? weights.some(w => w >= 700) : null };
 }
-export function sortCatalog(items, category, lang) {
+export function sortCatalog(items, category, lang, mode = 'recommended') {
   const region = /^(zh-Hant-HK|zh-HK)/i.test(lang) ? 'hk' : /^zh-(Hant|TW)/i.test(lang) ? 'tw' : /^ja/i.test(lang) ? 'jp' : /^ko/i.test(lang) ? 'kr' : 'sc';
   const wantsLatin = ['latin', 'digit', 'shared'].includes(category), want = wantsLatin ? 'latin' : category === 'kana' ? 'jp' : category === 'bopo' ? 'tw' : region;
   const score = item => item.region === want ? 0 : wantsLatin ? item.region == null ? 1 : 2 : item.region && item.region !== 'latin' ? 1 : item.region == null ? 2 : 3;
-  return [...items].sort((a, b) => score(a) - score(b) || Number(a.style === 'other') - Number(b.style === 'other') || a.family.localeCompare(b.family, 'en') || (a.kind || '').localeCompare(b.kind || ''));
+  const name = (a, b) => a.family.localeCompare(b.family, 'en', { numeric: true, sensitivity: 'base' }) || (a.kind || '').localeCompare(b.kind || '');
+  if (mode === 'name') return [...items].sort(name);
+  const span = item => item.weightRange ? item.weightRange[1] - item.weightRange[0] : -1;
+  const priority = (a, b) => mode === 'weights' ? span(b) - span(a) : mode === 'common' ? Number(COMMON.has(b.family)) - Number(COMMON.has(a.family)) : 0;
+  return [...items].sort((a, b) => priority(a, b) || score(a) - score(b) || Number(a.style === 'other') - Number(b.style === 'other') || name(a, b));
 }
 export function catalogOrder(category, lang, current) {
   return sortCatalog([...new Set([...GF_LIST, ...(current ? [current] : [])])].map(catalogInfo), category, lang);

@@ -1265,7 +1265,7 @@ function chooseCatalog(family) {
   pickTab = pickerLibraryKind = 'google'; $('#lfFaceField').hidden = true; updateCand(); syncLibrarySelection();
 }
 let localFontRecords = null, localReadAttempted = false, localReadPromise = null, localReadError = '';
-let libraryOrder = [];
+let libraryOrder = [], librarySort = 'recommended';
 function localGroups() {
   const groups = new Map();
   for (const item of localFontRecords || []) {
@@ -1280,11 +1280,14 @@ function libraryChoices() {
     const known = catalogInfo(family), named = styleOfFont(L(family));
     // Names can establish a positive match, but absence of a named bold face cannot rule out an unread variable font.
     const style = known.style || (named !== 'other' ? named : /script|hand|callig|brush/i.test(family) ? 'other' : null);
-    choices.push({ ...known, family, aliases: known.aliases + ' ' + faces.map(f => f.fullName + ' ' + f.postscriptName).join(' '), style,
+    // Reuse axes already read for a candidate; browsing and sorting never scan every installed file.
+    const axes = faces.flatMap(face => { const data = localAxes.get(face.fullName); return data?.unknown ? [] : (data?.axes || []).filter(a => a[0] === 'wght'); });
+    const weightRange = axes.length ? [Math.min(...axes.map(a => a[1])), Math.max(...axes.map(a => a[2]))] : null;
+    choices.push({ ...known, family, weightRange, aliases: known.aliases + ' ' + faces.map(f => f.fullName + ' ' + f.postscriptName).join(' '), style,
       bold: faces.some(f => /bold|black|heavy|demi|semi|W[6-9]\b/i.test(f.style)) ? true : null,
       kind: 'local', id: 'local:' + family, face: faces.find(f => /regular|normal|book/i.test(f.style))?.fullName || faces[0].fullName });
   }
-  if (!libraryOrder.length) libraryOrder = sortCatalog(choices, pickTarget?.id || 'custom', state.typo.lang).map(item => item.id);
+  if (!libraryOrder.length) libraryOrder = sortCatalog(choices, pickTarget?.id || 'custom', state.typo.lang, librarySort).map(item => item.id);
   // Enumeration may finish while a user browses. Append discoveries without moving an existing candidate under the pointer.
   const seen = new Set(libraryOrder); for (const item of choices) if (!seen.has(item.id)) { libraryOrder.push(item.id); seen.add(item.id); }
   const order = new Map(libraryOrder.map((id, i) => [id, i]));
@@ -1330,12 +1333,13 @@ function syncPickerFilters() {
   }
 }
 export function renderCatalog() {
+  $('#pkSortLabel').textContent = $('#pkSort input:checked').closest('label').querySelector('span').textContent;
   const box = $('#gfOptions'), query = $('#gfSearch').value, sourceFilter = pickerFilterValues('pkSource');
   const focused = box.contains(document.activeElement) ? document.activeElement.closest('[data-choice]')?.dataset.choice : null;
   const entries = filterCatalog(libraryChoices(), query, pickerFilterValues('gfStyle'), $('#gfBold').checked).filter(item => !sourceFilter.length || sourceFilter.includes(item.kind));
   catalogObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
   const selected = selectedLibraryId(), focusId = entries.some(item => item.id === selected) ? selected : entries[0]?.id;
-  box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.id === focusId ? 0 : -1}" aria-selected="${item.id === selected}" data-choice="${esc(item.id)}" ${item.kind === 'google' ? `data-family="${esc(item.family)}"` : `data-local-family="${esc(item.family)}" data-local-face="${esc(item.face)}"`}><span class="font-option-title"><span class="font-option-name" title="${esc(item.family)}">${esc(item.family)}${item.nativeName && item.nativeName !== item.family ? `<span class="font-option-native"> · ${esc(item.nameIsAlias ? T('pkAliasName', { name: item.nativeName }) : item.nativeName)}</span>` : ''}</span><span class="font-option-source">${esc(item.kind === 'google' ? 'Google Fonts' : T('srcLocal'))}</span></span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
+  box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.id === focusId ? 0 : -1}" aria-selected="${item.id === selected}" data-choice="${esc(item.id)}" ${item.kind === 'google' ? `data-family="${esc(item.family)}"` : `data-local-family="${esc(item.family)}" data-local-face="${esc(item.face)}"`}><span class="font-option-title"><span class="font-option-name" title="${esc(item.family)}">${esc(item.family)}${item.nativeName && item.nativeName !== item.family ? `<span class="font-option-native"> · ${esc(item.nameIsAlias ? T('pkAliasName', { name: item.nativeName }) : item.nativeName)}</span>` : ''}</span><span class="font-option-source">${esc(item.kind === 'google' ? 'Google Fonts' : T('srcLocal'))}${librarySort === 'weights' ? ' · ' + esc(item.weightRange ? item.weightRange.join('–') : T('fontWeightUnknownLabel')) : ''}</span></span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
   $('#gfResults').textContent = T('pkResults', { n: entries.length });
   const filters = sourceFilter.length + pickerFilterValues('gfStyle').length + Number($('#gfBold').checked);
   $('#pkFilterClear').hidden = !filters;
@@ -1425,7 +1429,7 @@ export function setPickTab(tab) {
   pickTab = tab;
   if (tab !== 'file') pickerLibraryKind = tab;
   const pane = tab === 'file' ? 'file' : 'library';
-  for (const id of ['pkSourcePop', 'gfStylePop', 'pkSamplePop']) { const pop = $('#'+id); if (pop.matches(':popover-open')) pop.hidePopover(); }
+  for (const id of ['pkSourcePop', 'gfStylePop', 'pkSortPop', 'pkSamplePop']) { const pop = $('#'+id); if (pop.matches(':popover-open')) pop.hidePopover(); }
   picker.querySelectorAll('[data-src]').forEach(b => { b.setAttribute('aria-selected', b.dataset.src === pane); b.tabIndex = b.dataset.src === pane ? 0 : -1; });
   picker.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== pane; });
   if (pane === 'file') renderImportedFonts();
@@ -1767,7 +1771,7 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   if (pickW && o.font.kind === 'file') { const g = guessPath(o.font.fileName, W); $('#ffPath').placeholder = g; $('#ffPath').value = state.weightNames[k] || g; }
   fileImportToken++; $('#ffDrop').removeAttribute('aria-busy'); $('#ffSearch').value = ''; $('#ffError').textContent = ''; $('#ffError').hidden = true;
   $('#ffFile').value = ''; $('#ffItal').value = '';
-  libraryOrder = []; clearPickerFilters();
+  libraryOrder = []; librarySort = 'recommended'; $('#pkSort input[value="recommended"]').checked = true; clearPickerFilters();
   pickerLibraryKind = (pickW ? (ovf || o.font).kind : cur?.kind) === 'local' ? 'local' : 'google';
   const rowFont = pickW ? (t.type === 'class' ? resolveCls(t.id, W, true) : resolveCustom(o, W, true)).font : cur;
   pickCand = ovf?.kind === 'file' ? ovf : rowFont?.kind === 'file' ? rowFont : null;
@@ -1872,7 +1876,7 @@ function pickerNumber(input) {
 }
 export function initPicker() {
   picker.querySelectorAll('input[type="number"]').forEach(pickerNumber);
-  for (const [pop, button] of [['pkSamplePop', 'pkSampleBtn'], ['pkSourcePop', 'pkSourceBtn'], ['gfStylePop', 'gfStyleBtn']]) bindPopover($('#'+pop), $('#'+button), { within: picker, inset: 16 });
+  for (const [pop, button] of [['pkSamplePop', 'pkSampleBtn'], ['pkSourcePop', 'pkSourceBtn'], ['gfStylePop', 'gfStyleBtn'], ['pkSortPop', 'pkSortBtn']]) bindPopover($('#'+pop), $('#'+button), { within: picker, inset: 16, align: button === 'pkSortBtn' ? 'end' : 'start' });
   picker.querySelectorAll('[data-filter-clear]').forEach(button => button.addEventListener('click', () => { $('#'+button.dataset.filterClear).querySelectorAll('input').forEach(input => { input.checked = false; }); renderCatalog(); }));
   $('#pkFilterClear').addEventListener('click', () => { clearPickerFilters(); renderCatalog(); $('#gfSearch').focus(); });
   picker.addEventListener('click', e => {
@@ -1910,6 +1914,10 @@ export function initPicker() {
   });
   $('#gfSearch').addEventListener('keydown', e => { if (e.key === 'ArrowDown') { e.preventDefault(); $('#gfOptions [tabindex="0"]')?.focus(); } });
   $('#pkSource').addEventListener('change', () => { renderCatalog(); const values = pickerFilterValues('pkSource'); if ((!values.length || values.includes('local')) && !localReadAttempted) readInstalledFonts(); });
+  $('#pkSort').addEventListener('change', () => {
+    librarySort = $('#pkSort input:checked').value; libraryOrder = []; renderCatalog();
+    $('#gfOptions').scrollTop = 0; $('#pkSortPop').hidePopover(); $('#pkSortBtn').focus();
+  });
   $('#gfStyle').addEventListener('change', renderCatalog); $('#gfBold').addEventListener('change', renderCatalog);
   $('#gfOptions').addEventListener('click', e => { const el = e.target.closest('[data-choice]'); if (el) chooseLibraryElement(el); });
   $('#gfOptions').addEventListener('keydown', e => {
