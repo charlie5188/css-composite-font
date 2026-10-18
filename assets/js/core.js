@@ -3,7 +3,7 @@ import { CLASSES, EFF, classOf, fmtRanges, inRanges, intersect, parseChars, pars
 import { AXIS_NAMES, GF_AXES, GF_ITALIC, GF_STYLE, GF_WEIGHTS } from './gfmeta.js';
 import { checkMissSoon, drawSpecimen, fitGlyphs, refreshVAutospace, renderChipsStatus, renderEditor } from './render.js';
 import { renderExport, renderExportSoon } from './export.js';
-import { renderPresetCardsSoon } from './ui.js';
+import { localData, renderPresetCardsSoon } from './ui.js';
 /* ================= Font sources ================= */
 export const G = (family, weight = 400) => ({ kind: 'google', family, weight });
 export const L = (name, alt = []) => ({ kind: 'local', name, alt });
@@ -88,7 +88,15 @@ export async function loadSource(s) {
     ffs.forEach(x => document.fonts.add(x));
     if (f.kind !== 'google') {
       try { await ffs[0].load(); }
-      catch (e) { throw new SrcError(f.kind === 'local' ? 'errLocal' : 'errFileBad'); }
+      catch (e) {
+        const record = f.kind === 'local' && localData.get(f.name);
+        if (!record) throw new SrcError(f.kind === 'local' ? 'errLocal' : 'errFileBad');
+        // Some installed faces are enumerable but cannot be addressed through CSS local().
+        document.fonts.delete(ffs[0]);
+        const buffer = await (await record.blob()).arrayBuffer();
+        const face = new FontFace(s.family, buffer, { display: 'swap', ...vs });
+        await face.load(); document.fonts.add(face); s.faces[0].buffer = buffer;
+      }
     }
     s.status = 'ok';
   } catch (e) {

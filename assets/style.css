@@ -199,14 +199,13 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 .settings-fields select{height:var(--ctl-h);font-size:var(--fs-s);padding-top:var(--sp-1);padding-bottom:var(--sp-1)}
 .settings-actions{display:flex;justify-content:flex-end;align-items:center;min-height:var(--ctl-h);padding:0 var(--sp-2)}
 .settings-actions .btn-text:disabled{color:var(--faint);cursor:default}
-/* Always-visible filters sit below search; native choices keep their keyboard and platform behavior. */
+/* Always-visible filters sit below search; multi-choice menus use the shared popover surface. */
 .filter-bar{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp-2);min-width:0}
-.filter-select,.filter-toggle{height:var(--ctl-h);border:1px solid var(--line);border-radius:var(--r-pill);background-color:transparent;font-size:var(--fs-s);color:var(--muted);max-width:100%}
-.filter-select{width:auto;padding-left:var(--sp-3)}
+.filter-trigger,.filter-toggle{height:var(--ctl-h);border:1px solid var(--line);border-radius:var(--r-pill);background-color:transparent;font-size:var(--fs-s);color:var(--muted);max-width:100%}
 .filter-toggle{display:inline-flex;align-items:center;gap:var(--sp-2);padding:0 var(--sp-3);cursor:pointer}
 .filter-toggle input{margin:0;accent-color:var(--ink)}
-.filter-select[data-active="true"],.filter-toggle:has(:checked){color:var(--ink);border-color:var(--ink);background-color:color-mix(in srgb,var(--ink) 5%,transparent)}
-.filter-select:hover,.filter-toggle:hover{background-color:color-mix(in srgb,var(--ink) 7%,transparent)}
+.filter-trigger[data-active="true"],.filter-toggle:has(:checked){color:var(--ink);border-color:var(--ink);background-color:color-mix(in srgb,var(--ink) 5%,transparent)}
+.filter-trigger:hover,.filter-toggle:hover{background-color:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink)}
 .filter-toggle:has(:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
 /* Section header: monospaced label on the left, section actions on the right. */
 .sec-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--sp-2) var(--sp-3);margin:var(--sp-6) 0 var(--sp-2)}
@@ -816,8 +815,8 @@ button.wl small{font-family:var(--ui);font-size:var(--fs-xs);margin-left:5px;opa
 /* ---------- dialog ---------- */
 dialog{border:1px solid var(--ink);border-radius:var(--r);background:var(--sheet);color:var(--ink);padding:0;width:min(600px,calc(100vw - 32px));max-height:calc(100vh - 48px)}
 dialog::backdrop{background:rgba(8,8,10,.45)}
-#picker{width:min(1280px,calc(100vw - 48px));overflow:hidden}
-.pk{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:var(--sp-4);padding:var(--sp-5);height:min(860px,calc(100dvh - 48px));max-height:calc(100dvh - 48px)}
+#picker{--picker-gap:24px;width:min(1280px,calc(100vw - 48px));max-height:calc(100dvh - 2 * var(--picker-gap));overflow:hidden}
+.pk{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:var(--sp-4);padding:var(--sp-5);height:calc(100dvh - 2 * var(--picker-gap) - 2px)}
 /* Give browsing most of the workspace; its scroll position is independent of the selected font's details. */
 .pk-workspace{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(340px,1fr);gap:var(--sp-5);overflow:hidden;min-height:0}
 .pk-sources,.pk-detail{display:grid;align-content:start;gap:var(--sp-4);min-width:0}
@@ -835,11 +834,12 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-name-actions .btn-text{max-width:100%;text-align:left;overflow-wrap:anywhere}
 .font-option-title{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-3)}
 .font-option-title .font-option-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.font-option-native{font-weight:400;color:var(--muted)}
 .font-option-source{flex:none;font-size:var(--fs-xs);font-weight:400;color:var(--muted)}
 .pk-search{display:flex;gap:var(--sp-2);align-items:center}
 .pk-search>input{width:100%;min-width:0}
 @media(max-width:860px){
-  #picker{width:calc(100vw - 32px)}
+  #picker{--picker-gap:16px;width:calc(100vw - 32px)}
   .pk{padding:var(--sp-4)}
   /* Use one workspace scroll on narrow screens so neither pane becomes a tiny nested viewport. */
   .pk-workspace{grid-template-columns:minmax(0,1fr);grid-auto-rows:max-content;overflow:auto;align-content:start;gap:var(--sp-4)}
@@ -863,6 +863,8 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 #pkVfTag{grid-column:1/-1;grid-row:2}
 .pk-preview-head>.btn-ghost{grid-column:2;grid-row:1;margin-top:calc(-1 * var(--sp-1))}
 .pk-preview #pkSample{min-height:200px;padding-block:var(--sp-5)}
+#lfFaceField{max-width:100%}
+#lfFaceField select{width:100%}
 #pkSample{font-size:32px;line-height:1.3;overflow-wrap:anywhere;white-space:pre-wrap;max-height:240px;overflow:auto}
 .pk-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:var(--fs-s);color:var(--muted)}
 .pk-punct.bad{color:var(--caution);background:var(--caution-bg);padding:2px 7px;border-radius:var(--r)}

@@ -11,6 +11,21 @@ const ALIASES = {
   'Shippori Mincho': 'しっぽり明朝', 'Zen Old Mincho': 'ZENオールド明朝', 'Zen Kaku Gothic New': 'ZEN角ゴシック',
   'Zen Maru Gothic': 'ZEN丸ゴシック 丸ゴ', 'BIZ UDPGothic': 'BIZ UDPゴシック', 'BIZ UDPMincho': 'BIZ UDP明朝',
   'M PLUS 2': 'エムプラス', 'Klee One': 'クレー 手書き', 'ZCOOL XiaoWei': '站酷小薇体 站酷小薇體', 'Ma Shan Zheng': '马善政楷书 馬善政楷書',
+  'PingFang SC': '苹方 蘋方 简体 簡體', 'PingFang TC': '苹方 蘋方 繁体 繁體 台湾 台灣', 'PingFang HK': '苹方 蘋方 香港',
+  'Songti SC': '宋体 宋體 简体 簡體', 'Songti TC': '宋体 宋體 繁体 繁體',
+};
+// Common search names help explain matches without claiming that Noto and Source Han are identical families.
+const NATIVE_NAMES = {
+  'Noto Sans SC': '思源黑体', 'Noto Serif SC': '思源宋体', 'Noto Sans TC': '思源黑體', 'Noto Serif TC': '思源宋體',
+  'Noto Sans HK': '思源黑體', 'Noto Sans JP': '源ノ角ゴシック', 'Noto Serif JP': '源ノ明朝',
+  'Noto Sans KR': '본고딕', 'Noto Serif KR': '본명조', 'LXGW WenKai TC': '霞鶩文楷',
+  'Shippori Mincho': 'しっぽり明朝', 'Zen Old Mincho': 'ZENオールド明朝', 'Zen Kaku Gothic New': 'ZEN角ゴシック',
+  'Zen Maru Gothic': 'ZEN丸ゴシック', 'BIZ UDPGothic': 'BIZ UDPゴシック', 'BIZ UDPMincho': 'BIZ UDP明朝',
+  'M PLUS 2': 'エムプラス', 'Klee One': 'クレー', 'ZCOOL XiaoWei': '站酷小薇体', 'Ma Shan Zheng': '马善政楷书',
+  'PingFang SC': '苹方-简', 'PingFang TC': '蘋方-繁', 'PingFang HK': '蘋方-港',
+  'Songti SC': '宋体-简', 'Songti TC': '宋體-繁', 'Hiragino Sans GB': '冬青黑体', 'Hiragino Sans': 'ヒラギノ角ゴ',
+  'Hiragino Mincho ProN': 'ヒラギノ明朝', 'Microsoft YaHei': '微软雅黑', 'Microsoft JhengHei': '微軟正黑體',
+  'SimSun': '宋体', 'Yu Gothic': '游ゴシック', 'Yu Mincho': '游明朝', 'Meiryo': 'メイリオ',
 };
 const SERIFS = new Set(['IBM Plex Serif', 'Source Serif 4', 'EB Garamond', 'Cormorant Garamond', 'Libre Caslon Text', 'Libre Baskerville', 'Crimson Pro', 'Lora', 'Newsreader', 'Literata', 'Spectral', 'Fraunces', 'Playfair Display', 'Instrument Serif', 'Roboto Serif']);
 const SANS = new Set(['Inter', 'IBM Plex Sans', 'Source Sans 3', 'DM Sans', 'Work Sans', 'Manrope', 'Instrument Sans', 'Roboto', 'Lato', 'Open Sans', 'Montserrat', 'Jost']);
@@ -21,7 +36,7 @@ export function catalogInfo(family) {
     : /\bTC$/.test(family) ? 'tw' : /\bHK$/.test(family) ? 'hk' : /\bKR$/.test(family) ? 'kr'
     : /\bJP$|Mincho|Gothic|^Zen |^BIZ |^M PLUS|^Klee/.test(family) ? 'jp' : STYLES.has(family) || !GF_LIST.includes(family) ? null : 'latin';
   const style = STYLES.get(family) || (SERIFS.has(family) ? 'serif' : SANS.has(family) ? 'sans' : null);
-  return { family, aliases: ALIASES[family] || '', region, style,
+  return { family, nativeName: NATIVE_NAMES[family] || '', nameIsAlias: family.startsWith('Noto '), aliases: (ALIASES[family] || '') + ' ' + (NATIVE_NAMES[family] || ''), region, style,
     bold: axis ? axis[2] >= 700 : weights ? weights.some(w => w >= 700) : null };
 }
 export function sortCatalog(items, category, lang) {
@@ -35,6 +50,7 @@ export function catalogOrder(category, lang, current) {
 }
 export function filterCatalog(items, query, style, bold) {
   const q = searchKey(query.trim());
+  const styles = Array.isArray(style) ? style : style ? [style] : [];
   return items.filter(item => (!q || searchKey(item.family + item.aliases).includes(q))
-    && (!style || item.style == null || item.style === style) && (!bold || item.bold !== false));
+    && (!styles.length || item.style == null || styles.includes(item.style)) && (!bold || item.bold !== false));
 }

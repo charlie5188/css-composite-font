@@ -1249,14 +1249,16 @@ async function loadPickerChoice(el, src, unavailable = 'pkPreviewUnavailable') {
     await waitForPicker((async () => {
       await src.promise;
       if (src.status !== 'ok') throw new Error('source-unavailable');
-      const chars = [...new Set([...sample.textContent, ...'Ag0123'].filter(ch => ch.trim()))], missing = await missingIn(src, chars);
+      const chars = [...new Set([...sample.textContent, ...'Ag0123'].filter(ch => ch.trim()))];
+      let missing;
+      try { missing = await missingIn(src, chars); } catch (error) { throw new Error('coverage-unavailable'); }
       if (!missing) throw new Error('coverage-unavailable');
       if ([...sample.textContent].some(ch => ch.trim() && missing.has(ch))) sample.textContent = chars.filter(ch => !missing.has(ch)).slice(0, 24).join('');
       if (!sample.textContent || !(await document.fonts.load(`24px "${src.family}"`, sample.textContent)).length) throw new Error('no-specimen');
     })());
     if (!el.isConnected || !picker.open) return;
     sample.style.fontFamily = `"${src.family}", var(--ui)`; sample.hidden = false; status.hidden = true;
-  } catch (error) { if (el.isConnected) status.textContent = T(error.message === 'picker-timeout' ? 'pkSlowSpecimen' : unavailable); }
+  } catch (error) { if (el.isConnected) status.textContent = T(error.message === 'picker-timeout' ? 'pkSlowSpecimen' : error.message === 'coverage-unavailable' ? 'pkCoverageUnknown' : error.message === 'no-specimen' ? 'pkNoSampleGlyphs' : unavailable); }
 }
 function chooseCatalog(family) {
   $('#gfFamily').value = family; syncGfWeight();
@@ -1278,7 +1280,7 @@ function libraryChoices() {
     const known = catalogInfo(family), named = styleOfFont(L(family));
     // Names can establish a positive match, but absence of a named bold face cannot rule out an unread variable font.
     const style = known.style || (named !== 'other' ? named : /script|hand|callig|brush/i.test(family) ? 'other' : null);
-    choices.push({ ...known, family, aliases: faces.map(f => f.fullName + ' ' + f.postscriptName).join(' '), style,
+    choices.push({ ...known, family, aliases: known.aliases + ' ' + faces.map(f => f.fullName + ' ' + f.postscriptName).join(' '), style,
       bold: faces.some(f => /bold|black|heavy|demi|semi|W[6-9]\b/i.test(f.style)) ? true : null,
       kind: 'local', id: 'local:' + family, face: faces.find(f => /regular|normal|book/i.test(f.style))?.fullName || faces[0].fullName });
   }
@@ -1300,7 +1302,7 @@ function selectLocalFamily(family, keepFace = false) {
   const current = $('#lfName').value, query = searchKey($('#gfSearch').value);
   const exact = faces.find(f => searchKey(f.fullName) === query || searchKey(f.postscriptName) === query);
   const face = (keepFace && faces.find(f => f.fullName === current)) || exact || faces.find(f => /regular|normal|book/i.test(f.style)) || faces[0];
-  $('#lfFaceField').hidden = false;
+  $('#lfFaceField').hidden = faces.length < 2;
   $('#lfFace').innerHTML = faces.map(f => `<option value="${esc(f.fullName)}">${esc(f.style)}</option>`).join('');
   $('#lfFace').value = face.fullName; $('#lfName').value = face.fullName;
   if (!keepFace) { pickTab = pickerLibraryKind = 'local'; updateCand(); }
@@ -1314,26 +1316,39 @@ function tryExactLocal() {
   $('#lfName').value = $('#gfSearch').value.trim(); $('#lfVar').checked = false;
   pickTab = pickerLibraryKind = 'local'; $('#lfFaceField').hidden = true; updateCand(); syncLibrarySelection();
 }
+function pickerFilterValues(id) { return [...$('#'+id).querySelectorAll('input:checked')].map(el => el.value); }
+function clearPickerFilters() {
+  for (const id of ['pkSource', 'gfStyle']) $('#'+id).querySelectorAll('input').forEach(el => { el.checked = false; });
+  $('#gfBold').checked = false;
+}
+function syncPickerFilters() {
+  for (const [id, button, any, label] of [['pkSource', 'pkSourceBtn', 'pkAllSources', 'pkSource'], ['gfStyle', 'gfStyleBtn', 'pkAnyStyle', 'pkFilterStyle']]) {
+    const checked = [...$('#'+id).querySelectorAll('input:checked')], trigger = $('#'+button);
+    trigger.dataset.active = String(checked.length > 0);
+    trigger.querySelector('[data-filter-label]').textContent = !checked.length ? T(any) : checked.length === 1 ? checked[0].closest('label').querySelector('span').textContent : T('pkFilterSelection', { label: T(label), n: checked.length });
+    picker.querySelector('[data-filter-clear="'+id+'"]').disabled = !checked.length;
+  }
+}
 export function renderCatalog() {
-  const box = $('#gfOptions'), query = $('#gfSearch').value, sourceFilter = $('#pkSource').value;
+  const box = $('#gfOptions'), query = $('#gfSearch').value, sourceFilter = pickerFilterValues('pkSource');
   const focused = box.contains(document.activeElement) ? document.activeElement.closest('[data-choice]')?.dataset.choice : null;
-  const entries = filterCatalog(libraryChoices(), query, $('#gfStyle').value, $('#gfBold').checked).filter(item => !sourceFilter || item.kind === sourceFilter);
+  const entries = filterCatalog(libraryChoices(), query, pickerFilterValues('gfStyle'), $('#gfBold').checked).filter(item => !sourceFilter.length || sourceFilter.includes(item.kind));
   catalogObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
   const selected = selectedLibraryId(), focusId = entries.some(item => item.id === selected) ? selected : entries[0]?.id;
-  box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.id === focusId ? 0 : -1}" aria-selected="${item.id === selected}" data-choice="${esc(item.id)}" ${item.kind === 'google' ? `data-family="${esc(item.family)}"` : `data-local-family="${esc(item.family)}" data-local-face="${esc(item.face)}"`}><span class="font-option-title"><span class="font-option-name" title="${esc(item.family)}">${esc(item.family)}</span><span class="font-option-source">${esc(item.kind === 'google' ? 'Google Fonts' : T('srcLocal'))}</span></span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
+  box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.id === focusId ? 0 : -1}" aria-selected="${item.id === selected}" data-choice="${esc(item.id)}" ${item.kind === 'google' ? `data-family="${esc(item.family)}"` : `data-local-family="${esc(item.family)}" data-local-face="${esc(item.face)}"`}><span class="font-option-title"><span class="font-option-name" title="${esc(item.family)}">${esc(item.family)}${item.nativeName && item.nativeName !== item.family ? `<span class="font-option-native"> · ${esc(item.nameIsAlias ? T('pkAliasName', { name: item.nativeName }) : item.nativeName)}</span>` : ''}</span><span class="font-option-source">${esc(item.kind === 'google' ? 'Google Fonts' : T('srcLocal'))}</span></span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
   $('#gfResults').textContent = T('pkResults', { n: entries.length });
-  const filters = Number(!!sourceFilter) + Number(!!$('#gfStyle').value) + Number($('#gfBold').checked);
+  const filters = sourceFilter.length + pickerFilterValues('gfStyle').length + Number($('#gfBold').checked);
   $('#pkFilterClear').hidden = !filters;
-  for (const id of ['pkSource', 'gfStyle']) $('#'+id).dataset.active = String(!!$('#'+id).value);
+  syncPickerFilters();
   $('#gfReset').hidden = !!entries.length || !query.trim() && !filters;
   $('#pkExactChoices').hidden = !!entries.length || !query.trim();
-  $('#gfTry').hidden = sourceFilter === 'local'; $('#lfTry').hidden = sourceFilter === 'google';
+  $('#gfTry').hidden = sourceFilter.length > 0 && !sourceFilter.includes('google'); $('#lfTry').hidden = sourceFilter.length > 0 && !sourceFilter.includes('local');
   $('#gfTry').textContent = T('pkTryGoogle', { name: query.trim() }); $('#lfTry').textContent = T('pkTryLocal', { name: query.trim() });
   catalogObserver = new IntersectionObserver(events => events.forEach(entry => {
     if (!entry.isIntersecting) return;
     const el = entry.target; catalogObserver.unobserve(el);
     const local = el.dataset.localFace;
-    loadPickerChoice(el, source(local ? L(local, localAlt.get(local) ? [localAlt.get(local)] : []) : G(el.dataset.family)), local ? 'pkLocalNotConfirmed' : 'pkPreviewUnavailable');
+    loadPickerChoice(el, source(local ? L(local, localAlt.get(local) ? [localAlt.get(local)] : []) : G(el.dataset.family), { retry: true }), local ? 'pkLocalNotConfirmed' : 'pkPreviewUnavailable');
   }), { root: box });
   box.querySelectorAll('[data-choice]').forEach(el => { catalogObserver.observe(el); if (el.dataset.choice === focused) el.focus({ preventScroll: true }); });
   $('#lfFaceField').hidden = pickTab !== 'local' || !localGroups().some(([, faces]) => faces.some(f => f.fullName === $('#lfName').value));
@@ -1410,7 +1425,7 @@ export function setPickTab(tab) {
   pickTab = tab;
   if (tab !== 'file') pickerLibraryKind = tab;
   const pane = tab === 'file' ? 'file' : 'library';
-  const pop = $('#pkSamplePop'); if (pop.matches(':popover-open')) pop.hidePopover();
+  for (const id of ['pkSourcePop', 'gfStylePop', 'pkSamplePop']) { const pop = $('#'+id); if (pop.matches(':popover-open')) pop.hidePopover(); }
   picker.querySelectorAll('[data-src]').forEach(b => { b.setAttribute('aria-selected', b.dataset.src === pane); b.tabIndex = b.dataset.src === pane ? 0 : -1; });
   picker.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== pane; });
   if (pane === 'file') renderImportedFonts();
@@ -1605,6 +1620,7 @@ function syncPickerProof(f) {
   $('#pkApplied').hidden = !f; $('#pkDetails').hidden = !f; $('#gfApplyField').hidden = f?.kind !== 'google';
   $('#lfVarField').hidden = f?.kind !== 'local' || localData.has(f.name);
   $('#pkSelectedName').textContent = f?.kind === 'file' ? importedFonts.get(f.fileId)?.family || f.fileName : f?.kind === 'google' ? f.family : f?.name || T('pkEmpty');
+  $('#lfFaceField').hidden = f?.kind !== 'local' || !localGroups().some(([, faces]) => faces.length > 1 && faces.some(face => face.fullName === f.name));
   $('#pkProofWeight').hidden = !axis; $('#pkProofWeightNum').hidden = !axis;
   $('#pkProofWeightSelect').hidden = !!axis || !weights?.length;
   $('#pkProofStyle').hidden = !!axis || !!weights?.length;
@@ -1639,6 +1655,7 @@ async function paintPickerCandidate() {
   const f = pickCand, token = ++pickerPreviewToken, ok = $('#pkOk'), st = $('#pkStatus'), sample = $('#pkSample'), preview = picker.querySelector('.pk-preview');
   const current = () => picker.open && pickCand === f && token === pickerPreviewToken && !pickerApplyBusy;
   pickerFailedSource = null; $('#pkRetry').hidden = true; $('#pkItal').hidden = true;
+  $('#pkLocalFallback').hidden = true;
   st.classList.remove('caution', 'vh'); st.parentElement.classList.remove('vh'); sample.hidden = true; showVfTag(pickerWeightAxis(f)); resetCoverage();
   if (!f) { ok.disabled = true; st.dataset.state = 'empty'; st.textContent = T('pkEmpty'); preview.removeAttribute('aria-busy'); return; }
   const axis = pickerWeightAxis(f), viewed = f.kind === 'google' ? { ...f, ...(axis ? { vf: true } : gfWeights(f.family) ? { weight: pickerProofWeight } : {}) } : f;
@@ -1657,6 +1674,7 @@ async function paintPickerCandidate() {
     sample.style.fontFamily = `"${src.family}", var(--ui)`; sample.hidden = !visible;
     st.dataset.state = visible ? 'ready' : 'no-glyphs'; st.textContent = T(visible ? 'pkReady' : 'pkNoSampleGlyphs');
     st.parentElement.classList.toggle('vh', visible);
+    $('#pkLocalFallback').hidden = f.kind !== 'local' || !src.faces[0]?.buffer;
     showVfTag(pickerWeightAxis(f)); renderItal();
     renderCoverage(src, f); renderPunct(src, f); ok.disabled = false;
   } catch (error) {
@@ -1749,13 +1767,13 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   if (pickW && o.font.kind === 'file') { const g = guessPath(o.font.fileName, W); $('#ffPath').placeholder = g; $('#ffPath').value = state.weightNames[k] || g; }
   fileImportToken++; $('#ffDrop').removeAttribute('aria-busy'); $('#ffSearch').value = ''; $('#ffError').textContent = ''; $('#ffError').hidden = true;
   $('#ffFile').value = ''; $('#ffItal').value = '';
-  libraryOrder = []; $('#pkSource').value = '';
+  libraryOrder = []; clearPickerFilters();
   pickerLibraryKind = (pickW ? (ovf || o.font).kind : cur?.kind) === 'local' ? 'local' : 'google';
   const rowFont = pickW ? (t.type === 'class' ? resolveCls(t.id, W, true) : resolveCustom(o, W, true)).font : cur;
   pickCand = ovf?.kind === 'file' ? ovf : rowFont?.kind === 'file' ? rowFont : null;
   pickerSampleMode = 'class'; pickerCustomText = pickerClassSample(); $('#pkSampleSize').value = 32; $('#pkSample').style.fontSize = '32px'; renderPickerSample();
   pickCatalog = catalogOrder(t.type === 'class' ? t.id : 'custom', state.typo.lang, cur?.kind === 'google' ? cur.family : '');
-  $('#gfSearch').value = ''; $('#pkSource').value = ''; $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog();
+  $('#gfSearch').value = ''; clearPickerFilters(); renderCatalog();
   picker.showModal();
   setPickTab(pickW ? (ovf || o.font).kind : cur?.kind || 'google');
   if (pickTab !== 'file') $('#gfSearch').focus();
@@ -1854,8 +1872,9 @@ function pickerNumber(input) {
 }
 export function initPicker() {
   picker.querySelectorAll('input[type="number"]').forEach(pickerNumber);
-  bindPopover($('#pkSamplePop'), $('#pkSampleBtn'), { within: picker, inset: 16 });
-  $('#pkFilterClear').addEventListener('click', () => { $('#pkSource').value = ''; $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog(); $('#gfSearch').focus(); });
+  for (const [pop, button] of [['pkSamplePop', 'pkSampleBtn'], ['pkSourcePop', 'pkSourceBtn'], ['gfStylePop', 'gfStyleBtn']]) bindPopover($('#'+pop), $('#'+button), { within: picker, inset: 16 });
+  picker.querySelectorAll('[data-filter-clear]').forEach(button => button.addEventListener('click', () => { $('#'+button.dataset.filterClear).querySelectorAll('input').forEach(input => { input.checked = false; }); renderCatalog(); }));
+  $('#pkFilterClear').addEventListener('click', () => { clearPickerFilters(); renderCatalog(); $('#gfSearch').focus(); });
   picker.addEventListener('click', e => {
     const button = e.target.closest('.field-step [data-step]'); if (!button) return;
     const input = button.closest('.field-step').querySelector('input');
@@ -1883,14 +1902,14 @@ export function initPicker() {
   $('#pkScope').addEventListener('change', () => { syncGfWeight(); updateCand(); });
   $('#lfFace').addEventListener('change', () => { $('#lfName').value = $('#lfFace').value; updateCand(); });
   $('#gfSearch').addEventListener('input', renderCatalog);
-  $('#gfReset').addEventListener('click', () => { $('#gfSearch').value = ''; $('#pkSource').value = ''; $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog(); $('#gfSearch').focus(); });
+  $('#gfReset').addEventListener('click', () => { $('#gfSearch').value = ''; clearPickerFilters(); renderCatalog(); $('#gfSearch').focus(); });
   $('#pkRetry').addEventListener('click', () => {
     // An explicit retry replaces a stuck or rejected face. Late callbacks still hold the previous preview token.
     if (pickerFailedSource && sources.get(pickerFailedSource.key) === pickerFailedSource) sources.delete(pickerFailedSource.key);
     paintPickerCandidate();
   });
   $('#gfSearch').addEventListener('keydown', e => { if (e.key === 'ArrowDown') { e.preventDefault(); $('#gfOptions [tabindex="0"]')?.focus(); } });
-  $('#pkSource').addEventListener('change', () => { renderCatalog(); if ($('#pkSource').value !== 'google' && !localReadAttempted) readInstalledFonts(); });
+  $('#pkSource').addEventListener('change', () => { renderCatalog(); const values = pickerFilterValues('pkSource'); if ((!values.length || values.includes('local')) && !localReadAttempted) readInstalledFonts(); });
   $('#gfStyle').addEventListener('change', renderCatalog); $('#gfBold').addEventListener('change', renderCatalog);
   $('#gfOptions').addEventListener('click', e => { const el = e.target.closest('[data-choice]'); if (el) chooseLibraryElement(el); });
   $('#gfOptions').addEventListener('keydown', e => {

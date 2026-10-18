@@ -1,14 +1,29 @@
 const { test, expect } = require('@playwright/test');
 const { open } = require('./helpers');
 
+async function selectFilter(page, id, values) {
+  const wanted = Array.isArray(values) ? values : [values], button = id === 'pkSource' ? '#pkSourceBtn' : '#gfStyleBtn';
+  await page.locator(button).click();
+  for (const input of await page.locator('#'+id+' input').all()) await input.setChecked(wanted.includes(await input.inputValue()));
+  await page.locator(button).click();
+}
+
+async function openClassPicker(page, category) {
+  // Resolve and activate in one task: even an element handle can become detached during metadata refreshes.
+  const opened = await page.evaluate(category => {
+    const el = document.querySelector(`.ct-row[data-id="${category}"] .fsel`);
+    el.focus(); el.value = 'pick'; el.dispatchEvent(new Event('change', { bubbles: true }));
+    return document.querySelector('#picker').open;
+  }, category);
+  expect(opened).toBe(true);
+  await expect(page.locator('#picker')).toBeVisible();
+}
+
 async function fixture(page, category = 'han') {
   await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: "@font-face { font-family: 'PickerFixture'; src: url('http://127.0.0.1:8765/tests/fixtures/Jost%5Bwght%5D.ttf'); }" }));
   await open(page);
   await page.click('#ltabFonts');
-  const select = page.locator(`.ct-row[data-id="${category}"] .fsel`);
-  // Native use focuses the select first; keep background font updates from replacing an unfocused test target.
-  await select.focus(); await select.selectOption('pick');
-  await expect(page.locator('#picker')).toBeVisible();
+  await openClassPicker(page, category);
 }
 
 test('字体列表：按校样语言和类别初排，别名搜索、已知筛选与未知资料保留，检查后不移动候选', async ({ page }) => {
@@ -21,6 +36,7 @@ test('字体列表：按校样语言和类别初排，别名搜索、已知筛�
   expect(await options.evaluateAll(els => els.map(el => el.dataset.family))).toEqual(order);
   await page.locator('#gfSearch').fill('思源宋');
   await expect(options).toHaveCount(2);
+  await expect(page.locator('#gfOptions [data-family="Noto Serif SC"] .font-option-native')).toContainText('思源宋体');
   await page.locator('#gfSearch').fill('noto san');
   await expect(options).toHaveCount(5);
   const entries = await page.evaluate(async () => {
@@ -34,8 +50,40 @@ test('字体列表：按校样语言和类别初排，别名搜索、已知筛�
   await page.locator('#gfSearch').fill('Klee One');
   await expect(options).toHaveCount(0);
   await page.locator('#pkCancel').click();
-  await page.locator('.ct-row[data-id="latin"] .fsel').selectOption('pick');
+  await openClassPicker(page, 'latin');
   expect(await options.first().getAttribute('data-family')).not.toMatch(/Noto.*(?:SC|TC|HK|JP|KR)/);
+});
+
+test('多选筛选与本机预览：组内任选、组间同时满足，名称加载失败后用授权文件预览，款式属于右侧候选', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.queryLocalFonts = async () => ['Regular', 'Bold'].map(style => ({ family: 'Inter', fullName: 'Fixture Inter '+style, postscriptName: 'FixtureInter-'+style, style,
+      blob: async () => (await fetch('/tests/fixtures/Jost%5Bwght%5D.ttf')).blob() }));
+  });
+  await fixture(page, 'latin');
+  const bounds = await page.locator('#picker').boundingBox();
+  expect(bounds.y).toBeLessThanOrEqual(25); expect(1000 - bounds.y - bounds.height).toBeLessThanOrEqual(25);
+  await page.locator('#gfSearch').fill('Inter');
+  await selectFilter(page, 'pkSource', ['google', 'local']);
+  await selectFilter(page, 'gfStyle', ['sans', 'serif']);
+  await expect(page.locator('#pkSourceBtn')).toContainText('2'); await expect(page.locator('#gfStyleBtn')).toContainText('2');
+  await expect(page.locator('#gfOptions [data-family="Inter"]')).toHaveCount(1);
+  await expect(page.locator('#gfOptions [data-local-family="Inter"]')).toHaveCount(1);
+  await page.locator('#gfOptions [data-local-family="Inter"]').click();
+  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('.pk-detail #lfFace')).toBeVisible();
+  await expect(page.locator('#pkLocalFallback')).toBeVisible();
+  await expect(page.locator('#lfFaceField label')).toHaveText('字体款式');
+  expect(await page.evaluate(async () => {
+    const core = await import('./assets/js/core.js');
+    const src = core.source(core.L('Fixture Inter Regular'));
+    return src.status === 'ok' && src.faces[0].buffer instanceof ArrayBuffer;
+  })).toBeTruthy();
+  await page.locator('#lfFace').selectOption('Fixture Inter Bold');
+  await expect(page.locator('#pkSelectedName')).toHaveText('Fixture Inter Bold');
+  await page.locator('#pkFilterClear').click();
+  await expect(page.locator('#gfSearch')).toHaveValue('Inter');
+  await expect(page.locator('#pkSource input:checked')).toHaveCount(0);
+  await expect(page.locator('#gfStyle input:checked')).toHaveCount(0);
 });
 
 test('字体列表：搜索不检测半个名字，可键盘选择，四语言和手机深色布局保持可用', async ({ page }) => {
@@ -54,7 +102,7 @@ test('字体列表：搜索不检测半个名字，可键盘选择，四语言�
   for (const lang of ['zh', 'tw', 'ja', 'en']) {
     await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
     await expect(page.locator('#gfSearch')).not.toHaveAttribute('placeholder', '');
-    await expect(page.locator('#gfStyle option').first()).not.toHaveText('pkAnyStyle');
+    await expect(page.locator('#gfStyle label').first()).not.toHaveText('pkSans');
   }
 });
 
@@ -98,7 +146,7 @@ test('导入字体：重复文件去重，取消后可跨类别复用，无效�
   const id = await page.locator('#ffOptions [data-imported]').getAttribute('data-imported');
   await page.locator('#pkCancel').click();
   await expect(page.locator('.ct-row[data-id="han"] .fsel')).toHaveValue('own');
-  await page.locator('.ct-row[data-id="latin"] .fsel').selectOption('pick');
+  await openClassPicker(page, 'latin');
   await page.locator('#picker [data-src="file"]').click();
   await page.locator('#ffOptions [data-imported]').click();
   await page.locator('#ffFile').setInputFiles({ name: 'broken.ttf', mimeType: 'font/ttf', buffer: Buffer.from('invalid') });
@@ -122,7 +170,7 @@ test('导入字体：支持拖入，手机深色可选用；重新载入不假�
   await expect(page.locator('#pkOk')).toBeInViewport();
   expect(await page.locator('#picker').evaluate(el => el.scrollWidth <= el.clientWidth)).toBeTruthy();
   await page.reload(); await page.click('#ltabFonts');
-  await page.locator('.ct-row[data-id="han"] .fsel').selectOption('pick');
+  await openClassPicker(page, 'han');
   await page.locator('#picker [data-src="file"]').click();
   await expect(page.locator('#ffLibrary')).toBeHidden();
 });
@@ -217,10 +265,10 @@ test('类别样张：繁体汉字、假名、数字与空校样，支持键盘�
   await page.locator('#pkCancel').click();
   await page.evaluate(async () => { const c = await import('./assets/js/core.js'), u = await import('./assets/js/ui.js'); c.state.typo.lang = 'zh-Hant-TW'; c.state.view.text = '漢字'; u.openPicker({ type: 'class', id: 'han' }); });
   await expect(page.locator('#pkSample')).toContainText('國字體');
-  await page.locator('#pkCancel').click(); await page.locator('.ct-row[data-id="kana"] .fsel').selectOption('pick');
+  await page.locator('#pkCancel').click(); await openClassPicker(page, 'kana');
   await expect(page.locator('#pkSample')).toContainText('あいうえお');
   await expect(page.locator('#pkSampleMode [data-pk-sample="proof"]')).toBeDisabled();
-  await page.locator('#pkCancel').click(); await page.locator('.ct-row[data-id="digit"] .fsel').selectOption('pick');
+  await page.locator('#pkCancel').click(); await openClassPicker(page, 'digit');
   await expect(page.locator('#pkSample')).toContainText('0123456789');
   await page.locator('#pkSampleBtn').click();
   await page.locator('#pkSampleMode [data-pk-sample="class"]').focus(); await page.keyboard.press('ArrowRight');
@@ -262,7 +310,7 @@ test('选择时自动匹配：默认勾选、仅调整所选类别，字体和�
   await page.locator('#undoBtn').click(); expect(await matchSettings(page)).toEqual(before);
   await page.locator('#redoBtn').click(); expect(await matchSettings(page)).toEqual(after);
   await page.click('#ltabFonts');
-  await page.locator('.ct-row[data-id="latin"] .fsel').selectOption('pick');
+  await openClassPicker(page, 'latin');
   await page.locator('#pkAutoFit').uncheck();
   if (await page.locator('#pkApplied').getAttribute('open') === null) await page.locator('#pkApplied > summary').click();
   await page.locator('#ffWeightNum').fill('450'); await page.locator('#ffWeightNum').dispatchEvent('change');
@@ -280,7 +328,7 @@ test('选择时自动匹配：单档不改变基础设置，取消测量不留�
   expect(after.over[700].latin.font.kind).toBe('file'); expect(after.over[700].latin.size).not.toBe(150);
   await page.locator('#undoBtn').click(); expect(await matchSettings(page)).toEqual(before);
   await page.click('#ltabFonts');
-  await page.locator('.ct-row[data-id="latin"] .fsel').selectOption('pick');
+  await openClassPicker(page, 'latin');
   await page.locator('#picker [data-src="file"]').click(); await page.locator('#ffOptions [data-imported]').click();
   await expect(page.locator('#pkOk')).toBeEnabled();
   await page.evaluate(() => {
@@ -401,7 +449,7 @@ test('状态反馈：自动读取本机字体，迟到结果不抢焦点，失�
   await expect(page.locator('#lfQuery')).toBeHidden(); await expect(page.locator('#lfMsg')).toHaveText('等待授权…');
   const chosen = page.locator('#gfOptions [data-choice]').first(); await chosen.focus(); await chosen.press('Enter');
   await expect(chosen).toBeFocused();
-  await page.locator('#pkCancel').click(); await page.locator('.ct-row[data-id="latin"] .fsel').selectOption('pick');
+  await page.locator('#pkCancel').click(); await openClassPicker(page, 'latin');
   await expect(page.locator('#gfSearch')).toBeFocused();
   const order = await page.locator('#gfOptions [data-choice]').evaluateAll(els => els.map(el => el.dataset.choice));
   await page.evaluate(() => window.releaseLocalQuery([{ family: 'Fresh Sans', fullName: 'Fresh Sans Regular', postscriptName: 'FreshSans', style: 'Regular', blob: async () => (await fetch('/tests/fixtures/Jost%5Bwght%5D.ttf')).blob() }]));
@@ -409,7 +457,7 @@ test('状态反馈：自动读取本机字体，迟到结果不抢焦点，失�
   expect((await page.locator('#gfOptions [data-choice]').evaluateAll(els => els.map(el => el.dataset.choice))).slice(0, order.length)).toEqual(order);
   await expect(page.locator('#lfStatus')).toBeHidden(); await expect(page.locator('#gfSearch')).toBeFocused();
   await page.addInitScript(() => { window.queryLocalFonts = async () => { throw new DOMException('Denied', 'NotAllowedError'); }; });
-  await page.reload(); await page.click('#ltabFonts'); await page.locator('.ct-row[data-id="han"] .fsel').selectOption('pick');
+  await page.reload(); await page.click('#ltabFonts'); await openClassPicker(page, 'han');
   await expect(page.locator('#lfQuery')).toBeVisible(); await expect(page.locator('#lfMsg')).toContainText('没有获得权限');
   await page.evaluate(() => { window.queryLocalFonts = async () => { throw new TypeError('Device failed'); }; });
   await page.locator('#lfQuery').click(); await expect(page.locator('#lfMsg')).toContainText('无法读取本机字体');
@@ -441,21 +489,21 @@ test('选字筛选栏：搜索下方直接筛选与清除；手机四语言换�
   await fixture(page, 'latin');
   await page.locator('#gfSearch').fill('Noto');
 
-  await page.locator('#gfStyle').selectOption('serif'); await page.locator('#gfBold').check();
-  await expect(page.locator('#gfStyle')).toHaveAttribute('data-active', 'true');
+  await selectFilter(page, 'gfStyle', 'serif'); await page.locator('#gfBold').check();
+  await expect(page.locator('#gfStyleBtn')).toHaveAttribute('data-active', 'true');
   await expect(page.locator('#gfBold')).toBeChecked();
   expect(await page.locator('.filter-bar').evaluate(el => el.getBoundingClientRect().top >= document.querySelector('#gfSearch').getBoundingClientRect().bottom)).toBeTruthy();
   await page.locator('#pkFilterClear').click();
   await expect(page.locator('#gfSearch')).toHaveValue('Noto'); await expect(page.locator('#pkFilterClear')).toBeHidden();
   await expect(page.locator('#gfSearch')).toBeFocused();
-  await expect(page.locator('#gfStyle')).toHaveValue(''); await expect(page.locator('#gfBold')).not.toBeChecked();
+  await expect(page.locator('#gfStyle input:checked')).toHaveCount(0); await expect(page.locator('#gfBold')).not.toBeChecked();
   await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
   for (const lang of ['zh', 'tw', 'ja', 'en']) {
     await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
     expect(await page.locator('.filter-bar').evaluate(el => el.scrollWidth <= el.clientWidth)).toBeTruthy();
     expect(await page.locator('#picker').evaluate(el => el.querySelector('.pk-detail').getBoundingClientRect().top >= el.querySelector('#gfOptions').getBoundingClientRect().bottom)).toBeTruthy();
-    await expect(page.locator('#pkSource')).toBeInViewport();
-    await expect(page.locator('#gfStyle')).toBeInViewport();
+    await expect(page.locator('#pkSourceBtn')).toBeInViewport();
+    await expect(page.locator('#gfStyleBtn')).toBeInViewport();
     await expect(page.locator('#gfBold')).toBeInViewport();
     await expect(page.locator('.pk-actions #pkAutoFit')).toBeInViewport();
     await expect(page.locator('#pkCancel')).toBeInViewport(); await expect(page.locator('#pkOk')).toBeInViewport();
@@ -490,9 +538,9 @@ test('合并字体库：自动枚举一次、同名字体区分来源，共享�
   await expect(page.locator('#gfOptions [data-family="Inter"] .font-option-source')).toHaveText('Google Fonts');
   await expect(page.locator('#gfOptions [data-local-family="Inter"] .font-option-source')).toHaveText('本机字体');
   await page.locator('#gfSearch').fill('');
-  await page.locator('#pkSource').selectOption('local'); await page.locator('#gfStyle').selectOption('serif'); await page.locator('#gfBold').check();
-  await expect(page.locator('#pkSource')).toHaveValue('local');
-  await expect(page.locator('#gfStyle')).toHaveValue('serif');
+  await selectFilter(page, 'pkSource', 'local'); await selectFilter(page, 'gfStyle', 'serif'); await page.locator('#gfBold').check();
+  await expect(page.locator('#pkSource input[value=local]')).toBeChecked();
+  await expect(page.locator('#gfStyle input[value=serif]')).toBeChecked();
   await expect(page.locator('#gfBold')).toBeChecked();
   await expect(page.locator('#gfOptions [data-family]')).toHaveCount(0);
   await expect(page.locator('#gfOptions [data-local-family="Fixture Sans"]')).toHaveCount(0);
@@ -515,7 +563,7 @@ test('统一名称输入：未知名称只在明确选用后检查，可直接�
   await page.locator('#gfSearch').press('Enter'); await expect(page.locator('#gfTry')).toBeFocused(); expect(probes).toBe(0);
   await page.locator('#gfTry').click(); await expect(page.locator('#pkSelectedName')).toHaveText('Outside Catalogue Family');
   await expect(page.locator('#pkOk')).toBeEnabled(); expect(probes).toBeGreaterThan(0);
-  await page.locator('#pkSource').selectOption('local');
+  await selectFilter(page, 'pkSource', 'local');
   await page.locator('#gfSearch').fill('Baskerville Full Name'); await expect(page.locator('#gfTry')).toBeHidden();
   await page.locator('#gfSearch').press('Enter'); await expect(page.locator('#lfName')).toHaveValue('Baskerville Full Name');
   await expect(page.locator('#pkSelectedName')).toHaveText('Baskerville Full Name');
