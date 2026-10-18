@@ -52,6 +52,7 @@ export default {
   pkTextbook: "教科書体",
   pkHandwriting: "手書き",
   pkBrush: "毛筆・書道",
+  pkStyleNote: "仿宋・楷書・書道などの細分類には名前からの推定を含みます。情報不明のフォントも候補に残ります。",
   pkCoverSc: "簡体字の漢字",
   pkCoverTc: "繁体字の漢字",
   pkCoverJp: "日本語の漢字",

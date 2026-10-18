@@ -52,6 +52,7 @@ export default {
   pkTextbook: "Textbook (Kyokasho)",
   pkHandwriting: "Handwriting",
   pkBrush: "Brush / calligraphy",
+  pkStyleNote: "Styles such as Fangsong, Kai and calligraphy include name-based estimates. Fonts with unknown styles stay in the results.",
   pkCoverSc: "Simplified Han",
   pkCoverTc: "Traditional Han",
   pkCoverJp: "Japanese Han",

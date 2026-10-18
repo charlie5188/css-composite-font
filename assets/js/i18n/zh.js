@@ -52,6 +52,7 @@ export default {
   pkTextbook: "教科书体",
   pkHandwriting: "手写",
   pkBrush: "毛笔／书法",
+  pkStyleNote: "仿宋、楷体、书法等细分含名称推断，仅供参考；资料不明的字体会保留。",
   pkCoverSc: "简体汉字",
   pkCoverTc: "繁体汉字",
   pkCoverJp: "日文汉字",

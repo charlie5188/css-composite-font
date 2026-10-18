@@ -1,6 +1,6 @@
 import { G, GF_LIST, axisOf, gfWeights } from './core.js';
 import { CATALOG_COVERAGE } from './font-catalog-data.js';
-import { GF_ITALIC, GF_STYLE } from './gfmeta.js';
+import { GF_ITALIC, GF_STYLE, GF_HANDWRITING } from './gfmeta.js';
 import { searchKey } from './ui-controls.js';
 
 // These search aliases do not replace the font's canonical family name.
@@ -33,17 +33,28 @@ const NATIVE_NAMES = {
 const SERIFS = new Set(['IBM Plex Serif', 'Source Serif 4', 'EB Garamond', 'Cormorant Garamond', 'Libre Caslon Text', 'Libre Baskerville', 'Crimson Pro', 'Lora', 'Newsreader', 'Literata', 'Spectral', 'Fraunces', 'Playfair Display', 'Instrument Serif', 'Roboto Serif']);
 const SANS = new Set(['Inter', 'IBM Plex Sans', 'Source Sans 3', 'DM Sans', 'Work Sans', 'Manrope', 'Instrument Sans', 'Roboto', 'Lato', 'Open Sans', 'Montserrat', 'Jost']);
 const STYLES = new Map(Object.entries(GF_STYLE).flatMap(([style, list]) => list.split(',').map(name => [name, style])));
-// Refine browsing tags only; font composition keeps its existing coarse style model.
-// Match explicit names, not vague syllables (for example Kaisei is not a Kai face).
-export function catalogStyles(family, style) {
+// Official descriptions identify these as running/grass/calligraphic scripts, even
+// though metadata only says Handwriting: google/fonts/ofl/{family}/DESCRIPTION.en_us.html.
+const CJK_CALLIGRAPHY = new Set(['Zhi Mang Xing', 'Long Cang', 'Liu Jian Mao Cao']);
+// Refine browsing tags only. Match explicit names, not vague syllables:
+// Kaisei is not a Kai face; composition retains its existing coarse style model.
+function refinedStyles(family, style) {
   if (/Fang\s?Song|仿宋/i.test(family)) return ['fangsong'];
   if (/楷|(?:^|[ -])(?:KaiTi|Kaiti|BiauKai|BiaoKai|DFKai|STKaiti|Kai)(?:$|[ -])/i.test(family) || family === 'LXGW WenKai TC') return ['kai'];
   if (/教科書|教科书|Kyokasho|Kyoukasho/i.test(family)) return ['textbook'];
   if (/(?:^|[ -])Maru(?:[ -]|$)|MaruGothic|Rounded|YuanTi|圆体|圓體|丸ゴ/i.test(family)) return [style === 'serif' ? 'serif' : 'sans', 'rounded'];
   if (family === 'Ma Shan Zheng') return ['kai', 'brush'];
+  if (CJK_CALLIGRAPHY.has(family)) return ['brush'];
   if (/Brush|毛筆|毛笔|行書|行书|隷書|隶书|Gyosho|Reisho|Kantei|勘亭|Yuji (Boku|Mai|Syuku)/i.test(family)) return ['brush'];
   if (/Handwriting|手書|手写|手寫/i.test(family) || ['Klee One', 'Zen Kurenaido'].includes(family)) return ['handwriting'];
   return style ? [style] : null;
+}
+export function catalogStyles(family, style) {
+  const styles = refinedStyles(family, style);
+  // A specific CJK label can coexist with official Handwriting; never lose that
+  // classification to the coarse composition model's "other" bucket.
+  if (GF_HANDWRITING.has(family)) return [...new Set([...(styles || []).filter(s => s !== 'other'), 'handwriting'])];
+  return styles;
 }
 export function catalogInfo(family) {
   const axis = axisOf(G(family), 'wght'), weights = gfWeights(family);

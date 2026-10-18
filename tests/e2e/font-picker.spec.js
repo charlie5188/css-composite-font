@@ -175,6 +175,33 @@ test('字体资料：仿宋楷体教科书体独立，圆体兼属黑体，未�
   expect(result.google).toEqual([{ type: 'continuous', styles: ['sans'] }, { type: 'stepped', styles: ['handwriting'] }, { type: 'stepped', styles: ['sans', 'rounded'] }]);
 });
 
+test('官方手写分类与书法细分：保留多标签、未知字体和合成分类', async ({ page }) => {
+  await fixture(page);
+  const result = await page.evaluate(async () => {
+    const { catalogInfo, catalogStyles, filterCatalog } = await import('./assets/js/font-catalog.js');
+    const { GF_STYLE } = await import('./assets/js/gfmeta.js');
+    const families = ['Zhi Mang Xing', 'Long Cang', 'Liu Jian Mao Cao', 'Ma Shan Zheng', 'LXGW WenKai TC', 'Klee One'];
+    return { styles: families.map(f => catalogInfo(f).styles),
+      coarseOther: families.every(f => GF_STYLE.other.split(',').includes(f)),
+      unknown: filterCatalog([{ family: 'Unknown', styles: catalogStyles('Unknown', null) }], '', ['handwriting'], false).length };
+  });
+  expect(result.styles).toEqual([['brush', 'handwriting'], ['brush', 'handwriting'], ['brush', 'handwriting'], ['kai', 'brush', 'handwriting'], ['kai', 'handwriting'], ['handwriting']]);
+  expect(result.coarseOther).toBe(true); expect(result.unknown).toBe(1);
+  await selectFilter(page, 'pkSource', 'google');
+  for (const style of ['handwriting', 'brush']) {
+    await selectFilter(page, 'gfStyle', style);
+    for (const family of ['Zhi Mang Xing', 'Long Cang', 'Liu Jian Mao Cao']) {
+      await page.locator('#gfSearch').fill(family);
+      await expect(page.locator('#gfOptions [data-family="'+family+'"]')).toHaveCount(1);
+    }
+  }
+  await page.locator('#gfStyleBtn').click();
+  await expect(page.locator('#gfStylePop [data-t="pkStyleNote"]')).toContainText('名称推断');
+  await page.locator('#gfStylePop [data-filter-clear="gfStyle"]').click();
+  await expect(page.locator('#gfStyle input:checked')).toHaveCount(0);
+  await expect(page.locator('#gfSearch')).toHaveValue('Liu Jian Mao Cao');
+});
+
 test('意大利体筛选：实际款式与 ital 轴、未知资料保留，清除保留搜索及排序', async ({ page }) => {
   await fixture(page, 'latin');
   const facts = await page.evaluate(async () => {
