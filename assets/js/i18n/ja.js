@@ -1,5 +1,7 @@
 /* UI text: Japanese. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkPreviewTitle: "プレビューと適用",
+  pkBrowseTitle: "フォントを探す",
   pkSampleOptions: "見本の設定",
   pkImporting: "フォントファイルを読み込み中…",
   pkLocalReadFailed: "インストール済みフォントを読み取れません。再試行するか、正式名を入力してください。",

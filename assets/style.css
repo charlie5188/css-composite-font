@@ -204,6 +204,7 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 /* Use type size, weight and spacing for hierarchy, not dividers: .sec-title > .typo-name > monospaced labels and muted notes. */
 .sec-title{margin:0;font-size:var(--fs-xl);font-weight:600;color:var(--ink);line-height:1.3;letter-spacing:-.01em}
 .sec-acts{display:inline-flex;align-items:center;gap:var(--sp-2) var(--sp-3)}
+.subsection-title{margin:0;font-size:var(--fs-l);font-weight:600;line-height:1.4;color:var(--ink)}
 /* Small dialogs such as Save preset: title, description and fields, with actions bottom-right and the primary action last. */
 .dlg-form{display:grid;gap:var(--sp-4);padding:22px 24px 20px}
 .dlg-form h2{margin:0;font-size:var(--fs-xl);font-weight:600}
@@ -857,7 +858,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .vh{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .pk .hint{margin:0}
 .pk-selected{display:grid;gap:var(--sp-1)}
-.pk-selected h4,.pk-apply h4{margin:0;font-size:var(--fs-l);font-weight:600;overflow-wrap:anywhere}
+.pk-selected h5{margin:0;font-size:var(--fs-m);font-weight:500;overflow-wrap:anywhere}
 .pk-apply{display:grid;gap:var(--sp-3)}
 .pk-apply>.field{max-width:180px}
 .pk-disclosure>summary{font-size:var(--fs-s);color:var(--muted);cursor:pointer}

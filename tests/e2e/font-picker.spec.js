@@ -72,6 +72,8 @@ test('本机字体：按家族和样式选择，自动读取可变属性，拒�
   await expect(page.locator('#lfManual')).not.toHaveAttribute('open', '');
   await page.locator('#lfQuery').click();
   await expect(page.locator('#lfOptions [data-local-family]')).toHaveCount(1);
+  await page.locator('#lfFamilySearch').fill('Ｆｉｘｔｕｒｅ-Ｓａｎｓ');
+  await expect(page.locator('#lfOptions [data-local-family]')).toHaveCount(1);
   await page.locator('#lfOptions [data-local-family]').click();
   await expect(page.locator('#lfFace option')).toHaveCount(2);
   await expect(page.locator('#lfName')).toHaveValue('Fixture Sans Regular');
@@ -96,6 +98,8 @@ test('导入字体：重复文件去重，取消后可跨类别复用，无效�
   await expect(page.locator('#ffOptions [data-imported]')).toHaveCount(1);
   await expect(page.locator('#pkOk')).toBeEnabled();
   await expect(page.locator('#pkTargetCoverage')).toContainText('缺少');
+  await page.locator('#ffSearch').fill('Ｊ ｏ-ｓ_ｔ');
+  await expect(page.locator('#ffOptions [data-imported]')).toHaveCount(1);
   const id = await page.locator('#ffOptions [data-imported]').getAttribute('data-imported');
   await page.locator('#pkCancel').click();
   await expect(page.locator('.ct-row[data-id="han"] .fsel')).toHaveValue('own');
@@ -302,6 +306,8 @@ test('选择时自动匹配：单档不改变基础设置，取消测量不留�
 test('信息层级：预览、应用与详情分组，短列表收紧，数字组件和来源页签支持键盘', async ({ page }) => {
   await fixture(page);
   await expect(page.locator('#pkSelectedName')).toHaveText('Noto Serif SC');
+  await expect(page.getByRole('region', { name: '浏览字体', exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: '预览与应用', exact: true })).toBeVisible();
   await expect(page.locator('#gfFamily')).toBeHidden();
   await expect(page.locator('#pkDetails')).not.toHaveAttribute('open', '');
   await expect(page.locator('#pkApplied #gfWeightNum')).toBeHidden();
@@ -445,6 +451,8 @@ test('选字弹层：筛选状态可见且可清除，Escape 只关闭弹层；�
   await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
   for (const lang of ['zh', 'tw', 'ja', 'en']) {
     await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
+    await expect(page.locator('#pkBrowseTitle')).not.toHaveText('pkBrowseTitle');
+    await expect(page.locator('#pkPreviewTitle')).not.toHaveText('pkPreviewTitle');
     await expect(page.locator('.pk-actions #pkAutoFit')).toBeInViewport();
     await expect(page.locator('#pkCancel')).toBeInViewport(); await expect(page.locator('#pkOk')).toBeInViewport();
     await page.locator('#pkSampleBtn').click(); await page.locator('[data-pk-sample="custom"]').click();

@@ -95,6 +95,7 @@ assets/js/core.js        State (`state`, setState, initState, normalizeState + v
 assets/js/refresh.js     refresh('editor', 'preview', …): re-render named parts in a fixed order, then save
 assets/js/render.js      Class table, proof, specimen canvas, toolbar sync
 assets/js/ui.js          Event wiring, preset cards, font picker, dialogs, typography rows, init()
+assets/js/ui-controls.js Shared popover anchoring and font-name search normalization; no configuration state
 assets/js/appearance.js  Browser-local theme and proof colors, separate from configuration state
 assets/js/share.js       Configuration links, bounded codec, validation, clipboard and reversible import
 assets/js/export.js      Exported CSS / baseline JS
@@ -173,7 +174,9 @@ for a role that already has one; if something is really missing, add it to that 
   (compact range popover with endpoints and optional `.btn-text` shortcuts in one row; omit endpoint labels
   when they would crowd a shortcut), `.pop` (popover
   surface) with `.menu` / `.mm-item` / `.mm-radio` / `.mm-check`, `.sec-head` + `.sec-title` + `.sec-acts` (section
-  heading), `.callout` (yellow notice), `.dlg-form` + `.dlg-act` (small dialog: title, fields, buttons bottom right), `.badge` (count pill), `.info` (the (i) button that opens `#infoPop`), tooltips through `title`.
+  heading; `.subsection-title` for smaller headings within a dialog), `.callout` (yellow notice), `.dlg-form` + `.dlg-act` (small dialog: title, fields, buttons bottom right), `.badge` (count pill), `.info` (the (i) button that opens `#infoPop`), tooltips through `title`.
+- **Shared interactions:** `ui-controls.js` owns `bindPopover` / `placePopover` for anchored popovers. Reuse them for viewport bounds, flipping, resize, scrolling and changing content; pass a dialog as `within` for modal controls. Use `searchKey` for font-name/alias search across sources (case, full-width forms, spaces, hyphens and underscores normalize together). Do not use name normalization for literal character searches.
+  Preview samples and weight fields reuse shared slider tokens and `stepperCell`; keep picker preview, main proof and export settings in their own state. Share mechanics without coupling those outcomes.
 - **File drops:** `.file-drop` extends the standard file button with a dashed drop target and `.dragging` feedback. Keep a keyboard-accessible file input and never replace a valid selection with a failed import.
 - **Font choices:** `.font-options` and `.font-option` keep names and real specimens in fixed-height rows. Load visible specimens lazily; asynchronous checks must never reorder a list under the pointer. Unknown metadata stays eligible when filtering. Size the list from its rendered item count, capped at the shared maximum; background specimen loading must not change its height.
 - **Color fields:** `.color-field` pairs a native color well with an editable hex value and a shared focus ring.

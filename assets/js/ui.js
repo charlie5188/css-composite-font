@@ -1,4 +1,5 @@
 import { refresh } from './refresh.js';
+import { bindPopover, placePopover, searchKey } from './ui-controls.js';
 import { catalogOrder, filterCatalog } from './font-catalog.js';
 import { importFontFile, importedFonts, rememberImportedFont } from './font-files.js';
 import { initShare } from './share.js';
@@ -520,9 +521,7 @@ export function infoHtml(key) {
   return INFO[key] ? INFO[key]() : '';
 }
 export function placePop(pop, btn) {
-  const r = btn?.getBoundingClientRect(); if (!r) return;
-  pop.style.left = Math.max(8, Math.min(r.left - 12, innerWidth - pop.offsetWidth - 8)) + 'px';
-  pop.style.top = (r.bottom + 8 + pop.offsetHeight > innerHeight ? Math.max(8, r.top - pop.offsetHeight - 8) : r.bottom + 8) + 'px';
+  placePopover(pop, btn);
 }
 export let infoBtn = null;
 document.addEventListener('click', e => {
@@ -686,18 +685,7 @@ export function initToolbar() {
       showWeightSlider();
     });
   });
-  const positionViewMenu = () => {      // Prefer below the button; allow scrolling on short screens and keep the popup inside the viewport after resize.
-    const pop = $('#viewPop'); if (!pop.matches(':popover-open')) return;
-    const r = $('#viewBtn').getBoundingClientRect();
-    if (!r.width) { pop.hidePopover(); return; }
-    pop.style.left = Math.max(8, Math.min(innerWidth - pop.offsetWidth - 8, r.right - pop.offsetWidth)) + 'px';
-    pop.style.top = Math.max(8, Math.min(r.bottom + 6, innerHeight - pop.offsetHeight - 8)) + 'px';
-  };
-  $('#viewPop').addEventListener('toggle', e => {
-    $('#viewBtn').setAttribute('aria-expanded', e.newState === 'open');
-    if (e.newState === 'open') { e.currentTarget.scrollTop = 0; positionViewMenu(); }
-  });
-  window.addEventListener('resize', positionViewMenu);
+  bindPopover($('#viewPop'), $('#viewBtn'), { align: 'end', gap: 6, flip: false });
   /* Metric toolbar legend buttons independently toggle Western, digit, kana and Zhuyin guides. */
   $('#specBar').addEventListener('click', e => {
     const b = e.target.closest('[data-sg]'); if (!b) return;
@@ -711,13 +699,7 @@ export function initToolbar() {
   /* Space exported stepped weights evenly by index; continuous mode uses actual numeric values. */
   const wn = $('#vWn'), slider = $('#vWSlider'), pop = $('#vWPop');
   let returningFocus = false;
-  const positionWeightSlider = () => {
-    if (!pop.matches(':popover-open')) return;
-    const r = $('#vWnLab').getBoundingClientRect();
-    if (!r.width) { pop.hidePopover(); return; }
-    pop.style.left = Math.max(8, Math.min(innerWidth - pop.offsetWidth - 8, r.right - pop.offsetWidth)) + 'px';
-    pop.style.top = (r.bottom + 6 + pop.offsetHeight <= innerHeight - 8 ? r.bottom + 6 : Math.max(8, r.top - pop.offsetHeight - 6)) + 'px';
-  };
+  const positionWeightSlider = bindPopover(pop, $('#vWnLab'), { align: 'end', gap: 6 });
   function showWeightSlider() {
     syncPreviewWeight({ preserveInput: true });
     if (!pop.matches(':popover-open')) pop.showPopover();
@@ -729,8 +711,6 @@ export function initToolbar() {
   });
   wn.addEventListener('focus', () => { if (!returningFocus) showWeightSlider(); });
   wn.addEventListener('click', showWeightSlider);
-  window.addEventListener('resize', positionWeightSlider);
-  document.addEventListener('scroll', positionWeightSlider, { passive: true, capture: true });
   slider.addEventListener('input', () => setPreviewW(state.wmode === 'cont' ? +slider.value : state.weights[+slider.value]));
   $('#vWTicks').addEventListener('click', e => {
     const b = e.target.closest('button[data-weight]');
@@ -1013,12 +993,6 @@ document.addEventListener('click', e => {
   renderPresetCards(); saveState();
   $(`#pfMenu [data-pf="${focus}"]`)?.focus();
 });
-/* Position the filter menu below its button with right edges aligned. */
-$('#pfMenu').addEventListener('toggle', e => {
-  if (e.newState !== 'open') return;
-  const r = $('#pfBtn').getBoundingClientRect(), pop = e.currentTarget;
-  pop.style.top = r.bottom + 6 + 'px'; pop.style.left = Math.max(8, Math.min(r.left, innerWidth - pop.offsetWidth - 8)) + 'px';
-});
 export const renderPresetCardsSoon = debounce(renderPresetCards, 120);
 export const hasFileFont = () => [...CLASSES.map(c => state.classes[c.id].font), ...state.custom.map(c => c.font)].some(f => f && f.kind === 'file');
 export function applyPreset(id) {
@@ -1189,6 +1163,7 @@ export function syncSave() {
   button.querySelector('span').textContent = T(exists ? 'presetUpdate' : saveThen ? 'leaveSave' : 'presetCreate');
 }
 export function initPresets() {
+  bindPopover($('#pfMenu'), $('#pfBtn'), { gap: 6 });
   $('#presetCards').addEventListener('click', e => {
     const del = e.target.closest('.pdel');
     if (del) {
@@ -1327,8 +1302,8 @@ function selectLocalFamily(family, keepFace = false) {
   if (!keepFace) updateCand();
 }
 export function renderLocalFonts() {
-  const box = $('#lfOptions'), query = $('#lfFamilySearch').value.trim().toLowerCase(), current = $('#lfName').value;
-  const groups = localGroups().filter(([family, faces]) => `${family} ${faces.map(f => f.fullName + ' ' + f.postscriptName).join(' ')}`.toLowerCase().includes(query));
+  const box = $('#lfOptions'), query = searchKey($('#lfFamilySearch').value), current = $('#lfName').value;
+  const groups = localGroups().filter(([family, faces]) => searchKey(`${family} ${faces.map(f => f.fullName + ' ' + f.postscriptName).join(' ')}`).includes(query));
   localObserver?.disconnect(); box.style.setProperty('--font-choice-count', groups.length);
   $('#lfResults').textContent = T('pkResults', { n: groups.length });
   box.innerHTML = groups.length ? groups.map(([family, faces], i) => `<button type="button" class="font-option" role="option" tabindex="${i ? -1 : 0}" aria-selected="${faces.some(f => f.fullName === current)}" data-local-family="${esc(family)}" data-local-face="${esc(faces.find(f => /regular|normal|book/i.test(f.style))?.fullName || faces[0].fullName)}"><span class="font-option-name">${esc(family)}</span><span class="font-option-sample" hidden>${esc(pickerClassSample())}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoLocalResults'))}</p>`;
@@ -1351,9 +1326,9 @@ function chooseImported(id) {
   $('#ffOptions').querySelectorAll('[data-imported]').forEach(el => el.setAttribute('aria-selected', el.dataset.imported === id));
 }
 export function renderImportedFonts() {
-  const query = $('#ffSearch').value.trim().toLowerCase(), box = $('#ffOptions');
+  const query = searchKey($('#ffSearch').value), box = $('#ffOptions');
   const all = [...importedFonts.values()].filter(entry => files.has(entry.font.fileId));
-  const entries = all.filter(entry => `${entry.family} ${entry.style} ${entry.font.fileName}`.toLowerCase().includes(query));
+  const entries = all.filter(entry => searchKey(`${entry.family} ${entry.style} ${entry.font.fileName}`).includes(query));
   $('#ffLibrary').hidden = !all.length; fileObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
   $('#ffResults').textContent = T('pkResults', { n: entries.length });
   box.innerHTML = entries.length ? entries.map((entry, i) => `<button class="font-option" type="button" role="option" tabindex="${i ? -1 : 0}" aria-selected="${pickCand?.fileId === entry.font.fileId}" data-imported="${esc(entry.font.fileId)}"><span class="font-option-name">${esc(entry.family)}${entry.style ? ' · ' + esc(entry.style) : ''}</span><span class="font-option-sample" hidden>${esc(pickerClassSample())}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoImportedResults'))}</p>`;
@@ -1828,17 +1803,7 @@ function pickerNumber(input) {
 export function initPicker() {
   picker.querySelectorAll('input[type="number"]').forEach(pickerNumber);
   const pickerPops = [['pkFilterPop', 'pkFilterBtn'], ['pkSamplePop', 'pkSampleBtn']];
-  const placePickerPops = () => pickerPops.forEach(([id, button]) => {
-    const pop = $('#'+id); if (!pop.matches(':popover-open')) return;
-    placePop(pop, $('#'+button));
-    const bounds = picker.getBoundingClientRect();
-    pop.style.left = Math.max(bounds.left + 16, Math.min(parseFloat(pop.style.left), bounds.right - pop.offsetWidth - 16)) + 'px';
-  });
-  // Popovers stay inside the dialog and re-anchor when custom text changes their height.
-  const pickerPopSizes = new ResizeObserver(placePickerPops);
-  pickerPops.forEach(([id]) => { $('#'+id).addEventListener('toggle', placePickerPops); pickerPopSizes.observe($('#'+id)); });
-  picker.querySelector('.pk-workspace').addEventListener('scroll', placePickerPops);
-  window.addEventListener('resize', placePickerPops);
+  pickerPops.forEach(([id, button]) => bindPopover($('#'+id), $('#'+button), { within: picker, inset: 16 }));
   $('#pkFilterClear').addEventListener('click', () => { $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog(); });
   picker.addEventListener('click', e => {
     const button = e.target.closest('.field-step [data-step]'); if (!button) return;
@@ -2032,17 +1997,7 @@ export function init() {
   $('#aboutBtn').addEventListener('click', () => $('#aboutDlg').showModal());
   $('#aboutItem').addEventListener('click', () => { $('#moreMenu').hidePopover(); $('#aboutDlg').showModal(); });
   $('#aboutClose').addEventListener('click', () => $('#aboutDlg').close());
-  /* Align Settings with the gear button's right edge and keep it inside narrow viewports. */
-  const positionSettings = () => {
-    const pop = $('#moreMenu'); if (!pop.matches(':popover-open')) return;
-    const r = $('#moreBtn').getBoundingClientRect();
-    pop.style.top = Math.max(8, Math.min(r.bottom + 6, innerHeight - pop.offsetHeight - 8)) + 'px'; pop.style.left = Math.max(8, r.right - pop.offsetWidth) + 'px';
-  };
-  $('#moreMenu').addEventListener('toggle', e => {
-    $('#moreBtn').setAttribute('aria-expanded', e.newState === 'open');
-    if (e.newState === 'open') { e.currentTarget.scrollTop = 0; positionSettings(); }
-  });
-  window.addEventListener('resize', positionSettings);
+  bindPopover($('#moreMenu'), $('#moreBtn'), { align: 'end', gap: 6, flip: false });
   for (const d of ['#aboutDlg', '#exDlg']) $(d).addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });      // Close on a click outside the dialog, on its backdrop.
   applyUI();
   initSplit(); initSpecSplit(); initHistory(); initTips(); initShare();

@@ -1,5 +1,6 @@
 import { G, GF_LIST, axisOf, gfWeights } from './core.js';
 import { GF_STYLE } from './gfmeta.js';
+import { searchKey } from './ui-controls.js';
 
 // These search aliases do not replace the font's canonical family name.
 const ALIASES = {
@@ -14,7 +15,6 @@ const ALIASES = {
 const SERIFS = new Set(['IBM Plex Serif', 'Source Serif 4', 'EB Garamond', 'Cormorant Garamond', 'Libre Caslon Text', 'Libre Baskerville', 'Crimson Pro', 'Lora', 'Newsreader', 'Literata', 'Spectral', 'Fraunces', 'Playfair Display', 'Instrument Serif', 'Roboto Serif']);
 const SANS = new Set(['Inter', 'IBM Plex Sans', 'Source Sans 3', 'DM Sans', 'Work Sans', 'Manrope', 'Instrument Sans', 'Roboto', 'Lato', 'Open Sans', 'Montserrat', 'Jost']);
 const STYLES = new Map(Object.entries(GF_STYLE).flatMap(([style, list]) => list.split(',').map(name => [name, style])));
-const normalized = value => value.normalize('NFKC').toLowerCase().replace(/[\s_-]+/g, '');
 export function catalogInfo(family) {
   const axis = axisOf(G(family), 'wght'), weights = gfWeights(family);
   const region = /\bSC$/.test(family) || ['ZCOOL XiaoWei', 'Ma Shan Zheng'].includes(family) ? 'sc'
@@ -33,7 +33,7 @@ export function catalogOrder(category, lang, current) {
     .sort((a, b) => score(a) - score(b) || Number(a.style === 'other') - Number(b.style === 'other') || a.family.localeCompare(b.family, 'en'));
 }
 export function filterCatalog(items, query, style, bold) {
-  const q = normalized(query.trim());
-  return items.filter(item => (!q || normalized(item.family + item.aliases).includes(q))
+  const q = searchKey(query.trim());
+  return items.filter(item => (!q || searchKey(item.family + item.aliases).includes(q))
     && (!style || item.style == null || item.style === style) && (!bold || item.bold !== false));
 }
