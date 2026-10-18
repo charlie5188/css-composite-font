@@ -6,7 +6,7 @@ import { initAppearance } from './appearance.js';
 import { FIT_SAMPLES, chooseFits, createFitter } from './autofit.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, classOf, inRanges, parseChars, rebuildClassRanges } from './unicode.js';
-import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
+import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
 import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
@@ -1238,9 +1238,29 @@ let pickerProofWeight = 400, pickerProofKey = '', pickerPreviewToken = 0;
 export let pickW = null;   // When editing a non-400 row with its own font, choose a weight, font name or file only for that step.
 export const picker = $('#picker');
 let pickCatalog = [], catalogObserver;
+let pickerSampleMode = 'class', pickerCustomText = '';
+function pickerOwns(ch) {
+  const owner = ownerOf(ch.codePointAt(0)), key = keyOf(pickTarget);
+  return owner === key || key === 'han' && owner === 'other';
+}
+function pickerClassSample() {
+  if (pickTarget.type === 'custom') return parseChars(objOf(pickTarget).chars).flatMap(([a, b]) => Array.from({ length: Math.min(32, b - a + 1) }, (_, i) => String.fromCodePoint(a + i))).slice(0, 48).join('');
+  const han = /^ko/i.test(state.typo.lang) ? '한글 가나다 漢字' : /^ja/i.test(state.typo.lang) ? '永国書体 春山風月' : /Hant|TW|HK/i.test(state.typo.lang) ? '永國字體 春山可望' : '永国字体 春山可望';
+  const samples = { han, latin: 'Hamburg Aa Gg Rr', digit: '0123456789 11980 2026', kana: 'あいうえお アイウエオ かなカナ', shared: '“ ” ‘ ’ — …… ·', punct: '「 」 『 』 （ ） 、 。 ！ ？', symbol: '①②③ ※ → ℃ ＡＢＣ １２３', bopo: 'ㄅㄆㄇㄈ ㄉㄊㄋㄌ ㄧㄨㄩ ˊˇˋ˙' };
+  return [...(samples[pickTarget.id] || CLS[pickTarget.id].sample)].map(ch => /\s/.test(ch) || pickerOwns(ch) ? ch : ' ').join('').replace(/\s+/g, ' ').trim();
+}
+function pickerProofText() {
+  return [...(state.view.text || '')].map(ch => pickerOwns(ch) ? ch : ' ').join('').replace(/\s+/g, ' ').trim();
+}
+function renderPickerSample() {
+  const proof = pickerProofText(), text = pickerSampleMode === 'proof' ? proof : pickerSampleMode === 'custom' ? pickerCustomText : pickerClassSample();
+  picker.querySelectorAll('[data-pk-sample]').forEach(el => { el.setAttribute('aria-checked', el.dataset.pkSample === pickerSampleMode); el.tabIndex = el.dataset.pkSample === pickerSampleMode ? 0 : -1; if (el.dataset.pkSample === 'proof') { el.disabled = !proof; el.title = proof ? '' : T('pkNoProofChars'); } });
+  $('#pkSampleText').hidden = pickerSampleMode !== 'custom'; $('#pkSampleText').value = pickerCustomText;
+  $('#pkSample').textContent = $('#pkSample').dataset.text = text;
+}
 function catalogSample(item) {
-  if (item?.region === 'latin') return 'Hamburg 0123';
-  return pickTarget?.type === 'class' ? CLS[pickTarget.id].sample : (state.custom[pickTarget?.i]?.chars || 'Ag');
+  if (item?.region === 'latin' && pickTarget?.type === 'class' && ['han', 'kana', 'bopo', 'punct', 'symbol'].includes(pickTarget.id)) return 'Hamburg 0123';
+  return pickerClassSample() || 'Ag';
 }
 function chooseCatalog(family) {
   $('#gfFamily').value = family; syncGfWeight(); updateCand();
@@ -1265,7 +1285,9 @@ export function renderCatalog() {
     const sample = el.querySelector('.font-option-sample'), status = el.querySelector('[data-font-state]');
     if (src.status !== 'ok') { status.textContent = T('pkPreviewUnavailable'); return; }
     try {
-      await document.fonts.load(`24px "${src.family}"`, sample.textContent);
+      const covered = text => [...text].every(ch => !ch.trim() || src.faces.some(face => !face.range || inRanges(face.range, ch.codePointAt(0))));
+      if (!covered(sample.textContent)) sample.textContent = covered('Ag 0123') ? 'Ag 0123' : '';
+      if (!sample.textContent || !(await document.fonts.load(`24px "${src.family}"`, sample.textContent)).length) { status.textContent = T('pkPreviewUnavailable'); return; }
       if (!el.isConnected) return;
       sample.style.fontFamily = `"${src.family}", var(--ui)`; sample.hidden = false; status.hidden = true;
     } catch (error) { status.textContent = T('pkPreviewUnavailable'); }
@@ -1491,7 +1513,7 @@ export async function renderCoverage(s, f) {
   const tok = ++covTok, box = $('#pkCov'), sample = $('#pkSample');
   const text = sample.dataset.text || sample.textContent;
   const sampleChars = [...new Set([...text].filter(c => c.trim() && c !== '·'))];
-  const targetChars = [...new Set([...(state.view.text || '')].filter(c => pickTarget?.type === 'class' ? classOf(c.codePointAt(0)) === pickTarget.id : inRanges(parseChars(state.custom[pickTarget?.i]?.chars || ''), c.codePointAt(0))))];
+  const targetChars = [...new Set([...(state.view.text || '')].filter(c => c.trim() && pickerOwns(c)))];
   const miss = await missingIn(s, [...new Set([...COV_SETS.flatMap(([, cs]) => [...cs]), ...sampleChars, ...targetChars])]);
   if (tok !== covTok || pickCand !== f) return;
   const targetMissing = targetChars.filter(ch => miss.has(ch)), targetNote = $('#pkTargetCoverage');
@@ -1669,7 +1691,7 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   $('#lfMsg').hidden = true; $('#lfMsg').classList.remove('caution');
   const rowFont = pickW ? (t.type === 'class' ? resolveCls(t.id, W, true) : resolveCustom(o, W, true)).font : cur;
   pickCand = ovf?.kind === 'file' ? ovf : rowFont?.kind === 'file' ? rowFont : null;
-  $('#pkSample').textContent = $('#pkSample').dataset.text = `${t.type === 'class' ? CLS[t.id].sample : (state.custom[t.i].chars || '')} · 永国字體 あア Hamburg 0123`;
+  pickerSampleMode = 'class'; pickerCustomText = pickerClassSample(); $('#pkSampleSize').value = 32; $('#pkSample').style.fontSize = '32px'; renderPickerSample();
   pickCatalog = catalogOrder(t.type === 'class' ? t.id : 'custom', state.typo.lang, cur?.kind === 'google' ? cur.family : '');
   $('#gfSearch').value = ''; $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog();
   picker.showModal();
@@ -1677,6 +1699,11 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   if (pickTab === 'google') $('#gfSearch').focus();
 }
 export function initPicker() {
+  $('#pkSampleMode').addEventListener('click', e => { const el = e.target.closest('[data-pk-sample]'); if (!el) return; pickerSampleMode = el.dataset.pkSample; renderPickerSample(); paintPickerCandidate(); });
+  $('#pkSampleMode').addEventListener('keydown', e => { if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return; e.preventDefault(); const els = [...e.currentTarget.querySelectorAll('button:not(:disabled)')], i = els.indexOf(e.target), next = e.key === 'Home' ? 0 : e.key === 'End' ? els.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + els.length) % els.length; els[next].click(); els[next].focus(); });
+  $('#pkSampleText').addEventListener('input', debounce(() => { pickerCustomText = $('#pkSampleText').value; $('#pkSample').textContent = $('#pkSample').dataset.text = pickerCustomText; paintPickerCandidate(); }, 200));
+  $('#pkSampleSize').addEventListener('input', e => { const size = +e.target.value; if (size >= 8 && size <= 96) $('#pkSample').style.fontSize = size + 'px'; });
+  $('#pkSampleSize').addEventListener('blur', e => { const size = Math.max(8, Math.min(96, +e.target.value || 32)); e.target.value = size; $('#pkSample').style.fontSize = size + 'px'; });
   for (const id of ['pkProofWeight', 'pkProofWeightNum', 'pkProofWeightSelect']) $('#'+id).addEventListener('input', e => { if (e.target.value !== '') setPickerProof(+e.target.value); });
   $('#pkProofWeightNum').addEventListener('blur', () => syncPickerProof(pickCand));
   picker.querySelectorAll('[data-proof-weight]').forEach(el => el.addEventListener('click', () => setPickerProof(+el.dataset.proofWeight)));

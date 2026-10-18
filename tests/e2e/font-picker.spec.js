@@ -177,3 +177,42 @@ test('逐档上传字体：读取该档实际粗细，保存单档映射不改�
   await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
   expect(await page.evaluate(async () => { const c = await import('./assets/js/core.js'); return [c.state.classes.han.font.weight, c.state.wOver[700].han.weight]; })).toEqual([400, 450]);
 });
+
+
+test('类别样张：西文不混入汉字，校样按实际归属提取；自定义文字和字号不进入配置', async ({ page }) => {
+  await fixture(page, 'latin');
+  await expect(page.locator('#pkSample')).toContainText('Hamburg');
+  await expect(page.locator('#pkSample')).not.toContainText('永');
+  const before = await page.evaluate(async () => JSON.stringify((await import('./assets/js/share.js')).shareSnapshot()));
+  await page.evaluate(async () => {
+    const c = await import('./assets/js/core.js'); c.state.custom = [{ chars: 'A', follow: 'han', font: null, size: null, shift: null }];
+    c.refreshCustomRanges(); c.state.view.text = '汉字 Alpha Beta 123';
+  });
+  const configured = await page.evaluate(async () => JSON.stringify((await import('./assets/js/share.js')).shareSnapshot()));
+  await page.locator('#pkSampleMode [data-pk-sample="proof"]').click();
+  await expect(page.locator('#pkSample')).toHaveText('lpha Beta');
+  await page.locator('#pkSampleMode [data-pk-sample="custom"]').click();
+  await page.locator('#pkSampleText').fill('PRIVATE PICKER TEXT');
+  await expect(page.locator('#pkSample')).toHaveText('PRIVATE PICKER TEXT');
+  await page.locator('#pkSampleSize').fill('48');
+  await expect(page.locator('#pkSample')).toHaveCSS('font-size', '48px');
+  await page.locator('#gfSearch').fill('Inter'); await page.locator('#gfOptions [data-family="Inter"]').click();
+  await expect(page.locator('#pkSample')).toHaveText('PRIVATE PICKER TEXT');
+  expect(await page.evaluate(async () => JSON.stringify((await import('./assets/js/share.js')).shareSnapshot()))).not.toContain('PRIVATE PICKER TEXT');
+  expect(await page.evaluate(async () => JSON.stringify((await import('./assets/js/share.js')).shareSnapshot()))).toBe(configured);
+  expect(before).not.toContain('PRIVATE PICKER TEXT');
+});
+
+test('类别样张：繁体汉字、假名、数字与空校样，支持键盘切换样张', async ({ page }) => {
+  await fixture(page);
+  await page.locator('#pkCancel').click();
+  await page.evaluate(async () => { const c = await import('./assets/js/core.js'), u = await import('./assets/js/ui.js'); c.state.typo.lang = 'zh-Hant-TW'; c.state.view.text = '漢字'; u.openPicker({ type: 'class', id: 'han' }); });
+  await expect(page.locator('#pkSample')).toContainText('國字體');
+  await page.locator('#pkCancel').click(); await page.locator('.ct-row[data-id="kana"] .fsel').selectOption('pick');
+  await expect(page.locator('#pkSample')).toContainText('あいうえお');
+  await expect(page.locator('#pkSampleMode [data-pk-sample="proof"]')).toBeDisabled();
+  await page.locator('#pkCancel').click(); await page.locator('.ct-row[data-id="digit"] .fsel').selectOption('pick');
+  await expect(page.locator('#pkSample')).toContainText('0123456789');
+  await page.locator('#pkSampleMode [data-pk-sample="class"]').focus(); await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#pkSampleMode [data-pk-sample="custom"]')).toHaveAttribute('aria-checked', 'true');
+});

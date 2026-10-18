@@ -1,5 +1,12 @@
 /* UI text: Simplified Chinese. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkNoProofChars: "当前校样没有此类字符",
+  pkSampleText: "输入预览文字",
+  pkSampleSize: "字号",
+  pkCustomSample: "自定义",
+  pkProofSample: "校样文字",
+  pkClassSample: "类别样张",
+  pkSampleSource: "样张来源",
   pkWeightMapping: "字体的 {weight} 将用于组合的 {target}。",
   pkCurrentStyle: "预览当前样式",
   pkAppliedWeight: "应用字重",

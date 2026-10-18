@@ -1,5 +1,12 @@
 /* UI text: English. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkNoProofChars: "The proof has no characters from this class",
+  pkSampleText: "Enter preview text",
+  pkSampleSize: "Size",
+  pkCustomSample: "Custom",
+  pkProofSample: "Proof text",
+  pkClassSample: "Class sample",
+  pkSampleSource: "Specimen source",
   pkWeightMapping: "Font weight {weight} maps to composite weight {target}.",
   pkCurrentStyle: "Previewing the current style",
   pkAppliedWeight: "Applied weight",

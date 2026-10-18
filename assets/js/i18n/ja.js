@@ -1,5 +1,12 @@
 /* UI text: Japanese. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkNoProofChars: "校正にこのクラスの文字がありません",
+  pkSampleText: "プレビューする文字",
+  pkSampleSize: "サイズ",
+  pkCustomSample: "カスタム",
+  pkProofSample: "校正の文字",
+  pkClassSample: "クラス見本",
+  pkSampleSource: "見本の内容",
   pkWeightMapping: "フォントの {weight} を合成フォントの {target} に対応させます。",
   pkCurrentStyle: "現在のスタイルを表示",
   pkAppliedWeight: "適用する太さ",

@@ -816,10 +816,14 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk .field input,.pk .field select{width:100%}
 /* Font picker: font source, preview card, collapsed axes, then scope and actions. */
 .pk-preview{border:1px solid var(--line);border-radius:var(--r);padding:16px 18px 14px;display:grid;gap:10px}
-#pkSample{font-size:32px;line-height:1.3;overflow-wrap:anywhere}
+#pkSample{font-size:32px;line-height:1.3;overflow-wrap:anywhere;white-space:pre-wrap;max-height:240px;overflow:auto}
 .pk-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:var(--fs-s);color:var(--muted)}
 .pk-punct.bad{color:var(--caution);background:var(--caution-bg);padding:2px 7px;border-radius:var(--r)}
 #pkSample:not([hidden])+.pk-meta{border-top:1px solid var(--rule);padding-top:10px}
+.pk-sample-bar{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-3);align-items:center}
+.pk-sample-size{display:flex;gap:var(--sp-2);align-items:center;font-size:var(--fs-s);color:var(--muted)}
+.pk-sample-size input{width:70px}
+#pkSampleText{width:100%;resize:vertical;min-height:64px;max-height:160px;background:var(--sheet);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);padding:var(--sp-2);font-size:var(--fs-m)}
 .pk-preview-tools{display:grid;gap:var(--sp-2);font-size:var(--fs-s);color:var(--muted)}
 .pk-proof-range{display:grid;grid-template-columns:minmax(0,1fr) 70px;gap:var(--sp-3);align-items:center}
 .pk-proof-range input[type=number]{width:100%}

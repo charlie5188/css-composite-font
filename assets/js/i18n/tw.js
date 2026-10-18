@@ -1,5 +1,12 @@
 /* UI text: Traditional Chinese (Taiwan). Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkNoProofChars: "目前校樣沒有這類字元",
+  pkSampleText: "輸入預覽文字",
+  pkSampleSize: "字級",
+  pkCustomSample: "自訂",
+  pkProofSample: "校樣文字",
+  pkClassSample: "類別字樣",
+  pkSampleSource: "字樣來源",
   pkWeightMapping: "字型的 {weight} 會用於組合的 {target}。",
   pkCurrentStyle: "預覽目前樣式",
   pkAppliedWeight: "套用字重",
