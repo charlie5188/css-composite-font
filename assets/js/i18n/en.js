@@ -49,7 +49,6 @@ export default {
   pkCoverSc: "Simplified Han",
   pkCoverTc: "Traditional Han",
   pkCoverJp: "Japanese Han",
-  pkCoverDigit: "Digits",
   pkCoverKana: "Kana",
   pkCoverPunct: "Full-width punctuation",
   pkCoverSymbol: "Full-width symbols",

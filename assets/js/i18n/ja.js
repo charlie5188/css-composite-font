@@ -49,7 +49,6 @@ export default {
   pkCoverSc: "簡体字の漢字",
   pkCoverTc: "繁体字の漢字",
   pkCoverJp: "日本語の漢字",
-  pkCoverDigit: "数字",
   pkCoverKana: "仮名",
   pkCoverPunct: "全角約物",
   pkCoverSymbol: "全角記号",
