@@ -329,6 +329,11 @@ export function os2Style(t) {
   return null;
 }
 export async function fileStyle(buf) { try { return os2Style(await sfntTable(buf, 0x4F532F32)); } catch (e) { return null; } }      // 'OS/2'
+// Prefer a face's declared weight over its style name once its file has been read.
+export async function fileWeight(buf) {
+  try { const table = await sfntTable(buf, 0x4F532F32), weight = table && table.byteLength >= 6 ? table.getUint16(4) : 0; return weight >= 1 && weight <= 1000 ? weight : null; }
+  catch (error) { return null; }
+}
 /* Classify serif, sans or other from uploaded/local OS/2 data, then Google Fonts metadata, then the font name. */
 const SERIF_RE = /Serif|Mincho|Ming|Song|Batang|Myeongjo|明|宋/i, SANS_RE = /Sans|Gothic|Hei|Kaku|PingFang|YaHei|Meiryo|Dotum|Gulim|Maru|Yuan|Rounded|M PLUS|黑|圆|圓|ゴシック/i;
 let gfStyleMap = null;

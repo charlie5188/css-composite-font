@@ -8,6 +8,12 @@ async function selectFilter(page, id, values) {
   await page.locator(button).click();
 }
 
+async function setBoldFilter(page, checked = true) {
+  await page.locator('#pkWeightTypeBtn').click();
+  await page.locator('#gfBold').setChecked(checked);
+  await page.locator('#pkWeightTypeBtn').click();
+}
+
 async function openClassPicker(page, category) {
   // Resolve and activate in one task: even an element handle can become detached during metadata refreshes.
   const opened = await page.evaluate(category => {
@@ -26,10 +32,10 @@ async function fixture(page, category = 'han') {
   await openClassPicker(page, category);
 }
 
-test('字体列表：按校样语言和类别初排，别名搜索、已知筛选与未知资料保留，检查后不移动候选', async ({ page }) => {
+test('字体列表：按名称初排，别名搜索、已知筛选与未知资料保留，检查后不移动候选', async ({ page }) => {
   await fixture(page);
   const options = page.locator('#gfOptions [data-family]');
-  expect(await options.first().getAttribute('data-family')).toMatch(/SC|ZCOOL|Ma Shan/);
+  expect(await options.first().getAttribute('data-family')).toBe('BIZ UDPGothic');
   const order = await options.evaluateAll(els => els.map(el => el.dataset.family));
   await options.filter({ hasText: 'Noto Serif SC' }).click();
   await expect(page.locator('#pkOk')).toBeEnabled();
@@ -44,7 +50,7 @@ test('字体列表：按校样语言和类别初排，别名搜索、已知筛�
     return filterCatalog([{ family: 'Unknown', aliases: '', style: null, bold: null }, { family: 'No bold', aliases: '', style: 'sans', bold: false }], '', 'serif', true).map(x => x.family);
   });
   expect(entries).toEqual(['Unknown']);
-  await page.locator('#gfSearch').fill('Shippori'); await page.locator('#gfBold').check();
+  await page.locator('#gfSearch').fill('Shippori'); await setBoldFilter(page);
   await expect(page.locator('#gfBold')).toBeChecked();
   await expect(options).toHaveCount(1);
   await page.locator('#gfSearch').fill('Klee One');
@@ -54,13 +60,13 @@ test('字体列表：按校样语言和类别初排，别名搜索、已知筛�
   expect(await options.first().getAttribute('data-family')).not.toMatch(/Noto.*(?:SC|TC|HK|JP|KR)/);
 });
 
-test('字体排序：名称、已知范围和常用优先，保留搜索筛选与候选且加载后顺序不变', async ({ page }) => {
+test('字体排序：名称、已知范围与精简菜单，保留搜索筛选与候选且加载后顺序不变', async ({ page }) => {
   await fixture(page, 'latin');
   const options = page.locator('#gfOptions [data-choice]');
   await page.locator('#gfOptions [data-family="Inter"]').click();
   await expect(page.locator('#pkOk')).toBeEnabled();
   await selectFilter(page, 'pkSource', 'google');
-  const chooseSort = async mode => { await page.locator('#pkSortBtn').click(); await page.locator(`#pkSort input[value="${mode}"]`).check(); };
+  const chooseSort = async mode => { await page.locator('#pkSortBtn').click(); await page.locator(`#pkSort input[value="${mode}"]`).click(); };
   await chooseSort('name');
   const names = await options.evaluateAll(els => els.map(el => el.dataset.family));
   expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' })));
@@ -75,16 +81,16 @@ test('字体排序：名称、已知范围和常用优先，保留搜索筛选�
   const sorted = await page.evaluate(async () => {
     const { sortCatalog } = await import('./assets/js/font-catalog.js');
     const items = [{ family: 'Unknown', region: 'latin', weightRange: null }, { family: 'Narrow', region: 'latin', weightRange: [400, 700] }, { family: 'Single', region: 'latin', weightRange: [400, 400] }, { family: 'Wide', region: 'latin', weightRange: [100, 900] }];
-    return { ranges: sortCatalog(items, 'latin', 'en', 'weights').map(x => x.family), common: sortCatalog([{ family: 'A Custom' }, { family: 'Inter' }], 'latin', 'en', 'common').map(x => x.family) };
+    return { ranges: sortCatalog(items, 'weights').map(x => x.family) };
   });
-  expect(sorted.ranges).toEqual(['Wide', 'Narrow', 'Single', 'Unknown']); expect(sorted.common).toEqual(['Inter', 'A Custom']);
-  await chooseSort('common'); await expect(page.locator('#pkSortBtn')).toBeFocused();
+  expect(sorted.ranges).toEqual(['Wide', 'Narrow', 'Single', 'Unknown']);
+  await chooseSort('name'); await expect(page.locator('#pkSortBtn')).toBeFocused();
   await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
   for (const lang of ['zh', 'tw', 'ja', 'en']) {
     await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
     await page.locator('#pkSortBtn').click();
     expect(await page.locator('#pkSortPop').evaluate(el => { const r = el.getBoundingClientRect(); return r.left >= 0 && r.right <= innerWidth && el.scrollWidth <= el.clientWidth; })).toBeTruthy();
-    await expect(page.locator('#pkSort label')).toHaveCount(4);
+    await expect(page.locator('#pkSort label')).toHaveCount(2);
     await page.keyboard.press('Escape'); await expect(page.locator('#picker')).toBeVisible();
   }
 });
@@ -98,18 +104,22 @@ test('新增筛选：字重类型、全选类别覆盖和中日文风格联合�
   await selectFilter(page, 'pkWeightType', 'stepped');
   await expect(page.locator('#gfOptions [data-family="Inter"]')).toHaveCount(0);
   await expect(page.locator('#gfOptions [data-family="Klee One"]')).toHaveCount(1);
-  await selectFilter(page, 'pkCoverage', ['han', 'kana']);
+  await selectFilter(page, 'pkWeightType', ['stepped', 'bold']);
+  await expect(page.locator('#gfOptions [data-family="Klee One"]')).toHaveCount(0);
+  await selectFilter(page, 'pkWeightType', ['stepped']);
+  await selectFilter(page, 'pkCoverage', ['jp', 'kana']);
   await selectFilter(page, 'gfStyle', 'handwriting');
   await expect(page.locator('#gfOptions [data-family="Klee One"]')).toHaveCount(1);
   await expect(page.locator('#gfOptions [data-family="Inter"]')).toHaveCount(0);
   await expect(page.locator('#pkCoverageBtn')).toContainText('2');
+  await selectFilter(page, 'pkCoverage', ['kana']);
   await selectFilter(page, 'gfStyle', ['kai', 'rounded']);
   await expect(page.locator('#gfOptions [data-family="Ma Shan Zheng"]')).toHaveCount(1);
   await expect(page.locator('#gfOptions [data-family="Zen Maru Gothic"]')).toHaveCount(1);
-  await selectFilter(page, 'pkCoverage', ['han', 'bopo']);
+  await selectFilter(page, 'pkCoverage', ['bopo']);
   await expect(page.locator('#gfOptions [data-family="Ma Shan Zheng"]')).toHaveCount(0);
   await expect(page.locator('#gfOptions [data-family="Zen Maru Gothic"]')).toHaveCount(1);
-  await page.locator('#pkSortBtn').click(); await page.locator('#pkSort input[value="name"]').check();
+  await page.locator('#pkSortBtn').click(); await page.locator('#pkSort input[value="name"]').click();
   await page.locator('#gfSearch').fill('Zen'); await page.locator('#pkFilterClear').click();
   await expect(page.locator('#gfSearch')).toHaveValue('Zen'); await expect(page.locator('#pkSort input[value="name"]')).toBeChecked();
   await expect(page.locator('#pkWeightType input:checked')).toHaveCount(0); await expect(page.locator('#pkCoverage input:checked')).toHaveCount(0);
@@ -130,12 +140,37 @@ test('字体资料：仿宋楷体教科书体独立，圆体兼属黑体，未�
     const { catalogStyles, catalogInfo, filterCatalog } = await import('./assets/js/font-catalog.js');
     const styles = ['STFangsong', 'Kaiti SC', 'DFKai-SB', 'UD Digi Kyokasho', 'Kaisei Tokumin', 'Maruburi', 'Rounded Serif'].map(f => catalogStyles(f, 'serif'));
     styles.splice(4, 0, catalogStyles('Hiragino Maru Gothic ProN', 'sans'));
-    const fonts = [{ family: 'Unknown', aliases: '', styles: null, weightType: null, coverage: null }, { family: 'Known no kana', aliases: '', styles: ['sans'], weightType: 'continuous', coverage: { han: true, kana: false } }, { family: 'Both', aliases: '', styles: ['kai'], weightType: 'stepped', coverage: { han: true, kana: true } }];
-    return { styles, matches: filterCatalog(fonts, '', ['kai'], false, ['stepped'], ['han', 'kana']).map(f => f.family), google: ['Inter', 'Klee One', 'Zen Maru Gothic'].map(f => ({ type: catalogInfo(f).weightType, styles: catalogInfo(f).styles })) };
+    const fonts = [{ family: 'Unknown', aliases: '', styles: null, weightType: null, coverage: null }, { family: 'Known no kana', aliases: '', styles: ['sans'], weightType: 'continuous', coverage: { sc: true, kana: false } }, { family: 'Both', aliases: '', styles: ['kai'], weightType: 'stepped', coverage: { sc: true, kana: true } }];
+    return { styles, matches: filterCatalog(fonts, '', ['kai'], false, ['stepped'], ['sc', 'kana']).map(f => f.family), google: ['Inter', 'Klee One', 'Zen Maru Gothic'].map(f => ({ type: catalogInfo(f).weightType, styles: catalogInfo(f).styles })) };
   });
   expect(result.styles).toEqual([['fangsong'], ['kai'], ['kai'], ['textbook'], ['sans', 'rounded'], ['serif'], ['serif'], ['serif', 'rounded']]);
   expect(result.matches).toEqual(['Unknown', 'Both']);
   expect(result.google).toEqual([{ type: 'continuous', styles: ['sans'] }, { type: 'stepped', styles: ['handwriting'] }, { type: 'stepped', styles: ['sans', 'rounded'] }]);
+});
+
+test('本机字重范围：汇总命名分档，读取轴后原地更新，与预览一致且不移动候选', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.queryLocalFonts = async () => ['Regular', 'Bold'].map(style => ({ family: 'Fixture Family', fullName: 'Fixture Family '+style, postscriptName: 'FixtureFamily-'+style, style,
+      blob: async () => (await fetch('/tests/fixtures/Jost%5Bwght%5D.ttf')).blob() }));
+  });
+  await fixture(page, 'latin');
+  await page.locator('#gfSearch').fill('Fixture Family');
+  await page.locator('#pkSortBtn').click(); await page.locator('#pkSort input[value="weights"]').click();
+  const row = page.locator('#gfOptions [data-local-family="Fixture Family"]');
+  await expect(row.locator('.font-option-source')).toContainText('400–700');
+  await page.evaluate(() => { window.originalWeightRow = document.querySelector('#gfOptions [data-local-family="Fixture Family"]'); });
+  await row.click(); await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('#pkVfTag')).toContainText('100–900');
+  await expect(row.locator('.font-option-source')).toContainText('100–900');
+  expect(await page.evaluate(() => window.originalWeightRow === document.querySelector('#gfOptions [data-local-family="Fixture Family"]'))).toBeTruthy();
+  const info = await page.evaluate(async () => {
+    const { localWeightInfo } = await import('./assets/js/font-catalog.js'), { fileWeight } = await import('./assets/js/core.js');
+    const faces = [{ fullName: 'Regular', style: 'Regular' }, { fullName: 'Bold', style: 'Bold' }];
+    const axes = new Map(faces.map(face => [face.fullName, { axes: [] }]));
+    return { named: localWeightInfo(faces, new Map()), read: localWeightInfo(faces, axes, new Map([['Regular', 350], ['Bold', 700]])), file: await fileWeight(await (await fetch('/tests/fixtures/NotoSansJP-Subset.ttf')).arrayBuffer()) };
+  });
+  expect(info.named.weightRange).toEqual([400, 700]); expect(info.named.weightType).toBeNull();
+  expect(info.read.weightRange).toEqual([350, 700]); expect(info.read.weightType).toBe('stepped'); expect(info.file).toBe(400);
 });
 
 test('多选筛选与本机预览：组内任选、组间同时满足，名称加载失败后用授权文件预览，款式属于右侧候选', async ({ page }) => {
@@ -162,7 +197,7 @@ test('多选筛选与本机预览：组内任选、组间同时满足，名称�
     const src = core.source(core.L('Fixture Inter Regular'));
     return src.status === 'ok' && src.faces[0].buffer instanceof ArrayBuffer;
   })).toBeTruthy();
-  await page.locator('#pkSortBtn').click(); await page.locator('#pkSort input[value="weights"]').check();
+  await page.locator('#pkSortBtn').click(); await page.locator('#pkSort input[value="weights"]').click();
   await expect(page.locator('#gfOptions [data-local-family="Inter"] .font-option-source')).toContainText('100–900');
   await page.locator('#lfFace').selectOption('Fixture Inter Bold');
   await expect(page.locator('#pkSelectedName')).toHaveText('Fixture Inter Bold');
@@ -575,7 +610,7 @@ test('选字筛选栏：搜索下方直接筛选与清除；手机四语言换�
   await fixture(page, 'latin');
   await page.locator('#gfSearch').fill('Noto');
 
-  await selectFilter(page, 'gfStyle', 'serif'); await page.locator('#gfBold').check();
+  await selectFilter(page, 'gfStyle', 'serif'); await setBoldFilter(page);
   await expect(page.locator('#gfStyleBtn')).toHaveAttribute('data-active', 'true');
   await expect(page.locator('#gfBold')).toBeChecked();
   expect(await page.locator('.filter-bar').evaluate(el => el.getBoundingClientRect().top >= document.querySelector('#gfSearch').getBoundingClientRect().bottom)).toBeTruthy();
@@ -590,7 +625,7 @@ test('选字筛选栏：搜索下方直接筛选与清除；手机四语言换�
     expect(await page.locator('#picker').evaluate(el => el.querySelector('.pk-detail').getBoundingClientRect().top >= el.querySelector('#gfOptions').getBoundingClientRect().bottom)).toBeTruthy();
     await expect(page.locator('#pkSourceBtn')).toBeInViewport();
     await expect(page.locator('#gfStyleBtn')).toBeInViewport();
-    await expect(page.locator('#gfBold')).toBeInViewport();
+    await expect(page.locator('#pkWeightTypeBtn')).toBeInViewport();
     await expect(page.locator('.pk-actions #pkAutoFit')).toBeInViewport();
     await expect(page.locator('#pkCancel')).toBeInViewport(); await expect(page.locator('#pkOk')).toBeInViewport();
     await page.locator('#pkSampleBtn').click(); await page.locator('[data-pk-sample="custom"]').click();
@@ -624,7 +659,7 @@ test('合并字体库：自动枚举一次、同名字体区分来源，共享�
   await expect(page.locator('#gfOptions [data-family="Inter"] .font-option-source')).toHaveText('Google Fonts');
   await expect(page.locator('#gfOptions [data-local-family="Inter"] .font-option-source')).toHaveText('本机字体');
   await page.locator('#gfSearch').fill('');
-  await selectFilter(page, 'pkSource', 'local'); await selectFilter(page, 'gfStyle', 'serif'); await page.locator('#gfBold').check();
+  await selectFilter(page, 'pkSource', 'local'); await selectFilter(page, 'gfStyle', 'serif'); await setBoldFilter(page);
   await expect(page.locator('#pkSource input[value=local]')).toBeChecked();
   await expect(page.locator('#gfStyle input[value=serif]')).toBeChecked();
   await expect(page.locator('#gfBold')).toBeChecked();

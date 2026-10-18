@@ -28,8 +28,6 @@ const NATIVE_NAMES = {
   'Hiragino Mincho ProN': 'ヒラギノ明朝', 'Microsoft YaHei': '微软雅黑', 'Microsoft JhengHei': '微軟正黑體',
   'SimSun': '宋体', 'Yu Gothic': '游ゴシック', 'Yu Mincho': '游明朝', 'Meiryo': 'メイリオ',
 };
-// Editorial shortcuts, not usage measurements or a live popularity ranking.
-const COMMON = new Set(['Noto Sans SC', 'Noto Serif SC', 'Noto Sans TC', 'Noto Serif TC', 'Noto Sans HK', 'Noto Sans JP', 'Noto Serif JP', 'Noto Sans KR', 'Noto Serif KR', 'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat', 'Source Sans 3', 'Source Serif 4', 'EB Garamond', 'PingFang SC', 'PingFang TC', 'PingFang HK', 'Arial', 'Georgia', 'Times New Roman', 'Microsoft YaHei', 'Microsoft JhengHei', 'Meiryo', 'Yu Gothic']);
 const SERIFS = new Set(['IBM Plex Serif', 'Source Serif 4', 'EB Garamond', 'Cormorant Garamond', 'Libre Caslon Text', 'Libre Baskerville', 'Crimson Pro', 'Lora', 'Newsreader', 'Literata', 'Spectral', 'Fraunces', 'Playfair Display', 'Instrument Serif', 'Roboto Serif']);
 const SANS = new Set(['Inter', 'IBM Plex Sans', 'Source Sans 3', 'DM Sans', 'Work Sans', 'Manrope', 'Instrument Sans', 'Roboto', 'Lato', 'Open Sans', 'Montserrat', 'Jost']);
 const STYLES = new Map(Object.entries(GF_STYLE).flatMap(([style, list]) => list.split(',').map(name => [name, style])));
@@ -56,18 +54,29 @@ export function catalogInfo(family) {
     weightRange: axis ? [axis[1], axis[2]] : weights?.length ? [weights[0], weights.at(-1)] : null,
     bold: axis ? axis[2] >= 700 : weights ? weights.some(w => w >= 700) : null };
 }
-export function sortCatalog(items, category, lang, mode = 'recommended') {
-  const region = /^(zh-Hant-HK|zh-HK)/i.test(lang) ? 'hk' : /^zh-(Hant|TW)/i.test(lang) ? 'tw' : /^ja/i.test(lang) ? 'jp' : /^ko/i.test(lang) ? 'kr' : 'sc';
-  const wantsLatin = ['latin', 'digit', 'shared'].includes(category), want = wantsLatin ? 'latin' : category === 'kana' ? 'jp' : category === 'bopo' ? 'tw' : region;
-  const score = item => item.region === want ? 0 : wantsLatin ? item.region == null ? 1 : 2 : item.region && item.region !== 'latin' ? 1 : item.region == null ? 2 : 3;
+export function sortCatalog(items, mode = 'name') {
   const name = (a, b) => a.family.localeCompare(b.family, 'en', { numeric: true, sensitivity: 'base' }) || (a.kind || '').localeCompare(b.kind || '');
-  if (mode === 'name') return [...items].sort(name);
   const span = item => item.weightRange ? item.weightRange[1] - item.weightRange[0] : -1;
-  const priority = (a, b) => mode === 'weights' ? span(b) - span(a) : mode === 'common' ? Number(COMMON.has(b.family)) - Number(COMMON.has(a.family)) : 0;
-  return [...items].sort((a, b) => priority(a, b) || score(a) - score(b) || Number(a.style === 'other') - Number(b.style === 'other') || name(a, b));
+  return [...items].sort((a, b) => (mode === 'weights' ? span(b) - span(a) : 0) || name(a, b));
 }
-export function catalogOrder(category, lang, current) {
-  return sortCatalog([...new Set([...GF_LIST, ...(current ? [current] : [])])].map(catalogInfo), category, lang);
+export function catalogOrder(current) {
+  return sortCatalog([...new Set([...GF_LIST, ...(current ? [current] : [])])].map(catalogInfo));
+}
+// Local Font Access exposes named faces before their binaries are read. Reuse those
+// explicit style names, but do not infer that an unread face lacks a variable axis.
+export function localWeightInfo(faces, axesByName, weightsByName = new Map()) {
+  const namedWeight = value => {
+    const name = value.replace(/italic|oblique/ig, '').replace(/[\s_-]/g, '').toLowerCase();
+    const words = { thin: 100, hairline: 100, extralight: 200, ultralight: 200, light: 300, regular: 400, normal: 400, roman: 400, book: 400, medium: 500, semibold: 600, demibold: 600, bold: 700, extrabold: 800, ultrabold: 800, black: 900, heavy: 900 };
+    return words[name] || (/^[1-9]00$/.test(name) ? +name : null);
+  };
+  const axes = faces.flatMap(face => { const data = axesByName.get(face.fullName); return data?.unknown ? [] : (data?.axes || []).filter(a => a[0] === 'wght'); });
+  const weights = [...new Set(faces.map(face => weightsByName.get(face.fullName) ?? namedWeight(face.style)).filter(w => w != null))].sort((a, b) => a - b);
+  const complete = faces.length > 0 && faces.every(face => { const data = axesByName.get(face.fullName); return data && !data.unknown; });
+  const limits = [...axes.flatMap(a => [a[1], a[2]]), ...weights];
+  const weightRange = axes.length || weights.length > 1 || complete && weights.length ? [Math.min(...limits), Math.max(...limits)] : null;
+  const weightType = axes.length ? 'continuous' : complete ? 'stepped' : null;
+  return { weights, weightRange, weightType, bold: limits.some(w => w >= 700) ? true : complete && limits.length ? false : null };
 }
 export function filterCatalog(items, query, style, bold, weightTypes = [], coverage = []) {
   const q = searchKey(query.trim());

@@ -19,7 +19,7 @@ from gfmeta import load
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SAMPLES = {
-    'han': '永国國字春山風月', 'latin': 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+    'sc': '这们说时对过学发会经实现进动应头书长马门问间东车见风让认识语读谁调谈网样个钱', 'tc': '這們說時對過學發會經實現進動應頭書長馬門問間東車見風讓認識語讀誰調談網樣個錢', 'jp': '円気駅図県様広応戦鉄売読楽薬弁両帰稲鉱塩', 'latin': 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
     'digit': '0123456789', 'kana': 'あいうえおアイウエオんンー',
     'shared': '“”‘’—…·', 'punct': '「」『』（）、。！？',
     'symbol': '①②③※→℃ＡＢＣ１２３', 'bopo': 'ㄅㄆㄇㄈㄉㄊㄋㄌㄧㄨㄩˊˇˋ˙',

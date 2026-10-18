@@ -1,6 +1,6 @@
 import { refresh } from './refresh.js';
 import { bindPopover, placePopover, searchKey } from './ui-controls.js';
-import { catalogInfo, catalogOrder, catalogStyles, filterCatalog, sortCatalog } from './font-catalog.js';
+import { catalogInfo, catalogOrder, catalogStyles, localWeightInfo, filterCatalog, sortCatalog } from './font-catalog.js';
 import { CATALOG_SAMPLES } from './font-catalog-data.js';
 import { importFontFile, importedFonts, rememberImportedFont } from './font-files.js';
 import { initShare } from './share.js';
@@ -8,7 +8,7 @@ import { initAppearance } from './appearance.js';
 import { FIT_SAMPLES, chooseFits, createFitter } from './autofit.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, classOf, inRanges, parseChars, rebuildClassRanges } from './unicode.js';
-import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownFontAt, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
+import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownFontAt, ownSize, presetDirty, presetSnap, rebuild, fileStyle, fileWeight, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
 import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, stepperCell, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
@@ -1268,7 +1268,7 @@ function chooseCatalog(family) {
   pickTab = pickerLibraryKind = 'google'; $('#lfFaceField').hidden = true; updateCand(); syncLibrarySelection();
 }
 let localFontRecords = null, localReadAttempted = false, localReadPromise = null, localReadError = '';
-let libraryOrder = [], librarySort = 'recommended';
+let libraryOrder = [], librarySort = 'name';
 function localGroups() {
   const groups = new Map();
   for (const item of localFontRecords || []) {
@@ -1283,20 +1283,32 @@ function libraryChoices() {
     const known = catalogInfo(family), named = styleOfFont(L(family));
     // Names can establish a positive match, but absence of a named bold face cannot rule out an unread variable font.
     const style = known.style || (named !== 'other' ? named : /script|hand|callig|brush/i.test(family) ? 'other' : null);
-    // Reuse axes already read for a candidate; browsing and sorting never scan every installed file.
-    const axes = faces.flatMap(face => { const data = localAxes.get(face.fullName); return data?.unknown ? [] : (data?.axes || []).filter(a => a[0] === 'wght'); });
-    const weightRange = axes.length ? [Math.min(...axes.map(a => a[1])), Math.max(...axes.map(a => a[2]))] : null;
+    const weightInfo = localWeightInfo(faces, localAxes, localWeights);
     const face = faces.find(f => /regular|normal|book/i.test(f.style))?.fullName || faces[0].fullName;
-    const weightType = axes.length ? 'continuous' : faces.every(f => { const data = localAxes.get(f.fullName); return data && !data.unknown; }) ? 'stepped' : null;
-    choices.push({ ...known, family, weightRange, weightType, coverage: catalogCoverageByFace.get(face) || null, styles: catalogStyles(family, style), aliases: known.aliases + ' ' + faces.map(f => f.fullName + ' ' + f.postscriptName).join(' '), style,
-      bold: faces.some(f => /bold|black|heavy|demi|semi|W[6-9]\b/i.test(f.style)) ? true : null,
+    choices.push({ ...known, ...weightInfo, family, coverage: catalogCoverageByFace.get(face) || null, styles: catalogStyles(family, style), aliases: known.aliases + ' ' + faces.map(f => f.fullName + ' ' + f.postscriptName).join(' '), style,
       kind: 'local', id: 'local:' + family, face });
   }
-  if (!libraryOrder.length) libraryOrder = sortCatalog(choices, pickTarget?.id || 'custom', state.typo.lang, librarySort).map(item => item.id);
+  if (!libraryOrder.length) libraryOrder = sortCatalog(choices, librarySort).map(item => item.id);
   // Enumeration may finish while a user browses. Append discoveries without moving an existing candidate under the pointer.
   const seen = new Set(libraryOrder); for (const item of choices) if (!seen.has(item.id)) { libraryOrder.push(item.id); seen.add(item.id); }
   const order = new Map(libraryOrder.map((id, i) => [id, i]));
   return choices.sort((a, b) => order.get(a.id) - order.get(b.id));
+}
+function localFamilyWeightInfo(name) {
+  const faces = localGroups().find(([family, faces]) => family === name || faces.some(face => face.fullName === name))?.[1] || [];
+  return localWeightInfo(faces, localAxes, localWeights);
+}
+function librarySourceLabel(item) {
+  return (item.kind === 'google' ? 'Google Fonts' : T('srcLocal')) + (librarySort === 'weights' ? ' · ' + (item.weightRange ? item.weightRange.join('–') : T('fontWeightUnknownLabel')) : '');
+}
+function syncLocalWeightLabels() {
+  // Metadata labels may change in place; membership and order wait for a user action.
+  const facts = new Map(localGroups().map(([family, faces]) => [family, localWeightInfo(faces, localAxes, localWeights)]));
+  for (const row of $('#gfOptions').querySelectorAll('[data-local-family]')) {
+    const info = facts.get(row.dataset.localFamily); if (!info) continue;
+    row.querySelector('.font-option-source').textContent = librarySourceLabel({ ...info, kind: 'local' });
+    row.querySelector('.font-option-source').title = info.weightType === 'continuous' ? T('fontWeightContinuousHint', { a: info.weightRange[0], b: info.weightRange[1] }) : info.weights.length ? T('fontWeightList', { weights: info.weights.join(', ') }) : '';
+  }
 }
 function selectedLibraryId() {
   return pickTab === 'google' ? 'google:' + $('#gfFamily').value : pickTab === 'local' ? 'local:' + localGroups().find(([, faces]) => faces.some(f => f.fullName === $('#lfName').value))?.[0] : '';
@@ -1327,7 +1339,6 @@ function tryExactLocal() {
 function pickerFilterValues(id) { return [...$('#'+id).querySelectorAll('input:checked')].map(el => el.value); }
 function clearPickerFilters() {
   for (const id of ['pkSource', 'gfStyle', 'pkWeightType', 'pkCoverage']) $('#'+id).querySelectorAll('input').forEach(el => { el.checked = false; });
-  $('#gfBold').checked = false;
 }
 function syncPickerFilters() {
   for (const [id, button, any, label] of [['pkSource', 'pkSourceBtn', 'pkAllSources', 'pkSource'], ['gfStyle', 'gfStyleBtn', 'pkAnyStyle', 'pkFilterStyle'], ['pkWeightType', 'pkWeightTypeBtn', 'pkAnyWeightType', 'pkWeightType'], ['pkCoverage', 'pkCoverageBtn', 'pkAnyCoverage', 'pkCoverage']]) {
@@ -1341,14 +1352,14 @@ export function renderCatalog() {
   $('#pkSortLabel').textContent = $('#pkSort input:checked').closest('label').querySelector('span').textContent;
   const box = $('#gfOptions'), query = $('#gfSearch').value, sourceFilter = pickerFilterValues('pkSource');
   const focused = box.contains(document.activeElement) ? document.activeElement.closest('[data-choice]')?.dataset.choice : null;
-  const entries = filterCatalog(libraryChoices(), query, pickerFilterValues('gfStyle'), $('#gfBold').checked, pickerFilterValues('pkWeightType'), pickerFilterValues('pkCoverage')).filter(item => !sourceFilter.length || sourceFilter.includes(item.kind));
+  const entries = filterCatalog(libraryChoices(), query, pickerFilterValues('gfStyle'), $('#gfBold').checked, pickerFilterValues('pkWeightType').filter(value => value !== 'bold'), pickerFilterValues('pkCoverage')).filter(item => !sourceFilter.length || sourceFilter.includes(item.kind));
   catalogObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
   const selected = selectedLibraryId(), focusId = entries.some(item => item.id === selected) ? selected : entries[0]?.id;
-  box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.id === focusId ? 0 : -1}" aria-selected="${item.id === selected}" data-choice="${esc(item.id)}" ${item.kind === 'google' ? `data-family="${esc(item.family)}"` : `data-local-family="${esc(item.family)}" data-local-face="${esc(item.face)}"`}><span class="font-option-title"><span class="font-option-name" title="${esc(item.family)}">${esc(item.family)}${item.nativeName && item.nativeName !== item.family ? `<span class="font-option-native"> · ${esc(item.nameIsAlias ? T('pkAliasName', { name: item.nativeName }) : item.nativeName)}</span>` : ''}</span><span class="font-option-source">${esc(item.kind === 'google' ? 'Google Fonts' : T('srcLocal'))}${librarySort === 'weights' ? ' · ' + esc(item.weightRange ? item.weightRange.join('–') : T('fontWeightUnknownLabel')) : ''}</span></span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
+  box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.id === focusId ? 0 : -1}" aria-selected="${item.id === selected}" data-choice="${esc(item.id)}" ${item.kind === 'google' ? `data-family="${esc(item.family)}"` : `data-local-family="${esc(item.family)}" data-local-face="${esc(item.face)}"`}><span class="font-option-title"><span class="font-option-name" title="${esc(item.family)}">${esc(item.family)}${item.nativeName && item.nativeName !== item.family ? `<span class="font-option-native"> · ${esc(item.nameIsAlias ? T('pkAliasName', { name: item.nativeName }) : item.nativeName)}</span>` : ''}</span><span class="font-option-source">${esc(librarySourceLabel(item))}</span></span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
   $('#gfResults').textContent = T('pkResults', { n: entries.length });
-  const filters = sourceFilter.length + pickerFilterValues('gfStyle').length + pickerFilterValues('pkWeightType').length + pickerFilterValues('pkCoverage').length + Number($('#gfBold').checked);
+  const filters = sourceFilter.length + pickerFilterValues('gfStyle').length + pickerFilterValues('pkWeightType').length + pickerFilterValues('pkCoverage').length;
   $('#pkFilterClear').hidden = !filters;
-  syncPickerFilters();
+  syncPickerFilters(); syncLocalWeightLabels();
   $('#gfReset').hidden = !!entries.length || !query.trim() && !filters;
   $('#pkExactChoices').hidden = !!entries.length || !query.trim();
   $('#gfTry').hidden = sourceFilter.length > 0 && !sourceFilter.includes('google'); $('#lfTry').hidden = sourceFilter.length > 0 && !sourceFilter.includes('local');
@@ -1466,14 +1477,14 @@ export function candFromFields() {
   return file.axis && !$('#ffWeightField').hidden && value && Number.isFinite(+value) ? { ...file, weight: Math.max(file.axis[0], Math.min(file.axis[1], Math.round(+value))) } : file;
 }
 /* Read local-font axes after permission to enumerate local fonts grants access to their files. */
-export const localData = new Map(), localAxes = new Map(), localStyle = new Map();      // Full font name -> FontData; -> detected axes (undefined = reading); -> OS/2 style.
+export const localData = new Map(), localAxes = new Map(), localStyle = new Map(), localWeights = new Map();      // Full font name -> FontData; -> detected axes (undefined = reading); -> OS/2 style.
 export function localAxesOf(name) {
   if (localAxes.has(name)) return localAxes.get(name);
   const fd = localData.get(name);
   if (!fd) return null;
   localAxes.set(name, undefined);
   fd.blob().then(b => b.arrayBuffer()).then(async buf => {
-    localAxes.set(name, await fileAxes(buf)); localStyle.set(name, await fileStyle(buf));
+    localAxes.set(name, await fileAxes(buf)); localStyle.set(name, await fileStyle(buf)); localWeights.set(name, await fileWeight(buf)); syncLocalWeightLabels();
     if (pickTab === 'local' && $('#lfName').value.trim() === name) updateCand();
   }, () => localAxes.set(name, null));
   return undefined;
@@ -1550,9 +1561,9 @@ export const COV_SETS = [
   ['covPinyin', 'āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü'],      // If a Western font lacks Pinyin letters, individual letters fall back to later fonts.
   ['covDigit', '0123456789'],
   ['covKana', 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンー'],
-  ['covSC', '这们说时对过学发会经实现进动应头书长马门问间东车见风让认识语读谁调谈网样个钱'],
-  ['covTC', '這們說時對過學發會經實現進動應頭書長馬門問間東車見風讓認識語讀誰調談網樣個錢'],
-  ['covJP', '円気駅図県様広応戦鉄売読楽薬弁両帰稲鉱塩'],
+  ['covSC', CATALOG_SAMPLES.sc],
+  ['covTC', CATALOG_SAMPLES.tc],
+  ['covJP', CATALOG_SAMPLES.jp],
   ['covHK', '嘅咗嚟啲冇佢喺嘢噉咁哋睇攞乜嗰𠝹𨋢'],      // Cantonese characters; the last two are in Extension B (HKSCS).
   ['covKR', '가나다라마바사아자차카타파하한글'],
   ['covSym', '①②③※→℃○■△◎★〒'],
@@ -1706,9 +1717,9 @@ export function updateScope() {
 /* Google weight controls: numeric fields over the wght range for variable fonts; a 100-900 menu for others. */
 /* Plain weight terminology matches the editor; the tooltip keeps the precise range or available steps. */
 export function showVfTag(axis) {
-  const tag = $('#pkVfTag'), f = pickCand, weights = f?.kind === 'google' ? gfWeights(f.family) : null;
+  const tag = $('#pkVfTag'), f = pickCand, weights = f?.kind === 'google' ? gfWeights(f.family) : f?.kind === 'local' ? localFamilyWeightInfo(f.name).weights : null;
   tag.hidden = !f;
-  tag.textContent = axis ? `${T('fontWeightContinuous')} ${axis[0]}–${axis[1]}` : weights?.length ? `${T('fontWeightStepped')} ${weights[0]}${weights.length > 1 ? '–' + weights.at(-1) : ''}` : T('fontWeightUnknownLabel');
+  tag.textContent = axis ? `${T('fontWeightContinuous')} ${axis[0]}–${axis[1]}` : weights?.length ? `${T(f?.kind === 'local' && localFamilyWeightInfo(f.name).weightType !== 'stepped' ? 'pkKnownWeights' : 'fontWeightStepped')} ${weights[0]}${weights.length > 1 ? '–' + weights.at(-1) : ''}` : T('fontWeightUnknownLabel');
   tag.title = axis ? T('fontWeightContinuousHint', { a: axis[0], b: axis[1] }) : weights?.length ? T('fontWeightList', { weights: weights.join(', ') }) : T('fontWeightUnknown');
 }
 
@@ -1776,12 +1787,12 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   if (pickW && o.font.kind === 'file') { const g = guessPath(o.font.fileName, W); $('#ffPath').placeholder = g; $('#ffPath').value = state.weightNames[k] || g; }
   fileImportToken++; $('#ffDrop').removeAttribute('aria-busy'); $('#ffSearch').value = ''; $('#ffError').textContent = ''; $('#ffError').hidden = true;
   $('#ffFile').value = ''; $('#ffItal').value = '';
-  libraryOrder = []; librarySort = 'recommended'; $('#pkSort input[value="recommended"]').checked = true; clearPickerFilters();
+  libraryOrder = []; librarySort = 'name'; $('#pkSort input[value="name"]').checked = true; clearPickerFilters();
   pickerLibraryKind = (pickW ? (ovf || o.font).kind : cur?.kind) === 'local' ? 'local' : 'google';
   const rowFont = pickW ? (t.type === 'class' ? resolveCls(t.id, W, true) : resolveCustom(o, W, true)).font : cur;
   pickCand = ovf?.kind === 'file' ? ovf : rowFont?.kind === 'file' ? rowFont : null;
   pickerSampleMode = 'class'; pickerCustomText = pickerClassSample(); $('#pkSampleSize').value = 32; $('#pkSample').style.fontSize = '32px'; renderPickerSample();
-  pickCatalog = catalogOrder(t.type === 'class' ? t.id : 'custom', state.typo.lang, cur?.kind === 'google' ? cur.family : '');
+  pickCatalog = catalogOrder(cur?.kind === 'google' ? cur.family : '');
   $('#gfSearch').value = ''; clearPickerFilters(); renderCatalog();
   picker.showModal();
   setPickTab(pickW ? (ovf || o.font).kind : cur?.kind || 'google');
@@ -1919,11 +1930,13 @@ export function initPicker() {
   });
   $('#gfSearch').addEventListener('keydown', e => { if (e.key === 'ArrowDown') { e.preventDefault(); $('#gfOptions [tabindex="0"]')?.focus(); } });
   $('#pkSource').addEventListener('change', () => { renderCatalog(); const values = pickerFilterValues('pkSource'); if ((!values.length || values.includes('local')) && !localReadAttempted) readInstalledFonts(); });
-  $('#pkSort').addEventListener('change', () => {
+  const applyLibrarySort = () => {
     librarySort = $('#pkSort input:checked').value; libraryOrder = []; renderCatalog();
     $('#gfOptions').scrollTop = 0; $('#pkSortPop').hidePopover(); $('#pkSortBtn').focus();
-  });
-  for (const id of ['gfStyle', 'pkWeightType', 'pkCoverage']) $('#'+id).addEventListener('change', renderCatalog); $('#gfBold').addEventListener('change', renderCatalog);
+  };
+  $('#pkSort').addEventListener('change', applyLibrarySort);
+  $('#pkSort').addEventListener('click', e => { if (e.target.matches('input') && e.target.value === librarySort && $('#pkSortPop').matches(':popover-open')) applyLibrarySort(); });
+  for (const id of ['gfStyle', 'pkWeightType', 'pkCoverage']) $('#'+id).addEventListener('change', renderCatalog);
   $('#gfOptions').addEventListener('click', e => { const el = e.target.closest('[data-choice]'); if (el) chooseLibraryElement(el); });
   $('#gfOptions').addEventListener('keydown', e => {
     const options = [...e.currentTarget.querySelectorAll('[data-choice]')], i = options.indexOf(e.target.closest('[data-choice]'));

@@ -13,7 +13,7 @@ spec.loader.exec_module(catalogmeta)
 def test_split_and_wildcard_ranges():
     result = catalogmeta.coverage("@font-face {unicode-range: U+30-39, U+4??;} @font-face {unicode-range: U+41-5A,U+61-7A;}")
     assert result['digit'] and result['latin']
-    assert not result['han'] and not result['kana']
+    assert not result['sc'] and not result['tc'] and not result['jp'] and not result['kana']
 
 
 def test_missing_ranges_are_unknown():
