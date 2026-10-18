@@ -1,4 +1,5 @@
 import { refresh } from './refresh.js';
+import { catalogOrder, filterCatalog } from './font-catalog.js';
 import { initShare } from './share.js';
 import { initAppearance } from './appearance.js';
 import { FIT_SAMPLES, chooseFits, createFitter } from './autofit.js';
@@ -1234,6 +1235,41 @@ export function initPresets() {
 export let pickTarget = null, pickCand = null, pickTab = 'google';
 export let pickW = null;   // When editing a non-400 row with its own font, choose a weight, font name or file only for that step.
 export const picker = $('#picker');
+let pickCatalog = [], catalogObserver;
+function catalogSample(item) {
+  if (item?.region === 'latin') return 'Hamburg 0123';
+  return pickTarget?.type === 'class' ? CLS[pickTarget.id].sample : (state.custom[pickTarget?.i]?.chars || 'Ag');
+}
+function chooseCatalog(family) {
+  $('#gfFamily').value = family; syncGfWeight(); updateCand();
+  $('#gfOptions').querySelectorAll('[data-family]').forEach(el => { const selected = el.dataset.family === family; el.setAttribute('aria-selected', selected); });
+}
+export function renderCatalog() {
+  const box = $('#gfOptions'), query = $('#gfSearch').value, current = $('#gfFamily').value;
+  const entries = filterCatalog(pickCatalog, query, $('#gfStyle').value, $('#gfBold').checked);
+  catalogObserver?.disconnect();
+  const focusFamily = entries.some(item => item.family === current) ? current : entries[0]?.family;
+  box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.family === focusFamily ? 0 : -1}" aria-selected="${item.family === current}" data-family="${esc(item.family)}"><span class="font-option-name">${esc(item.family)}</span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
+  const tryButton = $('#gfTry');
+  tryButton.hidden = !query.trim() || entries.some(item => item.family.toLowerCase() === query.trim().toLowerCase());
+  tryButton.textContent = T('pkTryName', { name: query.trim() });
+  // Only visible rows load a short specimen; detailed coverage remains an explicit candidate-selection task.
+  catalogObserver = new IntersectionObserver(events => events.forEach(async entry => {
+    if (!entry.isIntersecting) return;
+    const el = entry.target; catalogObserver.unobserve(el);
+    const font = G(el.dataset.family), src = source(font);
+    await src.promise;
+    if (!el.isConnected) return;
+    const sample = el.querySelector('.font-option-sample'), status = el.querySelector('[data-font-state]');
+    if (src.status !== 'ok') { status.textContent = T('pkPreviewUnavailable'); return; }
+    try {
+      await document.fonts.load(`24px "${src.family}"`, sample.textContent);
+      if (!el.isConnected) return;
+      sample.style.fontFamily = `"${src.family}", var(--ui)`; sample.hidden = false; status.hidden = true;
+    } catch (error) { status.textContent = T('pkPreviewUnavailable'); }
+  }), { root: box });
+  box.querySelectorAll('[data-family]').forEach(el => catalogObserver.observe(el));
+}
 export function setPickTab(tab) {
   pickTab = tab;
   picker.querySelectorAll('[data-src]').forEach(b => b.setAttribute('aria-selected', b.dataset.src === tab));
@@ -1371,8 +1407,12 @@ export async function renderCoverage(s, f) {
   const tok = ++covTok, box = $('#pkCov'), sample = $('#pkSample');
   const text = sample.dataset.text || sample.textContent;
   const sampleChars = [...new Set([...text].filter(c => c.trim() && c !== '·'))];
-  const miss = await missingIn(s, [...new Set([...COV_SETS.flatMap(([, cs]) => [...cs]), ...sampleChars])]);
+  const targetChars = [...new Set([...(state.view.text || '')].filter(c => pickTarget?.type === 'class' ? classOf(c.codePointAt(0)) === pickTarget.id : inRanges(parseChars(state.custom[pickTarget?.i]?.chars || ''), c.codePointAt(0))))];
+  const miss = await missingIn(s, [...new Set([...COV_SETS.flatMap(([, cs]) => [...cs]), ...sampleChars, ...targetChars])]);
   if (tok !== covTok || pickCand !== f) return;
+  const targetMissing = targetChars.filter(ch => miss.has(ch)), targetNote = $('#pkTargetCoverage');
+  targetNote.textContent = targetChars.length ? targetMissing.length ? T('pkTargetMissing', { n: targetMissing.length, chars: targetMissing.slice(0, 20).join('') + (targetMissing.length > 20 ? '…' : '') }) : T('pkTargetOk', { n: targetChars.length }) : '';
+  targetNote.classList.toggle('caution', targetMissing.length > 0);
   box.innerHTML = COV_SETS.map(([k, cs]) => {
     const list = [...cs], have = list.filter(c => !miss.has(c)).length;
     const cls = have === list.length ? 'ok' : have ? 'part' : 'none';
@@ -1393,7 +1433,7 @@ export function renderPunct(s, f) {
 export function resetCoverage() {
   $('#pkPunct').hidden = true;
   covTok++;
-  $('#pkCov').innerHTML = '';
+  $('#pkCov').innerHTML = ''; $('#pkTargetCoverage').textContent = '';
   const sample = $('#pkSample');
   if (sample.dataset.text) sample.textContent = sample.dataset.text;
 }
@@ -1497,10 +1537,24 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   $('#lfMsg').hidden = true; $('#lfMsg').classList.remove('caution');
   pickCand = ovf?.kind === 'file' ? ovf : cur?.kind === 'file' ? cur : null;
   $('#pkSample').textContent = $('#pkSample').dataset.text = `${t.type === 'class' ? CLS[t.id].sample : (state.custom[t.i].chars || '')} · 永国字體 あア Hamburg 0123`;
+  pickCatalog = catalogOrder(t.type === 'class' ? t.id : 'custom', state.typo.lang, cur?.kind === 'google' ? cur.family : '');
+  $('#gfSearch').value = ''; $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog();
   picker.showModal();
   setPickTab(pickW ? (ovf || o.font).kind : cur?.kind || 'google');
+  if (pickTab === 'google') $('#gfSearch').focus();
 }
 export function initPicker() {
+  $('#gfSearch').addEventListener('input', renderCatalog);
+  $('#gfSearch').addEventListener('keydown', e => { if (e.key === 'ArrowDown') { e.preventDefault(); $('#gfOptions [tabindex="0"]')?.focus(); } });
+  $('#gfStyle').addEventListener('change', renderCatalog); $('#gfBold').addEventListener('change', renderCatalog);
+  $('#gfOptions').addEventListener('click', e => { const el = e.target.closest('[data-family]'); if (el) chooseCatalog(el.dataset.family); });
+  $('#gfOptions').addEventListener('keydown', e => {
+    const options = [...e.currentTarget.querySelectorAll('[data-family]')], i = options.indexOf(e.target.closest('[data-family]'));
+    const next = e.key === 'ArrowDown' ? Math.min(options.length - 1, i + 1) : e.key === 'ArrowUp' ? Math.max(0, i - 1) : e.key === 'Home' ? 0 : e.key === 'End' ? options.length - 1 : null;
+    if (next != null) { e.preventDefault(); options.forEach((el, j) => { el.tabIndex = j === next ? 0 : -1; }); options[next]?.focus(); }
+  });
+  $('#gfTry').addEventListener('click', () => chooseCatalog($('#gfSearch').value.trim()));
+  picker.addEventListener('close', () => catalogObserver?.disconnect());
   picker.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => setPickTab(b.dataset.src)));
   $('#gfFamily').addEventListener('input', updateCandSoon);
   $('#gfFamily').addEventListener('change', updateCand);

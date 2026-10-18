@@ -174,6 +174,7 @@ for a role that already has one; if something is really missing, add it to that 
   when they would crowd a shortcut), `.pop` (popover
   surface) with `.menu` / `.mm-item` / `.mm-radio` / `.mm-check`, `.sec-head` + `.sec-title` + `.sec-acts` (section
   heading), `.callout` (yellow notice), `.dlg-form` + `.dlg-act` (small dialog: title, fields, buttons bottom right), `.badge` (count pill), `.info` (the (i) button that opens `#infoPop`), tooltips through `title`.
+- **Font choices:** `.font-options` and `.font-option` keep names and real specimens in fixed-height rows. Load visible specimens lazily; asynchronous checks must never reorder a list under the pointer. Unknown metadata stays eligible when filtering.
 - **Color fields:** `.color-field` pairs a native color well with an editable hex value and a shared focus ring.
 - **Settings popovers:** use `.pop.settings-pop` for mixed settings, and keep `.menu` for command menus.
   Put each logical group in `.settings-group`; use a native `<hr>` only between groups. The shell owns 8 px

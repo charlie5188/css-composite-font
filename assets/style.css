@@ -88,8 +88,8 @@ button{cursor:pointer}
    Regular actions share height and geometry; distinguish emphasis with fill, outline or no border. Compact actions use .sm / .mini; choice controls retain their own shapes.
    Add .danger for destructive actions, and use armConfirm() with .armed for two-click confirmation. */
 /* Wrap base form styles in :where() to minimize specificity so component classes such as .cell-in always win. */
-:where(select,input[type=text],input[type=number],input:not([type])){background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:6px 8px;min-width:0}
-:where(select,input[type=text],input[type=number]):hover{border-color:var(--faint)}
+:where(select,input[type=text],input[type=search],input[type=number],input:not([type])){background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:6px 8px;min-width:0}
+:where(select,input[type=text],input[type=search],input[type=number]):hover{border-color:var(--faint)}
 /* Replace native select arrows, which sit too close to the edge, with an arrow inset 10px. Grey stays legible in both themes. */
 select{-webkit-appearance:none;appearance:none;padding-right:30px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6l6 -6' fill='none' stroke='%23888884' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:12px 12px;text-overflow:ellipsis}
 :where(input[type=number]){font-family:var(--mono);font-variant-numeric:tabular-nums}
@@ -204,6 +204,14 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 .dlg-form .field input{width:100%}
 .dlg-act{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:10px;padding-top:var(--sp-1)}
 /* Yellow notices for font/browser/setting conflicts; remaining selectors are legacy elements toggling .warn / .caution. */
+/* Font choices share one stable name/specimen layout across font sources. */
+.font-options{display:grid;align-content:start;overflow:auto;min-height:120px;height:320px;gap:var(--sp-1);padding:var(--sp-1);border:1px solid var(--line);border-radius:var(--r)}
+.font-option{display:grid;grid-template-rows:auto 32px;gap:var(--sp-1);text-align:left;width:100%;min-height:76px;padding:var(--sp-2) var(--sp-3);border:1px solid transparent;border-radius:var(--r);background:transparent;color:var(--ink);cursor:pointer}
+.font-option:hover{background:color-mix(in srgb,var(--ink) 7%,transparent)}
+.font-option[aria-selected="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.font-option-name{font-size:var(--fs-m);font-weight:600;overflow-wrap:anywhere}
+.font-option-sample{font-size:24px;line-height:32px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.font-option small{font-size:var(--fs-s);color:var(--muted);align-self:center}
 .callout,.w-hint.warn,.typo-note.warn,#pkStatus.caution,#lfMsg.caution{margin:0;font-size:var(--fs-s);line-height:1.55;color:var(--caution);background:var(--caution-bg);padding:6px 10px;border-radius:var(--r)}
 :root{--slider-thumb-size:12px;--slider-track-size:2px;--slider-half:calc(var(--slider-thumb-size)/2)}
 /* All sliders share neutral colors, circular thumbs and focus rings. Native thumb centers are inset from field edges, so rails need half-thumb insets too. */
@@ -789,7 +797,15 @@ button.wl small{font-family:var(--ui);font-size:var(--fs-xs);margin-left:5px;opa
 /* ---------- dialog ---------- */
 dialog{border:1px solid var(--ink);border-radius:var(--r);background:var(--sheet);color:var(--ink);padding:0;width:min(600px,calc(100vw - 32px));max-height:calc(100vh - 48px)}
 dialog::backdrop{background:rgba(8,8,10,.45)}
-.pk{display:grid;gap:16px;padding:22px 24px 20px}
+#picker{width:min(960px,calc(100vw - 32px))}
+.pk{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:var(--sp-4);padding:var(--sp-5);max-height:calc(100dvh - 48px)}
+.pk-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--sp-5);overflow:auto;min-height:0}
+.pk-sources,.pk-detail{display:grid;align-content:start;gap:var(--sp-4);min-width:0}
+.pk-browse{display:grid;gap:var(--sp-2);margin-bottom:var(--sp-4)}
+.pk-browse>input{width:100%}
+.pk-filters{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-3);font-size:var(--fs-s)}
+.pk-filters label{display:flex;align-items:center;gap:var(--sp-1)}
+@media(max-width:760px){.pk-workspace{grid-template-columns:minmax(0,1fr)}.pk .font-options{height:220px}.pk{padding:var(--sp-4)}}
 .pk h3{margin:0;font-size:var(--fs-xl);font-weight:600}
 .pk h3 span{color:var(--muted);font-weight:400}
 .pk .tabs{margin-top:-6px;box-shadow:inset 0 -1px 0 var(--line);overflow-y:hidden}
