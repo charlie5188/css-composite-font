@@ -87,6 +87,28 @@ test('中日字体库：完整使用官方目录，新增字体支持中英文�
   await expect(page.locator('#gfOptions [data-family="Yuji Boku"]')).toHaveCount(1);
 });
 
+test('列表样张优先体现字体主要文字，日文混排假名，右侧仍按编辑类别预览', async ({ page }) => {
+  await fixture(page, 'latin');
+  const samples = [
+    ['Noto Sans SC', '永国字体 春山可望'], ['Noto Sans TC', '永國字體 春山可望'],
+    ['Noto Sans JP', '永あア 春のひかり'], ['Hachi Maru Pop', '永あア 春のひかり'],
+    ['ZCOOL KuaiLe', '永国字体 春山可望'], ['Noto Sans KR', '한글 가나다 漢字'], ['Inter', 'Hamburg Aa Gg 0123'],
+  ];
+  for (const [family, sample] of samples) {
+    await page.locator('#gfSearch').fill(family);
+    await expect(page.locator('#gfOptions [data-family="'+family+'"] .font-option-sample')).toHaveText(sample);
+  }
+  await expect(page.locator('#pkSample')).toContainText('Hamburg');
+  await page.locator('#gfSearch').fill('Hachi Maru Pop');
+  await page.locator('#gfOptions [data-family="Hachi Maru Pop"]').click();
+  await expect(page.locator('#pkSample')).toContainText('Hamburg');
+  await expect(page.locator('#pkSample')).not.toContainText('あ');
+  await page.locator('#pkCancel').click(); await openClassPicker(page, 'han');
+  await page.locator('#gfSearch').fill('Inter');
+  await expect(page.locator('#gfOptions [data-family="Inter"] .font-option-sample')).toHaveText('Hamburg Aa Gg 0123');
+  await expect(page.locator('#pkSample')).toContainText('永国字体');
+});
+
 test('字符覆盖筛选只显示已确认符合的字体；未检查字体清除筛选后仍可查看', async ({ page }) => {
   await page.addInitScript(() => {
     window.queryLocalFonts = async () => ['Fixture Latin', 'ZZ Unread'].map(family => ({ family, fullName: family+' Regular', postscriptName: family.replaceAll(' ', '')+'-Regular', style: 'Regular', blob: async () => (await fetch('/tests/fixtures/Jost%5Bwght%5D.ttf')).blob() }));
@@ -115,7 +137,7 @@ test('字体来源与字重：桌面右上、小档数列出值，窄列表换�
   await selectFilter(page, 'pkSource', 'google');
   await page.locator('#gfSearch').fill('BIZ UDPGothic');
   const row = page.locator('#gfOptions [data-family="BIZ UDPGothic"]');
-  await expect(row.locator('.font-option-source')).toHaveText('Google Fonts · 分档 400、700');
+  await expect(row.locator('.font-option-source')).toHaveText('Google Fonts · 分档 400/700');
   const desktop = await row.evaluate(el => {
     const name = el.querySelector('.font-option-name').getBoundingClientRect(), source = el.querySelector('.font-option-source').getBoundingClientRect();
     return source.left >= name.right && Math.abs(source.top - name.top) < 6;
@@ -278,7 +300,7 @@ test('意大利体筛选：实际款式与 ital 轴、未知资料保留，清�
   await expect(page.locator('#gfSearch')).toHaveValue('Garamond');
   await expect(page.locator('#pkSort input[value="weights"]')).toBeChecked();
   await page.locator('#gfSearch').fill('BIZ');
-  await expect(page.locator('#gfOptions [data-family="BIZ UDPGothic"] .font-option-source')).toContainText('分档 400、700');
+  await expect(page.locator('#gfOptions [data-family="BIZ UDPGothic"] .font-option-source')).toContainText('分档 400/700');
 });
 
 test('本机字重范围：汇总命名分档，读取轴后原地更新，与预览一致且不移动候选', async ({ page }) => {
@@ -290,7 +312,7 @@ test('本机字重范围：汇总命名分档，读取轴后原地更新，与�
   await page.locator('#gfSearch').fill('Fixture Family');
   await page.locator('#pkSortBtn').click(); await page.locator('#pkSort input[value="weights"]').click();
   const row = page.locator('#gfOptions [data-local-family="Fixture Family"]');
-  await expect(row.locator('.font-option-source')).toContainText('已发现 400、700');
+  await expect(row.locator('.font-option-source')).toContainText('已发现 400/700');
   await page.evaluate(() => { window.originalWeightRow = document.querySelector('#gfOptions [data-local-family="Fixture Family"]'); });
   await row.click(); await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'ready');
   await expect(page.locator('#pkVfTag')).toContainText('100–900');

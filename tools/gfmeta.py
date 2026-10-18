@@ -41,6 +41,7 @@ def build(d):
     fams = sorted(d['familyMetadataList'], key=lambda f: f['family'])
     axes = {f['family']: ','.join(f"{a['tag']} {num(a['min'])} {num(a['max'])} {num(a['defaultValue'])}" for a in sorted(f['axes'], key=lambda a: a['tag']))
             for f in fams if f.get('axes')}
+    scripts = {f['family']: f['primaryScript'] for f in fams if f.get('primaryScript') and any(subset in f.get('subsets', []) for subset in CJK)}
     italic = [f['family'] for f in fams if any(k.endswith('i') for k in f.get('fonts', {}))]
     handwriting = [f['family'] for f in fams if 'Handwriting' in [f.get('category'), *f.get('classifications', [])]]
     used = {a['tag'] for f in fams for a in f.get('axes', [])}      # Include only axes used by at least one family.
@@ -62,6 +63,7 @@ def build(d):
             "   GF_STYLE: comma-separated CJK families by style (serif = Song/Ming, sans = Hei/Gothic, other = display, handwriting or monospace).\n"
             "   GF_WEIGHTS: upright weights for families without wght, encoded as single digits representing weight / 100.\n"
             "   GF_CJ: every family tagged for Chinese or Japanese in this metadata snapshot. */\n"
+            f"export const GF_PRIMARY_SCRIPT = {j(scripts)};\n"
             f"export const GF_CJ = {j(cj_families(d))};\n"
             f"export const GF_AXES = {j(axes)};\n"
             f"export const GF_ITALIC = new Set({j('|'.join(italic))}.split('|'));\n"

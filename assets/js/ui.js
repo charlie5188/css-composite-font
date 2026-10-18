@@ -1237,8 +1237,9 @@ function renderPickerSample() {
   $('#pkSample').textContent = $('#pkSample').dataset.text = text;
 }
 function catalogSample(item) {
-  if (item?.region === 'latin' && pickTarget?.type === 'class' && ['han', 'kana', 'bopo', 'punct', 'symbol'].includes(pickTarget.id)) return 'Hamburg 0123';
-  return pickerClassSample() || 'Ag';
+  const script = item?.primaryScript || ({ sc: 'Hans', tw: 'Hant', hk: 'Hant', jp: 'Jpan', kr: 'Kore', latin: 'Latn' })[item?.region];
+  const samples = { Hans: '永国字体 春山可望', Hant: '永國字體 春山可望', Jpan: '永あア 春のひかり', Hira: 'あいうえお かきくけこ', Kana: 'アイウエオ カキクケコ', Kore: '한글 가나다 漢字', Hang: '한글 가나다라마', Latn: 'Hamburg Aa Gg 0123' };
+  return samples[script] || pickerClassSample() || 'Ag';
 }
 const PICKER_LOAD_MS = 12000;
 function waitForPicker(promise) {
@@ -1300,7 +1301,7 @@ function localFamilyWeightInfo(name) {
 }
 function librarySourceLabel(item) {
   const weights = item.weights || [], range = item.weightRange || (weights.length ? [weights[0], weights.at(-1)] : null);
-  const params = { n: weights.length, a: range?.[0], b: range?.[1], weights: weights.join(T('joiner')) };
+  const params = { n: weights.length, a: range?.[0], b: range?.[1], weights: weights.join('/') };
   const summary = item.weightType === 'continuous' && range ? T('pkContinuousSummary', params)
     : item.weightType === 'stepped' && range && weights.length ? T(weights.length <= 2 ? 'pkSteppedFewSummary' : 'pkSteppedSummary', params)
     : range && weights.length ? T(weights.length <= 2 ? 'pkKnownFewWeightSummary' : 'pkKnownWeightSummary', params) : T('fontWeightUnknownLabel');
@@ -1429,7 +1430,7 @@ export function renderImportedFonts() {
   const entries = all.filter(entry => searchKey(`${entry.family} ${entry.style} ${entry.font.fileName}`).includes(query));
   $('#ffLibrary').hidden = !all.length; fileObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
   $('#ffResults').textContent = T('pkResults', { n: entries.length });
-  box.innerHTML = entries.length ? entries.map((entry, i) => `<button class="font-option" type="button" role="option" tabindex="${i ? -1 : 0}" aria-selected="${pickCand?.fileId === entry.font.fileId}" data-imported="${esc(entry.font.fileId)}"><span class="font-option-name">${esc(entry.family)}${entry.style ? ' · ' + esc(entry.style) : ''}</span><span class="font-option-sample" hidden>${esc(pickerClassSample())}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoImportedResults'))}</p>`;
+  box.innerHTML = entries.length ? entries.map((entry, i) => `<button class="font-option" type="button" role="option" tabindex="${i ? -1 : 0}" aria-selected="${pickCand?.fileId === entry.font.fileId}" data-imported="${esc(entry.font.fileId)}"><span class="font-option-name">${esc(entry.family)}${entry.style ? ' · ' + esc(entry.style) : ''}</span><span class="font-option-sample" hidden>${esc(catalogSample(catalogInfo(entry.family)))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoImportedResults'))}</p>`;
   fileObserver = new IntersectionObserver(events => events.forEach(entry => {
     if (!entry.isIntersecting) return; const el = entry.target; fileObserver.unobserve(el);
     const font = importedFonts.get(el.dataset.imported)?.font; if (font) loadPickerChoice(el, source(font));

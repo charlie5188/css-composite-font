@@ -1,6 +1,6 @@
 import { G, GF_LIST, axisOf, gfWeights } from './core.js';
 import { CATALOG_COVERAGE } from './font-catalog-data.js';
-import { GF_ITALIC, GF_STYLE, GF_HANDWRITING } from './gfmeta.js';
+import { GF_ITALIC, GF_STYLE, GF_HANDWRITING, GF_PRIMARY_SCRIPT } from './gfmeta.js';
 import { searchKey } from './ui-controls.js';
 
 // These search aliases do not replace the font's canonical family name.
@@ -62,7 +62,7 @@ export function catalogInfo(family) {
     : /\bTC$/.test(family) ? 'tw' : /\bHK$/.test(family) ? 'hk' : /\bKR$/.test(family) ? 'kr'
     : /\bJP$|Mincho|Gothic|^Zen |^BIZ |^M PLUS|^Klee/.test(family) ? 'jp' : STYLES.has(family) || !GF_LIST.includes(family) ? null : 'latin';
   const style = STYLES.get(family) || (SERIFS.has(family) ? 'serif' : SANS.has(family) ? 'sans' : null);
-  return { family, nativeName: NATIVE_NAMES[family] || '', nameIsAlias: family.startsWith('Noto '), aliases: (ALIASES[family] || '') + ' ' + (NATIVE_NAMES[family] || ''), region, style, styles: catalogStyles(family, style),
+  return { family, nativeName: NATIVE_NAMES[family] || '', nameIsAlias: family.startsWith('Noto '), primaryScript: GF_PRIMARY_SCRIPT[family] || '', aliases: (ALIASES[family] || '') + ' ' + (NATIVE_NAMES[family] || ''), region, style, styles: catalogStyles(family, style),
     weights: weights || [], italic: GF_ITALIC.has(family) ? true : axis || weights || STYLES.has(family) ? false : null,
     weightType: axis ? 'continuous' : weights?.length ? 'stepped' : null, coverage: CATALOG_COVERAGE[family] || null,
     weightRange: axis ? [axis[1], axis[2]] : weights?.length ? [weights[0], weights.at(-1)] : null,
