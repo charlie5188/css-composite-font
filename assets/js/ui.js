@@ -1,6 +1,6 @@
 import { refresh } from './refresh.js';
 import { bindPopover, bindWeightControl, syncWeightControl, showMissingGlyphTip, paintMissingGlyphs, placePopover, searchKey } from './ui-controls.js';
-import { catalogInfo, catalogOrder, catalogStyles, localWeightInfo, localItalicInfo, filterCatalog, sortCatalog } from './font-catalog.js';
+import { catalogInfo, catalogOrder, catalogStyles, localStyleWeight, localWeightInfo, localItalicInfo, filterCatalog, sortCatalog } from './font-catalog.js';
 import { CATALOG_SAMPLES } from './font-catalog-data.js';
 import { readFontMetadata } from './font-metadata.js';
 import { importFontFile, importedFonts, rememberImportedFont } from './font-files.js';
@@ -1171,7 +1171,7 @@ export function initPresets() {
 }
 /* ================= Font picker dialog ================= */
 export let pickTarget = null, pickCand = null, pickTab = 'google';
-let pickerProofWeight = 400, pickerProofKey = '', pickerPreviewToken = 0;
+let pickerProofWeight = 400, pickerProofKey = '', pickerProofEdited = false, pickerPreviewToken = 0;
 let pickerApplyToken = 0, pickerApplyBusy = false, pickerFailedSource = null;
 export let pickW = null;   // When editing a non-400 row with its own font, choose a weight, font name or file only for that step.
 export const picker = $('#picker');
@@ -1290,6 +1290,35 @@ function syncLocalWeightLabels() {
     row.querySelector('.font-option-source').title = librarySourceHint({ ...info, kind: 'local' });
   }
 }
+// Weight previews can switch installed binaries within the selected width/slant variant, without changing the pending choice.
+function localVariant(style) {
+  return style.toLowerCase().replace(/extra[ -]?light|ultra[ -]?light|semi[ -]?bold|demi[ -]?bold|extra[ -]?bold|ultra[ -]?bold|hairline|thin|light|regular|normal|roman|book|medium|bold|black|heavy|\b[1-9]00\b|\bw\d+\b/g, '').replace(/[\s_-]/g, '');
+}
+function localPickerFaces(f) {
+  if (f?.kind !== 'local') return [];
+  const record = localData.get(f.name); if (!record) return [];
+  const variant = localVariant(record.style);
+  return (localGroups().find(([family]) => family === record.family)?.[1] || []).filter(face => localVariant(face.style) === variant)
+    .map(face => ({ face, weight: localWeights.get(face.fullName) ?? localStyleWeight(face.style) })).filter(item => item.weight != null);
+}
+function needsLocalFaceSelection(faces) {
+  return faces.length > 1 && (new Set(faces.map(face => localVariant(face.style))).size > 1 || faces.some(face => (localWeights.get(face.fullName) ?? localStyleWeight(face.style)) == null));
+}
+function hasLocalVariants(f) {
+  return f?.kind === 'local' && localGroups().some(([, faces]) => faces.some(face => face.fullName === f.name) && needsLocalFaceSelection(faces));
+}
+function pickerSteppedWeights(f) {
+  return f?.kind === 'google' ? gfWeights(f.family) : f?.kind === 'local' ? [...new Set(localPickerFaces(f).map(item => item.weight))].sort((a, b) => a - b) : null;
+}
+function pickerViewedFont(f) {
+  if (f.kind === 'google') return { ...f, ...(pickerWeightAxis(f) ? { vf: true } : gfWeights(f.family) ? { weight: pickerProofWeight } : {}) };
+  if (f.kind === 'local' && !pickerWeightAxis(f)) {
+    const matches = localPickerFaces(f).filter(item => item.weight === pickerProofWeight);
+    const match = matches.find(item => item.face.fullName === f.name) || matches[0];
+    if (match) return L(match.face.fullName, match.face.postscriptName ? [match.face.postscriptName] : []);
+  }
+  return f;
+}
 function selectedLibraryId() {
   return pickTab === 'google' ? 'google:' + $('#gfFamily').value : pickTab === 'local' ? 'local:' + localGroups().find(([, faces]) => faces.some(f => f.fullName === $('#lfName').value))?.[0] : '';
 }
@@ -1302,7 +1331,7 @@ function selectLocalFamily(family, keepFace = false) {
   const current = $('#lfName').value, query = searchKey($('#gfSearch').value);
   const exact = faces.find(f => searchKey(f.fullName) === query || searchKey(f.postscriptName) === query);
   const face = (keepFace && faces.find(f => f.fullName === current)) || exact || faces.find(f => /regular|normal|book/i.test(f.style)) || faces[0];
-  $('#lfFaceField').hidden = faces.length < 2;
+  $('#lfFaceField').hidden = !needsLocalFaceSelection(faces);
   $('#lfFace').innerHTML = faces.map(f => `<option value="${esc(f.fullName)}">${esc(f.style)}</option>`).join('');
   $('#lfFace').value = face.fullName; $('#lfName').value = face.fullName;
   if (!keepFace) { pickTab = pickerLibraryKind = 'local'; updateCand(); }
@@ -1524,7 +1553,7 @@ export const cleanVary = f => { const o = Object.fromEntries(Object.entries(pick
 /* Which font to use for this face's italic export. */
 export function renderItal() {
   const el = $('#pkItal'), f = pickCand;
-  el.hidden = !state.italic || !f;
+  el.hidden = !f; $('#pkItalLabel').hidden = el.hidden;
   if (el.hidden) return;
   if (f.kind === 'local' && italicLocal(f) === undefined) { el.textContent = T('pkItalChecking'); setTimeout(() => { if (picker.open && pickCand === f) renderItal(); }, 400); return; }
   const it = italOf(f);
@@ -1580,8 +1609,7 @@ export async function renderCoverage(s, f) {
   box.innerHTML = COV_SETS.filter(([key]) => !['covLatin', 'covDigit', 'covKR'].includes(key)).map(([k, cs]) => {
     const list = [...cs], have = list.filter(c => !miss.has(c)).length;
     const cls = have === list.length ? 'ok' : have ? 'part' : 'none';
-    const mark = cls === 'ok' ? ' ✓' : cls === 'part' ? ` ${have}/${list.length}` : '';
-    return `<span class="cov ${cls}" title="${esc(T('covTitle', { n: list.length, k: have }))}">${esc(T(k))}${mark}</span>`;
+    return `<dt>${esc(T(k))}</dt><dd class="cov-result ${cls}">${esc(T('pkCoverageResult', { have, total: list.length }))}</dd>`;
   }).join('');
 }
 /* Also show whether picker punctuation is centered (Taiwan/Hong Kong) or lower-left (Mainland/Japan); warn when it differs from the current language. */
@@ -1604,6 +1632,7 @@ function pickerWeightAxis(f) { return f && (f.kind === 'google' ? f.family in vf
 function setPickerDetailTab(tab) {
   picker.querySelectorAll('[data-pk-detail]').forEach(button => { const selected = button.dataset.pkDetail === tab; button.setAttribute('aria-selected', selected); button.tabIndex = selected ? 0 : -1; });
   $('#pkPreviewPanel').hidden = tab !== 'preview'; $('#pkDetails').hidden = tab !== 'info';
+  $('#pkDetailScroll').scrollTop = 0;
   if (tab === 'preview') sizePickerSample();
   else syncPickerMetadata(pickCand);
 }
@@ -1674,31 +1703,33 @@ function syncPickerProof(f, { preserveInput = false } = {}) {
   $('#pkEmptyState').hidden = !!f; $('#pkDetailContent').hidden = !f;
   picker.querySelector('.pk-detail').classList.toggle('is-empty', !f);
   syncPickerUseLabel();
-  const axis = pickerWeightAxis(f), weights = f?.kind === 'google' ? gfWeights(f.family) : null;
+  const axis = pickerWeightAxis(f), weights = pickerSteppedWeights(f);
   const key = f ? fontKey(f) + '|' + (f.weight || 400) : '';
-  if (key !== pickerProofKey) { pickerProofKey = key; pickerProofWeight = f?.weight || 400; }
+  if (key !== pickerProofKey) { pickerProofKey = key; pickerProofEdited = false; }
+  // A declared static weight may arrive after its name. Update the initial view, but preserve a user's preview edit.
+  if (!pickerProofEdited) pickerProofWeight = f?.weight || (f?.kind === 'local' ? localWeights.get(f.name) ?? localStyleWeight(localData.get(f.name)?.style || '') : null) || 400;
   if (axis) pickerProofWeight = Math.max(axis[0], Math.min(axis[1], pickerProofWeight));
   else if (weights?.length) pickerProofWeight = weights.reduce((a, b) => Math.abs(b - pickerProofWeight) < Math.abs(a - pickerProofWeight) ? b : a);
   $('#pkWeightControl').hidden = !f;
   $('#gfApplyField').hidden = !pickW || f?.kind !== 'google';
   $('#lfVarField').hidden = f?.kind !== 'local' || localData.has(f.name);
-  $('#pkSelectedName').textContent = f?.kind === 'file' ? importedFonts.get(f.fileId)?.family || f.fileName : f?.kind === 'google' ? f.family : f?.name || '';
-  $('#lfFaceField').hidden = f?.kind !== 'local' || !localGroups().some(([, faces]) => faces.length > 1 && faces.some(face => face.fullName === f.name));
+  $('#pkSelectedName').textContent = f?.kind === 'file' ? importedFonts.get(f.fileId)?.family || f.fileName : f?.kind === 'google' ? f.family : f?.kind === 'local' ? localData.get(f.name)?.family || f.name : '';
+  $('#lfFaceField').hidden = !hasLocalVariants(f);
   syncWeightControl({ input: $('#pkProofWeightNum'), slider: $('#pkProofWeight'), ticks: $('#pkProofTicks') }, { ...pickerWeightDomain(), value: pickerProofWeight, label: wTip, locale: UI, preserveInput });
   $('#ffWeightField').hidden = !pickW || f?.kind !== 'file' || !f.axis;
   if (f?.kind === 'file' && f.axis) { const input = $('#ffWeightNum'); input.min = f.axis[0]; input.max = f.axis[1]; input.value = f.weight || 400; }
-  $('#pkApplied').hidden = !f || !pickW && f.kind !== 'file' && $('#lfVarField').hidden;
+  $('#pkApplied').hidden = !f || !pickW && $('#lfVarField').hidden;
 }
 function pickerWeightDomain() {
-  const axis = pickerWeightAxis(pickCand), weights = pickCand?.kind === 'google' ? gfWeights(pickCand.family) : null;
-  return { continuous: !!axis, domain: axis || weights || [pickCand?.weight || 400], value: pickerProofWeight };
+  const axis = pickerWeightAxis(pickCand), weights = pickerSteppedWeights(pickCand);
+  return { continuous: !!axis, domain: axis || (weights?.length ? weights : [pickCand?.weight || 400]), value: pickerProofWeight };
 }
 function setPickerProof(value, { preserveInput = false } = {}) {
   if (!pickCand || !Number.isFinite(value)) return;
   const { continuous, domain } = pickerWeightDomain();
   const next = continuous ? Math.round(Math.max(domain[0], Math.min(domain.at(-1), value))) : domain.reduce((a, b) => Math.abs(b - value) < Math.abs(a - value) ? b : a);
   const changed = next !== pickerProofWeight;
-  pickerProofWeight = next; syncPickerProof(pickCand, { preserveInput }); applySampleAxes();
+  pickerProofEdited = true; pickerProofWeight = next; syncPickerProof(pickCand, { preserveInput }); applySampleAxes();
   if (changed) paintPickerCandidate();
 }
 export function updateCand() {
@@ -1706,7 +1737,9 @@ export function updateCand() {
   pickCand = f;
   updateScope(); syncPickerProof(f);
   renderAxes();
-  $('#ffItalField').hidden = f?.kind !== 'file';
+  // Pairing belongs to export configuration, and is normally useful for Western characters, not Han/kana.
+  const western = pickTarget?.type === 'custom' || ['latin', 'digit', 'shared'].includes(pickTarget?.id);
+  $('#ffItalField').hidden = f?.kind !== 'file' || !(state.italic || state.fx?.italic) || !f.italic && (!western || !!italOf(f));
   $('#ffName').textContent = f?.kind === 'file' ? f.fileName : T('ffHint');
   $('#ffItalName').textContent = f?.italic?.fileName || '';
   paintPickerCandidate();
@@ -1715,11 +1748,11 @@ async function paintPickerCandidate() {
   if (pickerApplyBusy) return;
   const f = pickCand, token = ++pickerPreviewToken, ok = $('#pkOk'), st = $('#pkStatus'), sample = $('#pkSample'), preview = picker.querySelector('.pk-preview');
   const current = () => picker.open && pickCand === f && token === pickerPreviewToken && !pickerApplyBusy;
-  pickerFailedSource = null; $('#pkRetry').hidden = true; $('#pkItal').hidden = true;
+  pickerFailedSource = null; $('#pkRetry').hidden = true; $('#pkItal').hidden = true; $('#pkItalLabel').hidden = true;
   $('#pkLocalFallback').hidden = true;
   st.classList.remove('caution', 'vh'); st.parentElement.classList.remove('vh'); showVfTag(pickerWeightAxis(f)); resetCoverage();
   if (!f) { ok.disabled = true; st.dataset.state = 'empty'; st.textContent = T('pkEmpty'); preview.removeAttribute('aria-busy'); return; }
-  const axis = pickerWeightAxis(f), viewed = f.kind === 'google' ? { ...f, ...(axis ? { vf: true } : gfWeights(f.family) ? { weight: pickerProofWeight } : {}) } : f;
+  const viewed = pickerViewedFont(f);
   const src = source(previewFont(viewed), { retry: true });
   sample.style.fontFamily = 'var(--ui)'; sizePickerSample();
   ok.disabled = true; st.dataset.state = 'loading'; st.textContent = T('pkFetching'); preview.setAttribute('aria-busy', 'true');
@@ -1877,7 +1910,7 @@ function resolvePickerDraft(st, key, W, depth = 0) {
 }
 function setPickerApplyBusy(busy) {
   pickerApplyBusy = busy;
-  picker.querySelector('.pk-sources').inert = busy; picker.querySelector('.pk-detail').inert = busy; picker.querySelector('.tabs').inert = busy; $('#pkScope').inert = busy; $('#pkAxes').inert = busy;
+  picker.querySelector('.pk-sources').inert = busy; picker.querySelector('.pk-detail').inert = busy; picker.querySelector('.tabs').inert = busy; $('#pkScope').inert = busy; $('#pkAxes').inert = busy; $('#ffItalField').inert = busy;
   $('#pkAutoFit').disabled = busy; $('#pkOk').disabled = busy; syncPickerUseLabel();
   if (busy) $('#pkOk').setAttribute('aria-busy', 'true'); else $('#pkOk').removeAttribute('aria-busy');
 }
@@ -2032,11 +2065,16 @@ export function initPicker() {
   $('#ffDrop').addEventListener('drop', e => { e.preventDefault(); e.currentTarget.classList.remove('dragging'); acceptFontFiles([...e.dataTransfer.files]); });
   /* Attach the italic file to this uploaded font; italic export uses it for this class, deriving other weights by filename. */
   $('#ffItal').addEventListener('change', async e => {
-    const file = e.target.files[0]; if (!file || pickCand?.kind !== 'file') return;
-    const id = 'f' + Date.now().toString(36) + 'i', buffer = await file.arrayBuffer();
-    files.set(id, { name: file.name, buffer });
-    pickCand = { ...pickCand, italic: setFontAxes({ fileId: id, fileName: file.name }, await fileAxes(buffer), pickCand.weight) };
-    rememberImportedFont(pickCand); updateCand();
+    const file = e.target.files[0], owner = pickCand; if (!file || owner?.kind !== 'file') return;
+    e.target.disabled = true;
+    try {
+      const entry = await importFontFile(file);
+      if (!picker.open || pickCand?.fileId !== owner.fileId) return;
+      pickCand = { ...pickCand, italic: { ...entry.font } }; rememberImportedFont(pickCand); renderImportedFonts(); updateCand();
+      $('#ffError').hidden = true;
+    } catch (error) {
+      if (picker.open && pickCand?.fileId === owner.fileId) { $('#ffError').textContent = T('pkFileInvalid', { names: file.name }); $('#ffError').hidden = false; }
+    } finally { e.target.disabled = false; e.target.value = ''; }
   });
   const axBox = $('#pkAxes');
   axBox.addEventListener('input', e => {

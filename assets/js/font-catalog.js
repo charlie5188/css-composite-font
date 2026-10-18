@@ -78,14 +78,14 @@ export function catalogOrder(current) {
 }
 // Local Font Access exposes named faces before their binaries are read. Reuse those
 // explicit style names, but do not infer that an unread face lacks a variable axis.
+export function localStyleWeight(value) {
+  const name = value.replace(/italic|oblique/ig, '').replace(/(?:ultra|extra|semi)?(?:condensed|expanded)|compressed|narrow|extended|wide/ig, '').replace(/[\s_-]/g, '').toLowerCase();
+  const words = { thin: 100, hairline: 100, extralight: 200, ultralight: 200, light: 300, regular: 400, normal: 400, roman: 400, book: 400, medium: 500, semibold: 600, demibold: 600, bold: 700, extrabold: 800, ultrabold: 800, black: 900, heavy: 900 };
+  return words[name] || (/^[1-9]00$/.test(name) ? +name : null);
+}
 export function localWeightInfo(faces, axesByName, weightsByName = new Map()) {
-  const namedWeight = value => {
-    const name = value.replace(/italic|oblique/ig, '').replace(/[\s_-]/g, '').toLowerCase();
-    const words = { thin: 100, hairline: 100, extralight: 200, ultralight: 200, light: 300, regular: 400, normal: 400, roman: 400, book: 400, medium: 500, semibold: 600, demibold: 600, bold: 700, extrabold: 800, ultrabold: 800, black: 900, heavy: 900 };
-    return words[name] || (/^[1-9]00$/.test(name) ? +name : null);
-  };
   const axes = faces.flatMap(face => { const data = axesByName.get(face.fullName); return data?.unknown ? [] : (data?.axes || []).filter(a => a[0] === 'wght'); });
-  const weights = [...new Set(faces.map(face => weightsByName.get(face.fullName) ?? namedWeight(face.style)).filter(w => w != null))].sort((a, b) => a - b);
+  const weights = [...new Set(faces.map(face => weightsByName.get(face.fullName) ?? localStyleWeight(face.style)).filter(w => w != null))].sort((a, b) => a - b);
   const complete = faces.length > 0 && faces.every(face => { const data = axesByName.get(face.fullName); return data && !data.unknown; });
   const limits = [...axes.flatMap(a => [a[1], a[2]]), ...weights];
   const weightRange = axes.length || weights.length > 1 || complete && weights.length ? [Math.min(...limits), Math.max(...limits)] : null;

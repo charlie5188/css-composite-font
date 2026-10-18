@@ -330,7 +330,7 @@ test('本机字重范围：汇总命名分档，读取轴后原地更新，与�
 
 test('多选筛选与本机预览：组内任选、组间同时满足，名称加载失败后用授权文件预览，款式属于右侧候选', async ({ page }) => {
   await page.addInitScript(() => {
-    window.queryLocalFonts = async () => ['Regular', 'Bold'].map(style => ({ family: 'Inter', fullName: 'Fixture Inter '+style, postscriptName: 'FixtureInter-'+style, style,
+    window.queryLocalFonts = async () => ['Regular', 'Bold', 'Italic'].map(style => ({ family: 'Inter', fullName: 'Fixture Inter '+style, postscriptName: 'FixtureInter-'+style, style,
       blob: async () => (await fetch('/tests/fixtures/Jost%5Bwght%5D.ttf')).blob() }));
   });
   await fixture(page, 'latin');
@@ -355,7 +355,7 @@ test('多选筛选与本机预览：组内任选、组间同时满足，名称�
   await page.locator('#pkSortBtn').click(); await page.locator('#pkSort input[value="weights"]').click();
   await expect(page.locator('#gfOptions [data-local-family="Inter"] .font-option-source')).toContainText('100–900');
   await page.locator('#lfFace').selectOption('Fixture Inter Bold');
-  await expect(page.locator('#pkSelectedName')).toHaveText('Fixture Inter Bold');
+  await expect(page.locator('#pkSelectedName')).toHaveText('Inter');
   await page.locator('#pkFilterClear').click();
   await expect(page.locator('#gfSearch')).toHaveValue('Inter');
   await expect(page.locator('#pkSource input:checked')).toHaveCount(0);
@@ -389,6 +389,7 @@ test('本机字体：按家族和样式选择，自动读取可变属性，拒�
     window.queryLocalFonts = async () => [
       { family: 'Fixture Sans', fullName: 'Fixture Sans Regular', postscriptName: 'FixtureSans-Regular', style: 'Regular', blob: async () => (await fetch('/tests/fixtures/Jost%5Bwght%5D.ttf')).blob() },
       { family: 'Fixture Sans', fullName: 'Fixture Sans Bold', postscriptName: 'FixtureSans-Bold', style: 'Bold', blob: async () => (await fetch('/tests/fixtures/Jost%5Bwght%5D.ttf')).blob() },
+      { family: 'Fixture Sans', fullName: 'Fixture Sans Italic', postscriptName: 'FixtureSans-Italic', style: 'Italic', blob: async () => (await fetch('/tests/fixtures/Jost-Italic%5Bwght%5D.ttf')).blob() },
     ];
   });
   await fixture(page);
@@ -397,7 +398,7 @@ test('本机字体：按家族和样式选择，自动读取可变属性，拒�
   await page.locator('#gfSearch').fill('Ｆｉｘｔｕｒｅ-Ｓａｎｓ');
   await expect(page.locator('#gfOptions [data-local-family]')).toHaveCount(1);
   await page.locator('#gfOptions [data-local-family]').click();
-  await expect(page.locator('#lfFace option')).toHaveCount(2);
+  await expect(page.locator('#lfFace option')).toHaveCount(3);
   await expect(page.locator('#lfName')).toHaveValue('Fixture Sans Regular');
   await page.locator('#lfFace').selectOption('Fixture Sans Bold');
   await expect(page.locator('#lfName')).toHaveValue('Fixture Sans Bold');
@@ -1131,4 +1132,86 @@ test('字体资料解析：TTF、OTF、WOFF 与 WOFF2 限制，保留中文及�
   expect(result.jp.names.style).toBe('Thin'); expect(result.jp.characterCount).toBe(52);
   expect(result.woff.names.postscript).toBe('Jost-Regular'); expect(result.woff.characterCount).toBe(524);
   expect(result.woff2.supported).toBe(false); expect(result.woff2.names).toBe(null); expect(result.woff2.characterCount).toBe(null); expect(result.woff2.variable).toBe(null);
+});
+
+test('本机分档字体：预览字重切换家族的真实文件，不改变所选款式或应用配置', async ({ page }) => {
+  await page.addInitScript(() => {
+    // Reuse a licensed static font with explicit weight metadata to model named installed faces.
+    window.queryLocalFonts = async () => [['Fixture Static','Regular',400], ['Fixture Static','Bold',700], ['Fixture Variants','Regular',400], ['Fixture Variants','Bold',700], ['Fixture Variants','Italic',400], ['Fixture Variants','Condensed Bold',700]].map(([family,style,weight]) => ({ family, fullName:family+' '+style, postscriptName:(family+'-'+style).replaceAll(' ',''), style,
+      blob: async () => {
+        const buffer = await (await fetch('/tests/fixtures/NotoSansJP-Subset.ttf')).arrayBuffer(), v = new DataView(buffer);
+        for (let j = 0; j < v.getUint16(4); j++) { const q = 12 + j * 16; if (v.getUint32(q) === 0x4f532f32) v.setUint16(v.getUint32(q + 8) + 4, weight); }
+        return new Blob([buffer]);
+      } }));
+  });
+  await fixture(page);
+  await page.locator('#gfSearch').fill('Fixture Static'); await page.locator('#gfOptions [data-local-family]').click();
+  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state','ready');
+  await expect(page.locator('#lfFaceField')).toBeHidden(); await expect(page.locator('#pkSelectedName')).toHaveText('Fixture Static');
+  const shown = () => page.evaluate(async () => {
+    const c = await import('./assets/js/core.js'), family = document.querySelector('#pkSample').style.fontFamily.split(',')[0].replaceAll('"','');
+    return [...c.sources.values()].find(s => s.family === family)?.font.name;
+  });
+  await expect.poll(shown).toBe('Fixture Static Regular');
+  await page.locator('#pkProofWeightNum').fill('700');
+  await expect.poll(shown).toBe('Fixture Static Bold');
+  await expect(page.locator('#pkProofWeightNum')).toHaveValue('700');
+  await page.evaluate(async () => { const u = await import('./assets/js/ui.js'); u.localWeights.set('Fixture Static Regular',350); u.updateCand(); });
+  await expect(page.locator('#pkProofWeightNum')).toHaveValue('700'); // Late metadata preserves an edited preview.
+  await expect(page.locator('#lfName')).toHaveValue('Fixture Static Regular');
+  expect(await page.evaluate(async () => (await import('./assets/js/ui.js')).pickCand.name)).toBe('Fixture Static Regular');
+  await page.locator('#pkProofWeightNum').fill('400'); await page.locator('#pkProofWeightNum').press('Enter'); await expect.poll(shown).toBe('Fixture Static Regular');
+  await page.locator('#pkProofWeightNum').press('ArrowUp'); await expect.poll(shown).toBe('Fixture Static Bold');
+  await page.locator('#pkOk').click();
+  expect(await page.evaluate(async () => (await import('./assets/js/core.js')).state.classes.han.font.name)).toBe('Fixture Static Regular');
+  await openClassPicker(page,'han'); await page.locator('#gfSearch').fill('Fixture Variants'); await page.locator('#gfOptions [data-local-family]').click();
+  await page.locator('#lfFace').selectOption('Fixture Variants Italic');
+  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state','ready');
+  await page.locator('#pkProofWeightNum').fill('700'); await page.locator('#pkProofWeightNum').press('Enter'); await expect.poll(shown).toBe('Fixture Variants Italic');
+  await expect(page.locator('#pkProofWeightNum')).toHaveValue('400');
+  await page.locator('#lfFace').selectOption('Fixture Variants Condensed Bold');
+  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state','ready');
+  await page.locator('#pkProofWeightNum').fill('400'); await page.locator('#pkProofWeightNum').press('Enter'); await expect.poll(shown).toBe('Fixture Variants Condensed Bold');
+  await expect(page.locator('#pkProofWeightNum')).toHaveValue('700');
+});
+
+test('详情滚动：字体名与页签固定，检测结果按字段对齐，窄屏页签随详情置顶', async ({ page }) => {
+  await fixture(page); await page.locator('#picker [data-src="file"]').click();
+  await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
+  await page.locator('#pkInfoTab').click(); await expect(page.locator('#pkCov dd')).toHaveCount(7);
+  await expect(page.locator('#pkCov dd').first()).toContainText('支持');
+  expect(await page.locator('#pkItal').evaluate(el => el.closest('.pk-info-group').querySelector('h4').textContent)).toBe('字体特征');
+  const before = await page.locator('#pkDetailTabs').boundingBox();
+  await page.locator('#pkDetailScroll').evaluate(el => { el.scrollTop = el.scrollHeight; });
+  const after = await page.locator('#pkDetailTabs').boundingBox(); expect(Math.abs(after.y - before.y)).toBeLessThan(1);
+  expect(await page.locator('#pkDetailScroll').evaluate(el => el.scrollTop)).toBeGreaterThan(100);
+  expect(await page.locator('.pk-detail').evaluate(el => el.scrollTop)).toBe(0);
+  expect(await page.locator('#pkCov').evaluate(el => { const count = el.querySelector('dd').getBoundingClientRect(), other = document.querySelector('#pkInfoSource').getBoundingClientRect(); return Math.abs(count.left - other.left) < 1; })).toBe(true);
+  await expect(page.locator('#pkOk')).toBeInViewport();
+  await page.setViewportSize({width:390,height:844}); await page.emulateMedia({colorScheme:'dark'});
+  await page.locator('#pkCov').scrollIntoViewIfNeeded();
+  await expect(page.locator('#pkDetailTabs')).toBeInViewport(); await expect(page.locator('#pkOk')).toBeInViewport();
+  expect(await page.locator('#pkDetails').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+});
+
+test('配套斜体：只在适用的导出配置区出现，导入失败保留配对，确认后供斜体使用', async ({ page }) => {
+  await fixture(page);
+  await page.locator('#picker [data-src="file"]').click();
+  await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
+  await expect(page.locator('#ffItalField')).toBeHidden();
+  await page.locator('#pkCancel').click(); await openClassPicker(page,'shared');
+  await page.locator('#picker [data-src="file"]').click(); await page.locator('#ffOptions [data-imported]').click();
+  await expect(page.locator('#ffItalField')).toBeVisible();
+  await page.locator('#pkCancel').click(); await openClassPicker(page,'latin');
+  await page.locator('#picker [data-src="file"]').click(); await page.locator('#ffOptions [data-imported]').click();
+  await expect(page.locator('#ffItalField')).toBeVisible();
+  expect(await page.locator('#ffItalField').evaluate(el => el.closest('footer') != null)).toBe(true);
+  await expect(page.locator('#ffItalField')).toContainText('导出斜体');
+  await page.locator('#ffItal').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost-Italic[wght].ttf'));
+  await expect(page.locator('#ffItalName')).toHaveText('Jost-Italic[wght].ttf');
+  await page.locator('#ffItal').setInputFiles({name:'broken.ttf',mimeType:'font/ttf',buffer:Buffer.from('invalid')});
+  await expect(page.locator('#ffError')).toContainText('broken.ttf');
+  await expect(page.locator('#ffItalName')).toHaveText('Jost-Italic[wght].ttf');
+  await page.locator('#pkAutoFit').uncheck(); await page.locator('#pkOk').click();
+  expect(await page.evaluate(async () => { const c = await import('./assets/js/core.js'); return c.italOf(c.state.classes.latin.font)?.fileName; })).toBe('Jost-Italic[wght].ttf');
 });
