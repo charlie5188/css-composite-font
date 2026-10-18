@@ -28,8 +28,8 @@ test('字体列表：按校样语言和类别初排，别名搜索、已知筛�
     return filterCatalog([{ family: 'Unknown', aliases: '', style: null, bold: null }, { family: 'No bold', aliases: '', style: 'sans', bold: false }], '', 'serif', true).map(x => x.family);
   });
   expect(entries).toEqual(['Unknown']);
-  await page.locator('#gfSearch').fill('Shippori'); await page.locator('#pkFilterBtn').click(); await page.locator('#gfBold').check();
-  await expect(page.locator('#pkFilterCount')).toHaveText('1'); await page.locator('#pkFilterBtn').click();
+  await page.locator('#gfSearch').fill('Shippori'); await page.locator('#gfBold').check();
+  await expect(page.locator('#gfBold')).toBeChecked();
   await expect(options).toHaveCount(1);
   await page.locator('#gfSearch').fill('Klee One');
   await expect(options).toHaveCount(0);
@@ -437,20 +437,26 @@ test('状态反馈：上一轮排队的关闭事件不能中止重新打开的�
 });
 
 
-test('选字弹层：筛选状态可见且可清除，Escape 只关闭弹层；手机 footer 与样张工具保持可用', async ({ page }) => {
+test('选字筛选栏：搜索下方直接筛选与清除；手机四语言换行，样张弹层 Escape 不关闭对话框', async ({ page }) => {
   await fixture(page, 'latin');
   await page.locator('#gfSearch').fill('Noto');
-  await page.locator('#pkFilterBtn').click();
+
   await page.locator('#gfStyle').selectOption('serif'); await page.locator('#gfBold').check();
-  await expect(page.locator('#pkFilterCount')).toHaveText('2');
-  await page.keyboard.press('Escape');
-  await expect(page.locator('#picker')).toBeVisible(); await expect(page.locator('#pkFilterPop')).toBeHidden();
-  await page.locator('#pkFilterBtn').click(); await page.locator('#pkFilterClear').click();
-  await expect(page.locator('#gfSearch')).toHaveValue('Noto'); await expect(page.locator('#pkFilterCount')).toBeHidden();
-  await page.keyboard.press('Escape');
+  await expect(page.locator('#gfStyle')).toHaveAttribute('data-active', 'true');
+  await expect(page.locator('#gfBold')).toBeChecked();
+  expect(await page.locator('.filter-bar').evaluate(el => el.getBoundingClientRect().top >= document.querySelector('#gfSearch').getBoundingClientRect().bottom)).toBeTruthy();
+  await page.locator('#pkFilterClear').click();
+  await expect(page.locator('#gfSearch')).toHaveValue('Noto'); await expect(page.locator('#pkFilterClear')).toBeHidden();
+  await expect(page.locator('#gfSearch')).toBeFocused();
+  await expect(page.locator('#gfStyle')).toHaveValue(''); await expect(page.locator('#gfBold')).not.toBeChecked();
   await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
   for (const lang of ['zh', 'tw', 'ja', 'en']) {
     await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
+    expect(await page.locator('.filter-bar').evaluate(el => el.scrollWidth <= el.clientWidth)).toBeTruthy();
+    expect(await page.locator('#picker').evaluate(el => el.querySelector('.pk-detail').getBoundingClientRect().top >= el.querySelector('#gfOptions').getBoundingClientRect().bottom)).toBeTruthy();
+    await expect(page.locator('#pkSource')).toBeInViewport();
+    await expect(page.locator('#gfStyle')).toBeInViewport();
+    await expect(page.locator('#gfBold')).toBeInViewport();
     await expect(page.locator('.pk-actions #pkAutoFit')).toBeInViewport();
     await expect(page.locator('#pkCancel')).toBeInViewport(); await expect(page.locator('#pkOk')).toBeInViewport();
     await page.locator('#pkSampleBtn').click(); await page.locator('[data-pk-sample="custom"]').click();
@@ -483,13 +489,15 @@ test('合并字体库：自动枚举一次、同名字体区分来源，共享�
   await expect(page.locator('#gfOptions [data-local-family="Inter"]')).toHaveCount(1);
   await expect(page.locator('#gfOptions [data-family="Inter"] .font-option-source')).toHaveText('Google Fonts');
   await expect(page.locator('#gfOptions [data-local-family="Inter"] .font-option-source')).toHaveText('本机字体');
-  await page.locator('#gfSearch').fill(''); await page.locator('#pkFilterBtn').click();
+  await page.locator('#gfSearch').fill('');
   await page.locator('#pkSource').selectOption('local'); await page.locator('#gfStyle').selectOption('serif'); await page.locator('#gfBold').check();
-  await expect(page.locator('#pkFilterCount')).toHaveText('3');
+  await expect(page.locator('#pkSource')).toHaveValue('local');
+  await expect(page.locator('#gfStyle')).toHaveValue('serif');
+  await expect(page.locator('#gfBold')).toBeChecked();
   await expect(page.locator('#gfOptions [data-family]')).toHaveCount(0);
   await expect(page.locator('#gfOptions [data-local-family="Fixture Sans"]')).toHaveCount(0);
   await expect(page.locator('#gfOptions [data-local-family="Mystery Face"]')).toHaveCount(1);
-  await page.locator('#pkFilterClear').click(); await page.keyboard.press('Escape');
+  await page.locator('#pkFilterClear').click();
   await page.locator('#gfSearch').fill('FixtureSans-Bold'); await page.locator('#gfSearch').press('Enter');
   await expect(page.locator('#lfName')).toHaveValue('Fixture Sans Bold'); await expect(page.locator('#lfFace')).toHaveValue('Fixture Sans Bold');
   await page.locator('#picker [data-src="file"]').click(); await page.locator('#picker [data-src="library"]').click();
@@ -507,7 +515,7 @@ test('统一名称输入：未知名称只在明确选用后检查，可直接�
   await page.locator('#gfSearch').press('Enter'); await expect(page.locator('#gfTry')).toBeFocused(); expect(probes).toBe(0);
   await page.locator('#gfTry').click(); await expect(page.locator('#pkSelectedName')).toHaveText('Outside Catalogue Family');
   await expect(page.locator('#pkOk')).toBeEnabled(); expect(probes).toBeGreaterThan(0);
-  await page.locator('#pkFilterBtn').click(); await page.locator('#pkSource').selectOption('local'); await page.keyboard.press('Escape');
+  await page.locator('#pkSource').selectOption('local');
   await page.locator('#gfSearch').fill('Baskerville Full Name'); await expect(page.locator('#gfTry')).toBeHidden();
   await page.locator('#gfSearch').press('Enter'); await expect(page.locator('#lfName')).toHaveValue('Baskerville Full Name');
   await expect(page.locator('#pkSelectedName')).toHaveText('Baskerville Full Name');

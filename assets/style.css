@@ -199,6 +199,15 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 .settings-fields select{height:var(--ctl-h);font-size:var(--fs-s);padding-top:var(--sp-1);padding-bottom:var(--sp-1)}
 .settings-actions{display:flex;justify-content:flex-end;align-items:center;min-height:var(--ctl-h);padding:0 var(--sp-2)}
 .settings-actions .btn-text:disabled{color:var(--faint);cursor:default}
+/* Always-visible filters sit below search; native choices keep their keyboard and platform behavior. */
+.filter-bar{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp-2);min-width:0}
+.filter-select,.filter-toggle{height:var(--ctl-h);border:1px solid var(--line);border-radius:var(--r-pill);background-color:transparent;font-size:var(--fs-s);color:var(--muted);max-width:100%}
+.filter-select{width:auto;padding-left:var(--sp-3)}
+.filter-toggle{display:inline-flex;align-items:center;gap:var(--sp-2);padding:0 var(--sp-3);cursor:pointer}
+.filter-toggle input{margin:0;accent-color:var(--ink)}
+.filter-select[data-active="true"],.filter-toggle:has(:checked){color:var(--ink);border-color:var(--ink);background-color:color-mix(in srgb,var(--ink) 5%,transparent)}
+.filter-select:hover,.filter-toggle:hover{background-color:color-mix(in srgb,var(--ink) 7%,transparent)}
+.filter-toggle:has(:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
 /* Section header: monospaced label on the left, section actions on the right. */
 .sec-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--sp-2) var(--sp-3);margin:var(--sp-6) 0 var(--sp-2)}
 /* Use type size, weight and spacing for hierarchy, not dividers: .sec-title > .typo-name > monospaced labels and muted notes. */
@@ -829,14 +838,12 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .font-option-source{flex:none;font-size:var(--fs-xs);font-weight:400;color:var(--muted)}
 .pk-search{display:flex;gap:var(--sp-2);align-items:center}
 .pk-search>input{width:100%;min-width:0}
-.pk-search .btn-ghost{flex:none}
-#pkFilterBtn:has(.badge:not([hidden])){color:var(--ink)}
 @media(max-width:860px){
   #picker{width:calc(100vw - 32px)}
   .pk{padding:var(--sp-4)}
   /* Use one workspace scroll on narrow screens so neither pane becomes a tiny nested viewport. */
-  .pk-workspace{grid-template-columns:minmax(0,1fr);overflow:auto;align-content:start;gap:var(--sp-4)}
-  .pk-sources,.pk-detail{overflow:visible;scrollbar-gutter:auto}
+  .pk-workspace{grid-template-columns:minmax(0,1fr);grid-auto-rows:max-content;overflow:auto;align-content:start;gap:var(--sp-4)}
+  .pk-sources,.pk-detail{min-height:auto;overflow:visible;scrollbar-gutter:auto}
   .pk-sources>[data-pane="library"]{height:auto;grid-template-rows:auto}
   #gfOptions{flex:none;height:min(220px,calc(var(--font-choice-count,4)*88px + 8px))}
   .pk-detail{padding:var(--sp-4)}

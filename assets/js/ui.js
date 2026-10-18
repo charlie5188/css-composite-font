@@ -1323,7 +1323,8 @@ export function renderCatalog() {
   box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.id === focusId ? 0 : -1}" aria-selected="${item.id === selected}" data-choice="${esc(item.id)}" ${item.kind === 'google' ? `data-family="${esc(item.family)}"` : `data-local-family="${esc(item.family)}" data-local-face="${esc(item.face)}"`}><span class="font-option-title"><span class="font-option-name" title="${esc(item.family)}">${esc(item.family)}</span><span class="font-option-source">${esc(item.kind === 'google' ? 'Google Fonts' : T('srcLocal'))}</span></span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
   $('#gfResults').textContent = T('pkResults', { n: entries.length });
   const filters = Number(!!sourceFilter) + Number(!!$('#gfStyle').value) + Number($('#gfBold').checked);
-  $('#pkFilterCount').hidden = !filters; $('#pkFilterCount').textContent = filters; $('#pkFilterClear').disabled = !filters;
+  $('#pkFilterClear').hidden = !filters;
+  for (const id of ['pkSource', 'gfStyle']) $('#'+id).dataset.active = String(!!$('#'+id).value);
   $('#gfReset').hidden = !!entries.length || !query.trim() && !filters;
   $('#pkExactChoices').hidden = !!entries.length || !query.trim();
   $('#gfTry').hidden = sourceFilter === 'local'; $('#lfTry').hidden = sourceFilter === 'google';
@@ -1409,7 +1410,7 @@ export function setPickTab(tab) {
   pickTab = tab;
   if (tab !== 'file') pickerLibraryKind = tab;
   const pane = tab === 'file' ? 'file' : 'library';
-  for (const id of ['pkFilterPop', 'pkSamplePop']) { const pop = $('#'+id); if (pop.matches(':popover-open')) pop.hidePopover(); }
+  const pop = $('#pkSamplePop'); if (pop.matches(':popover-open')) pop.hidePopover();
   picker.querySelectorAll('[data-src]').forEach(b => { b.setAttribute('aria-selected', b.dataset.src === pane); b.tabIndex = b.dataset.src === pane ? 0 : -1; });
   picker.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== pane; });
   if (pane === 'file') renderImportedFonts();
@@ -1853,9 +1854,8 @@ function pickerNumber(input) {
 }
 export function initPicker() {
   picker.querySelectorAll('input[type="number"]').forEach(pickerNumber);
-  const pickerPops = [['pkFilterPop', 'pkFilterBtn'], ['pkSamplePop', 'pkSampleBtn']];
-  pickerPops.forEach(([id, button]) => bindPopover($('#'+id), $('#'+button), { within: picker, inset: 16 }));
-  $('#pkFilterClear').addEventListener('click', () => { $('#pkSource').value = ''; $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog(); });
+  bindPopover($('#pkSamplePop'), $('#pkSampleBtn'), { within: picker, inset: 16 });
+  $('#pkFilterClear').addEventListener('click', () => { $('#pkSource').value = ''; $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog(); $('#gfSearch').focus(); });
   picker.addEventListener('click', e => {
     const button = e.target.closest('.field-step [data-step]'); if (!button) return;
     const input = button.closest('.field-step').querySelector('input');
