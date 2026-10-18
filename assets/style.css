@@ -911,14 +911,10 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-selected h5{margin:0;font-size:var(--fs-xl);font-weight:600;overflow-wrap:anywhere}
 .pk-apply{display:grid;gap:var(--sp-3)}
 .pk-apply>.field{max-width:180px}
-.pk-disclosure>summary{font-size:var(--fs-s);color:var(--muted);cursor:pointer}
-.pk-disclosure{min-width:0}
 .pk-sources>[data-pane]{display:grid;gap:var(--sp-3)}
 .pk-browse{margin-bottom:0}
 .pk input[type=checkbox],.pk input[type=radio]{accent-color:var(--ink)}
 .pk .pk-auto-fit{flex-basis:100%;margin:0 auto 0 0}
-#pkAppliedSummary{float:right;margin-left:var(--sp-3);font-family:var(--mono);font-variant-numeric:tabular-nums}
-.pk-detail>.pk-disclosure{padding-block:var(--sp-1)}
 
 /* If a local font is missing, show a yellow notice instead of a fallback-font specimen. */
 .vf-tag{display:inline-flex;align-items:center;flex:none;font:600 var(--fs-xs)/1 var(--mono);letter-spacing:.06em;padding:3px 5px 2px;border-radius:var(--r);background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);white-space:nowrap}
@@ -930,9 +926,6 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .cov.none{color:var(--faint);text-decoration:line-through}
 .pk-check{display:flex;gap:8px;align-items:center;font-size:var(--fs-m);margin-top:10px}
 /* Each variation-axis row contains name, slider, value and reset. */
-.pk-axes>summary{font-size:var(--fs-m)}
-.pk-axes>summary b{font-weight:600;flex:none}
-.ax-sum{font-size:var(--fs-s);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .ax-row{display:grid;grid-template-columns:minmax(96px,auto) minmax(0,1fr) 70px auto;gap:10px;align-items:center;font-size:var(--fs-m)}
 .ax-row .ax-name{display:flex;flex-direction:column;line-height:1.25}
 .ax-row .ax-name small{font-family:var(--mono);font-size:var(--fs-xs);color:var(--muted)}
@@ -944,12 +937,8 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .ct-ax{grid-column:3/4;display:flex;flex-wrap:wrap;gap:2px 12px;font-size:var(--fs-xs);color:var(--muted);margin:-4px 0 4px}      /* Show customized axes below the font column. */
 .ct-ax b{font-family:var(--mono);font-weight:500;color:var(--accent)}
 .ax-row .btn-text:disabled{visibility:hidden}
-/* details does not reliably support grid layout; arrange its contents inside .ax-body. */
+/* Axis and metadata groups share row spacing independently of their headings. */
 .ax-body{display:grid;gap:12px;padding-top:10px}
-.pk-axes>summary{display:flex;gap:10px;align-items:baseline;cursor:pointer;list-style:none;min-width:0}
-.pk-axes>summary::-webkit-details-marker{display:none}
-.pk-axes>summary::before{content:'';flex:none;width:6px;height:6px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:translateY(-2px) rotate(-45deg);transition:transform .15s}
-.pk-axes[open]>summary::before{transform:translateY(-4px) rotate(45deg)}
 .pk-scope{display:flex;gap:6px 16px;flex-wrap:wrap;align-items:center;font-size:var(--fs-m);margin-right:auto}
 .pk-scope>span{color:var(--muted);font-size:var(--fs-s)}
 .pk-scope label{display:inline-flex;gap:6px;align-items:center}

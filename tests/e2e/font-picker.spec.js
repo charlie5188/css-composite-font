@@ -470,18 +470,20 @@ test('预览字重不保存：连续字重可单独试粗体，静态字体只�
   expect(await page.evaluate(async () => (await import('./assets/js/core.js')).state.classes.han.font.weight)).toBe(400);
 });
 
-test('上传的连续字体：预览与应用字重各自保存到正确位置', async ({ page }) => {
+test('基础选字只选字体：上传字体的粗细在各字重调整，预览不写入配置', async ({ page }) => {
   await fixture(page); await page.locator('#picker [data-src="file"]').click();
   await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
-  await page.locator('#pkApplied > summary').click();
-  await expect(page.locator('#ffWeightField')).toBeVisible();
-  if (await page.locator('#pkApplied').getAttribute('open') === null) await page.locator('#pkApplied > summary').click();
-  await page.locator('#ffWeightNum').fill('450'); await page.locator('#ffWeightNum').dispatchEvent('change');
-  await page.locator('#pkProofWeightNum').fill('700');
-  await expect(page.locator('#pkOk')).toBeEnabled();
-  await expect(page.locator('#pkWeightMapping')).toContainText('450');
-  await expect(page.locator('#pkWeightMapping')).toContainText('400');
+  await expect(page.locator('#ffWeightField')).toBeHidden();
+  await expect(page.locator('#pkAppliedSummary,#pkWeightMapping')).toHaveCount(0);
+  await page.locator('#pkProofWeightNum').fill('700'); await expect(page.locator('#pkOk')).toBeEnabled();
   await page.locator('#pkOk').click();
+  expect(await page.evaluate(async () => (await import('./assets/js/core.js')).state.classes.han.font.weight)).toBe(400);
+  const weight = page.locator('#wMatrix .mw[data-k="han"][data-w="400"]');
+  await weight.fill('450'); await weight.press('Tab');
+  expect(await page.evaluate(async () => (await import('./assets/js/core.js')).state.classes.han.font.weight)).toBe(450);
+  await openClassPicker(page, 'han');
+  await expect(page.locator('#ffWeightField')).toBeHidden();
+  await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
   expect(await page.evaluate(async () => (await import('./assets/js/core.js')).state.classes.han.font.weight)).toBe(450);
 });
 
@@ -490,10 +492,11 @@ test('逐档选择：自动字重随应用范围改变，应用全部时明确�
   await fixture(page); await page.locator('#pkCancel').click();
   await page.evaluate(async () => (await import('./assets/js/ui.js')).openPicker({ type: 'class', id: 'han' }, 700));
   await page.locator('#gfSearch').fill('Noto Sans SC'); await page.locator('#gfOptions [data-family="Noto Sans SC"]').click();
-  await expect(page.locator('#pkWeightMapping')).toHaveText('组合字重 700 将使用这款字体的 700。');
-  await page.locator('#pkApplied > summary').click();
+  await expect(page.locator('#pkFor')).toContainText('700');
+  await expect(page.locator('#gfApplyField')).toBeVisible();
+  await expect(page.locator('#pkProofWeightNum')).toHaveValue('700');
   await page.locator('#pkScope [value="all"]').check();
-  await expect(page.locator('#pkWeightMapping')).toHaveText('组合字重 400 将使用这款字体的 400。');
+  await expect(page.locator('#pkProofWeightNum')).toHaveValue('400');
   await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
   expect(await page.evaluate(async () => (await import('./assets/js/core.js')).state.classes.han.font.weight)).toBe(400);
 });
@@ -504,7 +507,6 @@ test('逐档上传字体：读取该档实际粗细，保存单档映射不改�
   await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
   await page.evaluate(async () => (await import('./assets/js/ui.js')).openPicker({ type: 'class', id: 'han' }, 700));
   await expect(page.locator('#ffWeightNum')).toHaveValue('700');
-  if (await page.locator('#pkApplied').getAttribute('open') === null) await page.locator('#pkApplied > summary').click();
   await page.locator('#ffWeightNum').fill('450'); await page.locator('#ffWeightNum').dispatchEvent('change');
   await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
   expect(await page.evaluate(async () => { const c = await import('./assets/js/core.js'); return [c.state.classes.han.font.weight, c.state.wOver[700].han.weight]; })).toEqual([400, 450]);
@@ -587,11 +589,10 @@ test('选择时自动匹配：默认勾选、仅调整所选类别，字体和�
   await page.click('#ltabFonts');
   await openClassPicker(page, 'latin');
   await page.locator('#pkAutoFit').uncheck();
-  if (await page.locator('#pkApplied').getAttribute('open') === null) await page.locator('#pkApplied > summary').click();
-  await page.locator('#ffWeightNum').fill('450'); await page.locator('#ffWeightNum').dispatchEvent('change');
+  await expect(page.locator('#ffWeightField')).toBeHidden();
   await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
   expect((await matchSettings(page)).classes.latin.size).toBe(after.classes.latin.size);
-  expect((await matchSettings(page)).classes.latin.font.weight).toBe(450);
+  expect((await matchSettings(page)).classes.latin.font).toEqual(after.classes.latin.font);
 });
 
 test('选择时自动匹配：单档不改变基础设置，取消测量不留下字体或调整', async ({ page }) => {
@@ -628,13 +629,10 @@ test('信息层级：预览、应用与详情分组，短列表收紧，数字�
   await expect(page.locator('#picker .pk > .tabs [role=tab]')).toHaveCount(2);
   await expect(page.locator('#gfFamily')).toBeHidden();
   await expect(page.locator('#pkDetails')).toBeHidden();
-  await expect(page.locator('#pkApplied #gfWeightNum')).toBeHidden();
-  await expect(page.locator('#pkAppliedSummary')).toHaveText('组合 400 → 字体 400');
-  await page.locator('#pkApplied > summary').click();
-  await expect(page.locator('#pkApplied #gfWeightNum')).toBeVisible();
-  const weight = page.locator('#gfWeightNum'); await weight.locator('..').hover();
-  await weight.locator('..').locator('[data-step="up"]').click();
-  await expect(weight).toHaveValue('410');
+  await expect(page.locator('#gfApplyField')).toBeHidden();
+  await expect(page.locator('#pkAppliedSummary,#pkWeightMapping')).toHaveCount(0);
+  await page.locator('#pkProofWeightNum').fill('410');
+  await expect(page.locator('#pkProofWeightNum')).toHaveValue('410');
   await page.locator('#pkSampleSize').focus(); await page.keyboard.press('ArrowUp');
   await expect(page.locator('#pkSampleSize')).toHaveValue('33');
   await page.locator('#picker [data-src="library"]').focus(); await page.keyboard.press('ArrowRight');
@@ -643,12 +641,12 @@ test('信息层级：预览、应用与详情分组，短列表收紧，数字�
   await expect(page.locator('#pkOk')).toBeEnabled();
   expect(await page.locator('#ffOptions').evaluate(el => el.getBoundingClientRect().height)).toBeLessThan(140);
   await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
-  await page.locator('#pkApplied').scrollIntoViewIfNeeded();
+  await page.locator('#pkSample').scrollIntoViewIfNeeded();
   await expect(page.locator('#pkOk')).toBeInViewport();
   expect(await page.locator('#picker').evaluate(el => el.scrollWidth <= el.clientWidth)).toBeTruthy();
   for (const lang of ['en', 'ja', 'tw', 'zh']) {
     await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
-    await expect(page.locator('#pkAppliedTitle')).not.toHaveText('pkAppliedTitle');
+    await expect(page.locator('#pkFor')).not.toHaveText('');
     await expect(page.locator('#pkSampleSize')).not.toHaveAttribute('aria-label', '');
   }
 });
@@ -986,12 +984,12 @@ test('选字标题关闭不保存；可变轴展开后没有第二层折叠', as
   await page.locator('#gfSearch').fill('Fraunces');
   await page.locator('#gfOptions [data-family="Fraunces"]').click();
   await expect(page.locator('#pkOk')).toBeEnabled();
-  if (await page.locator('#pkApplied').getAttribute('open') === null) await page.locator('#pkApplied > summary').click();
-  await page.locator('#pkAxes > summary').click();
   await expect(page.locator('#pkAxes [data-axmode="opsz"]')).toBeVisible();
   for (const axis of ['SOFT', 'WONK']) await expect(page.locator(`#pkAxes input[type=number][data-ax="${axis}"]`)).toBeVisible();
   await expect(page.locator('#pkAxes details')).toHaveCount(0);
-  await page.locator('#gfWeightNum').fill('550');
+  await expect(page.locator('#pkAxes')).toHaveJSProperty('tagName', 'SECTION');
+  expect(await page.locator('#pkAxes').evaluate(el => el.parentElement.classList.contains('pk-detail'))).toBe(true);
+  await page.locator('#pkAxes input[type=number][data-ax=SOFT]').fill('37');
   await page.locator('#pkClose').click();
   await expect(page.locator('#picker')).not.toBeVisible();
   expect(await matchSettings(page)).toEqual(before);

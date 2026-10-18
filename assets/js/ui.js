@@ -1233,6 +1233,8 @@ async function loadPickerChoice(el, src, unavailable = 'pkPreviewUnavailable') {
   } catch (error) { if (el.isConnected) status.textContent = T(error.message === 'picker-timeout' ? 'pkSlowSpecimen' : error.message === 'coverage-unavailable' ? 'pkCoverageUnknown' : error.message === 'no-specimen' ? 'pkNoSampleGlyphs' : unavailable); }
 }
 function chooseCatalog(family) {
+  // Base selection chooses a family; weight tuning belongs to the weight table, independently of the specimen.
+  if (!pickW && family !== $('#gfFamily').value) { $('#gfWeightNum').value = 400; $('#gfWeight').value = '400'; }
   $('#gfFamily').value = family; syncGfWeight();
   pickTab = pickerLibraryKind = 'google'; $('#lfFaceField').hidden = true; updateCand(); syncLibrarySelection();
 }
@@ -1478,7 +1480,7 @@ export function renderAxes() {
   let body = `<p class="hint">${esc(T('axUnknown'))}</p>`;
   if (ax.length) {
     const g = f.kind === 'google';
-    /* Keep common axes first, but expose every axis in the same disclosure. */
+    /* Keep common axes first; all axes are direct settings below the specimen. */
     const MAIN = ['wdth', 'opsz', 'GRAD', 'slnt'], rank = t => MAIN.includes(t) ? MAIN.indexOf(t) : 9;
     const sorted = [...ax].sort((x, y) => rank(x[0]) - rank(y[0]) || (x[0] < y[0] ? -1 : 1));
     const row = ([t, lo, hi, def]) => {
@@ -1494,16 +1496,9 @@ export function renderAxes() {
     };
     body = `<p class="hint">${esc(T(g ? 'axNoteG' : 'axNote'))}</p>` + sorted.map(row).join('');
   }
-  box.innerHTML = `<summary><b>${esc(T('axHead'))}</b><span class="ax-sum"></span></summary><div class="ax-body">${body}</div>`;
+  box.innerHTML = `<h4 class="subsection-title">${esc(T('axHead'))}</h4><div class="ax-body">${body}</div>`;
   box.querySelectorAll('input[type="number"]').forEach(pickerNumber);
-  updateAxSum();
   applySampleAxes();
-}
-/* Collapsed summaries still show adjusted axes, such as optical size following size and width 80; otherwise show the axis count and default status. */
-export function updateAxSum() {
-  const el = $('#pkAxes .ax-sum'), f = pickCand; if (!el || !f) return;
-  const n = extraAxes(f).length, list = Object.entries(pickVary).filter(([t]) => axisOf(f, t)).map(([t, v]) => `${axisLabel(t)} ${v === 'auto' ? T('axOpszAuto') : v}`);
-  el.textContent = list.length ? list.join(' · ') : n ? T('axNone', { n }) : '';
 }
 /* The picker preview loads Google files retaining every axis and applies edits directly through font-variation-settings. */
 export function applySampleAxes() {
@@ -1621,17 +1616,14 @@ function syncPickerProof(f, { preserveInput = false } = {}) {
   if (axis) pickerProofWeight = Math.max(axis[0], Math.min(axis[1], pickerProofWeight));
   else if (weights?.length) pickerProofWeight = weights.reduce((a, b) => Math.abs(b - pickerProofWeight) < Math.abs(a - pickerProofWeight) ? b : a);
   $('#pkWeightControl').hidden = !f;
-  $('#pkApplied').hidden = !f; $('#gfApplyField').hidden = f?.kind !== 'google';
+  $('#gfApplyField').hidden = !pickW || f?.kind !== 'google';
   $('#lfVarField').hidden = f?.kind !== 'local' || localData.has(f.name);
   $('#pkSelectedName').textContent = f?.kind === 'file' ? importedFonts.get(f.fileId)?.family || f.fileName : f?.kind === 'google' ? f.family : f?.name || T('pkEmpty');
   $('#lfFaceField').hidden = f?.kind !== 'local' || !localGroups().some(([, faces]) => faces.length > 1 && faces.some(face => face.fullName === f.name));
   syncWeightControl({ input: $('#pkProofWeightNum'), slider: $('#pkProofWeight'), ticks: $('#pkProofTicks') }, { ...pickerWeightDomain(), value: pickerProofWeight, label: wTip, locale: UI, preserveInput });
-  $('#ffWeightField').hidden = f?.kind !== 'file' || !f.axis;
+  $('#ffWeightField').hidden = !pickW || f?.kind !== 'file' || !f.axis;
   if (f?.kind === 'file' && f.axis) { const input = $('#ffWeightNum'); input.min = f.axis[0]; input.max = f.axis[1]; input.value = f.weight || 400; }
-  const target = pickW && (sameFontAs(f, objOf(pickTarget).font) || picker.querySelector('[name="pkScope"]:checked')?.value === 'w') ? pickW : 400;
-  $('#pkWeightMapping').textContent = f && (f.kind === 'google' || axis) ? T('pkWeightMapping', { weight: f.weight || 400, target }) : '';
-  $('#pkAppliedSummary').textContent = f && (f.kind === 'google' || axis) ? T('pkMappingSummary', { weight: f.weight || 400, target }) : '';
-  $('#pkAppliedSummary').title = $('#pkWeightMapping').textContent;
+  $('#pkApplied').hidden = !f || !pickW && f.kind !== 'file' && $('#lfVarField').hidden;
 }
 function pickerWeightDomain() {
   const axis = pickerWeightAxis(pickCand), weights = pickCand?.kind === 'google' ? gfWeights(pickCand.family) : null;
@@ -1738,12 +1730,11 @@ export function gfWeightVal() {
 export function openPicker(t, W = BASE_W) {      // W is the target weight when opening from a weight row.
   pickerApplyToken++; pickerPreviewToken++; setPickerApplyBusy(false);
   pickTarget = t;
-  setPickerDetailTab('preview'); $('#pkApplied').open = false;
+  setPickerDetailTab('preview');
   $('#pkAutoFitField').hidden = t.type === 'class' && t.id === 'han'; $('#pkAutoFit').checked = true;
   const o = objOf(t), key = keyOf(t);
   pickerProofKey = ''; $('#ffWeightField').hidden = true;
   pickVary = { ...(o.vary || {}) };
-  $('#pkAxes').open = Object.keys(pickVary).length > 0;      // Expand axes when customized; otherwise collapse them.
   pickW = W !== BASE_W && !o.follow && o.font ? W : null;
   const name = t.type === 'class' ? tr(CLS[t.id].name) : T('customName', { c: state.custom[t.i].chars || '…' });
   $('#pkFor').textContent = '· ' + name + (pickW ? ' · ' + T('pkForW', { w: W }) : '');
@@ -1991,7 +1982,7 @@ export function initPicker() {
     if (v === a[3] && t !== 'opsz') delete pickVary[t]; else pickVary[t] = v;
     axBox.querySelectorAll(`[data-ax="${t}"]`).forEach(el => { if (el !== e.target) el.value = v; });
     const rb = axBox.querySelector(`[data-axreset="${t}"]`); if (rb) rb.disabled = !(t in pickVary);
-    updateAxSum(); applySampleAxes();
+    applySampleAxes();
   });
   axBox.addEventListener('change', e => {
     const t = e.target.dataset.axmode; if (!t) return;
