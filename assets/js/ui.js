@@ -1,6 +1,6 @@
 import { refresh } from './refresh.js';
 import { bindPopover, placePopover, searchKey } from './ui-controls.js';
-import { catalogInfo, catalogOrder, catalogStyles, localWeightInfo, filterCatalog, sortCatalog } from './font-catalog.js';
+import { catalogInfo, catalogOrder, catalogStyles, localWeightInfo, localItalicInfo, filterCatalog, sortCatalog } from './font-catalog.js';
 import { CATALOG_SAMPLES } from './font-catalog-data.js';
 import { importFontFile, importedFonts, rememberImportedFont } from './font-files.js';
 import { initShare } from './share.js';
@@ -1285,7 +1285,7 @@ function libraryChoices() {
     const style = known.style || (named !== 'other' ? named : /script|hand|callig|brush/i.test(family) ? 'other' : null);
     const weightInfo = localWeightInfo(faces, localAxes, localWeights);
     const face = faces.find(f => /regular|normal|book/i.test(f.style))?.fullName || faces[0].fullName;
-    choices.push({ ...known, ...weightInfo, family, coverage: catalogCoverageByFace.get(face) || null, styles: catalogStyles(family, style), aliases: known.aliases + ' ' + faces.map(f => f.fullName + ' ' + f.postscriptName).join(' '), style,
+    choices.push({ ...known, ...weightInfo, italic: localItalicInfo(faces, localAxes), family, coverage: catalogCoverageByFace.get(face) || null, styles: catalogStyles(family, style), aliases: known.aliases + ' ' + faces.map(f => f.fullName + ' ' + f.postscriptName).join(' '), style,
       kind: 'local', id: 'local:' + family, face });
   }
   if (!libraryOrder.length) libraryOrder = sortCatalog(choices, librarySort).map(item => item.id);
@@ -1299,7 +1299,15 @@ function localFamilyWeightInfo(name) {
   return localWeightInfo(faces, localAxes, localWeights);
 }
 function librarySourceLabel(item) {
-  return (item.kind === 'google' ? 'Google Fonts' : T('srcLocal')) + (librarySort === 'weights' ? ' · ' + (item.weightRange ? item.weightRange.join('–') : T('fontWeightUnknownLabel')) : '');
+  const weights = item.weights || [], range = item.weightRange || (weights.length ? [weights[0], weights.at(-1)] : null);
+  const params = { n: weights.length, a: range?.[0], b: range?.[1] };
+  const summary = item.weightType === 'continuous' && range ? T('pkContinuousSummary', params)
+    : item.weightType === 'stepped' && range && weights.length ? T('pkSteppedSummary', params)
+    : range && weights.length ? T('pkKnownWeightSummary', params) : T('fontWeightUnknownLabel');
+  return (item.kind === 'google' ? 'Google Fonts' : T('srcLocal')) + ' · ' + summary;
+}
+function librarySourceHint(item) {
+  return librarySourceLabel(item) + (item.weights?.length ? '\n' + T('fontWeightList', { weights: item.weights.join(', ') }) : '');
 }
 function syncLocalWeightLabels() {
   // Metadata labels may change in place; membership and order wait for a user action.
@@ -1307,7 +1315,7 @@ function syncLocalWeightLabels() {
   for (const row of $('#gfOptions').querySelectorAll('[data-local-family]')) {
     const info = facts.get(row.dataset.localFamily); if (!info) continue;
     row.querySelector('.font-option-source').textContent = librarySourceLabel({ ...info, kind: 'local' });
-    row.querySelector('.font-option-source').title = info.weightType === 'continuous' ? T('fontWeightContinuousHint', { a: info.weightRange[0], b: info.weightRange[1] }) : info.weights.length ? T('fontWeightList', { weights: info.weights.join(', ') }) : '';
+    row.querySelector('.font-option-source').title = librarySourceHint({ ...info, kind: 'local' });
   }
 }
 function selectedLibraryId() {
@@ -1339,6 +1347,7 @@ function tryExactLocal() {
 function pickerFilterValues(id) { return [...$('#'+id).querySelectorAll('input:checked')].map(el => el.value); }
 function clearPickerFilters() {
   for (const id of ['pkSource', 'gfStyle', 'pkWeightType', 'pkCoverage']) $('#'+id).querySelectorAll('input').forEach(el => { el.checked = false; });
+  $('#gfItalic').checked = false;
 }
 function syncPickerFilters() {
   for (const [id, button, any, label] of [['pkSource', 'pkSourceBtn', 'pkAllSources', 'pkSource'], ['gfStyle', 'gfStyleBtn', 'pkAnyStyle', 'pkFilterStyle'], ['pkWeightType', 'pkWeightTypeBtn', 'pkAnyWeightType', 'pkWeightType'], ['pkCoverage', 'pkCoverageBtn', 'pkAnyCoverage', 'pkCoverage']]) {
@@ -1352,12 +1361,12 @@ export function renderCatalog() {
   $('#pkSortLabel').textContent = T('pkSortCurrent', { sort: $('#pkSort input:checked').closest('label').querySelector('span').textContent });
   const box = $('#gfOptions'), query = $('#gfSearch').value, sourceFilter = pickerFilterValues('pkSource');
   const focused = box.contains(document.activeElement) ? document.activeElement.closest('[data-choice]')?.dataset.choice : null;
-  const entries = filterCatalog(libraryChoices(), query, pickerFilterValues('gfStyle'), $('#gfBold').checked, pickerFilterValues('pkWeightType').filter(value => value !== 'bold'), pickerFilterValues('pkCoverage')).filter(item => !sourceFilter.length || sourceFilter.includes(item.kind));
+  const entries = filterCatalog(libraryChoices(), query, pickerFilterValues('gfStyle'), $('#gfBold').checked, pickerFilterValues('pkWeightType').filter(value => value !== 'bold'), pickerFilterValues('pkCoverage'), $('#gfItalic').checked).filter(item => !sourceFilter.length || sourceFilter.includes(item.kind));
   catalogObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
   const selected = selectedLibraryId(), focusId = entries.some(item => item.id === selected) ? selected : entries[0]?.id;
-  box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.id === focusId ? 0 : -1}" aria-selected="${item.id === selected}" data-choice="${esc(item.id)}" ${item.kind === 'google' ? `data-family="${esc(item.family)}"` : `data-local-family="${esc(item.family)}" data-local-face="${esc(item.face)}"`}><span class="font-option-title"><span class="font-option-name" title="${esc(item.family)}">${esc(item.family)}${item.nativeName && item.nativeName !== item.family ? `<span class="font-option-native"> · ${esc(item.nameIsAlias ? T('pkAliasName', { name: item.nativeName }) : item.nativeName)}</span>` : ''}</span><span class="font-option-source">${esc(librarySourceLabel(item))}</span></span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
+  box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.id === focusId ? 0 : -1}" aria-selected="${item.id === selected}" data-choice="${esc(item.id)}" ${item.kind === 'google' ? `data-family="${esc(item.family)}"` : `data-local-family="${esc(item.family)}" data-local-face="${esc(item.face)}"`}><span class="font-option-title"><span class="font-option-name" title="${esc(item.family)}">${esc(item.family)}${item.nativeName && item.nativeName !== item.family ? `<span class="font-option-native"> · ${esc(item.nameIsAlias ? T('pkAliasName', { name: item.nativeName }) : item.nativeName)}</span>` : ''}</span><span class="font-option-source" title="${esc(librarySourceHint(item))}">${esc(librarySourceLabel(item))}</span></span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
   $('#gfResults').textContent = T('pkResults', { n: entries.length });
-  const filters = sourceFilter.length + pickerFilterValues('gfStyle').length + pickerFilterValues('pkWeightType').length + pickerFilterValues('pkCoverage').length;
+  const filters = sourceFilter.length + pickerFilterValues('gfStyle').length + pickerFilterValues('pkWeightType').length + pickerFilterValues('pkCoverage').length + Number($('#gfItalic').checked);
   $('#pkFilterClear').hidden = !filters;
   syncPickerFilters(); syncLocalWeightLabels();
   $('#gfReset').hidden = !!entries.length || !query.trim() && !filters;
@@ -1936,7 +1945,7 @@ export function initPicker() {
   };
   $('#pkSort').addEventListener('change', applyLibrarySort);
   $('#pkSort').addEventListener('click', e => { if (e.target.matches('input') && e.target.value === librarySort && $('#pkSortPop').matches(':popover-open')) applyLibrarySort(); });
-  for (const id of ['gfStyle', 'pkWeightType', 'pkCoverage']) $('#'+id).addEventListener('change', renderCatalog);
+  for (const id of ['gfStyle', 'pkWeightType', 'pkCoverage', 'gfItalic']) $('#'+id).addEventListener('change', renderCatalog);
   $('#gfOptions').addEventListener('click', e => { const el = e.target.closest('[data-choice]'); if (el) chooseLibraryElement(el); });
   $('#gfOptions').addEventListener('keydown', e => {
     const options = [...e.currentTarget.querySelectorAll('[data-choice]')], i = options.indexOf(e.target.closest('[data-choice]'));

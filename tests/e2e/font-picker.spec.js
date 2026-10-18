@@ -148,6 +148,40 @@ test('字体资料：仿宋楷体教科书体独立，圆体兼属黑体，未�
   expect(result.google).toEqual([{ type: 'continuous', styles: ['sans'] }, { type: 'stepped', styles: ['handwriting'] }, { type: 'stepped', styles: ['sans', 'rounded'] }]);
 });
 
+test('意大利体筛选：实际款式与 ital 轴、未知资料保留，清除保留搜索及排序', async ({ page }) => {
+  await fixture(page, 'latin');
+  const facts = await page.evaluate(async () => {
+    const { catalogInfo, localItalicInfo, filterCatalog } = await import('./assets/js/font-catalog.js');
+    const face = { fullName: 'Fixture Regular', style: 'Regular' };
+    const read = new Map([[face.fullName, { axes: [] }]]);
+    const items = [{ family: 'Italic', aliases: '', italic: true }, { family: 'Upright', aliases: '', italic: false }, { family: 'Unknown', aliases: '', italic: null }];
+    return {
+      google: ['EB Garamond', 'Noto Serif SC'].map(name => catalogInfo(name).italic),
+      unread: localItalicInfo([face], new Map()), upright: localItalicInfo([face], read),
+      named: localItalicInfo([{ ...face, style: 'Bold Italic' }], new Map()),
+      oblique: localItalicInfo([{ ...face, style: 'Oblique' }], read),
+      slant: localItalicInfo([face], new Map([[face.fullName, { axes: [['slnt', -12, 0, 0]] }]])),
+      axis: localItalicInfo([face], new Map([[face.fullName, { axes: [['ital', 0, 1, 0]] }]])),
+      matches: filterCatalog(items, '', [], false, [], [], true).map(item => item.family)
+    };
+  });
+  expect(facts).toEqual({ google: [true, false], unread: null, upright: false, named: true, oblique: false, slant: false, axis: true, matches: ['Italic', 'Unknown'] });
+  await selectFilter(page, 'pkSource', 'google');
+  await page.locator('#gfSearch').fill('Noto');
+  await page.locator('#pkSortBtn').click(); await page.locator('#pkSort input[value="weights"]').click();
+  await page.locator('#gfItalic').check();
+  await expect(page.locator('#gfOptions [data-choice]')).toHaveCount(0);
+  await page.locator('#gfSearch').fill('Garamond');
+  await expect(page.locator('#gfOptions [data-family="EB Garamond"] .font-option-source')).toContainText('连续 400–800');
+  await expect(page.locator('#gfOptions [data-family="Cormorant Garamond"] .font-option-source')).toContainText('连续 300–700');
+  await page.locator('#pkFilterClear').click();
+  await expect(page.locator('#gfItalic')).not.toBeChecked();
+  await expect(page.locator('#gfSearch')).toHaveValue('Garamond');
+  await expect(page.locator('#pkSort input[value="weights"]')).toBeChecked();
+  await page.locator('#gfSearch').fill('BIZ');
+  await expect(page.locator('#gfOptions [data-family="BIZ UDPGothic"] .font-option-source')).toContainText('分档 2 档 · 400–700');
+});
+
 test('本机字重范围：汇总命名分档，读取轴后原地更新，与预览一致且不移动候选', async ({ page }) => {
   await page.addInitScript(() => {
     window.queryLocalFonts = async () => ['Regular', 'Bold'].map(style => ({ family: 'Fixture Family', fullName: 'Fixture Family '+style, postscriptName: 'FixtureFamily-'+style, style,
@@ -656,8 +690,12 @@ test('合并字体库：自动枚举一次、同名字体区分来源，共享�
   await page.locator('#gfSearch').fill('Inter');
   await expect(page.locator('#gfOptions [data-family="Inter"]')).toHaveCount(1);
   await expect(page.locator('#gfOptions [data-local-family="Inter"]')).toHaveCount(1);
-  await expect(page.locator('#gfOptions [data-family="Inter"] .font-option-source')).toHaveText('Google Fonts');
-  await expect(page.locator('#gfOptions [data-local-family="Inter"] .font-option-source')).toHaveText('本机字体');
+  await expect(page.locator('#gfOptions [data-family="Inter"] .font-option-source')).toHaveText('Google Fonts · 连续 100–900');
+  await expect(page.locator('#gfOptions [data-local-family="Inter"] .font-option-source')).toContainText('本机字体 · 已知 1 档');
+  await page.locator('#gfItalic').check();
+  await expect(page.locator('#gfOptions [data-family="Inter"]')).toHaveCount(1);
+  await expect(page.locator('#gfOptions [data-local-family="Inter"]')).toHaveCount(1);
+  await page.locator('#pkFilterClear').click();
   await page.locator('#gfSearch').fill('');
   await selectFilter(page, 'pkSource', 'local'); await selectFilter(page, 'gfStyle', 'serif'); await setBoldFilter(page);
   await expect(page.locator('#pkSource input[value=local]')).toBeChecked();

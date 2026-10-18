@@ -1,6 +1,6 @@
 import { G, GF_LIST, axisOf, gfWeights } from './core.js';
 import { CATALOG_COVERAGE } from './font-catalog-data.js';
-import { GF_STYLE } from './gfmeta.js';
+import { GF_ITALIC, GF_STYLE } from './gfmeta.js';
 import { searchKey } from './ui-controls.js';
 
 // These search aliases do not replace the font's canonical family name.
@@ -50,6 +50,7 @@ export function catalogInfo(family) {
     : /\bJP$|Mincho|Gothic|^Zen |^BIZ |^M PLUS|^Klee/.test(family) ? 'jp' : STYLES.has(family) || !GF_LIST.includes(family) ? null : 'latin';
   const style = STYLES.get(family) || (SERIFS.has(family) ? 'serif' : SANS.has(family) ? 'sans' : null);
   return { family, nativeName: NATIVE_NAMES[family] || '', nameIsAlias: family.startsWith('Noto '), aliases: (ALIASES[family] || '') + ' ' + (NATIVE_NAMES[family] || ''), region, style, styles: catalogStyles(family, style),
+    weights: weights || [], italic: GF_ITALIC.has(family) ? true : axis || weights || STYLES.has(family) ? false : null,
     weightType: axis ? 'continuous' : weights?.length ? 'stepped' : null, coverage: CATALOG_COVERAGE[family] || null,
     weightRange: axis ? [axis[1], axis[2]] : weights?.length ? [weights[0], weights.at(-1)] : null,
     bold: axis ? axis[2] >= 700 : weights ? weights.some(w => w >= 700) : null };
@@ -78,12 +79,17 @@ export function localWeightInfo(faces, axesByName, weightsByName = new Map()) {
   const weightType = axes.length ? 'continuous' : complete ? 'stepped' : null;
   return { weights, weightRange, weightType, bold: limits.some(w => w >= 700) ? true : complete && limits.length ? false : null };
 }
-export function filterCatalog(items, query, style, bold, weightTypes = [], coverage = []) {
+// Only explicit Italic faces or an ital axis count; oblique names and browser synthesis do not.
+export function localItalicInfo(faces, axesByName) {
+  if (faces.some(face => /italic/i.test(face.style) || (axesByName.get(face.fullName)?.axes || []).some(axis => axis[0] === 'ital' && axis[2] >= 1))) return true;
+  return faces.length && faces.every(face => { const data = axesByName.get(face.fullName); return data && !data.unknown; }) ? false : null;
+}
+export function filterCatalog(items, query, style, bold, weightTypes = [], coverage = [], italic = false) {
   const q = searchKey(query.trim());
   const styles = Array.isArray(style) ? style : style ? [style] : [];
   const matchesStyle = item => { const tags = item.styles || (item.style ? [item.style] : null); return !styles.length || !tags || styles.some(tag => tags.includes(tag)); };
   return items.filter(item => (!q || searchKey(item.family + item.aliases).includes(q))
-    && matchesStyle(item) && (!bold || item.bold !== false)
+    && matchesStyle(item) && (!bold || item.bold !== false) && (!italic || item.italic !== false)
     && (!weightTypes.length || item.weightType == null || weightTypes.includes(item.weightType))
     && coverage.every(key => item.coverage?.[key] !== false));
 }
