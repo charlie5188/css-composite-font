@@ -118,7 +118,7 @@ export async function fetchGoogleCss(family, spec) {
     catch (e) { /* CSP may block fetch; try reading through a <link> instead. */ }
     try { return await cssViaLink(url); } catch (e) { /* Next URL. */ }
   }
-  throw new SrcError('errGoogle', { family, weight });
+  throw new SrcError('errGoogle', { family, weight: spec });
 }
 /* ================= Variable fonts ================= */
 export const clampW = (w, axis) => Math.min(axis[1], Math.max(axis[0], Math.round(w)));

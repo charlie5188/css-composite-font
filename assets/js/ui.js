@@ -6,7 +6,7 @@ import { initAppearance } from './appearance.js';
 import { FIT_SAMPLES, chooseFits, createFitter } from './autofit.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, classOf, inRanges, parseChars, rebuildClassRanges } from './unicode.js';
-import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownFontAt, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
+import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownFontAt, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
 import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, stepperCell, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
@@ -1237,7 +1237,7 @@ export function initPresets() {
 /* ================= Font picker dialog ================= */
 export let pickTarget = null, pickCand = null, pickTab = 'google';
 let pickerProofWeight = 400, pickerProofKey = '', pickerPreviewToken = 0;
-let pickerApplyToken = 0, pickerApplyBusy = false;
+let pickerApplyToken = 0, pickerApplyBusy = false, pickerFailedSource = null;
 export let pickW = null;   // When editing a non-400 row with its own font, choose a weight, font name or file only for that step.
 export const picker = $('#picker');
 let pickCatalog = [], catalogObserver;
@@ -1269,31 +1269,42 @@ function chooseCatalog(family) {
   $('#gfFamily').value = family; syncGfWeight(); updateCand();
   $('#gfOptions').querySelectorAll('[data-family]').forEach(el => { const selected = el.dataset.family === family; el.setAttribute('aria-selected', selected); });
 }
+const PICKER_LOAD_MS = 12000;
+function waitForPicker(promise) {
+  let timer;
+  return Promise.race([promise, new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('picker-timeout')), PICKER_LOAD_MS); })]).finally(() => clearTimeout(timer));
+}
+async function loadPickerChoice(el, src, unavailable = 'pkPreviewUnavailable') {
+  const sample = el.querySelector('.font-option-sample'), status = el.querySelector('[data-font-state]');
+  try {
+    await waitForPicker((async () => {
+      await src.promise;
+      if (src.status !== 'ok') throw new Error('source-unavailable');
+      const chars = [...new Set([...sample.textContent, ...'Ag0123'].filter(ch => ch.trim()))], missing = await missingIn(src, chars);
+      if (!missing) throw new Error('coverage-unavailable');
+      if ([...sample.textContent].some(ch => ch.trim() && missing.has(ch))) sample.textContent = chars.filter(ch => !missing.has(ch)).slice(0, 24).join('');
+      if (!sample.textContent || !(await document.fonts.load(`24px "${src.family}"`, sample.textContent)).length) throw new Error('no-specimen');
+    })());
+    if (!el.isConnected || !picker.open) return;
+    sample.style.fontFamily = `"${src.family}", var(--ui)`; sample.hidden = false; status.hidden = true;
+  } catch (error) { if (el.isConnected) status.textContent = T(error.message === 'picker-timeout' ? 'pkSlowSpecimen' : unavailable); }
+}
 export function renderCatalog() {
   const box = $('#gfOptions'), query = $('#gfSearch').value, current = $('#gfFamily').value;
   const entries = filterCatalog(pickCatalog, query, $('#gfStyle').value, $('#gfBold').checked);
   catalogObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
   const focusFamily = entries.some(item => item.family === current) ? current : entries[0]?.family;
   box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.family === focusFamily ? 0 : -1}" aria-selected="${item.family === current}" data-family="${esc(item.family)}"><span class="font-option-name">${esc(item.family)}</span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
+  $('#gfResults').textContent = T('pkResults', { n: entries.length });
+  $('#gfReset').hidden = !!entries.length || !query.trim() && !$('#gfStyle').value && !$('#gfBold').checked;
   const tryButton = $('#gfTry');
   tryButton.hidden = !query.trim() || entries.some(item => item.family.toLowerCase() === query.trim().toLowerCase());
   tryButton.textContent = T('pkTryName', { name: query.trim() });
   // Only visible rows load a short specimen; detailed coverage remains an explicit candidate-selection task.
-  catalogObserver = new IntersectionObserver(events => events.forEach(async entry => {
+  catalogObserver = new IntersectionObserver(events => events.forEach(entry => {
     if (!entry.isIntersecting) return;
     const el = entry.target; catalogObserver.unobserve(el);
-    const font = G(el.dataset.family), src = source(font);
-    await src.promise;
-    if (!el.isConnected) return;
-    const sample = el.querySelector('.font-option-sample'), status = el.querySelector('[data-font-state]');
-    if (src.status !== 'ok') { status.textContent = T('pkPreviewUnavailable'); return; }
-    try {
-      const covered = text => [...text].every(ch => !ch.trim() || src.faces.some(face => !face.range || inRanges(face.range, ch.codePointAt(0))));
-      if (!covered(sample.textContent)) sample.textContent = covered('Ag 0123') ? 'Ag 0123' : '';
-      if (!sample.textContent || !(await document.fonts.load(`24px "${src.family}"`, sample.textContent)).length) { status.textContent = T('pkPreviewUnavailable'); return; }
-      if (!el.isConnected) return;
-      sample.style.fontFamily = `"${src.family}", var(--ui)`; sample.hidden = false; status.hidden = true;
-    } catch (error) { status.textContent = T('pkPreviewUnavailable'); }
+    loadPickerChoice(el, source(G(el.dataset.family)));
   }), { root: box });
   box.querySelectorAll('[data-family]').forEach(el => catalogObserver.observe(el));
 }
@@ -1317,14 +1328,11 @@ export function renderLocalFonts() {
   const box = $('#lfOptions'), query = $('#lfFamilySearch').value.trim().toLowerCase(), current = $('#lfName').value;
   const groups = localGroups().filter(([family, faces]) => `${family} ${faces.map(f => f.fullName + ' ' + f.postscriptName).join(' ')}`.toLowerCase().includes(query));
   localObserver?.disconnect(); box.style.setProperty('--font-choice-count', groups.length);
-  box.innerHTML = groups.length ? groups.map(([family, faces], i) => `<button type="button" class="font-option" role="option" tabindex="${i ? -1 : 0}" aria-selected="${faces.some(f => f.fullName === current)}" data-local-family="${esc(family)}" data-local-face="${esc(faces.find(f => /regular|normal|book/i.test(f.style))?.fullName || faces[0].fullName)}"><span class="font-option-name">${esc(family)}</span><span class="font-option-sample" hidden>Ag 0123</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoLocalResults'))}</p>`;
-  localObserver = new IntersectionObserver(entries => entries.forEach(async entry => {
+  $('#lfResults').textContent = T('pkResults', { n: groups.length });
+  box.innerHTML = groups.length ? groups.map(([family, faces], i) => `<button type="button" class="font-option" role="option" tabindex="${i ? -1 : 0}" aria-selected="${faces.some(f => f.fullName === current)}" data-local-family="${esc(family)}" data-local-face="${esc(faces.find(f => /regular|normal|book/i.test(f.style))?.fullName || faces[0].fullName)}"><span class="font-option-name">${esc(family)}</span><span class="font-option-sample" hidden>${esc(pickerClassSample())}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoLocalResults'))}</p>`;
+  localObserver = new IntersectionObserver(entries => entries.forEach(entry => {
     if (!entry.isIntersecting) return; const el = entry.target; localObserver.unobserve(el);
-    const src = source(L(el.dataset.localFace, localAlt.get(el.dataset.localFace) ? [localAlt.get(el.dataset.localFace)] : [])); await src.promise;
-    if (!el.isConnected) return;
-    const status = el.querySelector('[data-font-state]'), sample = el.querySelector('.font-option-sample');
-    if (src.status !== 'ok') { status.textContent = T('pkLocalNotConfirmed'); return; }
-    sample.style.fontFamily = `"${src.family}", var(--ui)`; sample.hidden = false; status.hidden = true;
+    loadPickerChoice(el, source(L(el.dataset.localFace, localAlt.get(el.dataset.localFace) ? [localAlt.get(el.dataset.localFace)] : [])), 'pkLocalNotConfirmed');
   }), { root: box });
   box.querySelectorAll('[data-local-family]').forEach(el => localObserver.observe(el));
   const selected = groups.find(([, faces]) => faces.some(f => f.fullName === current));
@@ -1345,24 +1353,22 @@ export function renderImportedFonts() {
   const all = [...importedFonts.values()].filter(entry => files.has(entry.font.fileId));
   const entries = all.filter(entry => `${entry.family} ${entry.style} ${entry.font.fileName}`.toLowerCase().includes(query));
   $('#ffLibrary').hidden = !all.length; fileObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
-  box.innerHTML = entries.length ? entries.map((entry, i) => `<button class="font-option" type="button" role="option" tabindex="${i ? -1 : 0}" aria-selected="${pickCand?.fileId === entry.font.fileId}" data-imported="${esc(entry.font.fileId)}"><span class="font-option-name">${esc(entry.family)}${entry.style ? ' · ' + esc(entry.style) : ''}</span><span class="font-option-sample" hidden>Ag 0123</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
-  fileObserver = new IntersectionObserver(events => events.forEach(async entry => {
+  $('#ffResults').textContent = T('pkResults', { n: entries.length });
+  box.innerHTML = entries.length ? entries.map((entry, i) => `<button class="font-option" type="button" role="option" tabindex="${i ? -1 : 0}" aria-selected="${pickCand?.fileId === entry.font.fileId}" data-imported="${esc(entry.font.fileId)}"><span class="font-option-name">${esc(entry.family)}${entry.style ? ' · ' + esc(entry.style) : ''}</span><span class="font-option-sample" hidden>${esc(pickerClassSample())}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoImportedResults'))}</p>`;
+  fileObserver = new IntersectionObserver(events => events.forEach(entry => {
     if (!entry.isIntersecting) return; const el = entry.target; fileObserver.unobserve(el);
-    const font = importedFonts.get(el.dataset.imported)?.font; if (!font) return;
-    const src = source(font); await src.promise;
-    if (!el.isConnected) return;
-    const sample = el.querySelector('.font-option-sample'), status = el.querySelector('[data-font-state]');
-    if (src.status !== 'ok') { status.textContent = T('pkPreviewUnavailable'); return; }
-    sample.style.fontFamily = `"${src.family}", var(--ui)`; sample.hidden = false; status.hidden = true;
+    const font = importedFonts.get(el.dataset.imported)?.font; if (font) loadPickerChoice(el, source(font));
   }), { root: box });
   box.querySelectorAll('[data-imported]').forEach(el => fileObserver.observe(el));
 }
 async function acceptFontFiles(list) {
   const target = pickTarget, token = ++fileImportToken, entries = [], failed = [];
   $('#ffError').textContent = ''; $('#ffError').hidden = true; $('#pkOk').disabled = true;
+  $('#ffName').textContent = T('pkImporting'); $('#ffDrop').setAttribute('aria-busy', 'true');
   for (const file of list) {
     try { entries.push(await importFontFile(file)); } catch (error) { failed.push(file.name); }
   }
+  if (token === fileImportToken) $('#ffDrop').removeAttribute('aria-busy');
   if (token !== fileImportToken || pickTarget !== target || !picker.open || pickTab !== 'file') return;
   renderImportedFonts();
   if (entries.length) chooseImported(entries[0].font.fileId); else updateCand();
@@ -1372,7 +1378,7 @@ export function setPickTab(tab) {
   pickTab = tab;
   picker.querySelectorAll('[data-src]').forEach(b => { b.setAttribute('aria-selected', b.dataset.src === tab); b.tabIndex = b.dataset.src === tab ? 0 : -1; });
   picker.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== tab; });
-  if (tab === 'local') renderLocalFonts();
+  if (tab === 'local') { renderLocalFonts(); if ($('#lfQuery').disabled) { $('#lfMsg').hidden = false; $('#lfMsg').textContent = T('lfWait'); } }
   if (tab === 'file') renderImportedFonts();
   updateCand();
 }
@@ -1473,7 +1479,7 @@ export function renderItal() {
   const el = $('#pkItal'), f = pickCand;
   el.hidden = !state.italic || !f;
   if (el.hidden) return;
-  if (f.kind === 'local' && italicLocal(f) === undefined) { el.textContent = T('pkItalChecking'); setTimeout(() => { if (pickCand === f) renderItal(); }, 400); return; }
+  if (f.kind === 'local' && italicLocal(f) === undefined) { el.textContent = T('pkItalChecking'); setTimeout(() => { if (picker.open && pickCand === f) renderItal(); }, 400); return; }
   const it = italOf(f);
   el.textContent = !it ? T('pkItalNo') : it.slant ? T('pkItalSlant', { t: it.slant, v: it.slant === 'slnt' ? axisOf(f, 'slnt')[1] : 1 })
     : T('pkItalYes', { name: it.kind === 'google' ? `${it.family} Italic` : it.kind === 'local' ? it.name : it.fileName || it.path });
@@ -1506,8 +1512,8 @@ export async function missingIn(s, chars) {
     for (const r of all) { const l = merged[merged.length - 1]; if (l && r[0] <= l[1] + 1) l[1] = Math.max(l[1], r[1]); else merged.push([...r]); }
     return new Set(chars.filter(c => !inRanges(merged, c.codePointAt(0))));
   }
-  if (!(await loadBlank())) return new Set();
-  try { await document.fonts.load(`32px "${s.family}"`, chars.join('')); } catch (e) { /* Check normally. */ }
+  if (!(await loadBlank())) return null;
+  try { await document.fonts.load(`32px "${s.family}"`, chars.join('')); } catch (e) { return null; }
   const ctx = document.createElement('canvas').getContext('2d');
   ctx.font = `32px "${s.family}", "__cf_blank"`;
   return new Set(chars.filter(c => ctx.measureText(c).width === 0));
@@ -1518,8 +1524,11 @@ export async function renderCoverage(s, f) {
   const text = sample.dataset.text || sample.textContent;
   const sampleChars = [...new Set([...text].filter(c => c.trim() && c !== '·'))];
   const targetChars = [...new Set([...(state.view.text || '')].filter(c => c.trim() && pickerOwns(c)))];
-  const miss = await missingIn(s, [...new Set([...COV_SETS.flatMap(([, cs]) => [...cs]), ...sampleChars, ...targetChars])]);
-  if (tok !== covTok || pickCand !== f) return;
+  $('#pkTargetCoverage').textContent = T('pkCheckingCoverage');
+  let miss;
+  try { miss = await waitForPicker(missingIn(s, [...new Set([...COV_SETS.flatMap(([, cs]) => [...cs]), ...sampleChars, ...targetChars])])); } catch (error) { miss = null; }
+  if (tok !== covTok || pickCand !== f || !picker.open) return;
+  if (!miss) { $('#pkTargetCoverage').textContent = T('pkCoverageUnknown'); $('#pkTargetCoverage').className = 'hint'; box.innerHTML = ''; return; }
   const targetMissing = targetChars.filter(ch => miss.has(ch)), targetNote = $('#pkTargetCoverage');
   targetNote.textContent = targetChars.length ? targetMissing.length ? T('pkTargetMissing', { n: targetMissing.length, chars: targetMissing.slice(0, 20).join('') + (targetMissing.length > 20 ? '…' : '') }) : T('pkTargetOk', { n: targetChars.length }) : '';
   targetNote.className = targetMissing.length ? 'callout' : 'hint';
@@ -1532,9 +1541,9 @@ export async function renderCoverage(s, f) {
   sample.innerHTML = [...text].map(c => miss.has(c) ? `<span class="miss">${esc(c)}</span>` : esc(c)).join('');
 }
 /* Also show whether picker punctuation is centered (Taiwan/Hong Kong) or lower-left (Mainland/Japan); warn when it differs from the current language. */
-export function renderPunct(s, f) {
+export function renderPunct(s, f, token = pickerPreviewToken, attempts = 0) {
   const el = $('#pkPunct'), lang = state.typo.lang, want = REGION_OF_LANG[lang], pos = punctPos(s, lang);
-  if (pos === undefined) { el.hidden = true; setTimeout(() => { if (pickCand === f) renderPunct(s, f); }, 300); return; }
+  if (pos === undefined) { el.hidden = true; if (attempts < 20) setTimeout(() => { if (picker.open && pickCand === f && token === pickerPreviewToken) renderPunct(s, f, token, attempts + 1); }, 300); return; }
   el.hidden = !pos;
   if (!pos) return;
   el.textContent = T(pos === 'center' ? 'pkPunctCenter' : 'pkPunctCorner');
@@ -1578,46 +1587,51 @@ export function updateCand() {
   const f = candFromFields();
   pickCand = f;
   updateScope(); syncPickerProof(f);
-  renderAxes(); renderItal();
+  renderAxes();
   $('#ffItalField').hidden = f?.kind !== 'file';
   $('#ffName').textContent = f?.kind === 'file' ? f.fileName : T('ffHint');
   $('#ffItalName').textContent = f?.italic?.fileName || '';
   paintPickerCandidate();
 }
-function paintPickerCandidate() {
+async function paintPickerCandidate() {
   if (pickerApplyBusy) return;
-  const f = pickCand, token = ++pickerPreviewToken;
-  const ok = $('#pkOk'), st = $('#pkStatus'), sample = $('#pkSample');
-  /* Show specimens only when the font is available. Rendering complete UI-font text before selection, during checks or after failure would imply false coverage. */
-  st.classList.remove('caution'); sample.hidden = true; showVfTag(null); resetCoverage();
-  if (!f) { ok.disabled = true; st.textContent = T('pkEmpty'); sample.style.fontFamily = 'var(--ui)'; return; }
-  const axis = pickerWeightAxis(f);
-  const viewed = f.kind === 'google' ? { ...f, ...(axis ? { vf: true } : gfWeights(f.family) ? { weight: pickerProofWeight } : {}) } : f;
-  const s = source(previewFont(viewed), { retry: true });
-  ok.disabled = true; st.textContent = T('pkChecking'); sample.style.fontFamily = 'var(--ui)';
-  s.promise.then(async () => {
-    if (pickCand !== f || token !== pickerPreviewToken || pickerApplyBusy) return;
-    if (s.status === 'ok') {
-      try { await document.fonts.load(`32px "${s.family}"`, sample.dataset.text || sample.textContent); }
-      catch (error) { if (token === pickerPreviewToken) { st.textContent = T('pkPreviewUnavailable'); st.classList.add('caution'); } return; }
-      if (pickCand !== f || token !== pickerPreviewToken || pickerApplyBusy) return;
-      sample.style.fontFamily = `"${s.family}", var(--ui)`;
-      sample.hidden = false;
-      st.textContent = T('pkReady');
-      const ax = f.kind === 'google' ? null : f.axis;
-      showVfTag(ax);
-      if (f.kind === 'google') vfAxis(f.family).then(a => { if (pickCand === f) showVfTag(a); });
-      renderCoverage(s, f);
-      renderPunct(s, f);
-      ok.disabled = false;
-    } else {
-      st.textContent = srcError(s) + (f.kind === 'local' ? T('pkLocalStill') : '');
-      st.classList.add('caution');
-      ok.disabled = f.kind !== 'local';
-    }
-  });
+  const f = pickCand, token = ++pickerPreviewToken, ok = $('#pkOk'), st = $('#pkStatus'), sample = $('#pkSample'), preview = picker.querySelector('.pk-preview');
+  const current = () => picker.open && pickCand === f && token === pickerPreviewToken && !pickerApplyBusy;
+  pickerFailedSource = null; $('#pkRetry').hidden = true; $('#pkItal').hidden = true;
+  st.classList.remove('caution'); sample.hidden = true; showVfTag(pickerWeightAxis(f)); resetCoverage();
+  if (!f) { ok.disabled = true; st.dataset.state = 'empty'; st.textContent = T('pkEmpty'); preview.removeAttribute('aria-busy'); return; }
+  const axis = pickerWeightAxis(f), viewed = f.kind === 'google' ? { ...f, ...(axis ? { vf: true } : gfWeights(f.family) ? { weight: pickerProofWeight } : {}) } : f;
+  const src = source(previewFont(viewed), { retry: true });
+  ok.disabled = true; st.dataset.state = 'loading'; st.textContent = T('pkFetching'); preview.setAttribute('aria-busy', 'true');
+  try {
+    let visible = false;
+    await waitForPicker((async () => {
+      await src.promise;
+      if (!current()) return;
+      if (src.status !== 'ok') throw new Error('source-unavailable');
+      st.textContent = T('pkLoadingSample');
+      visible = !!(await document.fonts.load(`32px "${src.family}"`, sample.dataset.text || pickerClassSample() || ' ')).length;
+    })());
+    if (!current()) return;
+    sample.style.fontFamily = `"${src.family}", var(--ui)`; sample.hidden = !visible;
+    st.dataset.state = 'ready'; st.textContent = T(visible ? 'pkReady' : 'pkNoSampleGlyphs');
+    showVfTag(pickerWeightAxis(f)); renderItal();
+    renderCoverage(src, f); renderPunct(src, f); ok.disabled = false;
+  } catch (error) {
+    if (!current()) return;
+    const slow = error.message === 'picker-timeout';
+    st.dataset.state = slow ? 'slow' : 'error';
+    st.textContent = T(slow ? 'pkSlowLoad' : f.kind === 'google' ? GF_LIST.includes(f.family) ? 'pkGoogleFailed' : 'pkExactFailed' : f.kind === 'local' ? 'pkInstalledFailed' : 'pkFileFailed');
+    st.classList.add('caution'); $('#pkRetry').hidden = f.kind === 'file' && !files.has(f.fileId);
+    pickerFailedSource = src; ok.disabled = slow || f.kind !== 'local';
+  } finally { if (current()) preview.removeAttribute('aria-busy'); }
 }
-export const updateCandSoon = debounce(updateCand, 700);
+function invalidatePickerDraft() {
+  pickerPreviewToken++; pickCand = null; syncPickerProof(null); resetCoverage();
+  $('#pkOk').disabled = true; $('#pkRetry').hidden = true; $('#pkSample').hidden = true;
+  $('#pkStatus').dataset.state = 'draft'; $('#pkStatus').classList.remove('caution'); $('#pkStatus').textContent = T('pkNameDraft');
+  picker.querySelector('.pk-preview').removeAttribute('aria-busy');
+}
 /* Strip weight suffixes, such as W3 or Bold, from local names when checking family identity. */
 export const localStem = n => n.replace(/\bW\d$/, '').replace(WORD_RE, '').trim().toLowerCase();
 /* Check whether this is the row's original font, possibly at another weight, name or file. */
@@ -1627,7 +1641,7 @@ export function updateScope() {
   $('#pkScope').hidden = !show;
 }
 /* Google weight controls: numeric fields over the wght range for variable fonts; a 100-900 menu for others. */
-/* Variable-font badge, for example 'VF 400-800', with a hover explanation. */
+/* Plain weight terminology matches the editor; the tooltip keeps the precise range or available steps. */
 export function showVfTag(axis) {
   const tag = $('#pkVfTag'), f = pickCand, weights = f?.kind === 'google' ? gfWeights(f.family) : null;
   tag.hidden = !f;
@@ -1662,6 +1676,7 @@ export function gfWeightVal() {
   return Math.min(+num.max || 900, Math.max(+num.min || 100, Math.round(+num.value)));
 }
 export function openPicker(t, W = BASE_W) {      // W is the target weight when opening from a weight row.
+  pickerApplyToken++; pickerPreviewToken++; setPickerApplyBusy(false);
   pickTarget = t;
   $('#gfManual').open = false; $('#pkDetails').open = false;
   $('#pkAutoFitField').hidden = t.type === 'class' && t.id === 'han'; $('#pkAutoFit').checked = true;
@@ -1696,7 +1711,7 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   $('#lfName').value = ovf?.kind === 'local' ? ovf.name : pickW ? (state.weightNames[k] || autoName) : cur?.kind === 'local' ? cur.name : '';
   $('#ffPathField').hidden = !(pickW && o.font.kind === 'file');
   if (pickW && o.font.kind === 'file') { const g = guessPath(o.font.fileName, W); $('#ffPath').placeholder = g; $('#ffPath').value = state.weightNames[k] || g; }
-  fileImportToken++; $('#ffSearch').value = ''; $('#ffError').textContent = ''; $('#ffError').hidden = true;
+  fileImportToken++; $('#ffDrop').removeAttribute('aria-busy'); $('#ffSearch').value = ''; $('#ffError').textContent = ''; $('#ffError').hidden = true;
   $('#ffFile').value = ''; $('#ffItal').value = '';
   $('#lfFamilySearch').value = ''; $('#lfManual').open = false;
   $('#lfMsg').hidden = true; $('#lfMsg').classList.remove('caution');
@@ -1825,6 +1840,7 @@ export function initPicker() {
   for (const id of ['pkProofWeight', 'pkProofWeightNum', 'pkProofWeightSelect']) $('#'+id).addEventListener('input', e => { if (e.target.value !== '') setPickerProof(+e.target.value); });
   $('#pkProofWeightNum').addEventListener('blur', () => syncPickerProof(pickCand));
   picker.querySelectorAll('[data-proof-weight]').forEach(el => el.addEventListener('click', () => setPickerProof(+el.dataset.proofWeight)));
+  $('#ffWeightNum').addEventListener('input', updateCand);
   $('#ffWeightNum').addEventListener('change', updateCand);
   $('#pkScope').addEventListener('change', () => { syncGfWeight(); updateCand(); });
   $('#lfFamilySearch').addEventListener('input', renderLocalFonts);
@@ -1832,6 +1848,12 @@ export function initPicker() {
   $('#lfOptions').addEventListener('keydown', e => { if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return; e.preventDefault(); const els = [...e.currentTarget.querySelectorAll('[data-local-family]')], i = els.indexOf(e.target.closest('[data-local-family]')), n = e.key === 'Home' ? 0 : e.key === 'End' ? els.length - 1 : Math.max(0, Math.min(els.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1))); els.forEach((el, j) => { el.tabIndex = j === n ? 0 : -1; }); els[n]?.focus(); });
   $('#lfFace').addEventListener('change', () => { $('#lfName').value = $('#lfFace').value; updateCand(); });
   $('#gfSearch').addEventListener('input', renderCatalog);
+  $('#gfReset').addEventListener('click', () => { $('#gfSearch').value = ''; $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog(); $('#gfSearch').focus(); });
+  $('#pkRetry').addEventListener('click', () => {
+    // An explicit retry replaces a stuck or rejected face. Late callbacks still hold the previous preview token.
+    if (pickerFailedSource && sources.get(pickerFailedSource.key) === pickerFailedSource) sources.delete(pickerFailedSource.key);
+    paintPickerCandidate();
+  });
   $('#gfSearch').addEventListener('keydown', e => { if (e.key === 'ArrowDown') { e.preventDefault(); $('#gfOptions [tabindex="0"]')?.focus(); } });
   $('#gfStyle').addEventListener('change', renderCatalog); $('#gfBold').addEventListener('change', renderCatalog);
   $('#gfOptions').addEventListener('click', e => { const el = e.target.closest('[data-family]'); if (el) chooseCatalog(el.dataset.family); });
@@ -1841,14 +1863,19 @@ export function initPicker() {
     if (next != null) { e.preventDefault(); options.forEach((el, j) => { el.tabIndex = j === next ? 0 : -1; }); options[next]?.focus(); }
   });
   $('#gfTry').addEventListener('click', () => chooseCatalog($('#gfSearch').value.trim()));
-  picker.addEventListener('close', () => { pickerApplyToken++; setPickerApplyBusy(false); fileImportToken++; catalogObserver?.disconnect(); localObserver?.disconnect(); fileObserver?.disconnect(); });
+  picker.addEventListener('close', () => {
+    // Native close events are queued; an earlier dialog must not cancel one that has already reopened.
+    if (picker.open) return;
+    pickerPreviewToken++; covTok++; pickerApplyToken++; setPickerApplyBusy(false); fileImportToken++; catalogObserver?.disconnect(); localObserver?.disconnect(); fileObserver?.disconnect(); });
   picker.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => setPickTab(b.dataset.src)));
-  $('#gfFamily').addEventListener('input', updateCandSoon);
+  $('#gfFamily').addEventListener('input', invalidatePickerDraft);
+  $('#gfFamily').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); syncGfWeight(); updateCand(); } });
   $('#gfFamily').addEventListener('change', () => { syncGfWeight(); updateCand(); });
   $('#gfWeight').addEventListener('change', updateCand);
-  $('#gfWeightNum').addEventListener('input', updateCandSoon);
+  $('#gfWeightNum').addEventListener('input', updateCand);
   $('#gfWeightNum').addEventListener('change', () => { if ($('#gfWeightNum').value.trim()) $('#gfWeightNum').value = gfWeightVal(); updateCand(); });
-  $('#lfName').addEventListener('input', updateCandSoon);
+  $('#lfName').addEventListener('input', invalidatePickerDraft);
+  $('#lfName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); updateCand(); } });
   $('#lfName').addEventListener('change', updateCand);
   $('#lfVar').addEventListener('change', updateCand);
   $('#ffFile').addEventListener('change', e => acceptFontFiles([...e.target.files]));
@@ -1884,21 +1911,21 @@ export function initPicker() {
   });
   axBox.addEventListener('click', e => { const t = e.target.closest('[data-axreset]')?.dataset.axreset; if (t) { delete pickVary[t]; renderAxes(); } });
   $('#lfQuery').addEventListener('click', async () => {
-    const msg = $('#lfMsg');
+    const msg = $('#lfMsg'), button = $('#lfQuery'), target = pickTarget;
+    if (button.disabled) return;
     msg.classList.remove('caution'); msg.hidden = false;
     if (!('queryLocalFonts' in window)) { msg.textContent = T('lfNoApi'); msg.classList.add('caution'); $('#lfManual').open = true; return; }
     try {
+      button.disabled = true; button.setAttribute('aria-busy', 'true');
       msg.textContent = T('lfWait');
       const list = await window.queryLocalFonts();
       const seen = new Set(), opts = []; localFontRecords = [];
       for (const f of list) { if (seen.has(f.fullName)) continue; seen.add(f.fullName); localFontRecords.push(f); localAlt.set(f.fullName, f.postscriptName); localData.set(f.fullName, f); opts.push(`<option value="${esc(f.fullName)}">${esc(f.family)} · ${esc(f.style)}</option>`); }
       $('#lfList').innerHTML = opts.join('');
-      msg.textContent = T('lfCount', { n: opts.length });
-      renderLocalFonts(); $('#lfFamilySearch').focus();
+      if (picker.open && pickTab === 'local') { msg.textContent = T('lfCount', { n: opts.length }); renderLocalFonts(); if (pickTarget === target) $('#lfFamilySearch').focus(); }
     } catch (e) {
-      msg.textContent = e && e.name === 'SecurityError' ? T('lfSec') : T('lfDenied'); $('#lfManual').open = true;
-      msg.classList.add('caution');
-    }
+      if (picker.open && pickTab === 'local') { msg.textContent = T(e?.name === 'SecurityError' ? 'lfSec' : e?.name === 'NotAllowedError' ? 'lfDenied' : 'pkLocalReadFailed'); $('#lfManual').open = true; msg.classList.add('caution'); }
+    } finally { button.disabled = false; button.removeAttribute('aria-busy'); }
   });
   $('#pkCancel').addEventListener('click', () => picker.close());
   $('#pkOk').addEventListener('click', applyPicker);

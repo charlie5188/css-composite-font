@@ -904,3 +904,5 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}.toast.on{animation:none}}
 
 .pk-auto-fit{display:flex;align-items:center;gap:var(--sp-2);font-size:var(--fs-s);margin-top:var(--sp-3)}
+
+.pk-feedback{display:grid;justify-items:start;gap:var(--sp-2)}

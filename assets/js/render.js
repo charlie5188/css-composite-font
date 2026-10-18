@@ -614,7 +614,7 @@ export async function checkMiss() {
     chains.set(c, chain);
     for (const f of chain) { const k = fontKey(f); if (!need.has(k)) need.set(k, new Set()); need.get(k).add(c); }
   }
-  const miss = new Map();      // Font -> missing characters; null means still loading and not yet checked.
+  const miss = new Map();      // Font -> missing characters; null means unavailable or not yet checked.
   await Promise.all([...need].map(async ([k, cs]) => {
     const src = sources.get(k);
     miss.set(k, !src || src.status === 'loading' ? null : src.status === 'error' ? cs : await missingIn(src, [...cs]));

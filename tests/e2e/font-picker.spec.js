@@ -5,7 +5,10 @@ async function fixture(page, category = 'han') {
   await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: "@font-face { font-family: 'PickerFixture'; src: url('http://127.0.0.1:8765/tests/fixtures/Jost%5Bwght%5D.ttf'); }" }));
   await open(page);
   await page.click('#ltabFonts');
-  await page.locator(`.ct-row[data-id="${category}"] .fsel`).selectOption('pick');
+  const select = page.locator(`.ct-row[data-id="${category}"] .fsel`);
+  // Native use focuses the select first; keep background font updates from replacing an unfocused test target.
+  await select.focus(); await select.selectOption('pick');
+  await expect(page.locator('#picker')).toBeVisible();
 }
 
 test('字体列表：按校样语言和类别初排，别名搜索、已知筛选与未知资料保留，检查后不移动候选', async ({ page }) => {
@@ -315,4 +318,102 @@ test('信息层级：预览、应用与详情分组，短列表收紧，数字�
     await expect(page.locator('#pkAppliedTitle')).not.toHaveText('pkAppliedTitle');
     await expect(page.locator('#pkSampleSize').locator('..').locator('[data-step="up"]')).not.toHaveAttribute('aria-label', '');
   }
+});
+
+test('状态反馈：无搜索结果保留候选，名称草稿不探测，加载失败可重试恢复', async ({ page }) => {
+  await fixture(page);
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  await page.locator('#gfSearch').fill('NothingMatchesThis');
+  await expect(page.locator('#gfResults')).toHaveText('0 个候选字体');
+  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  await page.locator('#gfReset').click();
+  await expect(page.locator('#gfSearch')).toHaveValue('');
+  let requested = 0, fail = true;
+  await page.route('https://fonts.googleapis.com/**', route => {
+    if (!route.request().url().includes('family=Inter')) return route.fallback();
+    requested++;
+    return fail ? route.fulfill({ status: 400, body: 'Unavailable' }) : route.fulfill({ contentType: 'text/css', body: "@font-face { font-family: 'PickerRetry'; src: url('http://127.0.0.1:8765/tests/fixtures/Jost%5Bwght%5D.ttf'); }" });
+  });
+  await page.locator('#gfManual > summary').click();
+  await page.locator('#gfFamily').fill('Int');
+  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'draft');
+  await expect(page.locator('#pkOk')).toBeDisabled(); expect(requested).toBe(0);
+  await page.locator('#gfFamily').fill('Inter'); await page.locator('#gfFamily').press('Enter');
+  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'error');
+  await expect(page.locator('#pkStatus')).toContainText('加载失败');
+  await expect(page.locator('#pkOk')).toBeDisabled(); await expect(page.locator('#pkRetry')).toBeVisible();
+  fail = false; await page.locator('#pkRetry').click();
+  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('#pkOk')).toBeEnabled();
+});
+
+test('状态反馈：慢请求可重试，超时后迟到的旧结果不改变当前候选', async ({ page }) => {
+  let release; const gate = new Promise(resolve => { release = resolve; });
+  await fixture(page); await expect(page.locator('#pkOk')).toBeEnabled();
+  await page.route('https://fonts.googleapis.com/**', async route => {
+    if (!route.request().url().includes('family=Inter')) return route.fallback();
+    await gate;
+    await route.fulfill({ contentType: 'text/css', body: "@font-face { font-family: 'PickerSlow'; src: url('http://127.0.0.1:8765/tests/fixtures/Jost%5Bwght%5D.ttf'); }" });
+  });
+  await page.clock.install();
+  await page.locator('#gfSearch').fill('Inter'); await page.locator('#gfOptions [data-family="Inter"]').click();
+  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'loading');
+  await page.clock.runFor(12001);
+  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'slow');
+  await expect(page.locator('#pkRetry')).toBeVisible(); await expect(page.locator('#pkOk')).toBeDisabled();
+  await page.locator('#pkRetry').click(); await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'loading');
+  await page.locator('#gfSearch').fill('Noto Serif SC'); await page.locator('#gfOptions [data-family="Noto Serif SC"]').click();
+  await expect(page.locator('#pkSelectedName')).toHaveText('Noto Serif SC');
+  release();
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  await expect(page.locator('#pkSelectedName')).toHaveText('Noto Serif SC');
+  await expect(page.locator('#pkRetry')).toBeHidden();
+  await page.clock.resume();
+});
+
+test('状态反馈：无法完成字符检查时显示未知，避免伪造全部支持', async ({ page }) => {
+  await page.addInitScript(() => {
+    const load = FontFace.prototype.load;
+    FontFace.prototype.load = function () { return this.family === '__cf_blank' ? Promise.reject(new Error('Probe unavailable')) : load.call(this); };
+  });
+  await fixture(page); await page.locator('#picker [data-src="file"]').click();
+  await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  await expect(page.locator('#pkTargetCoverage')).toContainText('无法确认');
+  await expect(page.locator('#pkCov .cov.ok')).toHaveCount(0);
+});
+
+test('状态反馈：本机授权结果迟到不抢新对话框焦点，已知错误不会冒充拒绝授权', async ({ page }) => {
+  await page.addInitScript(() => { window.queryLocalFonts = () => new Promise(resolve => { window.releaseLocalQuery = resolve; }); });
+  await fixture(page); await page.locator('#picker [data-src="local"]').click(); await page.locator('#lfQuery').click();
+  await expect(page.locator('#lfQuery')).toBeDisabled(); await expect(page.locator('#lfMsg')).toHaveText('等待授权…');
+  await page.locator('#pkCancel').click(); await page.locator('.ct-row[data-id="latin"] .fsel').selectOption('pick');
+  await expect(page.locator('#gfSearch')).toBeFocused();
+  await page.locator('#picker [data-src=local]').click(); await expect(page.locator('#lfMsg')).toHaveText('等待授权…');
+  await page.locator('#picker [data-src=google]').click(); await page.locator('#gfSearch').focus();
+  await page.evaluate(() => window.releaseLocalQuery([]));
+  await expect(page.locator('#lfQuery')).toBeEnabled(); await expect(page.locator('#gfSearch')).toBeFocused();
+  await page.locator('#picker [data-src="local"]').click();
+  await page.evaluate(() => { window.queryLocalFonts = async () => { throw new Error('Read failed'); }; });
+  await page.locator('#lfQuery').click(); await expect(page.locator('#lfMsg')).toContainText('无法读取本机字体');
+  await expect(page.locator('#lfManual')).toHaveAttribute('open', '');
+});
+
+test('状态反馈：上一轮排队的关闭事件不能中止重新打开的预览', async ({ page }) => {
+  await fixture(page); await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'ready');
+  let release; const gate = new Promise(resolve => { release = resolve; });
+  await page.route('https://fonts.googleapis.com/**', async route => {
+    if (!route.request().url().includes('family=Inter')) return route.fallback();
+    await gate; await route.fulfill({ contentType: 'text/css', body: "@font-face { font-family: 'PickerReopen'; src: url('http://127.0.0.1:8765/tests/fixtures/Jost%5Bwght%5D.ttf'); }" });
+  });
+  await page.evaluate(async () => {
+    const u = await import('./assets/js/ui.js');
+    u.picker.close(); u.openPicker({ type: 'class', id: 'han' });
+    // Start another request in the same task, before the browser delivers the previous native close event.
+    const field = document.querySelector('#gfFamily'); field.value = 'Inter'; field.dispatchEvent(new Event('change'));
+  });
+  await expect(page.locator('#pkSelectedName')).toHaveText('Inter');
+  release(); await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('#pkOk')).toBeEnabled();
 });
