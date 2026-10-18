@@ -1,9 +1,11 @@
 import { refresh } from './refresh.js';
+import { initShare } from './share.js';
+import { initAppearance } from './appearance.js';
 import { FIT_SAMPLES, chooseFits, createFitter } from './autofit.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, classOf, inRanges, parseChars, rebuildClassRanges } from './unicode.js';
-import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, objByKey, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
-import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncToolbar, tabFade } from './render.js';
+import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
+import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
 /* ================= 交互：字符类别表 ================= */
@@ -13,10 +15,12 @@ export const objOf = t => t.type === 'class' ? state.classes[t.id] : state.custo
 export const resolvedOf = t => t.type === 'class' ? resolveCls(t.id) : resolveCustom(state.custom[t.i]);
 export function changed({ fonts = false, editor = true, fontChange = false } = {}) {
   const notice = fontChange ? trimExportWeights() : '';
+  const previewChanged = constrainPreviewWeight();
+  syncPreviewWeight();
   refreshCustomRanges();
   if (editor) renderEditor(); else refreshInherited();
   renderPreview();
-  if (fonts) rebuild(); else { drawSpecimen(); renderExport(); }
+  if (fonts || previewChanged) rebuild(); else { drawSpecimen(); renderExport(); }
   markCustomPreset();
   saveState();
   if (notice) { refresh('toolbar', 'export', 'fxFields'); toast(notice); }
@@ -41,6 +45,7 @@ function trimExportWeights() {
 }
 export function markCustomPreset() {
   if (state.preset && !String(state.preset).startsWith('user:')) { state.preset = ''; renderPresetCards(); }
+  else renderCurrentPreset();
 }
 export const LIMITS = { size: [20, 300], shift: [-60, 60] };
 /* 写入一格：空 = 恢复继承；commit 为 false 时（还在输入）忽略超出范围的中间值 */
@@ -155,28 +160,32 @@ export function setMatrixSize(inp, commit) {
 }
 /* 在某一行里编辑时，校样跟着换到这个字重：只换高亮，不重画表格（保持输入焦点） */
 export function previewSoft(W) {
-  const v = state.view, cont = state.wmode === 'cont';
-  if (cont ? stepOf(v.wcont) === W : W === v.weight) return;
-  v.weight = W;
-  markPreviewRow();
-  if (cont) { v.wcont = W; root.style.setProperty('--fw', W); drawSpecimen(); } else rebuild();
-  syncToolbar(); saveState();
+  if (state.wmode === 'cont' && stepOf(state.view.wcont) === W) return;
+  setPreviewW(W, { soft: true });
 }
-/* 预览不受导出勾选限制，方便先看效果再决定是否导出；连续时仍在导出范围内预览。 */
-export function setPreviewW(x) {
-  const v = state.view;
-  if (state.wmode !== 'cont') { setPreviewWeight(WEIGHTS.reduce((a, b) => Math.abs(b - x) < Math.abs(a - x) ? b : a)); return; }
-  const [lo, hi] = state.wrange, w = Math.min(hi, Math.max(lo, Math.round(x)));
-  if (document.activeElement !== $('#vWn')) $('#vWn').value = w;
-  if (w === v.wcont) return;
-  v.wcont = w; root.style.setProperty('--fw', w);
-  if (stepOf(w) !== v.weight) { v.weight = stepOf(w); markPreviewRow(); drawSpecimen(); }
-  saveState();
+/* 输入中保留尚未打完的文字；拖动、滑杆和键盘调整则始终同步数字，哪怕输入框仍有焦点。 */
+export function setPreviewW(x, { soft = false, preserveInput = false } = {}) {
+  if (!Number.isFinite(x)) return;
+  const v = state.view, cont = state.wmode === 'cont', w = previewWeight(x);
+  const changed = w !== (cont ? v.wcont : v.weight);
+  if (cont) {
+    v.wcont = w; v.weight = stepOf(w);
+    root.style.setProperty('--fw', w);
+    if (changed) { markPreviewRow(); drawSpecimen(); }
+  } else if (changed) {
+    v.weight = w;
+    if (soft) { markPreviewRow(); rebuild(); } else refresh('editor', 'fonts');
+  }
+  syncPreviewWeight({ preserveInput });
+  if (changed) saveState();
 }
 /* 导出哪些字重（分档）：各字重里的勾选和导出对话框里的按钮是同一个设定 */
 export function setWeights(ws) {
-  state.weights = [...new Set(ws)].sort((a, c) => a - c);
-  refresh('toolbar', 'editor', 'export');
+  const selected = WEIGHTS.filter(W => ws.includes(W));
+  if (!selected.length) return;
+  state.weights = selected;
+  const changed = constrainPreviewWeight();
+  refresh('toolbar', 'editor', 'export', ...(changed ? ['fonts'] : []));
 }
 /* 连续模式的导出范围：各字重里和导出对话框里各有一组，校样的字重也只走这个范围 */
 export function setWRange(lo, hi) {
@@ -185,9 +194,7 @@ export function setWRange(lo, hi) {
   lo = Math.min(899, Math.max(100, Math.round(lo))); hi = Math.min(900, Math.max(lo + 1, Math.round(hi)));
   state.wrange = [lo, hi];
   for (const [a, b] of [['exWLo', 'wLo'], ['exWHi', 'wHi']]) { const x = a === 'exWLo' ? lo : hi; $('#' + a).value = x; if ($('#' + b)) $('#' + b).value = x; }
-  const v = state.view;
-  v.wcont = Math.min(hi, Math.max(lo, v.wcont));
-  v.weight = stepOf(v.wcont);
+  constrainPreviewWeight();
   refresh('toolbar', 'editor', 'fonts', 'export');
 }
 $('#wMatrix').addEventListener('click', e => {
@@ -195,7 +202,7 @@ $('#wMatrix').addEventListener('click', e => {
   const row = e.target.closest('[data-row]');
   if (row && !e.target.closest('button,input,select,textarea,label,a')) {
     const W = +row.dataset.row;
-    if (state.wmode === 'cont') setPreviewW(W); else setPreviewWeight(W);
+    if (state.wmode === 'cont' || state.weights.includes(W)) setPreviewW(W);
     return;
   }
   const b = e.target.closest('button'); if (!b) return;
@@ -251,8 +258,11 @@ $('#wMatrix').addEventListener('keydown', e => {
 });
 /* 危险操作点两次才执行：第一次点击时按钮换成确认文字（.armed，原来的内容先藏起来），3 秒内再点才执行，过时恢复原样。
    按钮原来的文字要包在元素里（纯文字节点藏不起来） */
+function disarmConfirm(btn) {
+  clearTimeout(btn.armT); btn.classList.remove('armed'); btn.querySelector(':scope > .arm-lab')?.remove();
+}
 export function armConfirm(btn, text, run) {
-  const disarm = () => { btn.classList.remove('armed'); btn.querySelector(':scope > .arm-lab')?.remove(); };
+  const disarm = () => disarmConfirm(btn);
   if (btn.classList.contains('armed')) { clearTimeout(btn.armT); disarm(); run(); return; }
   const lab = document.createElement('span'); lab.className = 'arm-lab'; lab.textContent = text;
   btn.append(lab); btn.classList.add('armed');
@@ -294,6 +304,7 @@ $('#wReset').addEventListener('click', e => armConfirm(e.currentTarget, T('wRese
    按钮在左窗格页签那一排的右端；快捷键 ⌘Z / ⇧⌘Z（Windows：Ctrl+Z / Ctrl+Y）。在输入框里时交给输入框自己撤销 */
 export const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 export function syncHistory() {
+  renderCurrentPreset();
   for (const [id, ok, key, keys] of [['undoBtn', canUndo(), 'undo', IS_MAC ? '⌘Z' : 'Ctrl+Z'], ['redoBtn', canRedo(), 'redo', IS_MAC ? '⇧⌘Z' : 'Ctrl+Y']]) {
     const b = $('#' + id); b.setAttribute('aria-disabled', !ok);
     b.dataset.tip = `${T(key)} (${keys})`; b.setAttribute('aria-label', T(key));
@@ -337,8 +348,15 @@ export function initTips() {
   };
   const find = t => t?.closest?.('[title], [data-tip]') || null;
   const open = () => tip.matches(':popover-open');
+  // 加载状态可在悬停时变化；只在提示待显示或已显示期间观察，避免保留旧状态。
+  const watch = new MutationObserver(() => {
+    if (!cur) return;
+    if (!cur.isConnected || !cur.getClientRects().length) { hide(); return; }
+    if (open() && take(cur) !== tip.textContent) show(cur);
+  });
   const show = el => {
     const text = take(el); if (!text || !el.isConnected || el !== cur) return;
+    if (el.dataset.tipUnlessOpen && document.getElementById(el.dataset.tipUnlessOpen)?.matches(':popover-open')) return;
     const host = el.closest('dialog[open]') || document.body;      // 模态对话框打开时，放进对话框里
     if (tip.parentNode !== host) { if (open()) tip.hidePopover(); host.append(tip); }
     tip.textContent = text;
@@ -349,11 +367,15 @@ export function initTips() {
     tip.style.left = Math.max(4, Math.min(innerWidth - w - 4, r.left + r.width / 2 - w / 2)) + 'px';
   };
   const hide = () => {
-    clearTimeout(timer);
+    watch.disconnect(); clearTimeout(timer);
     if (open()) { warm = performance.now() + 500; tip.hidePopover(); }
     cur = null;
   };
-  const arm = (el, delay) => { hide(); cur = el; take(el); timer = setTimeout(() => show(el), performance.now() < warm ? 0 : delay); };
+  const arm = (el, delay) => {
+    hide(); cur = el; take(el);
+    watch.observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['title', 'data-tip', 'class', 'hidden'] });
+    timer = setTimeout(() => show(el), performance.now() < warm ? 0 : delay);
+  };
   document.addEventListener('pointerover', e => {
     if (e.pointerType === 'touch') return;
     const el = find(e.target);
@@ -423,7 +445,6 @@ $('#wSub').addEventListener('change', e => { if (e.target.id === 'wLo' || e.targ
 $('#wSub').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('input')) e.target.blur(); });
 /* (i) 说明：所有说明文字共用一个弹层，打开时按 data-info 填入内容 */
 export const INFO = {
-  presetInfo: () => esc(T('presetInfo')),
   classInfo: () => `<p>${esc(T('inheritHint'))}</p><dl>${CLASSES.map(c => `<dt>${esc(tr(c.name))}</dt><dd>${esc(tr(c.desc))}</dd>`).join('')}</dl>`,
   customInfo: () => T('customIntro'),
   metricsInfo: () => `<p>${esc(T('metricsHint'))}</p><p>${esc(T('mixInfo'))}</p><p>${T('refNote')}</p>`,
@@ -516,11 +537,7 @@ $('#grpPop').addEventListener('click', e => {
   changed({ fonts: true });
   renderGroups();
 });
-export function setPreviewWeight(W) {
-  if (W === state.view.weight) return;
-  state.view.weight = W;
-  refresh('toolbar', 'editor', 'fonts');
-}
+export function setPreviewWeight(W) { setPreviewW(W); }
 
 /* ================= 交互：校样、度量、导出 ================= */
 export const SUPPORT = { sizeAdjust: typeof FontFace !== 'undefined' && 'sizeAdjust' in FontFace.prototype };
@@ -559,7 +576,7 @@ export function initToolbar() {
   });
   $('.pane-bar').addEventListener('click', e => {
     const b = e.target.closest('[data-ltab]'); if (!b) return;
-    v().ltab = b.dataset.ltab; syncLeftTab(); $('#editor').scrollTop = 0; saveState();
+    v().ltab = b.dataset.ltab; renderCurrentPreset(); syncLeftTab(); $('#editor').scrollTop = 0; saveState();
   });
   $('#sampleTabs').addEventListener('scroll', tabFade, { passive: true });
   $('#sampleTabs').addEventListener('wheel', e => {      // 没有触控板时：竖向滚轮也能横向滚页签
@@ -583,23 +600,47 @@ export function initToolbar() {
   }
   /* 左右拖动图标调整：字号每 2px 变 1，行高每 1px 变 0.01 */
   const SCRUB = { ...NUM, w: { el: '#vWn', px: 1, get: () => state.wmode === 'cont' ? v().wcont : v().weight, set: setPreviewW } };      // 字重每 1px 变 1（分档时落到最接近的一档）
-  document.querySelectorAll('[data-scrub]').forEach(ic => ic.addEventListener('pointerdown', e => {
-    const k = ic.dataset.scrub, n = SCRUB[k], x0 = e.clientX, v0 = n.get ? n.get() : v()[k];
-    e.preventDefault(); ic.setPointerCapture(e.pointerId); document.body.classList.add('scrubbing');
-    const move = ev => { const x = v0 + (ev.clientX - x0) * n.px * (ev.shiftKey ? 10 : 1); if (n.set) n.set(x); else setNum(k, x); };
-    const up = ev => {
-      ic.removeEventListener('pointermove', move); ic.removeEventListener('pointerup', up); ic.removeEventListener('pointercancel', up);
-      document.body.classList.remove('scrubbing');
-      if (Math.abs(ev.clientX - x0) < 3) $(n.el).select();      // 没拖动：当成点击，选中框里的数字
-    };
-    ic.addEventListener('pointermove', move); ic.addEventListener('pointerup', up); ic.addEventListener('pointercancel', up);
-  }));
-  $('#viewPop').addEventListener('toggle', e => {      // 菜单贴在按钮下方、右对齐
-    if (e.newState !== 'open') return;
-    const r = $('#viewBtn').getBoundingClientRect(), pop = e.currentTarget;
-    pop.style.left = Math.max(8, r.right - pop.offsetWidth) + 'px';
-    pop.style.top = (r.bottom + 6 + pop.offsetHeight > innerHeight ? Math.max(8, r.top - pop.offsetHeight - 6) : r.bottom + 6) + 'px';
+  document.querySelectorAll('[data-scrub]').forEach(ic => {
+    let suppressClick = false;
+    ic.addEventListener('pointerdown', e => {
+      if (e.button !== 0 || !e.isPrimary) return;
+      const k = ic.dataset.scrub, n = SCRUB[k], x0 = e.clientX, v0 = n.get ? n.get() : v()[k];
+      const y0 = e.clientY;
+      let moved = false;
+      suppressClick = false;
+      e.preventDefault(); ic.setPointerCapture(e.pointerId); document.body.classList.add('scrubbing');
+      const move = ev => {
+        moved ||= Math.hypot(ev.clientX - x0, ev.clientY - y0) >= 3;
+        if (!moved) return;
+        const x = v0 + (ev.clientX - x0) * n.px * (ev.shiftKey ? 10 : 1); if (n.set) n.set(x); else setNum(k, x);
+      };
+      const up = ev => {
+        ic.removeEventListener('pointermove', move); ic.removeEventListener('pointerup', up); ic.removeEventListener('pointercancel', up);
+        document.body.classList.remove('scrubbing');
+        suppressClick = moved || ev.type === 'pointercancel';
+        if (!suppressClick && k !== 'w') $(n.el).select();
+      };
+      ic.addEventListener('pointermove', move); ic.addEventListener('pointerup', up); ic.addEventListener('pointercancel', up);
+    });
+    if (ic.dataset.scrub === 'w') ic.addEventListener('click', e => {
+      e.preventDefault();
+      // 在 click 阶段展开，避开原生 popover 在指针抬起时的关闭；拖回原点也不算点击。
+      if (suppressClick && e.detail !== 0) { suppressClick = false; return; }
+      showWeightSlider();
+    });
   });
+  const positionViewMenu = () => {      // 优先贴在按钮下方；矮屏滚动菜单，调整窗口时也收进视口。
+    const pop = $('#viewPop'); if (!pop.matches(':popover-open')) return;
+    const r = $('#viewBtn').getBoundingClientRect();
+    if (!r.width) { pop.hidePopover(); return; }
+    pop.style.left = Math.max(8, Math.min(innerWidth - pop.offsetWidth - 8, r.right - pop.offsetWidth)) + 'px';
+    pop.style.top = Math.max(8, Math.min(r.bottom + 6, innerHeight - pop.offsetHeight - 8)) + 'px';
+  };
+  $('#viewPop').addEventListener('toggle', e => {
+    $('#viewBtn').setAttribute('aria-expanded', e.newState === 'open');
+    if (e.newState === 'open') { e.currentTarget.scrollTop = 0; positionViewMenu(); }
+  });
+  window.addEventListener('resize', positionViewMenu);
   /* 度量参考图的工具条：西文、数字、假名、注音的参考线分别开关（图例兼开关） */
   $('#specBar').addEventListener('click', e => {
     const b = e.target.closest('[data-sg]'); if (!b) return;
@@ -610,17 +651,55 @@ export function initToolbar() {
   for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vRules', 'rules'], ['vMiss', 'miss'], ['vItalic', 'italic']])
     $('#' + id).addEventListener('click', () => { v()[key] = !v()[key]; refresh('toolbar', 'preview', 'export'); });
   $('#viewTypo').addEventListener('change', e => { const k = e.target.dataset.vtypo; if (k) { state.typo[k] = e.target.value; syncViewTypo(); refresh('preview'); } });
-  /* 校样的字重：分档时 ↑↓ 跳一档，和点击表格行一样可预览尚未导出的字重。 */
-  const wn = $('#vWn');
-  wn.addEventListener('input', () => { if (state.wmode !== 'cont') return; const x = parseFloat(wn.value); if (x >= state.wrange[0] && x <= state.wrange[1]) setPreviewW(x); });
-  wn.addEventListener('change', () => { const x = parseFloat(wn.value); if (isFinite(x)) setPreviewW(x); wn.value = state.wmode === 'cont' ? v().wcont : v().weight; });
+  /* 滑杆按已导出字重的索引等距布点；连续模式直接使用实际数值。 */
+  const wn = $('#vWn'), slider = $('#vWSlider'), pop = $('#vWPop');
+  let returningFocus = false;
+  const positionWeightSlider = () => {
+    if (!pop.matches(':popover-open')) return;
+    const r = $('#vWnLab').getBoundingClientRect();
+    if (!r.width) { pop.hidePopover(); return; }
+    pop.style.left = Math.max(8, Math.min(innerWidth - pop.offsetWidth - 8, r.right - pop.offsetWidth)) + 'px';
+    pop.style.top = (r.bottom + 6 + pop.offsetHeight <= innerHeight - 8 ? r.bottom + 6 : Math.max(8, r.top - pop.offsetHeight - 6)) + 'px';
+  };
+  function showWeightSlider() {
+    syncPreviewWeight({ preserveInput: true });
+    if (!pop.matches(':popover-open')) pop.showPopover();
+    positionWeightSlider();
+  }
+  pop.addEventListener('toggle', e => {
+    for (const el of [wn, $('#vWBtn')]) el.setAttribute('aria-expanded', e.newState === 'open');
+    positionWeightSlider();
+  });
+  wn.addEventListener('focus', () => { if (!returningFocus) showWeightSlider(); });
+  wn.addEventListener('click', showWeightSlider);
+  window.addEventListener('resize', positionWeightSlider);
+  document.addEventListener('scroll', positionWeightSlider, { passive: true, capture: true });
+  slider.addEventListener('input', () => setPreviewW(state.wmode === 'cont' ? +slider.value : state.weights[+slider.value]));
+  $('#vWTicks').addEventListener('click', e => {
+    const b = e.target.closest('button[data-weight]');
+    if (b && state.wmode === 'cont') setPreviewW(+b.dataset.weight);
+  });
+  pop.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    e.preventDefault(); returningFocus = true;
+    pop.hidePopover(); wn.focus({ preventScroll: true }); returningFocus = false;
+  });
+  wn.addEventListener('input', () => {
+    const x = parseFloat(wn.value);
+    if (state.wmode === 'cont' ? x >= state.wrange[0] && x <= state.wrange[1] : state.weights.includes(x)) setPreviewW(x, { preserveInput: true });
+  });
+  const commitWeight = () => { const x = parseFloat(wn.value); if (Number.isFinite(x)) setPreviewW(x); else syncPreviewWeight(); };
+  wn.addEventListener('change', commitWeight);
+  wn.addEventListener('blur', commitWeight);
   wn.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { wn.blur(); return; }
-    if (state.wmode === 'cont' || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+    if (e.key === 'Enter') { wn.blur(); if (pop.matches(':popover-open')) pop.hidePopover(); return; }
+    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
     e.preventDefault();
-    const ws = WEIGHTS, i = Math.max(0, ws.indexOf(v().weight));
-    setPreviewWeight(ws[Math.min(ws.length - 1, Math.max(0, i + (e.key === 'ArrowUp' ? 1 : -1)))]);
-    wn.value = v().weight;
+    if (state.wmode === 'cont') setPreviewW(v().wcont + (e.key === 'ArrowUp' ? 1 : -1) * (e.shiftKey ? 10 : 1));
+    else {
+      const ws = state.weights, i = Math.max(0, ws.indexOf(v().weight));
+      setPreviewW(ws[Math.min(ws.length - 1, Math.max(0, i + (e.key === 'ArrowUp' ? 1 : -1)))]);
+    }
   });
   const reloadForText = debounce(() => rebuild(), 600);
   $('#proofText').addEventListener('pointermove', e => missTipAt(e.clientX, e.clientY));
@@ -661,6 +740,7 @@ export function initToolbar() {
     const b = e.target.closest('[data-m]'); if (!b || b.dataset.m === state.wmode) return;
     state.wmode = b.dataset.m;
     if (state.wmode === 'cont') { state.weights = [...WEIGHTS]; v().wcont = Math.min(state.wrange[1], Math.max(state.wrange[0], v().weight)); }
+    constrainPreviewWeight();
     refresh('toolbar', 'editor', 'fonts', 'export');
   });
   $('#exWPresets').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b) setWRange(...b.dataset.r.split(',').map(Number)); });
@@ -828,7 +908,24 @@ export function renderPresetFilter(shown, total) {
     `<button type="button" class="mm-item mm-check" data-pf="${g}:${v}" aria-pressed="${!!pf[g]?.includes(v)}"${T(k + 'Tip') !== k + 'Tip' ? ` title="${esc(T(k + 'Tip'))}"` : ''}>${esc(T(k))}</button>`).join('')).join('<hr>') +
     (n ? `<hr><div class="pf-end"><button type="button" class="mm-item" data-pf="clear">${esc(T('pfClear'))}</button><span class="mono">${shown} / ${total}</span></div>` : '');
 }
-/* 「我的预设」排在最前面，后面是内置的 */
+const ownPresetName = () => {
+  const name = state.preset?.startsWith('user:') ? state.preset.slice(5) : null;
+  return name != null && Object.hasOwn(userPresets, name) && userPresets[name]?.classes?.han ? name : null;
+};
+/* 首张卡片不参与筛选，也不套用配置；字体直接使用实时合成结果，避免预览与当前内容脱节。 */
+export function renderCurrentPreset() {
+  const own = ownPresetName(), name = own ?? (state.preset ? presetTitle(state.preset) : suggestedPresetName());
+  $('#currentPresetName').textContent = name;
+  $('#currentPresetSpec').textContent = `永${SCRIPT_CHAR[scriptOfLang(state.scope || state.typo.lang)]}Ag`;
+  const update = $('#updatePresetBtn');
+  if (update.presetOwner !== own) disarmConfirm(update);
+  update.presetOwner = own; update.hidden = own == null;
+  update.disabled = own == null || !presetDirty();
+  if (update.disabled) disarmConfirm(update);
+  const create = $('#savePresetBtn');
+  create.classList.toggle('btn-text', own != null); create.classList.toggle('btn', own == null);
+}
+/* 当前配置固定在首位；筛选计数只包含可套用的自存与内置预设。 */
 export function renderPresetCards() {
   const all = [], pf = state.view.pfilter || {};
   for (const [n, snap] of Object.entries(userPresets)) if (snap?.classes?.han) {
@@ -841,8 +938,8 @@ export function renderPresetCards() {
   }
   const fit = m => PF_GROUPS.every(([g]) => !pf[g]?.length || pf[g].includes(m[g]));
   const cards = all.filter(([m]) => fit(m)).map(([, c]) => presetCard(c));
-  $('#presetCards').innerHTML = cards.join('') || `<p class="pf-none">${esc(T('pfNone'))} <button type="button" class="btn-text" data-pf="clear">${esc(T('pfClear'))}</button></p>`;
-  renderPresetFilter(cards.length, all.length);
+  $('#presetList').innerHTML = cards.join('') || `<p class="pf-none">${esc(T('pfNone'))} <button type="button" class="btn-text" data-pf="clear">${esc(T('pfClear'))}</button></p>`;
+  renderPresetFilter(cards.length, all.length); renderCurrentPreset();
 }
 /* 点筛选按钮：组内加上 / 去掉这一项；「清除筛选」在筛选条和空结果里都有 */
 document.addEventListener('click', e => {
@@ -987,25 +1084,38 @@ export async function autoAdjust() {
 /* 把现在的设定存成自己的预设；meta 是对话框里确认的地区和风格 */
 export function savePresetAs(n, meta) {
   const snap = JSON.parse(JSON.stringify(state)); delete snap.view; delete snap.presetBase;
-  userPresets[n] = { ...snap, meta }; lsSet(LS_PRESETS, userPresets);
+  const saved = { ...snap, meta };
+  // 先确保写入成功再替换内存和当前身份；空间不足时保留编辑内容与已有预设。
+  try { localStorage.setItem(LS_PRESETS, JSON.stringify({ ...userPresets, [n]: saved })); }
+  catch (error) { toast(T('presetSaveFailed')); return false; }
+  Object.defineProperty(userPresets, n, { value: saved, writable: true, configurable: true, enumerable: true });
   state.preset = 'user:' + n; state.presetBase = presetSnap();
   refresh('presets');
   toast(T('tSaved', { n }) + (hasFileFont() ? T('tSavedFile') : ''));
+  return true;
 }
 /* ================= 保存预设的对话框 =================
    「存为预设」和「改过设定后换预设」都用它；后者多一句会丢失什么，和「不保存」。
    地区、风格先按字体推算好（inferMeta），不对可以改；来源只显示，按字体算 */
 export let saveThen = null, saveMeta = null;
-const presetTitle = id => id.startsWith('user:') ? id.slice(5) : tr(PRESETS.find(p => p.id === id)?.name || { zh: id, ja: id, tw: id });
-export function openSave(leaveTo = null) {
+const presetTitle = id => id.startsWith('user:') ? id.slice(5) : tr(PRESETS.find(p => p.id === id)?.name || { zh: id, ja: id, tw: id, en: id });
+function suggestedPresetName() {
+  // 未命名的当前配置与新建对话框共用建议名称；只在打开时填入输入框，保留框内的手工修改。
+  const fonts = ['han', 'latin', 'kana'].map(id => shortName(resolveCls(id, BASE_W, true).font).trim()).filter(Boolean);
+  const base = [...new Set(fonts)].join(' × ') || T('presetUnnamed');
+  let name = base, i = 2;
+  while (Object.hasOwn(userPresets, name)) name = `${base} (${i++})`;
+  return name;
+}
+export function openSave(leaveTo = null, { create = false } = {}) {
   saveThen = leaveTo;
   const m = inferMeta(state);
   saveMeta = { region: m.region, style: m.style };
-  $('#saveTitle').textContent = T(leaveTo ? 'leaveTitle' : 'presetSaveAs');
+  $('#saveTitle').textContent = T(leaveTo ? 'leaveTitle' : 'presetCreate');
   $('#saveMsg').hidden = !leaveTo; if (leaveTo) $('#saveMsg').textContent = T('leaveMsg', { name: presetTitle(leaveTo) });
   $('#saveDiscard').hidden = !leaveTo;
-  $('#saveOk').textContent = T(leaveTo ? 'leaveSave' : 'save');
-  $('#saveName').value = state.preset?.startsWith('user:') ? state.preset.slice(5) : state.name === 'My Composite' ? '' : state.name;      // 改的是自己的预设：默认存回去
+  $('#saveOk').querySelector('span').textContent = T(leaveTo ? 'leaveSave' : 'presetCreate');
+  $('#saveName').value = !create && ownPresetName() != null ? ownPresetName() : !create && state.name.trim() && state.name !== 'My Composite' ? state.name : suggestedPresetName();      // 改的是自己的预设：默认存回去；新建则建议未占用的名称
   $('#saveSrc').textContent = T(m.src === 'google' ? 'saveSrcGoogle' : 'saveSrcLocal');
   $('#saveFile').hidden = !hasFileFont();
   syncSave();
@@ -1014,7 +1124,11 @@ export function openSave(leaveTo = null) {
 export function syncSave() {
   for (const g of ['region', 'style']) document.querySelectorAll(`#save${g === 'region' ? 'Region' : 'Style'} [data-v]`).forEach(b => b.setAttribute('aria-checked', b.dataset.v === saveMeta[g]));
   const n = $('#saveName').value.trim();
-  $('#saveDup').hidden = !n || !(n in userPresets);
+  const exists = !!n && Object.hasOwn(userPresets, n);
+  $('#saveDup').hidden = !exists;
+  const button = $('#saveOk');
+  disarmConfirm(button);
+  button.querySelector('span').textContent = T(exists ? 'presetUpdate' : saveThen ? 'leaveSave' : 'presetCreate');
 }
 export function initPresets() {
   $('#presetCards').addEventListener('click', e => {
@@ -1033,12 +1147,28 @@ export function initPresets() {
   });
   const doSave = () => {
     const n = $('#saveName').value.trim(); if (!n) return $('#saveName').focus();
-    savePresetAs(n, { ...saveMeta }); $('#saveDlg').close();
-    if (saveThen) applyPreset(saveThen);
+    const run = () => {
+      if (!savePresetAs(n, { ...saveMeta })) return;
+      $('#saveDlg').close(); if (saveThen) applyPreset(saveThen);
+    };
+    if (Object.hasOwn(userPresets, n)) armConfirm($('#saveOk'), T('presetReplaceConfirm'), run); else run();
   };
-  $('#savePresetBtn').addEventListener('click', () => openSave());
+  $('#savePresetBtn').addEventListener('click', () => openSave(null, { create: true }));
+  $('#updatePresetBtn').addEventListener('click', e => {
+    const name = ownPresetName(); if (name == null) return;
+    const button = e.currentTarget, stamp = state.preset + '\n' + presetSnap();
+    if (button.presetStamp !== stamp) disarmConfirm(button);
+    button.presetStamp = stamp;
+    armConfirm(button, T('presetReplaceConfirm'), () => {
+      if (ownPresetName() === name) savePresetAs(name, { region: inferMeta(state).region, style: inferMeta(state).style, ...userPresets[name].meta });
+    });
+  });
   $('#saveOk').addEventListener('click', doSave);
-  $('#saveName').addEventListener('keydown', e => { if (e.key === 'Enter') doSave(); });
+  $('#saveName').addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || e.isComposing) return;
+    // 保存后焦点会回到入口按钮，阻止同一次回车再次触发它并重新打开对话框。
+    e.preventDefault(); doSave();
+  });
   $('#saveName').addEventListener('input', syncSave);
   $('#saveCancel').addEventListener('click', () => $('#saveDlg').close());
   $('#saveDiscard').addEventListener('click', () => { $('#saveDlg').close(); if (saveThen) applyPreset(saveThen); });
@@ -1432,7 +1562,7 @@ export function applyUI() {
   document.querySelectorAll('[data-ta]').forEach(el => el.dataset.ta.split(';').forEach(p => { const [a, k] = p.split(':'); el.setAttribute(a, T(k)); }));
   document.querySelectorAll('[data-ui]').forEach(el => { el.hidden = el.dataset.ui !== UI; });
   renderAboutToc();
-  document.querySelectorAll('#moreMenu [data-ui-lang]').forEach(b => b.setAttribute('aria-checked', b.dataset.uiLang === UI));
+  document.querySelectorAll('#moreMenu [data-ui-lang]').forEach(b => { b.setAttribute('aria-checked', b.dataset.uiLang === UI); b.tabIndex = b.dataset.uiLang === UI ? 0 : -1; });
   renderLangOptions(); renderPresetCards(); renderTypoRows(); renderEditor();
   syncToolbar(); renderPreview(); drawSpecimen(); renderExport();
 }
@@ -1440,6 +1570,13 @@ $('#moreMenu').addEventListener('click', e => {
   const b = e.target.closest('[data-ui-lang]'); if (!b) return;
   $('#moreMenu').hidePopover();
   setUI(b.dataset.uiLang); lsSet(LS_UI, UI); applyUI();
+});
+$('#uiLanguages').addEventListener('keydown', e => {
+  if (!['ArrowDown', 'ArrowUp', 'ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(e.key)) return;
+  e.preventDefault();
+  const buttons = [...e.currentTarget.querySelectorAll('[data-ui-lang]')], i = buttons.indexOf(e.target);
+  const next = e.key === 'Home' ? 0 : e.key === 'End' ? buttons.length - 1 : (i + (['ArrowDown', 'ArrowRight'].includes(e.key) ? 1 : -1) + buttons.length) % buttons.length;
+  setUI(buttons[next].dataset.uiLang); lsSet(LS_UI, UI); applyUI(); buttons[next].focus();
 });
 
 /* ================= 其他 ================= */
@@ -1481,25 +1618,30 @@ export function initReset() {
 }
 export function init() {
   refreshCustomRanges();
+  initAppearance(drawSpecimen);
   initToolbar(); initPresets(); initPicker(); initReset(); initFontTab();
   $('#aboutToc').addEventListener('click', e => { const a = e.target.closest('a'); if (!a) return; e.preventDefault(); document.getElementById(a.hash.slice(1))?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); });
   setExKind(state.view.exKind, false); syncPanes();
   $('#aboutBtn').addEventListener('click', () => $('#aboutDlg').showModal());
   $('#aboutItem').addEventListener('click', () => { $('#moreMenu').hidePopover(); $('#aboutDlg').showModal(); });
   $('#aboutClose').addEventListener('click', () => $('#aboutDlg').close());
-  /* 「⋯」菜单：右边和按钮对齐，挂在按钮下面 */
+  /* 「设置」菜单：右边和齿轮按钮对齐，窄屏时收进视口 */
+  const positionSettings = () => {
+    const pop = $('#moreMenu'); if (!pop.matches(':popover-open')) return;
+    const r = $('#moreBtn').getBoundingClientRect();
+    pop.style.top = Math.max(8, Math.min(r.bottom + 6, innerHeight - pop.offsetHeight - 8)) + 'px'; pop.style.left = Math.max(8, r.right - pop.offsetWidth) + 'px';
+  };
   $('#moreMenu').addEventListener('toggle', e => {
-    if (e.newState !== 'open') return;
-    const r = $('#moreBtn').getBoundingClientRect(), pop = e.currentTarget;
-    pop.style.top = r.bottom + 6 + 'px'; pop.style.left = Math.max(8, r.right - pop.offsetWidth) + 'px';
+    $('#moreBtn').setAttribute('aria-expanded', e.newState === 'open');
+    if (e.newState === 'open') { e.currentTarget.scrollTop = 0; positionSettings(); }
   });
+  window.addEventListener('resize', positionSettings);
   for (const d of ['#aboutDlg', '#exDlg']) $(d).addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });      // 点对话框外面（背景）关闭
   applyUI();
-  initSplit(); initSpecSplit(); initHistory(); initTips();
+  initSplit(); initSpecSplit(); initHistory(); initTips(); initShare();
   rebuildNow();
   new ResizeObserver(debounce(drawSpecimen, 100)).observe($('#spec'));
   document.fonts.addEventListener('loadingdone', debounce(fitGlyphs, 60));      // 字样里的字晚一点才下载时，下载完再量
   new ResizeObserver(debounce(refreshVAutospace, 100)).observe($('#proofText'));      // 直排校样的高度跟着窗口变
-  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => drawSpecimen());
   new MutationObserver(() => drawSpecimen()).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 }

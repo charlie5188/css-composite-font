@@ -5,29 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>复合字体工坊 · Composite Font Studio</title>
 <meta name="description" content="像 InDesign 的复合字体一样，为汉字、假名和西文分别指定字体与大小，导出 CSS（@font-face + unicode-range + size-adjust）或字体文件。">
+<!-- 首次绘制前恢复外观，避免手动主题与系统不同时闪出另一种配色。这里只接受主题枚举和六位颜色。 -->
+<script>
+try {
+  const p = JSON.parse(localStorage.getItem('composite-font:appearance:v1') || '{}');
+  if (p?.theme === 'light' || p?.theme === 'dark') document.documentElement.dataset.theme = p.theme;
+  for (const [key, token] of [['background', '--proof-bg'], ['text', '--proof-ink']])
+    if (/^#[\da-f]{6}$/i.test(p?.[key])) document.documentElement.style.setProperty(token, p[key]);
+} catch (_) { /* 存储不可用时跟随系统 */ }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=0a6e8b47">
+<link rel="stylesheet" href="assets/style.css?v=b3ec0b60">
 <!-- 模块的缓存版本号：模块之间互相 import 时不带 ?v=，靠 import map 换成带版本号的地址（tools/rehash.py 生成） -->
 <script type="importmap">{
  "imports": {
   "./assets/js/appcode.js": "./assets/js/appcode.js?v=e758c44f",
+  "./assets/js/appearance.js": "./assets/js/appearance.js?v=1334e199",
   "./assets/js/autofit.js": "./assets/js/autofit.js?v=943bd9db",
-  "./assets/js/bake.js": "./assets/js/bake.js?v=49a0cb2c",
-  "./assets/js/core.js": "./assets/js/core.js?v=597f46c8",
+  "./assets/js/bake.js": "./assets/js/bake.js?v=9c2ce214",
+  "./assets/js/core.js": "./assets/js/core.js?v=779ab73b",
   "./assets/js/export.js": "./assets/js/export.js?v=00e8050f",
   "./assets/js/gfmeta.js": "./assets/js/gfmeta.js?v=d21e19f7",
   "./assets/js/i18n.js": "./assets/js/i18n.js?v=897d7490",
-  "./assets/js/i18n/en.js": "./assets/js/i18n/en.js?v=9e36b803",
-  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=3d816503",
-  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=dfa7933e",
-  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=7f75dd8f",
+  "./assets/js/i18n/en.js": "./assets/js/i18n/en.js?v=d89acc65",
+  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=0c175d7f",
+  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=798ea506",
+  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=8207c53d",
   "./assets/js/main.js": "./assets/js/main.js?v=77ec7ac1",
   "./assets/js/refresh.js": "./assets/js/refresh.js?v=4dffc5b8",
-  "./assets/js/render.js": "./assets/js/render.js?v=1117e7f2",
-  "./assets/js/ui.js": "./assets/js/ui.js?v=8d829a2e",
-  "./assets/js/unicode.js": "./assets/js/unicode.js?v=108fe507"
+  "./assets/js/render.js": "./assets/js/render.js?v=a255df23",
+  "./assets/js/share.js": "./assets/js/share.js?v=b6df1781",
+  "./assets/js/ui.js": "./assets/js/ui.js?v=32008f8f",
+  "./assets/js/unicode.js": "./assets/js/unicode.js?v=0d857075"
  }
 }</script>
 <script type="module" src="assets/js/main.js?v=77ec7ac1"></script>
@@ -41,25 +52,30 @@
     <h1 class="brand" data-t="title">复合字体工坊</h1>
     <div class="top-right">
       <button type="button" class="btn-ghost" id="aboutBtn" aria-haspopup="dialog" aria-controls="aboutDlg" data-t="aboutTitle"></button>
-      <button type="button" class="btn primary ex-toggle" id="exToggle" aria-haspopup="dialog" aria-controls="exDlg"><span data-t="exportTitle"></span></button>
-      <!-- 「⋯」菜单：不常用的操作。重置会改动所有设置（字体、排版、校样），所以放在全局的顶栏里，而不是某个页签里 -->
-      <button type="button" class="btn-icon" id="moreBtn" popovertarget="moreMenu" aria-haspopup="menu" data-ta="aria-label:moreAria;title:moreAria"><svg class="ic" aria-hidden="true"><use href="#i-dots"/></svg></button>
-      <div class="pop menu more-menu" id="moreMenu" popover role="menu">
-        <!-- 界面语言：没选过时跟随浏览器，选了就记下来。语言名总是用它自己的文字写 -->
-        <div class="mm-group" role="group" aria-labelledby="uiLangLab">
-          <p class="mm-lab" id="uiLangLab" data-t="uiLang"></p>
-          <button type="button" class="mm-item mm-radio" role="menuitemradio" data-ui-lang="zh" aria-checked="false" lang="zh-Hans">简体中文</button>
-          <button type="button" class="mm-item mm-radio" role="menuitemradio" data-ui-lang="tw" aria-checked="false" lang="zh-Hant-TW">繁體中文</button>
-          <button type="button" class="mm-item mm-radio" role="menuitemradio" data-ui-lang="ja" aria-checked="false" lang="ja">日本語</button>
-          <button type="button" class="mm-item mm-radio" role="menuitemradio" data-ui-lang="en" aria-checked="false" lang="en">English</button>
+      <!-- 全局设置菜单。重置会改动所有设置（字体、排版、校样），所以放在顶栏，而不是某个页签里 -->
+      <button type="button" class="btn-icon" id="moreBtn" popovertarget="moreMenu" aria-haspopup="dialog" aria-expanded="false" aria-controls="moreMenu" data-ta="aria-label:settingsAria;title:settingsAria"><svg class="ic" aria-hidden="true"><use href="#i-settings"/></svg></button>
+      <div class="pop menu more-menu" id="moreMenu" popover role="dialog" data-ta="aria-label:settingsAria">
+        <div class="settings-block">
+          <label class="settings-row" for="appearanceTheme"><span data-t="appearanceTheme"></span><select id="appearanceTheme"><option value="system" data-t="appearanceSystem"></option><option value="light" data-t="appearanceLight"></option><option value="dark" data-t="appearanceDark"></option></select></label>
         </div>
         <hr>
-        <button type="button" class="mm-item mm-about" role="menuitem" id="aboutItem" data-t="aboutTitle"></button>
-        <a class="mm-item" role="menuitem" href="https://github.com/charlie5188/css-composite-font" target="_blank" rel="noopener" data-ta="aria-label:ghAria">GitHub <svg class="ic ext" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></a>
+        <!-- 界面语言：没选过时跟随浏览器，选了就记下来。语言名总是用它自己的文字写 -->
+        <div class="mm-group" role="radiogroup" aria-labelledby="uiLangLab" id="uiLanguages">
+          <p class="mm-lab" id="uiLangLab" data-t="uiLang"></p>
+          <button type="button" class="mm-item mm-radio" role="radio" data-ui-lang="zh" aria-checked="false" lang="zh-Hans">简体中文</button>
+          <button type="button" class="mm-item mm-radio" role="radio" data-ui-lang="tw" aria-checked="false" lang="zh-Hant-TW">繁體中文</button>
+          <button type="button" class="mm-item mm-radio" role="radio" data-ui-lang="ja" aria-checked="false" lang="ja">日本語</button>
+          <button type="button" class="mm-item mm-radio" role="radio" data-ui-lang="en" aria-checked="false" lang="en">English</button>
+        </div>
         <hr>
-        <button type="button" class="mm-item danger" role="menuitem" id="resetAll"><span data-t="resetAll"></span></button>
+        <button type="button" class="mm-item mm-about" id="aboutItem" data-t="aboutTitle"></button>
+        <a class="mm-item" href="https://github.com/charlie5188/css-composite-font" target="_blank" rel="noopener" data-ta="aria-label:ghAria">GitHub <svg class="ic ext" aria-hidden="true"><use href="#i-arrow-up-right"/></svg></a>
+        <hr>
+        <button type="button" class="mm-item danger" id="resetAll"><span data-t="resetAll"></span></button>
         <p class="mm-note" data-t="resetNote"></p>
       </div>
+      <button type="button" class="btn" id="shareBtn" data-t="shareTitle" data-ta="title:shareTip"></button>
+      <button type="button" class="btn primary ex-toggle" id="exToggle" aria-haspopup="dialog" aria-controls="exDlg"><span data-t="exportTitle"></span></button>
     </div>
   </header>
 
@@ -76,14 +92,24 @@
         <span class="hist"><button type="button" class="btn-icon" id="undoBtn" aria-disabled="true"><svg class="ic" aria-hidden="true"><use href="#i-arrow-back-up"/></svg></button><button type="button" class="btn-icon" id="redoBtn" aria-disabled="true"><svg class="ic" aria-hidden="true"><use href="#i-arrow-forward-up"/></svg></button></span>
       </div>
       <div class="pane-sec presets" id="panePresets" role="tabpanel" aria-labelledby="ltabPresets" hidden>
-        <div class="sec-head preset-head"><h2 class="sec-title lab-i" id="presetsLabel"><span data-t="preset"></span><button type="button" class="info" data-info="presetInfo" popovertarget="infoPop" data-ta="aria-label:infoAria"><svg class="ic" aria-hidden="true"><use href="#i-info-circle"/></svg></button></h2>
+        <div class="sec-head preset-head"><h2 class="sec-title" id="presetsLabel" data-t="preset"></h2>
           <div class="preset-acts">
             <button type="button" class="btn-ghost" id="pfBtn" popovertarget="pfMenu" aria-haspopup="true"><svg class="ic" aria-hidden="true"><use href="#i-filter"/></svg><span data-t="pfTitle"></span><span class="badge" id="pfCount"></span></button>
             <div class="pop menu pf-menu" id="pfMenu" popover role="group" data-ta="aria-label:pfAria"></div>
-            <button type="button" class="btn-text" id="savePresetBtn"><span aria-hidden="true">+ </span><span data-t="presetSaveAs"></span></button>
           </div>
         </div>
-        <div class="pgrid" id="presetCards"></div>
+        <div class="pgrid" id="presetCards">
+          <article class="pcard pcurrent" id="currentPreset" aria-labelledby="currentPresetLabel">
+            <span class="pspec" id="currentPresetSpec" aria-hidden="true"></span>
+            <span class="ptag" id="currentPresetLabel" data-t="presetCurrent" data-ta="title:presetCurrent"></span>
+            <span class="pname" id="currentPresetName"></span>
+            <div class="current-actions">
+              <button type="button" class="btn" id="updatePresetBtn" hidden><span data-t="presetUpdate"></span></button>
+              <button type="button" class="btn" id="savePresetBtn"><span data-t="presetCreate"></span></button>
+            </div>
+          </article>
+          <div class="preset-list" id="presetList"></div>
+        </div>
       </div>
       <div class="pane-sec" id="paneFonts" role="tabpanel" aria-labelledby="ltabFonts">
       <!-- 表格只管基础设定（400，其他字重按它推算）；按字重的差异在下面的「各字重」里 -->
@@ -96,7 +122,6 @@
       <!-- 各字重：行是字重、列是有自己字体的类别。分档 / 连续决定有哪些行、粗细能不能单独设定 -->
       <div class="sec-head w-head"><h3 class="sec-title lab-i"><span data-t="wTitle"></span><button type="button" class="info" data-info="wmodeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria"><svg class="ic" aria-hidden="true"><use href="#i-info-circle"/></svg></button></h3><span class="w-acts"><button type="button" class="btn-icon wreset" id="wReset" hidden data-ta="title:wResetTip;aria-label:wResetTip"><svg class="ic" aria-hidden="true"><use href="#i-restore"/></svg></button><span class="seg" id="vWMode" role="radiogroup" data-ta="aria-label:exWMode"><button type="button" role="radio" data-m="steps" data-t="wmStepsShort" data-ta="title:wmStepsTip"></button><button type="button" role="radio" data-m="cont" data-t="wmContShort" data-ta="title:wmContTip"></button></span></span></div>
       <div class="w-sub" id="wSub"></div>
-      <div class="callout" id="vWNote" hidden></div>
       <div class="wm" id="wMatrix" role="group" data-ta="aria-label:wTitle"></div>
       <div class="pop menu" id="wRowMenu" popover role="menu"></div>
       <!-- 字体特性：选哪个字形（OpenType 特性）和行高度量，属于字体，但不分字重 -->
@@ -123,12 +148,16 @@
           <div class="sheet-bar">
             <div class="sample-tabs" id="sampleTabs" role="tablist" data-ta="aria-label:sample"></div>
             <div class="bar-ctrl">
-            <label class="nf nf-w" id="vWnLab" for="vWn" data-ta="title:tipWeight"><span class="nf-ic" data-scrub="w" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-bold"/></svg></span><input type="number" id="vWn" min="100" max="900" step="100" inputmode="numeric" data-ta="aria-label:previewWeight"></label>
+            <div class="nf nf-w" id="vWnLab" data-tip-unless-open="vWPop" data-ta="title:tipWeight"><button class="btn-icon sm nf-ic" type="button" id="vWBtn" data-scrub="w" aria-controls="vWPop" aria-expanded="false" data-tip-unless-open="vWPop" data-ta="aria-label:previewWeight;title:tipWeight"><svg class="ic" aria-hidden="true"><use href="#i-bold"/></svg></button><input type="number" id="vWn" min="100" max="900" step="100" inputmode="numeric" aria-controls="vWPop" aria-expanded="false" data-ta="aria-label:previewWeight"></div>
+            <div class="pop range-pop" id="vWPop" popover role="group" data-ta="aria-label:previewWeight">
+              <input type="range" id="vWSlider" min="0" max="8" step="1" data-ta="aria-label:previewWeight">
+              <div class="range-ticks" id="vWTicks"></div>
+            </div>
             <label class="nf" for="vSize" data-ta="title:tipSize"><span class="nf-ic" data-scrub="size" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-text-size"/></svg></span><input type="number" id="vSize" min="12" max="160" step="1" inputmode="numeric" data-ta="aria-label:fontSize"><span class="unit">px</span></label>
             <label class="nf" for="vLh" data-ta="title:tipLh"><span class="nf-ic" data-scrub="lh" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-line-height"/></svg></span><input type="number" id="vLh" min="1" max="2.6" step="0.05" inputmode="decimal" data-ta="aria-label:lineHeight"><output class="unit" id="vLhOut" for="vLh"></output></label>
             <span class="bar-sep" aria-hidden="true"></span>
-            <button class="btn-ghost view-btn" type="button" id="viewBtn" popovertarget="viewPop" aria-haspopup="true"><svg class="ic vb-ic" aria-hidden="true"><use href="#i-eye"/></svg><span data-t="viewMenu"></span></button>
-            <div class="pop menu view-pop" id="viewPop" popover role="group" data-ta="aria-label:viewMenu">
+            <button class="btn-ghost view-btn" type="button" id="viewBtn" popovertarget="viewPop" aria-haspopup="dialog" aria-expanded="false" aria-controls="viewPop"><span data-t="viewMenu"></span></button>
+            <div class="pop menu view-pop" id="viewPop" popover role="dialog" data-ta="aria-label:viewMenu">
               <button class="mm-item mm-check" type="button" id="vVertical" aria-pressed="false" data-t="vertical"></button>
               <button class="mm-item mm-check" type="button" id="vColor" aria-pressed="false" data-t="colorize"></button>
               <button class="mm-item mm-check" type="button" id="vRules" aria-pressed="false" data-t="vRules"></button>
@@ -137,6 +166,12 @@
               <!-- 对齐等：页面版式，只改校样，不写进导出的 CSS -->
               <div class="vt" id="viewTypo"></div>
               <p class="vt-note" data-t="viewTypoNote"></p>
+              <hr>
+              <fieldset class="settings-block" data-ta="aria-label:appearanceColors">
+                <div class="settings-row"><label for="proofBgHex" data-t="appearanceBackground"></label><span class="color-field"><input type="color" data-appearance-color="background" data-ta="aria-label:appearanceBackground"><input id="proofBgHex" type="text" class="mono" data-appearance-hex="background" maxlength="7" spellcheck="false" autocomplete="off" data-ta="title:appearanceHexTip"></span></div>
+                <div class="settings-row"><label for="proofInkHex" data-t="appearanceText"></label><span class="color-field"><input type="color" data-appearance-color="text" data-ta="aria-label:appearanceText"><input id="proofInkHex" type="text" class="mono" data-appearance-hex="text" maxlength="7" spellcheck="false" autocomplete="off" data-ta="title:appearanceHexTip"></span></div>
+                <div class="settings-actions"><button type="button" class="btn-text" id="appearanceReset" data-t="appearanceReset"></button></div>
+              </fieldset>
             </div>
             </div>
           </div>
@@ -243,6 +278,17 @@
       <div class="notes" data-ui="zh">
         <h3>匹配规则</h3>
         <p>同一个 font-family 下可以写多条 <code>@font-face</code>。浏览器为每个字符从最后一条往前找，选第一条 <code>unicode-range</code> 包含它、且字体里真有这个字形的规则。所以基础字体（汉字）写在最前，不限范围，负责兜底；半角西文、半角数字等类别写在后面接管各自的范围；例外字符写在最后，优先级最高。</p>
+        <p>类别行保留名称和必要的状态；各类别涵盖的字符可在「类别」说明及分组设置中查看；半角数字仅含 0–9，全角数字属于全角符号。预设卡片名称描述字体搭配，简繁与地区由标签区分。顶栏「分享」左侧的齿轮打开「设置」，校样的「显示」菜单控制预览。</p>
+        <p>字体名前的灰色闪烁点表示正在加载，红点表示加载失败；悬停或用键盘聚焦可查看说明与具体失败原因。状态对应当前预览实际使用的字体；连续模式读取整条可变字重轴的加载结果。加载完成后状态点隐藏，跟随其他类别的字体不另显示状态点。</p>
+        <h3>预设与保存</h3>
+        <p>列表首张「当前配置」卡片显示正在编辑的搭配，不受筛选影响。「存为新预设」会按当前主要字体组合填入可修改的名称，重名时自动加序号，可以直接保存副本。没有预设名称时，卡片也显示同一建议名称；已有名称保留。编辑自己的预设时，「保存修改」会在有修改时启用，再次点击确认后更新原预设。另存默认新建副本；输入已有名称时会提示，并需再次确认覆盖。</p>
+        <p>预设只保存在当前浏览器，不包含字体文件。筛选只作用于后面的预设列表；没有匹配项时仍可保存当前配置。切换预设前会提醒保存尚未保存的修改。保存失败时保留编辑内容和已有预设。</p>
+        <h3>外观与校样颜色</h3>
+        <p>顶栏齿轮里的「外观」可选浅色、深色或跟随系统。跟随系统时会响应系统配色的变化。校样工具栏的「显示」菜单可用色板或十六进制色码自定义背景色与文字颜色，即时应用到校样和度量图；编辑区与工具栏继续使用主题配色。离开颜色框时，无效输入会恢复为上一次有效颜色。「恢复默认颜色」会清除自定义颜色，恢复当前主题的默认颜色。颜色可独立设置，切换主题时保留自定义值。</p>
+        <p>这些是当前浏览器的外观偏好，刷新、换预设、撤销或导入分享后会保留，不随预设保存或分享，也不影响导出的 CSS、应用代码和字体文件。</p>
+        <h3>分享配置</h3>
+        <p>顶栏「导出」左侧的描边「分享」按钮会复制当前配置的链接，无需先存为预设。链接保留点击分享时的字体、大小、字重、基线、可变轴、字符分组、例外字符、排版及导出设置；后续编辑不会改变已经发出的链接。</p>
+        <p>链接不包含字体文件、自定义校样正文、历史记录或其他已存预设。接收方会看到内置校样，可以继续编辑或另存预设，也可撤销导入恢复原配置。Google Fonts 会重新加载；本机字体需要接收方安装，上传字体需要重新提供文件，缺失时在字体页提示。配置直接保存在链接片段中，无需服务器存储；链接过长时会提示，剪贴板不可用时可手动复制。</p>
         <h3>大小：size-adjust</h3>
         <p><code>size-adjust</code> 按百分比缩放一个字体的字形和度量。Chrome/Edge 92+、Firefox 92+、Safari 17+ 支持。它也会放大这个字体的上伸、下伸度量，<code>line-height: normal</code> 时行距可能不均匀，建议写固定的 <code>line-height</code>。</p>
         <p>「基础设定」里的大小和基线，以及「各字重」里的大小，都可直接输入数值，或用输入框右侧的上下箭头每次增减 0.5。键盘按住 Shift 再按 ↑↓ 时，每次增减 5。清空输入框可恢复继承值。箭头在悬停或聚焦时出现，触屏上常显；显示与隐藏不会改变数字的对齐位置。</p>
@@ -255,12 +301,14 @@
         <p><b>字重与基线。</b>分档模式在最终大小下比较同类字符的笔画粗细，选择更接近的可用字重，并避免同一字体的粗体比正文更细。西文使用 H、h 的主干，其他类别使用多个对应字符的横纵截面估算；它们都只是视觉匹配的起点。支持 Google Fonts 和带字重轴的本机／上传字体；连续模式、单一字重或量不到可靠笔画时保留粗细。按选中的导出字重测量，并始终测量 400：400 写入基础设定，其他档的大小与基础相差至少 0.5 个百分点时单独保存。基线只保存基础值，小于 2% em 的偏移设为 0；网页偏移需要 JS，字体文件直接写入位置。旧版浏览器仍可自动匹配字重；若无法测量所选的其他可变轴，该类别保留原设置并提示。</p>
         <p><b>局部重置与限制。</b>「各字重」类别标题旁的重置按钮恢复该类别的基础大小 100%、基线 0 和最接近常规 400 的可用字重，并清除逐档大小、粗细与独立字体覆盖。保留基础字体选择、其他可变轴、其他类别、共享字体名映射、导出勾选及预览字重，可撤销。自动调整不会创造缺失字重，也不会改变导出勾选。字形风格、衬线反差及设计比例仍需在正文中判断，必要时手动微调或更换字体。</p>
         <h3>本机字体：local()</h3>
-        <p><code>local()</code> 按字体的完整名或 PostScript 名匹配，而不是字族名。例如写 <code>Hiragino Sans GB W3</code> 或 <code>HiraginoSansGB-W3</code>，而不是 <code>Hiragino Sans GB</code>。字体卡片上的绿点表示当前浏览器找到了它。Safari 只允许网页使用系统预装字体，自己安装的字体在 Safari 里不生效。访客电脑上没有这个字体时，会回退到前面一条规则。</p>
+        <p><code>local()</code> 按字体的完整名或 PostScript 名匹配，而不是字族名。例如写 <code>Hiragino Sans GB W3</code> 或 <code>HiraginoSansGB-W3</code>，而不是 <code>Hiragino Sans GB</code>。Safari 只允许网页使用系统预装字体，自己安装的字体在 Safari 里不生效。访客电脑上没有这个字体时，会回退到前面一条规则。</p>
         <h3>Google Fonts</h3>
         <p>中日韩字体在 Google Fonts 上被切成上百个分片，每片有自己的 <code>unicode-range</code>。导出时工具会把分片范围和类别范围求交集，只保留需要的分片，所以西文类别通常只剩一两条。url 指向 fonts.gstatic.com，正式项目建议下载后自托管。</p>
         <h3>导出多个字重</h3>
         <p>字体名下用「连续字重」「分档字重」说明可用的粗细：连续字重可在范围内输入任意值，例如「连续字重 200–900」；分档字重只有固定档位，例如「分档字重 400、700」，档位较多时显示最轻到最重的范围，悬停可查看完整档位。这些标注说明字体本身的能力；导出模式在「各字重」里另选。范围无法准确读取时不推测，已知存在可变轴但字重范围不明时标为「字重范围未知」。跟随其他类别的字体信息看来源行。</p>
-        <p>在「各字重」里勾选要导出的字重（导出对话框里也能选），每个字重各生成一组规则。点击任一行的空白处即可预览该字重，不会改变导出勾选。工具里设定的字体对应 400；其他字重里，Google Fonts 的字体按同样的差值换算（例如 500 的字体在 700 时取 800），没有这个字重就取最接近的；本机字体会按名称推测粗体（例如 W3 → W6、Regular → Bold），并在这台电脑上检测。各字体的粗细分布并不一致：「各字重」一览表里可以按字重单独调整各类别的大小和粗细。可变字体的粗细可直接输入任意数值，右侧箭头或键盘 ↑↓ 每次增减 10，Shift + ↑↓ 每次增减 100；静态 Google Fonts 字体按 100 档调整，缺档时跳到下一个可用字重。本机字体名、字体文件，或者只给这个字重换的字体，点那一格，或者用这一行末尾的「⋯」菜单里的「换字体…」，在「选择字体」里指定。Google Fonts 的静态字体只列出它实际有的字重；灰色是推算的值，蓝色是单独设定的，选回灰色那一档就取消单独设定。</p>
+        <p>连续模式下，预览或网页设为 <code>font-weight: 450</code>，可变字体就显示 450，不必只选 400 或 500；超出字体支持范围时使用最近的端点，静态字体使用最接近的一档。可变字体的单独粗细调整暂不生效，切回分档即可恢复。</p>
+        <p>连续模式可直接输入导出范围。表格只有大小列时，使用「汉字大小」「半角西文大小」等单行表头；有静态字体可调粗细时，保留类别与粗细、大小两级表头。</p>
+        <p>分档模式下，在「各字重」里勾选要导出的字重（导出对话框里也能选），每个字重各生成一组规则。点击已勾选行的空白处即可预览该字重，不会改变导出勾选。点击校样工具栏的 B 图标或字重框可展开滑杆，也可直接输入数字或拖动 B 图标；数字会实时同步。分档模式只预览已勾选的字重，滑杆显示对应节点；连续模式在导出范围内无级调整，范围内的 400（Regular）和 700（Bold）刻度可点击跳转。范围端点与常用刻度统一显示在滑杆下方，过近的端点文字会省略。取消当前预览的字重时，自动切到最近的已勾选字重；输入范围外或未勾选的值，确认时也会收进可用范围。工具里设定的字体对应 400；其他字重里，Google Fonts 的字体按同样的差值换算（例如 500 的字体在 700 时取 800），没有这个字重就取最接近的；本机字体会按名称推测粗体（例如 W3 → W6、Regular → Bold），并在这台电脑上检测。各字体的粗细分布并不一致：「各字重」一览表里可以按字重单独调整各类别的大小和粗细。可变字体的粗细可直接输入任意数值，右侧箭头或键盘 ↑↓ 每次增减 10，Shift + ↑↓ 每次增减 100；静态 Google Fonts 字体按 100 档调整，缺档时跳到下一个可用字重。本机字体名、字体文件，或者只给这个字重换的字体，点那一格，或者用这一行末尾的「⋯」菜单里的「换字体…」，在「选择字体」里指定。Google Fonts 的静态字体只列出它实际有的字重；灰色是推算的值，蓝色是单独设定的，选回灰色那一档就取消单独设定。</p>
         <p>各字重的规则没法合并。CSS 变量（<code>var()</code>）在 <code>@font-face</code> 里无效，浏览器会直接丢掉这条描述。同一个 font-family 里，如果有的规则写 <code>font-weight: 700</code>、有的写 <code>400 700</code>，实测 Chrome 会把它们分成两组，只用其中一组，合成就失效了。</p>
         <p>真正占体积的是汉字字体在 Google Fonts 上的上百个分片。「基础字体：引用 Google Fonts」会用 <code>@import</code> 直接引用 Google 的 CSS，把这个字体排在 font-family 的第二位，自己只写需要覆盖它的类别，导出的 CSS 通常只有几 KB。服务器一般会用 gzip 压缩 CSS，导出区显示的 gzip 体积更接近实际传输量。字体文件只按页面用到的字符下载，与 CSS 长度无关。</p>
         <p>分档模式下，在字体选择器里提交修改或改变跟随关系时，会检查各行实际使用的字体和粗细，自动取消明确超出已知字重范围的导出勾选。网页和字体文件的选择分别检查；有效的单独映射、范围内的静态缺档，以及范围未知的字体都会保留。取消勾选不删除该行的调整，可重新勾选；换字体和自动取消可一起撤销。若某组已选字重全部越界，则保留原勾选并提示手动确认。换成范围更大的字体不会自动勾回字重；连续模式的选择与范围不自动调整。</p>
@@ -304,6 +352,17 @@
       <div class="notes" data-ui="tw" lang="zh-Hant-TW" hidden>
         <h3>比對規則</h3>
         <p>同一個 font-family 下可以寫多條 <code>@font-face</code>。瀏覽器為每個字元從最後一條往前找，選第一條 <code>unicode-range</code> 包含它、且字型裡真有這個字形的規則。所以基礎字型（漢字）寫在最前，不限範圍，負責其餘所有字元；半形西文、半形數字等類別寫在後面接管各自的範圍；例外字元寫在最後，優先順序最高。</p>
+        <p>類別列保留名稱與必要狀態；各類別涵蓋的字元可在「類別」說明與分組設定中查看；半形數字僅含 0–9，全形數字屬於全形符號。預設卡片名稱描述字型搭配，簡繁與地區由標籤區分。頂端列「分享」左側的齒輪開啟「設定」，校樣的「顯示」選單控制預覽。</p>
+        <p>字型名前的灰色閃爍點表示正在載入，紅點表示載入失敗；將滑鼠移到狀態點上或以鍵盤聚焦，可查看說明與具體失敗原因。狀態對應目前校樣實際使用的字型；連續模式讀取整條可變字重軸的載入結果。載入完成後隱藏狀態點，跟隨其他類別的字型不另外顯示狀態點。</p>
+        <h3>預設集與儲存</h3>
+        <p>清單第一張「目前設定」卡片顯示正在編輯的搭配，不受篩選影響。「另存預設集」會依目前主要字型組合填入可修改的名稱，重名時自動加上編號，可直接儲存副本。尚未命名時，卡片也顯示相同的建議名稱；已有名稱則保留。編輯自己的預設集時，「儲存變更」會在有變更時啟用，再次點選確認後更新原預設集。另存時會建立副本；輸入已有名稱時會提示，並須再次確認覆寫。</p>
+        <p>預設集只儲存在目前瀏覽器，不包含字型檔案。篩選只套用至後面的預設集清單；沒有符合項目時仍可儲存目前設定。切換預設集前會提醒儲存尚未儲存的變更。儲存失敗時保留編輯內容與已有預設集。</p>
+        <h3>外觀與校樣顏色</h3>
+        <p>頂欄齒輪裡的「外觀」可選擇淺色、深色或跟隨系統，並在跟隨系統時隨系統配色更新。校樣工具列的「顯示」選單可用色盤或十六進位色碼自訂背景色與文字顏色，即時套用到校樣與度量圖；編輯區與工具列維持主題配色。離開色碼欄位時，無效輸入會恢復成上一次有效顏色。「恢復預設顏色」會清除自訂顏色，恢復目前主題的預設顏色。顏色可分別設定，切換主題時會保留自訂值。</p>
+        <p>這些是目前瀏覽器的外觀偏好，重新整理、切換預設集、復原或匯入分享後都會保留，不隨預設集儲存或分享，也不影響匯出的 CSS、應用程式碼與字型檔案。</p>
+        <h3>分享設定</h3>
+        <p>頂端列「匯出」左側的外框「分享」按鈕會複製目前設定的連結，無須先存為預設。連結保留分享當下的字型、大小、字重、基線、可變軸、字元分組、例外字元、排版與匯出設定；後續編輯不會改變已傳送的連結。</p>
+        <p>連結不包含字型檔案、自訂校樣內文、歷程紀錄或其他已存預設。接收方會看到內建校樣，可以繼續編輯或另存預設，也可復原導入以恢復原設定。Google Fonts 會重新載入；本機字型需由接收方安裝，上傳字型需重新提供檔案，缺少時會在字型頁提示。設定直接儲存在連結片段中，無須伺服器儲存；連結過長時會提示，剪貼簿無法使用時可手動複製。</p>
         <h3>大小：size-adjust</h3>
         <p><code>size-adjust</code> 按百分比縮放一個字型的字形和度量。Chrome/Edge 92+、Firefox 92+、Safari 17+ 支援。它也會放大這個字型的上伸、下伸度量，<code>line-height: normal</code> 時行距可能不均勻，建議寫固定的 <code>line-height</code>。</p>
         <p>「基礎設定」裡的大小與基線，以及「各字重」裡的大小，都可直接輸入數值，或使用輸入框右側的上下箭頭每次增減 0.5。鍵盤按住 Shift 再按 ↑↓ 時，每次增減 5。清空輸入框可恢復繼承值。箭頭在滑鼠停留或聚焦時出現，觸控螢幕上持續顯示；顯示與隱藏不會改變數字的對齊位置。</p>
@@ -316,12 +375,14 @@
         <p><b>字重與基線。</b>分段模式在調整後的大小比較同類字元的筆畫粗細，選擇較接近的可用字重，並避免同一字型的粗體比正文更細。西文使用 H、h 的主幹，其他類別使用多個對應字元的橫縱截面估算，僅作為視覺調整的起點。支援 Google Fonts 與有字重軸的本機／上傳字型；連續模式、單一字重或無法測量可靠筆畫時保留粗細。依勾選的匯出字重測量，並一律測量 400：400 寫入基礎設定，其他字重的大小與基礎相差至少 0.5 個百分點時個別儲存。基線只儲存基礎值，小於 2% em 的偏移設為 0；網頁偏移需要 JS，字型檔案直接寫入位置。舊版瀏覽器仍可自動比對字重；若無法測量所選的其他可變軸，該類別保留原設定並提示。</p>
         <p><b>個別重設與限制。</b>「各字重」類別標題旁的重設按鈕會恢復該類別的基礎大小 100%、基線 0 與最接近標準 400 的可用字重，並清除各字重的大小、粗細與獨立字型設定。保留基礎字型選擇、其他可變軸、其他類別、共用字型名稱對應、匯出勾選與預覽字重，並可復原。自動調整無法建立缺少的字重，也不會改變匯出勾選。字形風格、襯線對比與設計比例仍需在正文中判斷，必要時手動微調或更換字型。</p>
         <h3>本機字型：local()</h3>
-        <p><code>local()</code> 按字型的完整名或 PostScript 名比對，而不是字族名。例如寫 <code>Hiragino Sans GB W3</code> 或 <code>HiraginoSansGB-W3</code>，而不是 <code>Hiragino Sans GB</code>。字型卡片上的綠點表示目前瀏覽器找到了它。Safari 只允許網頁使用系統預裝字型，自己安裝的字型在 Safari 裡不生效。訪客電腦上沒有這個字型時，會改用前面一條規則。</p>
+        <p><code>local()</code> 按字型的完整名或 PostScript 名比對，而不是字族名。例如寫 <code>Hiragino Sans GB W3</code> 或 <code>HiraginoSansGB-W3</code>，而不是 <code>Hiragino Sans GB</code>。Safari 只允許網頁使用系統預裝字型，自己安裝的字型在 Safari 裡不生效。訪客電腦上沒有這個字型時，會改用前面一條規則。</p>
         <h3>Google Fonts</h3>
         <p>中日韓字型在 Google Fonts 上被切成上百個分片，每片有自己的 <code>unicode-range</code>。匯出時工具會把分片範圍和類別範圍求交集，只保留需要的分片，所以西文類別通常只剩一兩條。url 指向 fonts.gstatic.com，正式專案建議下載後自行託管。</p>
         <h3>匯出多個字重</h3>
         <p>字型名下使用「連續字重」「分段字重」說明可用的粗細：連續字重可在範圍內輸入任意值，例如「連續字重 200–900」；分段字重只有固定檔位，例如「分段字重 400、700」，檔位較多時顯示最細到最粗的範圍，滑鼠移到標示上可查看完整檔位。這些標示說明字型本身的能力；匯出模式在「各字重」裡另外選擇。無法確切讀取範圍時不推測，已知具有可變軸但字重範圍不明時標為「字重範圍未知」。跟隨其他類別時，請查看來源列的字型資訊。</p>
-        <p>在「各字重」裡勾選要匯出的字重（匯出對話框裡也能選），每個字重各生成一組規則。點選任一列的空白處即可預覽該字重，不會改變匯出勾選。工具裡設定的字型對應 400；其他字重裡，Google Fonts 的字型按同樣的差值換算（例如 500 的字型在 700 時取 800），沒有這個字重就取最接近的；本機字型會按名稱推測粗體（例如 W3 → W6、Regular → Bold），並在這台電腦上檢測。各字型的粗細分布並不一致：「各字重」表格裡可以按字重個別調整各類別的大小與粗細。可變字型的粗細可直接輸入任意數值，右側箭頭或鍵盤 ↑↓ 每次增減 10，Shift + ↑↓ 每次增減 100；靜態 Google Fonts 字型按 100 檔調整，缺檔時跳到下一個可用字重。本機字型名、字型檔案，或者只給這個字重換的字型，點那一格，或者用這一列末尾的「⋯」選單裡的「換字型…」，在「選擇字型」裡指定。Google Fonts 的靜態字型只列出它實際有的字重；灰色是推算的值，藍色是單獨設定的，選回灰色那一檔就取消單獨設定。</p>
+        <p>連續模式下，校樣或網頁設為 <code>font-weight: 450</code>，可變字型就顯示 450，不必只選 400 或 500；超出字型支援範圍時使用最接近的端點，靜態字型使用最接近的一段。可變字型的個別粗細調整暫不生效，切回分段即可恢復。</p>
+        <p>連續模式可直接輸入匯出範圍。表格只有大小欄時，使用「漢字大小」「半形西文大小」等單列表頭；有靜態字型可調整粗細時，保留類別與粗細、大小兩層表頭。</p>
+        <p>分段模式下，在「各字重」裡勾選要匯出的字重（匯出對話框裡也能選），每個字重各生成一組規則。點選已勾選列的空白處即可預覽該字重，不會改變匯出勾選。點選校樣工具列的 B 圖示或字重欄位可展開滑桿，也可直接輸入數字或拖曳 B 圖示；數字會即時同步。分段模式只預覽已勾選的字重，滑桿顯示對應節點；連續模式在匯出範圍內無段調整，範圍內的 400（Regular）與 700（Bold）刻度可點選跳轉。範圍端點與常用刻度統一顯示在滑桿下方，過近的端點文字會省略。取消目前預覽的字重時，自動切換至最接近的已勾選字重；輸入範圍外或未勾選的值，確認時也會調整至可用範圍。工具裡設定的字型對應 400；其他字重裡，Google Fonts 的字型按同樣的差值換算（例如 500 的字型在 700 時取 800），沒有這個字重就取最接近的；本機字型會按名稱推測粗體（例如 W3 → W6、Regular → Bold），並在這台電腦上檢測。各字型的粗細分布並不一致：「各字重」表格裡可以按字重個別調整各類別的大小與粗細。可變字型的粗細可直接輸入任意數值，右側箭頭或鍵盤 ↑↓ 每次增減 10，Shift + ↑↓ 每次增減 100；靜態 Google Fonts 字型按 100 檔調整，缺檔時跳到下一個可用字重。本機字型名、字型檔案，或者只給這個字重換的字型，點那一格，或者用這一列末尾的「⋯」選單裡的「換字型…」，在「選擇字型」裡指定。Google Fonts 的靜態字型只列出它實際有的字重；灰色是推算的值，藍色是單獨設定的，選回灰色那一檔就取消單獨設定。</p>
         <p>各字重的規則沒法合併。CSS 變數（<code>var()</code>）在 <code>@font-face</code> 裡無效，瀏覽器會直接丟掉這條描述。同一個 font-family 裡，如果有的規則寫 <code>font-weight: 700</code>、有的寫 <code>400 700</code>，實測 Chrome 會把它們分成兩組，只用其中一組，合成就失效了。</p>
         <p>真正佔體積的是漢字字型在 Google Fonts 上的上百個分片。「基礎字型：引用 Google Fonts」會用 <code>@import</code> 直接引用 Google 的 CSS，把這個字型排在 font-family 的第二位，自己只寫需要覆蓋它的類別，匯出的 CSS 通常只有幾 KB。伺服器一般會用 gzip 壓縮 CSS，匯出區顯示的 gzip 體積更接近實際傳輸量。字型檔案只按頁面用到的字元下載，與 CSS 長度無關。</p>
         <p>分檔模式下，在字型選擇器裡套用修改或改變跟隨關係時，會檢查各列實際使用的字型與粗細，自動取消明確超出已知字重範圍的匯出勾選。網頁與字型檔案的選擇分別檢查；有效的個別對應、範圍內的靜態字重缺檔，以及範圍未知的字型都會保留。取消勾選不會刪除該列的調整，可重新勾選；更換字型與自動取消可一起復原。若某組已選字重全部超出範圍，則保留原勾選並提示手動確認。換成範圍更大的字型不會自動勾回字重；連續模式的選擇與範圍不自動調整。</p>
@@ -365,6 +426,17 @@
       <div class="notes" data-ui="ja" lang="ja" hidden>
         <h3>照合の規則</h3>
         <p>同じ font-family 名で複数の <code>@font-face</code> を書けます。ブラウザは文字ごとに最後の規則からさかのぼり、<code>unicode-range</code> にその文字を含み、実際にグリフを持つ最初の規則を使います。そのため、ベースフォント（漢字）を最初に範囲指定なしで書いてすべてを受け持たせ、半角欧文や半角数字などのクラスを後に書いて担当範囲を引き受けさせます。例外文字は最後に書くので、優先度が最も高くなります。</p>
+        <p>文字クラスの行には名前と必要な状態を表示します。文字範囲の詳細は「クラス」の説明とグループ設定で確認できます。半角数字は 0–9 のみで、全角数字は全角記号に含まれます。プリセット名はフォントの組み合わせを示し、簡体字・繁体字や地域はラベルで区別します。上部の「共有」の左にある歯車から「設定」を開き、校正刷りの「表示」メニューでプレビューを調整します。</p>
+        <p>フォント名の前で灰色の点が点滅している間は読み込み中、赤い点は読み込み失敗を表します。点にポインターを重ねるかキーボードでフォーカスすると、状態や失敗の理由を確認できます。状態はプレビューで実際に使うフォントを示し、連続モードでは可変ウェイトの範囲全体を読み込んだ結果を使います。読み込みが完了した場合や、ほかのクラスと同じフォントを使う場合は点を表示しません。</p>
+        <h3>プリセットと保存</h3>
+        <p>一覧の先頭にある「現在の設定」カードは編集中の組み合わせを表示し、フィルターの対象外です。「新規保存」では現在の主なフォントを組み合わせた名前が自動入力され、そのままコピーを保存できます。名前は変更でき、重複する場合は番号を付けます。名前のない設定ではカードにも同じ候補名を表示し、既存の名前は維持します。自分のプリセットを編集中なら、変更がある場合に「変更を保存」が有効になります。もう一度確認して元のプリセットを更新できます。既存の名前を入力した場合は通知し、再確認後に上書きします。</p>
+        <p>プリセットはこのブラウザだけに保存され、フォントファイルは含みません。フィルターは後続のプリセットに適用され、一致するものがなくても現在の設定を保存できます。変更が未保存の場合は切り替える前に保存を確認します。保存に失敗しても編集中の内容と既存のプリセットは保持されます。</p>
+        <h3>外観とプレビューの色</h3>
+        <p>上部の歯車にある「外観」でライト・ダーク・システム設定を選べます。システム設定では OS の配色変更に追従します。校正刷りのツールバーの「表示」ではカラーピッカーか16進数カラーで背景色と文字色を指定でき、校正刷りとメトリクス図にすぐ反映されます。編集画面とツールバーはテーマの配色を使います。不正な色の入力は、欄を離れると最後の有効な色に戻ります。「標準の色に戻す」はカスタム色を解除し、現在のテーマの標準色に戻します。色は個別に設定でき、テーマを変えてもカスタム値を維持します。</p>
+        <p>このブラウザの表示設定として保存され、再読み込み・プリセット切り替え・取り消し・共有設定の読み込み後も維持されます。プリセットや共有リンクには含まれず、CSS・アプリコード・フォントファイルの書き出しには影響しません。</p>
+        <h3>設定の共有</h3>
+        <p>上部の「書き出し」の左にある枠線付きの「共有」ボタンで、現在の設定のリンクをコピーします。先にプリセットを保存する必要はありません。リンクには共有時点のフォント、サイズ、ウェイト、ベースライン、可変軸、文字の振り分け、例外文字、組版と書き出しの設定が入り、その後の編集は送信済みのリンクに影響しません。</p>
+        <p>フォントファイル、独自の校正テキスト、履歴、ほかの保存済みプリセットは含まれません。受信側では標準の校正テキストで表示され、編集やプリセット保存ができ、読み込みを取り消して元の設定に戻すこともできます。Google Fonts は再読み込みされます。ローカルフォントは受信側でインストールし、アップロードフォントはファイルを別途用意してください。不足はフォント画面に表示されます。設定はリンクのフラグメントに入り、サーバーへの保存は不要です。長すぎる場合は通知し、クリップボードが使えない場合は手動でコピーできます。</p>
         <h3>サイズ：size-adjust</h3>
         <p><code>size-adjust</code> はフォントのグリフとメトリクスをパーセントで拡大縮小します。Chrome/Edge 92+、Firefox 92+、Safari 17+ が対応しています。アセンダーとディセンダーも拡大されるため、<code>line-height: normal</code> では行送りが不揃いになることがあります。<code>line-height</code> は固定値で指定するのがおすすめです。</p>
         <p>「基本設定」のサイズとベースライン、および「ウェイト別」のサイズは、数値を直接入力するか、入力欄右側の上下の矢印で 0.5 ずつ調整できます。Shift を押しながらキーボードの ↑↓ を押すと 5 ずつ変わります。入力を消すと継承値に戻ります。矢印はホバー時やフォーカス時に表示され、タッチ画面では常に表示されます。表示が切り替わっても数値の位置は変わりません。</p>
@@ -377,12 +449,14 @@
         <p><b>ウェイトとベースライン。</b>段階モードでは調整後のサイズで対応する文字の線の太さを比較し、同じフォントの太字が本文より細くならないよう、より近いウェイトを選びます。欧文は H・h の主画、ほかは複数の文字の縦横断面から推定し、視覚調整の出発点とします。Google Fonts とウェイト軸を持つローカル・アップロードフォントに対応します。連続モード、単一ウェイト、信頼できる線幅を測れない場合は太さを維持します。選択した書き出しウェイトと必ず 400 を測り、400 は基本設定、ほかは基本と 0.5 ポイント以上違うサイズだけ個別に保存します。ベースラインは基本値のみを保存し、2% em 未満は 0 にします。Web のシフトには JS が必要で、フォントファイルには位置を直接反映します。古いブラウザーでもウェイトを自動調整できます。指定したほかの可変軸を測定できない場合、そのクラスの設定を維持して通知します。</p>
         <p><b>個別リセットと制限。</b>「ウェイト別」のクラス見出し横のボタンは、そのクラスの基本サイズを 100%、ベースラインを 0、調整可能なウェイトを通常の 400 に最も近い値に戻し、ウェイト別の個別設定を消去します。ベースフォントの選択、ほかの可変軸と文字クラス、共有のフォント名対応、書き出し選択、プレビューのウェイトは維持し、取り消しもできます。自動調整は不足するウェイトを作らず、書き出し選択も変えません。字形、セリフのコントラスト、設計上の比率は本文で確認し、必要に応じて微調整するかフォントを変えてください。</p>
         <h3>ローカルフォント：local()</h3>
-        <p><code>local()</code> はファミリー名ではなく、フルネームか PostScript 名で照合します。たとえば <code>Hiragino Sans GB</code> ではなく、<code>Hiragino Sans GB W3</code> または <code>HiraginoSansGB-W3</code> と書きます。フォントカードの緑の点は、現在のブラウザがそのフォントを見つけたことを示します。Safari はシステムにプリインストールされたフォントしか Web で使わせないため、自分でインストールしたフォントは Safari では効きません。閲覧者の環境にフォントがない場合は、ひとつ前の規則にフォールバックします。</p>
+        <p><code>local()</code> はファミリー名ではなく、フルネームか PostScript 名で照合します。たとえば <code>Hiragino Sans GB</code> ではなく、<code>Hiragino Sans GB W3</code> または <code>HiraginoSansGB-W3</code> と書きます。Safari はシステムにプリインストールされたフォントしか Web で使わせないため、自分でインストールしたフォントは Safari では効きません。閲覧者の環境にフォントがない場合は、ひとつ前の規則にフォールバックします。</p>
         <h3>Google Fonts</h3>
         <p>CJK フォントは Google Fonts で 100 以上のサブセットに分割され、それぞれに <code>unicode-range</code> があります。書き出し時にサブセットの範囲とクラスの範囲の共通部分を取り、必要なサブセットだけを残すので、欧文クラスは通常 1〜2 件になります。url は fonts.gstatic.com を指しています。本番ではダウンロードしてセルフホストすることをおすすめします。</p>
         <h3>複数のウェイトを書き出す</h3>
         <p>フォント名の下に「連続ウェイト」「段階ウェイト」と表示します。連続ウェイトは「連続ウェイト 200–900」のように、その範囲で任意の太さを入力できます。段階ウェイトは「段階ウェイト 400、700」のように決まった太さを持ち、数が多い場合は最小〜最大の範囲を表示します。マウスを重ねると全ウェイトを確認できます。これはフォント自体の情報で、書き出しモードは「ウェイト別」で選びます。正確な範囲は推測せず、可変軸があってもウェイト範囲が不明なら「ウェイト範囲不明」と表示します。ほかのクラスに追従する場合は、追従元の行の情報を参照してください。</p>
-        <p>「ウェイト別」で書き出すウェイトにチェックを入れると（書き出しダイアログでも選べます）、ウェイトごとに規則を 1 組ずつ生成します。各行の空白部分をクリックすると、そのウェイトをプレビューできます。書き出しのチェックは変わりません。ツールで設定したフォントは 400 に対応します。ほかのウェイトでは、Google Fonts のフォントは同じ差分で換算し（500 のフォントなら 700 のとき 800）、そのウェイトがなければ最も近いものを使います。ローカルフォントは名前から太字の名前を推測し（W3 → W6、Regular → Bold など）、このデバイスで確認します。フォントごとにウェイトの分布は異なるので、「ウェイト別」の表でウェイトごとに各クラスのサイズと太さを個別に調整できます。可変フォントの太さは任意の数値を直接入力でき、右側の矢印やキーボードの ↑↓ で 10 ずつ、Shift + ↑↓ で 100 ずつ調整できます。静的な Google Fonts は 100 刻みで調整し、存在しないウェイトは飛ばします。ローカルフォント名やファイル、そのウェイトだけ別のフォントにする場合は、そのセルか、行の末尾にある「⋯」メニューの「フォントを変更…」から「フォントを選択」で指定します。Google Fonts の静的フォントは実際にあるウェイトだけを表示します。グレーは自動で決まった値、青は個別に設定した値で、グレーの値を選び直すと個別の設定が解除されます。</p>
+        <p>連続モードでは、プレビューや Web ページで <code>font-weight: 450</code> を指定すると、可変フォントも 450 で表示され、400 と 500 の間も使えます。フォントの対応範囲外では最も近い端点、静的フォントでは最も近い段階の太さを使います。可変フォントの太さの個別設定は一時的に無効になり、段階モードに戻すと復元されます。</p>
+        <p>連続モードでは書き出す範囲を直接入力できます。サイズ列だけの場合は「漢字のサイズ」「半角欧文のサイズ」などの見出しを一段で表示します。静的フォントの太さを調整できる場合は、クラス名と太さ・サイズの二段の見出しを使います。</p>
+        <p>段階モードでは、「ウェイト別」で書き出すウェイトにチェックを入れると（書き出しダイアログでも選べます）、ウェイトごとに規則を 1 組ずつ生成します。選択済みの行の空白部分をクリックすると、そのウェイトをプレビューできます。書き出しのチェックは変わりません。プレビューの B アイコンかウェイト欄をクリックするとスライダーが開きます。直接入力や B アイコンのドラッグでも調整でき、数値はすぐに反映されます。段階モードでは選択済みのウェイトだけを使い、スライダーに目盛りを表示します。連続モードでは書き出し範囲内で無段階に調整できます。範囲内にある 400（Regular）と 700（Bold）の目盛りをクリックすると、そのウェイトに切り替わります。端点と目盛りのラベルはスライダーの下に一列で表示し、近すぎる端点のラベルは省略します。現在のウェイトの選択を外すと、最も近い選択済みウェイトに切り替わります。範囲外や未選択の値を入力した場合も、確定時に使える値へ調整します。ツールで設定したフォントは 400 に対応します。ほかのウェイトでは、Google Fonts のフォントは同じ差分で換算し（500 のフォントなら 700 のとき 800）、そのウェイトがなければ最も近いものを使います。ローカルフォントは名前から太字の名前を推測し（W3 → W6、Regular → Bold など）、このデバイスで確認します。フォントごとにウェイトの分布は異なるので、「ウェイト別」の表でウェイトごとに各クラスのサイズと太さを個別に調整できます。可変フォントの太さは任意の数値を直接入力でき、右側の矢印やキーボードの ↑↓ で 10 ずつ、Shift + ↑↓ で 100 ずつ調整できます。静的な Google Fonts は 100 刻みで調整し、存在しないウェイトは飛ばします。ローカルフォント名やファイル、そのウェイトだけ別のフォントにする場合は、そのセルか、行の末尾にある「⋯」メニューの「フォントを変更…」から「フォントを選択」で指定します。Google Fonts の静的フォントは実際にあるウェイトだけを表示します。グレーは自動で決まった値、青は個別に設定した値で、グレーの値を選び直すと個別の設定が解除されます。</p>
         <p>ウェイトごとの規則はまとめられません。CSS 変数（<code>var()</code>）は <code>@font-face</code> の中では無効で、ブラウザはその記述を捨てます。同じ font-family の中に <code>font-weight: 700</code> の規則と <code>400 700</code> の規則が混ざると、Chrome は実測で別のグループとして扱い、片方しか使わないため、合成が効かなくなります。</p>
         <p>容量の大半は、Google Fonts で 100 以上に分割された漢字フォントの規則です。「ベースフォント：Google Fonts を参照」では Google の CSS を <code>@import</code> で直接参照し、そのフォントを font-family の 2 番目に置いて、上書きするクラスだけを書き出します。書き出す CSS は通常数 KB です。サーバーは CSS を gzip で圧縮するのが一般的なので、書き出し欄の gzip 後のサイズが実際の転送量に近い値です。フォントファイルはページで使う文字の分だけダウンロードされ、CSS の長さとは関係ありません。</p>
         <p>段階モードでフォント選択画面の変更を適用するか、追従先を変えると、各行で実際に使うフォントと太さを確認し、既知のウェイト範囲から明らかに外れる書き出しのチェックを外します。Web とフォントファイルの選択は別々に確認します。有効な個別の対応、静的フォントの範囲内の欠番、範囲が不明なフォントは維持します。チェックを外しても行の調整は削除せず、再選択できます。フォントの変更と自動解除はまとめて取り消せます。選択中のウェイトがすべて範囲外なら選択を維持し、手動確認を促します。範囲の広いフォントに変えても自動でチェックは戻しません。連続モードの選択と範囲は自動調整しません。</p>
@@ -426,6 +500,17 @@
       <div class="notes" data-ui="en" lang="en" hidden>
         <h3>Matching rules</h3>
         <p>One font-family can have several <code>@font-face</code> rules. For each character, the browser searches from the last rule backward and uses the first rule whose <code>unicode-range</code> includes it and whose font actually has the glyph. So the base font (Han) comes first, with no range, and covers everything else; classes such as Western and Digits come after it and take over their own ranges; exception characters come last and have the highest priority.</p>
+        <p>Class rows show their names and relevant status. Character coverage is explained in the class help and group settings. Digits includes only half-width 0–9; full-width digits belong to Full-width symbols. Preset names describe font pairings; labels identify the script and region. The gear to the left of Share opens Settings; the proof’s View menu controls the preview.</p>
+        <p>A pulsing gray dot before a font name means it is loading; a red dot means loading failed. Hover or focus the dot with the keyboard for its status or the reason it failed. The status reflects the font actually used in the preview; Continuous mode checks the full variable weight range. Dots are hidden when the font is ready and for classes that follow another class’s font.</p>
+        <h3>Presets and saving</h3>
+        <p>The first card, “Current setup”, shows your current pairing and stays visible when you filter presets. “Save as new” fills in an editable name from the main fonts in your setup, adding a number if needed to avoid duplicates, so you can save a copy directly. Unnamed setups show the same suggested name on the card and in the save dialog; existing names are kept. When editing your own preset, “Save changes” becomes available when there are changes and updates it after a second click to confirm. Entering an existing name shows a warning and also requires confirmation before replacing it.</p>
+        <p>Presets stay in this browser and exclude font files. Filters apply only to the presets below; you can save your current setup even when no presets match. Switching presets prompts you to save unsaved changes. Failed saves preserve your current work and existing presets.</p>
+        <h3>Appearance and preview colors</h3>
+        <p>Choose Light, Dark or System in the top bar’s Settings. System follows changes to your device’s color scheme. The proof toolbar’s View menu lets you set the background and text color with a color picker or hex code. Changes appear immediately in the proof and metric chart; editing controls keep the theme colors. Invalid hex input returns to the last valid color when you leave the field. Reset colors clears custom values and restores the current theme’s defaults. Colors can be set independently, and custom values remain when you switch themes.</p>
+        <p>These preferences stay in this browser across reloads, preset changes, undo and shared configuration imports. They are excluded from presets and share links and do not affect exported CSS, app code or font files.</p>
+        <h3>Sharing configurations</h3>
+        <p>The outlined Share button, to the left of Export, copies a link to the current configuration without saving a preset first. The link captures the fonts, sizes, weights, baselines, variation axes, character groups, exceptions, text layout and export settings at that moment. Later edits do not change links already sent.</p>
+        <p>Links exclude font files, custom proof text, history and other saved presets. Recipients see a built-in proof and can edit, save a preset or undo the import to restore their previous settings. Google Fonts load again; local fonts must be installed and uploaded files supplied separately. Missing fonts are shown in Fonts. Configuration data stays in the URL fragment and needs no server storage. Oversized links show a notice; a manual copy field is available when the clipboard cannot be used.</p>
         <h3>Size: size-adjust</h3>
         <p><code>size-adjust</code> scales a font's glyphs and metrics by a percentage. It is supported in Chrome/Edge 92+, Firefox 92+ and Safari 17+. It also scales the font's ascent and descent, so with <code>line-height: normal</code> the line spacing can become uneven; set a fixed <code>line-height</code>.</p>
         <p>In Base settings, size and baseline can be typed directly or adjusted by 0.5 using the arrows on the right of each input. The size inputs in Weights work the same way. Hold Shift while pressing ↑↓ on the keyboard to adjust by 5. Clear an input to restore its inherited value. Arrows appear on hover or focus and stay visible on touch screens; the numbers stay aligned as the arrows appear or disappear.</p>
@@ -438,12 +523,14 @@
         <p><b>Weight and baseline.</b> Stepped mode compares strokes at the fitted size and chooses closer available weights without making bold lighter than body text in the same font. Western text uses the main strokes of H and h; other classes estimate stroke width from horizontal and vertical slices through corresponding characters. These measurements are a starting point for visual matching. Google Fonts and local or uploaded fonts with a weight axis are supported. Continuous mode, single-weight fonts and unreliable stroke measurements keep weights unchanged. Selected export weights and always 400 are measured. The 400 result goes into Base settings; other sizes are stored separately when they differ by at least 0.5 percentage points. Only the base baseline is stored; shifts below 2% em become 0. Web shifts need JS; font files store the positions directly. Weight matching also works in older browsers. If a selected additional variation axis cannot be measured, that class keeps its settings and is reported.</p>
         <p><b>Reset and limits.</b> The reset button beside each class heading in Weights restores its base size to 100%, baseline to 0 and adjustable weight to the available value nearest regular 400, then clears its per-weight size, weight and font overrides. It keeps the base font choice, other variation axes and classes, shared font-name mappings, export selections and preview weight, and can be undone. Auto-adjust cannot create missing weights and does not change export selections. Check shapes, serif contrast and design proportions in body text, then fine-tune or change fonts as needed.</p>
         <h3>Installed fonts: local()</h3>
-        <p><code>local()</code> matches a font’s full name or PostScript name, not its family name. For example, write <code>Hiragino Sans GB W3</code> or <code>HiraginoSansGB-W3</code>, not <code>Hiragino Sans GB</code>. A green dot on a font card means the current browser found the font. Safari lets web pages use only the fonts that come with the system; fonts you installed yourself don’t work in Safari. If a visitor’s computer doesn’t have the font, the browser falls back to the previous rule.</p>
+        <p><code>local()</code> matches a font’s full name or PostScript name, not its family name. For example, write <code>Hiragino Sans GB W3</code> or <code>HiraginoSansGB-W3</code>, not <code>Hiragino Sans GB</code>. Safari lets web pages use only the fonts that come with the system; fonts you installed yourself don’t work in Safari. If a visitor’s computer doesn’t have the font, the browser falls back to the previous rule.</p>
         <h3>Google Fonts</h3>
         <p>On Google Fonts, CJK fonts are split into a hundred or more slices, each with its own <code>unicode-range</code>. On export, the tool intersects each slice’s range with the class’s range and keeps only the slices it needs, so the Western class usually ends up with one or two rules. The URLs point to fonts.gstatic.com; for production, download the files and host them yourself.</p>
         <h3>Exporting several weights</h3>
         <p>Font names show “Continuous weights” or “Stepped weights”. Continuous weights accept any value in their range, for example “Continuous weights 200–900”. Stepped weights offer fixed values, for example “Stepped weights 400, 700”; longer lists show their lightest-to-heaviest range, with the full list on hover. These labels describe the font’s capabilities; choose the export mode separately in Weights. Ranges are never guessed. Fonts with variable axes but no readable weight range show “Weight range unknown”. Fonts that follow another class use the information in that class’s row.</p>
-        <p>Check the weights to export in Weights (you can also choose them in the export dialog); each weight gets its own set of rules. Click empty space in any row to preview that weight without changing the export selection. The fonts you set in the tool correspond to 400. For other weights, Google Fonts fonts are shifted by the same difference (a font set at 500 becomes 800 at 700), or the nearest available weight if that one doesn’t exist; for installed fonts, the tool guesses the bold name (W3 → W6, Regular → Bold, and so on) and checks for it on this computer. Fonts don’t distribute their weights the same way: in the Weights table you can adjust each class’s size and weight separately for each weight. For variable fonts, type any weight or use the arrows on the right or keyboard ↑↓ to adjust it by 10 (Shift + ↑↓ for 100). Static Google Fonts step by 100, skipping unavailable weights. To set an installed font name, a font file, or a different font for just that weight, click that cell, or use “change font…” in the “⋯” menu at the end of the row, and choose it in “Choose font”. For static Google Fonts fonts, only the weights the font actually has are listed; grey values are computed, blue ones are set for that row, and picking the grey value again clears the row’s setting.</p>
+        <p>In Continuous mode, setting the preview or web page to <code>font-weight: 450</code> displays variable fonts at 450, rather than choosing between 400 and 500. Values outside a font’s supported range use the nearest endpoint; static fonts use the nearest weight. Individual variable font weight adjustments are temporarily ignored and restored when you switch to Stepped.</p>
+        <p>In Continuous mode, enter the export range directly. When the table has only size columns, it uses one header row, such as “Han size” and “Western size”. Static fonts with adjustable weights keep the two header rows for class names, weight and size.</p>
+        <p>In Stepped mode, check the weights to export in Weights (you can also choose them in the export dialog); each weight gets its own set of rules. Click empty space in a selected row to preview its weight without changing the export selection. Click the B icon or preview weight field to open a slider. You can also type a number or drag B; the number updates as you adjust it. Stepped mode previews only selected export weights, shown as slider stops. Continuous mode adjusts smoothly within the export range, with clickable marks for 400 (Regular) and 700 (Bold) when they fall within that range. Endpoints and shortcut labels share one row below the slider; endpoint labels are omitted when too close to a shortcut. Removing the current preview weight selects the nearest remaining weight. Typed values outside the range or between selected weights snap to an available value when committed. The fonts you set in the tool correspond to 400. For other weights, Google Fonts fonts are shifted by the same difference (a font set at 500 becomes 800 at 700), or the nearest available weight if that one doesn’t exist; for installed fonts, the tool guesses the bold name (W3 → W6, Regular → Bold, and so on) and checks for it on this computer. Fonts don’t distribute their weights the same way: in the Weights table you can adjust each class’s size and weight separately for each weight. For variable fonts, type any weight or use the arrows on the right or keyboard ↑↓ to adjust it by 10 (Shift + ↑↓ for 100). Static Google Fonts step by 100, skipping unavailable weights. To set an installed font name, a font file, or a different font for just that weight, click that cell, or use “change font…” in the “⋯” menu at the end of the row, and choose it in “Choose font”. For static Google Fonts fonts, only the weights the font actually has are listed; grey values are computed, blue ones are set for that row, and picking the grey value again clears the row’s setting.</p>
         <p>The rules for different weights can’t be combined. CSS variables (<code>var()</code>) don’t work inside <code>@font-face</code>; the browser simply drops the descriptor. If some rules in one font-family say <code>font-weight: 700</code> and others say <code>400 700</code>, Chrome (in testing) splits them into two groups and uses only one, and the composite font stops working.</p>
         <p>Most of the size comes from the hundreds of slices of the Han font on Google Fonts. “Base font: Link Google Fonts (shortest)” references Google’s CSS directly with <code>@import</code>, puts that font second in font-family, and writes only the classes that override it, so the exported CSS is usually just a few KB. Servers usually compress CSS with gzip, so the gzip size shown in the export panel is closer to what is actually transferred. Font files are downloaded only for the characters a page uses, regardless of the length of the CSS.</p>
         <p>In stepped mode, applying changes in the font picker or changing which class a row follows checks the actual font and weight used in each row. Selected export weights clearly outside a known range are unchecked, with Web and font-file selections checked separately. Valid individual mappings, gaps within a static font’s range, and fonts with unknown ranges are kept. Unchecking a row preserves its adjustments, and you can select it again. The font change and automatic unchecking can be undone together. If every selected weight in a group is out of range, the selection is kept with a notice to review it. Switching to a font with a wider range does not select more weights. Continuous-mode selections and ranges are not adjusted.</p>
@@ -495,7 +582,17 @@
 </dialog>
 
 <div class="miss-tip" id="missTip" role="tooltip" hidden></div>
-<!-- 保存预设：「存为预设」和「改过设定后换预设」都用它。地区、风格按字体推算好，可以改（预设筛选用）；来源只显示 -->
+<!-- 剪贴板不可用时才显示手动复制，不增加正常分享的步骤 -->
+<dialog id="shareDlg" aria-labelledby="shareTitle">
+  <div class="dlg-form">
+    <h2 id="shareTitle" data-t="shareTitle"></h2>
+    <p data-t="shareFallback"></p>
+    <label class="field"><span class="flabel" data-t="shareLinkLabel"></span><input id="shareUrl" type="text" readonly spellcheck="false" autocomplete="off"></label>
+    <p class="hint" id="shareFontsNote" data-t="shareFontsNote" hidden></p>
+    <div class="dlg-act"><button type="button" class="btn" id="shareClose" data-t="close"></button><button type="button" class="btn primary" id="shareCopy" data-t="shareCopy"></button></div>
+  </div>
+</dialog>
+<!-- 保存预设：首张卡片的「存为新预设」和「改过设定后换预设」共用命名框。地区、风格先按字体推算；来源只显示 -->
 <dialog id="saveDlg" aria-labelledby="saveTitle">
   <div class="dlg-form">
     <h2 id="saveTitle"></h2>
@@ -511,7 +608,7 @@
     <div class="dlg-act">
       <button type="button" class="btn-text" id="saveCancel" data-t="cancel"></button>
       <button type="button" class="btn" id="saveDiscard" data-t="leaveDiscard" hidden></button>
-      <button type="button" class="btn primary" id="saveOk" data-t="save"></button>
+      <button type="button" class="btn primary" id="saveOk"><span data-t="save"></span></button>
     </div>
   </div>
 </dialog>

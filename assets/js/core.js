@@ -554,8 +554,8 @@ export const PRESETS = [
   { id: 'mac-jp', style: 'sans', region: 'jp', name: { zh: 'ヒラギノ角ゴ × Avenir Next', ja: 'ヒラギノ角ゴ × Avenir Next', tw: 'ヒラギノ角ゴ × Avenir Next', en: 'Hiragino Sans × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 日文', ja: 'macOS 標準・日本語', tw: 'macOS 系統字型 · 日文', en: 'macOS · Japanese' }, han: L('Hiragino Sans W3', ['HiraginoSans-W3']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 111.5, latinW: { 100: { size: 108.5 }, 200: { size: 110.5 }, 300: { size: 111 }, 500: { size: 112 }, 600: { size: 112.5 }, 700: { size: 112 }, 800: { size: 110 } }, latinShift: -3.5, sample: 'ja' },
   /* 台湾、香港：分别实测对应地区的 Noto 字体；内建西文相同，所以匹配结果与简中一致。 */
   { id: 'ming-tw', style: 'serif', region: 'tc', name: { zh: '明體 × Garamond', ja: '明体 × Garamond', tw: '明體 × Garamond', en: 'Ming × Garamond' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）', en: 'Traditional (TW)' }, han: G('Noto Serif TC'), latin: G('EB Garamond'), latinSize: 115, latinW: { 100: { size: 114, weight: 400 }, 200: { size: 114, weight: 400 }, 300: { size: 114.5, weight: 400 }, 500: { size: 115.5, weight: 460 }, 600: { size: 116, weight: 500 }, 700: { size: 116.5, weight: 620 }, 800: { size: 117, weight: 660 }, 900: { size: 117.5, weight: 740 } }, sample: 'tw' },
-  { id: 'hei-tw', style: 'sans', region: 'tc', name: { zh: '黑體 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter', en: 'Hei × Inter' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）', en: 'Traditional (TW)' }, han: G('Noto Sans TC'), latin: G('Inter'), latinSize: 100, latinW: { 100: { size: 98, weight: 160 }, 200: { size: 98.5, weight: 220 }, 300: { size: 99, weight: 260 }, 500: { size: 101 }, 600: { size: 101.5 }, 700: { size: 102 }, 800: { size: 102.5, weight: 740 }, 900: { size: 103.5, weight: 800 } }, sample: 'tw' },
-  { id: 'hei-hk', style: 'sans', region: 'hk', name: { zh: '香港黑體 × Inter', ja: '香港の黒体 × Inter', tw: '香港黑體 × Inter', en: 'HK Hei × Inter' }, tag: { zh: '繁体中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）', en: 'Traditional (HK)' }, han: G('Noto Sans HK'), latin: G('Inter'), latinSize: 100, latinW: { 100: { size: 98, weight: 160 }, 200: { size: 98.5, weight: 220 }, 300: { size: 99, weight: 260 }, 500: { size: 101 }, 600: { size: 101.5 }, 700: { size: 102 }, 800: { size: 102.5, weight: 740 }, 900: { size: 103.5, weight: 800 } }, sample: 'hk' },
+  { id: 'hei-tw', style: 'sans', region: 'tc', name: { zh: '黑体 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter', en: 'Hei × Inter' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）', en: 'Traditional (TW)' }, han: G('Noto Sans TC'), latin: G('Inter'), latinSize: 100, latinW: { 100: { size: 98, weight: 160 }, 200: { size: 98.5, weight: 220 }, 300: { size: 99, weight: 260 }, 500: { size: 101 }, 600: { size: 101.5 }, 700: { size: 102 }, 800: { size: 102.5, weight: 740 }, 900: { size: 103.5, weight: 800 } }, sample: 'tw' },
+  { id: 'hei-hk', style: 'sans', region: 'hk', name: { zh: '黑体 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter', en: 'Hei × Inter' }, tag: { zh: '繁体中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）', en: 'Traditional (HK)' }, han: G('Noto Sans HK'), latin: G('Inter'), latinSize: 100, latinW: { 100: { size: 98, weight: 160 }, 200: { size: 98.5, weight: 220 }, 300: { size: 99, weight: 260 }, 500: { size: 101 }, 600: { size: 101.5 }, 700: { size: 102 }, 800: { size: 102.5, weight: 740 }, 900: { size: 103.5, weight: 800 } }, sample: 'hk' },
   { id: 'mac-tw', style: 'sans', region: 'tc', name: { zh: '蘋方-繁 × Avenir Next', ja: 'PingFang TC × Avenir Next', tw: '蘋方-繁 × Avenir Next', en: 'PingFang TC × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 繁体中文', ja: 'macOS 標準・繁体字', tw: 'macOS 系統字型 · 繁體中文', en: 'macOS · Traditional' }, han: L('PingFang TC Regular', ['PingFangTC-Regular']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 104, latinW: { 700: { size: 102.5 }, 800: { size: 99.5 }, 900: { size: 99.5 } }, latinShift: -3, sample: 'tw' },
 ];
 
@@ -608,8 +608,28 @@ export function setState(s) { state = s; }
 /* 预设有没有被改过：和套用（或保存）预设那一刻的设定比较。校样的文字、字号等（view）不算 */
 export const PRESET_SKIP = new Set(['view', 'preset', 'presetBase', 'v', 'fx']);
 /* 只看校样用的排版设定（对齐等）不算改了预设 */
-export function presetSnap() { return JSON.stringify(state, function (k, v) { return this === state && PRESET_SKIP.has(k) || this === state.typo && VIEW_TYPO.has(k) ? undefined : v; }); }
-export const presetDirty = () => state.presetBase ? presetSnap() !== state.presetBase : state.preset === '';
+export function presetSnap(st = state) { return JSON.stringify(st, function (k, v) { return this === st && (PRESET_SKIP.has(k) || k === 'meta') || this === st.typo && VIEW_TYPO.has(k) ? undefined : v; }); }
+export const presetDirty = () => {
+  const name = state.preset?.startsWith('user:') ? state.preset.slice(5) : null;
+  const saved = name != null && Object.hasOwn(userPresets, name) ? userPresets[name] : null;
+  // 更新自存预设后再撤销编辑，要与现在保存的版本比较，不能沿用历史中的旧基准。
+  const baseline = saved?.v === state.v ? presetSnap(saved) : state.presetBase;
+  return baseline ? presetSnap() !== baseline : state.preset === '';
+};
+/* 所有预览入口共用导出域；恢复旧数据、撤销或分享导入时也不能停在未导出的字重。 */
+export function previewWeight(x) {
+  x = Number.isFinite(x) ? x : 400;
+  if (state.wmode === 'cont') return Math.min(state.wrange[1], Math.max(state.wrange[0], Math.round(x)));
+  return state.weights.reduce((a, b) => Math.abs(b - x) < Math.abs(a - x) ? b : a);
+}
+export function constrainPreviewWeight() {
+  const v = state.view, before = v.weight;
+  if (state.wmode === 'cont') {
+    v.wcont = previewWeight(v.wcont);
+    v.weight = Math.min(900, Math.max(100, Math.round((v.wcont - 1) / 100) * 100));
+  } else v.weight = previewWeight(v.weight);
+  return before !== v.weight;
+}
 export function normalizeState() {
   if (!(state.v >= 2)) {    // 旧版本里「跟随」连大小、基线一起跟随，迁移为继承
     for (const o of [...Object.values(state.classes), ...state.custom]) if (o.follow) { o.size = null; o.shift = null; }
@@ -702,8 +722,7 @@ export function normalizeState() {
   if (ci && !vw.customs[+ci[1]]) vw.sample = 'zh';
   if (ci && vw.customs[+ci[1]]) vw.text = vw.customs[+ci[1]].text;
   else if (vw.sample in SAMPLES) vw.text = SAMPLES[vw.sample].text;     // 选的是示例时跟着示例更新
-  // 预览与导出勾选独立：重载时保留尚未导出的预览字重。
-  if (!WEIGHTS.includes(state.view.weight)) state.view.weight = state.weights.includes(400) ? 400 : state.weights[0];
+  constrainPreviewWeight();
   if (state.presetBase === undefined && state.preset) state.presetBase = presetSnap();      // 旧的保存数据：以现在为准
   rebuildClassRanges();
 }

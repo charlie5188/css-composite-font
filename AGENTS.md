@@ -94,6 +94,8 @@ assets/js/core.js        State (`state`, setState, initState, normalizeState + v
 assets/js/refresh.js     refresh('editor', 'preview', …): re-render named parts in a fixed order, then save
 assets/js/render.js      Class table, proof, specimen canvas, toolbar sync
 assets/js/ui.js          Event wiring, preset cards, font picker, dialogs, typography rows, init()
+assets/js/appearance.js  Browser-local theme and proof colors, separate from configuration state
+assets/js/share.js       Configuration links, bounded codec, validation, clipboard and reversible import
 assets/js/export.js      Exported CSS / baseline JS
 assets/js/bake.js        Font-file export: plan, downloads, license checks, Pyodide worker, result UI
 assets/js/appcode.js     App code export (experimental): one data model, Swift / Kotlin / Dart generators
@@ -137,6 +139,11 @@ tests/e2e/               Playwright: CSS snapshots per preset, UI, layout, font-
 - **UI shell.** The page never scrolls; `.bench` holds the editor (Presets / Fonts / Text layout tabs) and the
   tester, each scrolling on its own. Export and About are `<dialog class="side-dlg">`. Below 1000 px one pane
   is shown at a time (`.app[data-mview]`, bottom tabs).
+- **Appearance.** Theme and proof colors use their own `composite-font:appearance:v1` preference. Keep them out
+  of presets, undo, share links and exports. The small validated head script restores them before the first
+  paint; `appearance.js` handles controls and system changes. Proof colors apply only to proof surfaces and
+  specimen glyphs; editing controls keep theme tokens. Theme selection lives in top-bar Settings; proof color controls live
+  in the proof toolbar’s View popover alongside the other preview controls.
 
 ## Design system
 
@@ -146,19 +153,28 @@ for a role that already has one; if something is really missing, add it to that 
 
 - **Tokens** on `:root`: colours (`--ink`, `--ink-2`, `--muted`, `--faint`, `--line`, `--rule`, `--accent`, `--warn`,
   `--caution` …, redefined for dark mode), type scale `--fs-xs/s/m/l/xl/2xl` (11 / 12 / 13 / 14 / 18 / 22 px), spacing
-  `--sp-1`…`--sp-6` (4–32 px), radii `--r-s` (2), `--r` (4), `--r-pill`, control height `--ctl-h` (30), `--shadow-pop`.
+  `--sp-1`…`--sp-6` (4–32 px), radii `--r-s` (2), `--r` (4), `--r-pill`, control heights `--ctl-h` (32)
+  and `--ctl-h-sm` (26), `--shadow-pop`.
   UI text and radii use tokens, never raw px. Specimen text (proof, glyph samples, preset thumbnails, the title) is
   sized by its content and is the only exception.
 - **Buttons, five kinds:** `.btn` (secondary), `.btn.primary`, `.btn-ghost` (toolbar: icon and/or label),
   `.btn-icon` (icon only; `.sm`, and `.mini` for small icons inside text), `.btn-text` (link style). Add `.danger` for
   destructive actions. Anything destructive that can't be undone goes through `armConfirm(btn, text, run)` in
   `ui.js` (second click within 3 s); keep the button's own label inside an element so it can be hidden.
+  Regular `.btn`, `.btn-ghost` and `.btn-icon` controls share the 32 px height: text buttons are pills and icon-only
+  buttons are circles. Use fill, outline or a subtle hover surface for emphasis, not a different geometry.
+  `.btn-icon.sm` is the 26 px compact action for tables and lists; `.mini` fits inline icons. Table steppers keep
+  their compact rectangular hit areas. Tabs, segmented choices and form fields retain their own control shapes.
 - **Other components:** `.seg` (segmented choice), `.chips` (multi-select pills; `.chips.tags` for text labels such as filters), `.sw` (switch), `.cell-in` +
   `.cell-num` (inputs inside tables; `.own` = set in the base settings, `.set` = set for one weight), `.cell-step`
   (table stepper: a numeric input or weight select plus `.cell-step-actions` / `.cell-step-btn`; keep its fixed
-  arrow gutter aligned with the header, keyboard arrows operate the field), `.pop` (popover
+  arrow gutter aligned with the header, keyboard arrows operate the field), `.range-pop` + `.range-ticks`
+  (compact range popover with endpoints and optional `.btn-text` shortcuts in one row; omit endpoint labels
+  when they would crowd a shortcut), `.pop` (popover
   surface) with `.menu` / `.mm-item` / `.mm-radio` / `.mm-check`, `.sec-head` + `.sec-title` + `.sec-acts` (section
   heading), `.callout` (yellow notice), `.dlg-form` + `.dlg-act` (small dialog: title, fields, buttons bottom right), `.badge` (count pill), `.info` (the (i) button that opens `#infoPop`), tooltips through `title`.
+- **Color fields:** `.color-field` pairs a native color well with an editable hex value and a shared focus ring.
+  `.settings-block`, `.settings-row` and `.settings-actions` arrange controls inside settings popovers.
 - **Icons:** Tabler Icons (outline, MIT; license in `assets/LICENSE-tabler-icons.txt`) as an SVG sprite at the top of
   `index.html`. Use `<svg class="ic" aria-hidden="true"><use href="#i-name"/></svg>`; to add one, copy its paths from
   the Tabler outline set into a new `<symbol id="i-name" viewBox="0 0 24 24">`. Stroke width (1.75) and size come from

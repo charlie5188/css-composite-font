@@ -1,4 +1,6 @@
 import { refresh } from './refresh.js';
+import { decodeConfig, encodeConfig } from './share.js';
+export { b64u } from './share.js';
 import { $, T, esc, lsGet } from './i18n.js';
 import { EFF } from './unicode.js';
 import { GF_AXES } from './gfmeta.js';
@@ -474,11 +476,10 @@ export function fxReadme(pl) {
 }
 
 /* ---------- 从 artifact 带设置到 GitHub Pages：设置压缩后放在链接的 #cfg= 里 ---------- */
-export const b64u = bytes => { let s = ''; for (let i = 0; i < bytes.length; i += 8192) s += String.fromCharCode(...bytes.subarray(i, i + 8192)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); };
 export async function cfgLink() {
   try {
-    const z = await new Response(new Blob([JSON.stringify({ ...state, view: { ...state.view, text: state.view.text.slice(0, 2500) } })]).stream().pipeThrough(new CompressionStream('deflate-raw'))).arrayBuffer();
-    return BK.pages + '#cfg=' + b64u(new Uint8Array(z));
+    const { mode, data } = await encodeConfig({ ...state, view: { ...state.view, text: state.view.text.slice(0, 2500) } });
+    return mode === 'd' ? BK.pages + '#cfg=' + data : BK.pages;
   } catch (e) { return BK.pages; }
 }
 export async function importCfg() {
@@ -486,8 +487,7 @@ export async function importCfg() {
   if (!m) return;
   history.replaceState(null, '', location.pathname + location.search);
   try {
-    const bin = atob(m[1].replace(/-/g, '+').replace(/_/g, '/')), bytes = Uint8Array.from(bin, c => c.charCodeAt(0));
-    const s = JSON.parse(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text());
+    const s = await decodeConfig(m[1]);
     if (!validState(s)) return;
     setState(s);
     normalizeState(); refresh('ranges', 'toolbar', 'editor', 'preview', 'presets', 'fonts');

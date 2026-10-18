@@ -152,16 +152,17 @@ test('各字重：点击行间距或空白预览，保留导出勾选和输入�
   await expect(page.locator('#wRowMenu')).toBeVisible();
   await expect(page.locator('#vWn')).toHaveValue('700');
   await page.keyboard.press('Escape');
-  // 未导出的空行同样可预览，勾选保持关闭，重载后也保留预览。
+  // 未导出的行不可预览；重载后继续预览已勾选的字重。
   await page.locator('#wMatrix [data-row="300"]').click({ position: { x: 2, y: 2 } });
-  await expect(page.locator('#wMatrix [data-row="300"]')).toHaveClass(/off.*cur/);
-  await expect(page.locator('#wMatrix input[data-wx="300"]')).not.toBeChecked();
-  await expect(page.locator('#vWn')).toHaveValue('300');
-  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('composite-font:state:v1'))?.view.weight)).toBe(300);
+  await expect(page.locator('#wMatrix [data-row="300"]')).not.toHaveAttribute('aria-current', 'true');
+  await expect(page.locator('#wMatrix [data-pw="300"]')).toBeDisabled();
+  await expect(page.locator('#vWn')).toHaveValue('700');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('composite-font:state:v1'))?.view.weight)).toBe(700);
   await page.reload(); await page.click('#ltabFonts');
-  await expect(page.locator('#wMatrix [data-row="300"]')).toHaveAttribute('aria-current', 'true');
+  await expect(page.locator('#wMatrix [data-row="700"]')).toHaveAttribute('aria-current', 'true');
   await expect(page.locator('#wMatrix input[data-wx="300"]')).not.toBeChecked();
-  // 原有按钮仍是键盘入口，编辑数值仍可直接输入并预览。
+  // 重新勾选后可用键盘预览，编辑数值仍可直接输入并预览。
+  await page.click('#wMatrix input[data-wx="300"]');
   await page.locator('#wMatrix [data-pw="300"]').focus();
   await page.keyboard.press('Enter');
   await expect(page.locator('#vWn')).toHaveValue('300');
@@ -171,7 +172,7 @@ test('各字重：点击行间距或空白预览，保留导出勾选和输入�
   await expect(page.locator('#vWn')).toHaveValue('600');
 });
 
-test('各字重：连续范围和窄屏可点行空白，单一导出仍可预览其他字重', async ({ page }) => {
+test('各字重：窄屏的预览遵守导出选择，连续范围内可点行空白', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await open(page); await page.click('#ltabFonts');
   await page.evaluate(async () => {
@@ -179,19 +180,182 @@ test('各字重：连续范围和窄屏可点行空白，单一导出仍可预�
     u.setWeights([400]);
   });
   await page.locator('#wMatrix [data-row="700"]').click({ position: { x: 2, y: 2 } });
-  await expect(page.locator('#wMatrix [data-row="700"]')).toHaveAttribute('aria-current', 'true');
+  await expect(page.locator('#wMatrix [data-row="400"]')).toHaveAttribute('aria-current', 'true');
   await expect(page.locator('#wMatrix input[data-wx="700"]')).not.toBeChecked();
   await page.click('#mTabs [data-mv="preview"]');
   await expect(page.locator('#vWn')).toBeVisible();
-  await expect(page.locator('#vWn')).toHaveValue('700');
+  await expect(page.locator('#vWn')).toHaveValue('400');
   await page.locator('#vWn').press('ArrowDown');
-  await expect(page.locator('#vWn')).toHaveValue('600');
+  await expect(page.locator('#vWn')).toHaveValue('400');
+  await expect(page.locator('#vWSlider')).toBeDisabled();
+  await page.keyboard.press('Escape');
   await page.click('#mTabs [data-mv="edit"]');
   await page.click('#vWMode [data-m="cont"]');
   await page.locator('#wMatrix [data-row="700"]').click({ position: { x: 2, y: 2 } });
   await expect(page.locator('#wMatrix [data-row="700"]')).toHaveAttribute('aria-current', 'true');
   await page.click('#mTabs [data-mv="preview"]');
   await expect(page.locator('#vWn')).toHaveValue('700');
+});
+
+test('预览字重：滑杆节点、手动输入和当前字重取消都遵守已选档位', async ({ page }) => {
+  await open(page); await page.click('#ltabFonts');
+  await page.evaluate(async () => (await import('./assets/js/ui.js')).setWeights([400, 700, 900]));
+  const field = page.locator('#vWn'), slider = page.locator('#vWSlider');
+  await field.click();
+  await expect(page.locator('#vWPop')).toBeVisible();
+  await expect(page.locator('#vWTicks')).toHaveText('400700900');
+  await field.press('Tab');
+  await expect(slider).toBeFocused();
+  await slider.press('End');
+  await expect(field).toHaveValue('900');
+  await expect(slider).toHaveAttribute('aria-valuetext', '900');
+  await slider.press('ArrowLeft');
+  await expect(field).toHaveValue('700');
+  await slider.press('Escape');
+  await expect(page.locator('#vWPop')).toBeHidden();
+  await expect(field).toBeFocused();
+  await field.fill('500'); await field.press('Enter');
+  await expect(field).toHaveValue('400');
+  await expect(page.locator('#vWPop')).toBeHidden();
+  await field.fill('2000'); await field.press('Enter');
+  await expect(field).toHaveValue('900');
+  await field.fill(''); await field.press('Tab');
+  await expect(field).toHaveValue('900');
+  await page.keyboard.press('Escape');
+  await page.click('#wMatrix input[data-wx="900"]');
+  await expect(field).toHaveValue('700');
+  await expect(page.locator('#wMatrix [data-row="700"]')).toHaveAttribute('aria-current', 'true');
+  await field.press('ArrowDown');
+  await expect(field).toHaveValue('400');
+  await field.press('ArrowDown');
+  await expect(field).toHaveValue('400');
+  await expect(page.locator('#wMatrix input[data-wx="400"]')).toBeChecked();
+  await expect(page.locator('#wMatrix input[data-wx="700"]')).toBeChecked();
+});
+
+test('预览字重：点击或键盘激活 B 展开滑杆，拖动结束不误触', async ({ page }) => {
+  await open(page);
+  const icon = page.locator('#vWBtn'), pop = page.locator('#vWPop');
+  await icon.click();
+  await expect(pop).toBeVisible();
+  await expect(icon).toHaveAttribute('aria-expanded', 'true');
+  await icon.click();
+  await expect(pop).toBeVisible();
+  await page.click('#proofText');
+  await expect(pop).toBeHidden();
+  await icon.focus(); await icon.press('Enter');
+  await expect(pop).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(pop).toBeHidden();
+  await icon.focus(); await icon.press('Space');
+  await expect(pop).toBeVisible();
+  await page.click('#proofText');
+  const box = await icon.boundingBox(), x = box.x + box.width / 2, y = box.y + box.height / 2;
+  await page.mouse.move(x, y); await page.mouse.down();
+  await page.mouse.move(x + 30, y, { steps: 3 });
+  await page.mouse.move(x, y, { steps: 3 });
+  await page.mouse.up();
+  await expect(pop).toBeHidden();
+  await icon.click();
+  await expect(pop).toBeVisible();
+});
+
+test('预览字重：连续模式的 400 / 700 刻度可跳转，并保留无级调整与范围限制', async ({ page }) => {
+  await open(page); await page.click('#ltabFonts');
+  await page.click('#vWMode [data-m="cont"]');
+  const setRange = (lo, hi) => page.evaluate(async ([lo, hi]) => (await import('./assets/js/ui.js')).setWRange(lo, hi), [lo, hi]);
+  await setRange(200, 800);
+  const field = page.locator('#vWn'), slider = page.locator('#vWSlider'), ticks = page.locator('#vWTicks');
+  const regular = ticks.locator('button[data-weight="400"]'), bold = ticks.locator('button[data-weight="700"]');
+  await page.click('#vWBtn');
+  await expect(ticks).toHaveText('200400700800');
+  const initialLayout = await ticks.locator(':scope > *').evaluateAll(els => els.map(el => el.getBoundingClientRect().y));
+  expect(Math.max(...initialLayout) - Math.min(...initialLayout)).toBeLessThan(1);
+  await regular.click();
+  await expect(field).toHaveValue('400');
+  await expect(slider).toHaveValue('400');
+  await expect(regular).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('#vWPop')).toBeVisible();
+  await regular.press('Tab');
+  await expect(bold).toBeFocused();
+  await bold.press('Enter');
+  await expect(field).toHaveValue('700');
+  await expect(slider).toHaveValue('700');
+  await expect.poll(() => page.locator('html').evaluate(el => el.style.getPropertyValue('--fw'))).toBe('700');
+  await slider.focus(); await slider.press('ArrowRight');
+  await expect(field).toHaveValue('701');
+  await expect(bold).toHaveAttribute('aria-pressed', 'false');
+  await setRange(399, 701);
+  await expect(ticks).toHaveText('400700');
+  await expect(slider).toHaveAttribute('min', '399'); await expect(slider).toHaveAttribute('max', '701');
+  // 过近的端点省略文字，保留常用刻度的真实位置，不改变可预览的范围。
+  const layout = await page.locator('#vWPop').evaluate(el => {
+    return [...el.querySelectorAll('button[data-weight]')].map(b => ({ pos: parseFloat(b.style.getPropertyValue('--tick')), rect: b.getBoundingClientRect().toJSON() }));
+  });
+  expect(layout[0].pos).toBeCloseTo(100 / 302);
+  expect(layout[1].pos).toBeCloseTo(30100 / 302);
+  expect(layout[0].rect.right).toBeLessThan(layout[1].rect.left);
+  await setRange(400, 700);
+  await expect(regular).toHaveCount(1); await expect(bold).toHaveCount(1);
+  await regular.click(); await regular.press('Space');
+  await expect(field).toHaveValue('400');
+  await setRange(450, 650);
+  await expect(ticks).toHaveText('450650');
+  await expect(ticks.locator('button')).toHaveCount(0);
+  await expect(field).toHaveValue('450');
+  await setRange(700, 900);
+  await expect(ticks).toHaveText('700900');
+});
+
+test('预览字重：连续滑杆、输入与聚焦后拖动 B 实时同步', async ({ page }) => {
+  await open(page); await page.click('#ltabFonts');
+  await page.click('#vWMode [data-m="cont"]');
+  await page.evaluate(async () => (await import('./assets/js/ui.js')).setWRange(350, 650));
+  const field = page.locator('#vWn'), slider = page.locator('#vWSlider');
+  await field.click(); await field.press('Tab');
+  await slider.press('Home'); await slider.press('ArrowRight');
+  await expect(field).toHaveValue('351');
+  await slider.press('End');
+  await expect(field).toHaveValue('650');
+  await field.fill('555');
+  await expect(slider).toHaveValue('555');
+  await expect.poll(() => page.locator('html').evaluate(el => el.style.getPropertyValue('--fw'))).toBe('555');
+  await field.press('ArrowUp');
+  await expect(field).toHaveValue('556');
+  await field.press('Shift+ArrowUp');
+  await expect(field).toHaveValue('566');
+  await field.fill('200'); await field.press('Enter');
+  await expect(field).toHaveValue('350');
+  await field.fill('500');
+  const box = await page.locator('[data-scrub="w"]').boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width / 2 + 45, box.y + box.height / 2, { steps: 5 });
+  // 鼠标还没放开，且数字框仍聚焦，也必须看到当前值。
+  await expect(field).toBeFocused();
+  await expect(field).toHaveValue('545');
+  await expect(slider).toHaveValue('545');
+  await expect.poll(() => page.locator('html').evaluate(el => el.style.getPropertyValue('--fw'))).toBe('545');
+  await page.mouse.up();
+  await field.fill('1000'); await field.press('Enter');
+  await expect(field).toHaveValue('650');
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.click('#mTabs [data-mv="preview"]');
+  await field.click();
+  await expect(page.locator('#vWPop')).toBeVisible();
+  const rect = await page.locator('#vWPop').boundingBox();
+  expect(rect.x).toBeGreaterThanOrEqual(8); expect(rect.x + rect.width).toBeLessThanOrEqual(382);
+});
+
+test('预览字重：重载旧配置时收进导出选择', async ({ page }) => {
+  await open(page);
+  await page.evaluate(async () => {
+    const key = 'composite-font:state:v1', state = structuredClone((await import('./assets/js/core.js')).state);
+    state.weights = [400, 700]; state.view.weight = 100;
+    localStorage.setItem(key, JSON.stringify(state));
+  });
+  await page.reload();
+  await expect(page.locator('#vWn')).toHaveValue('400');
 });
 
 test('撤销 / 重做：按钮和快捷键，输入框里的 ⌘Z 不抢', async ({ page }) => {
@@ -213,7 +377,7 @@ test('撤销 / 重做：按钮和快捷键，输入框里的 ⌘Z 不抢', async
 
 test('预设筛选：组内任选、组间同时满足，没有结果时可以清除', async ({ page }) => {
   await open(page);
-  const cards = page.locator('#presetCards .pcard');
+  const cards = page.locator('#presetList .pcard');
   const all = await cards.count();
   await page.click('#pfBtn');      // 筛选在菜单里
   await page.click('[data-pf="style:serif"]');
@@ -239,7 +403,7 @@ test('保存预设用对话框：地区和风格预先推算好、可以改，�
   await expect(page.locator('#saveDlg')).toBeHidden();
   await page.click('#pfBtn');
   await page.click('[data-pf="style:other"]');
-  await expect(page.locator('#presetCards .pname')).toHaveText(['测试']);
+  await expect(page.locator('#presetList .pname')).toHaveText(['测试']);
 });
 
 test('(i)：鼠标停一会儿就打开说明，移开关掉；悬停后再点就固定打开', async ({ page }) => {
@@ -265,6 +429,7 @@ test('各字重：静态字体只列有的字重，行末菜单能换字体、�
   await page.click('#ltabFonts');
   const sel = () => page.locator('#wMatrix [data-row="200"] select.msel').first();
   await expect.poll(async () => sel().evaluate(s => [...s.options].map(o => o.value).join())).toBe('400,500,600,700,800');
+  await sel().focus();      // 和实际操作一致：先聚焦再选择，后台字体加载不会替换正在编辑的控件。
   await sel().selectOption('700');
   await expect(sel()).toHaveClass(/\bset\b/);
   await page.locator('#wMatrix [data-row="200"]').hover();
@@ -272,4 +437,116 @@ test('各字重：静态字体只列有的字重，行末菜单能换字体、�
   await expect(page.locator('#wRowMenu')).toContainText('换字体');
   await page.click('#wRowMenu [data-wm-reset]');
   await expect(sel()).not.toHaveClass(/\bset\b/);
+});
+
+test('字体状态点：首次加载已有提示，悬停时状态变化会同步原因，完成后隐藏', async ({ page }) => {
+  // 固定在首次加载，检查提示不依赖任意字体先完成下载；随后只模拟来源状态的变化。
+  await page.route('https://fonts.googleapis.com/**', route => {
+    if (route.request().resourceType() === 'stylesheet') return route.fulfill({ contentType: 'text/css', body: '' });
+  });
+  await open(page); await page.click('#ltabFonts');
+  const dot = page.locator('#classRows [data-id="han"] .status');
+  await expect(dot).toHaveAttribute('title', '正在加载字体，请稍候');
+  await page.locator('#classRows [data-id="han"] .fsel').focus();
+  await dot.hover(); await expect(page.locator('#tip')).toHaveText('正在加载字体，请稍候');
+  await expect(page.locator('#tip')).toBeVisible();
+  const changeStatus = async (status, errKey) => page.evaluate(async ({ status, errKey }) => {
+    const core = await import('./assets/js/core.js');
+    const s = core.sources.get(document.querySelector('#classRows [data-id="han"] .status').dataset.key);
+    Object.assign(s, { status, errKey }); core.onSourcesChanged();
+  }, { status, errKey });
+  await changeStatus('error', 'errLocal');
+  await expect(dot).toHaveAccessibleName('字体加载失败：这台电脑上没找到这个字体名');
+  await expect(page.locator('#tip')).toHaveText('字体加载失败：这台电脑上没找到这个字体名');
+  await changeStatus('error', 'errFileGone');
+  await expect(page.locator('#tip')).toContainText('字体文件需要重新上传');
+  await changeStatus('loading');
+  await expect(page.locator('#tip')).toHaveText('正在加载字体，请稍候');
+  await changeStatus('ok');
+  await expect(dot).toBeHidden();
+  // 状态点消失后，字体菜单可能移到鼠标下并显示名称，但不能残留旧的加载提示。
+  await expect(page.locator('#tip')).not.toHaveText('正在加载字体，请稍候');
+  await expect(page.locator('#classRows [data-id="digit"] .status')).toBeHidden();
+});
+
+test('字体状态点：四语言、键盘聚焦与窄屏深色提示', async ({ page }) => {
+  await page.route('https://fonts.googleapis.com/**', route => {
+    if (route.request().resourceType() === 'stylesheet') return route.fulfill({ contentType: 'text/css', body: '' });
+  });
+  await page.emulateMedia({ colorScheme: 'dark', reducedMotion: 'reduce' });
+  await open(page); await page.click('#ltabFonts');
+  const labels = { tw: '正在載入字型，請稍候', ja: 'フォントを読み込み中です。しばらくお待ちください', en: 'Loading font; please wait', zh: '正在加载字体，请稍候' };
+  for (const [lang, label] of Object.entries(labels)) {
+    await setLang(page, lang);
+    const dot = page.locator('#classRows [data-id="han"] .status');
+    await expect(dot).toHaveAccessibleName(label);
+    await dot.focus(); await page.keyboard.press('Tab'); await page.keyboard.press('Shift+Tab');
+    await expect(dot).toBeFocused(); await expect(page.locator('#tip')).toHaveText(label);
+    await expect(page.locator('#tip')).toBeVisible();
+    await page.keyboard.press('Escape');
+  }
+  await page.setViewportSize({ width: 390, height: 600 });
+  const dot = page.locator('#classRows [data-id="han"] .status');
+  await expect(dot).toHaveCSS('animation-name', 'none');
+  await dot.hover(); await expect(page.locator('#tip')).toBeVisible();
+  const r = await page.locator('#tip').boundingBox();
+  expect(r.x).toBeGreaterThanOrEqual(4); expect(r.x + r.width).toBeLessThanOrEqual(386);
+});
+
+test('连续字重表：纯大小表头合并，静态字体保留粗细列，调整值在切换模式后保留', async ({ page }) => {
+  await open(page); await page.click('#ltabFonts');
+  const original = await page.evaluate(async () => JSON.stringify((await import('./assets/js/core.js')).state.wOver));
+  await page.click('#vWMode [data-m="cont"]');
+  await expect(page.locator('#vWNote')).toHaveCount(0);
+  await expect(page.locator('#wSub > span')).toHaveCount(1);
+  await expect(page.locator('#wMatrix .wm-sub')).toHaveCount(0);
+  const names = { zh: ['汉字大小', '半角西文大小'], tw: ['漢字大小', '半形西文大小'], ja: ['漢字のサイズ', '半角欧文のサイズ'], en: ['Han size', 'Western size'] };
+  for (const [lang, labels] of Object.entries(names)) {
+    await setLang(page, lang);
+    await expect(page.locator('#wMatrix .wm-clabel')).toHaveText(labels);
+  }
+  const size = page.locator('#wMatrix .mnum[data-k="latin"][data-w="700"]');
+  await size.fill('118'); await size.press('Tab');
+  await page.click('#vWMode [data-m="steps"]');
+  await expect(page.locator('#wMatrix .wm-sub')).toHaveCount(1);
+  await expect(page.locator('#wMatrix .mw[data-k="latin"][data-w="700"]')).toBeVisible();
+  const saved = await page.evaluate(async () => (await import('./assets/js/core.js')).state.wOver);
+  expect(saved['700'].latin.weight).toBe(JSON.parse(original)['700'].latin.weight);
+  expect(saved['700'].latin.size).toBe(118);
+  await page.click('#vWMode [data-m="cont"]');
+  await expect(size).toHaveValue('118');
+  // 这些预设使用静态字体；连续导出仍允许为每段选择其实际档位。
+  await page.click('#ltabPresets'); await pick(page, 'antigochi');
+  await page.click('#saveDiscard');
+  await page.click('#ltabFonts'); await page.click('#vWMode [data-m="cont"]');
+  await expect(page.locator('#wMatrix .wm-sub')).toHaveCount(1);
+  await expect(page.locator('#wMatrix .wm-c')).not.toHaveCount(0);
+});
+
+test('字体状态点：连续模式重载和中间字重使用实际可变来源，成功不再等待，失败显示原因', async ({ page }) => {
+  let failVariable = false;
+  await page.route('https://fonts.googleapis.com/**', route => {
+    const family = new URL(route.request().url()).searchParams.get('family') || '';
+    const empty = failVariable && family.startsWith('Noto Serif SC:') && family.includes('..');
+    return route.fulfill({ contentType: 'text/css', body: empty ? '/* no font faces */' : '@font-face {font-family: Fixture; src: url("http://127.0.0.1:8765/tests/fixtures/NotoSansJP-Subset.ttf");}' });
+  });
+  await open(page); await page.click('#ltabFonts');
+  await page.click('#vWMode [data-m="cont"]');
+  await page.fill('#vWn', '600'); await page.locator('#vWn').press('Enter');
+  await expect.poll(() => page.evaluate(async () => (await import('./assets/js/core.js')).sources.get('g:Noto Serif SC@vf')?.status)).toBe('ok');
+  // 冷启动时不会请求单独的 600；状态必须读取已加载的 @vf，而不是将不存在的记录当作加载中。
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('composite-font:state:v1') || '{}').view?.weight)).toBe(600);
+  await page.reload();
+  const dot = page.locator('#classRows [data-id="han"] .status');
+  await expect(dot).toHaveAttribute('data-key', 'g:Noto Serif SC@vf');
+  await expect(dot).toBeHidden();
+  expect(await page.evaluate(async () => (await import('./assets/js/core.js')).sources.has('g:Noto Serif SC@600'))).toBe(false);
+  await page.fill('#vWn', '650'); await page.locator('#vWn').press('Enter');
+  await expect(dot).toBeHidden();
+  failVariable = true; await page.reload();
+  await expect(dot).toHaveClass('status error');
+  await expect(dot).toHaveAccessibleName('字体加载失败：Google Fonts 没有返回字体');
+  await expect(page.locator('#classRows [data-id="han"] .ct-err')).toHaveText('Google Fonts 没有返回字体');
+  failVariable = false; await page.reload();
+  await expect(dot).toHaveClass('status ok'); await expect(dot).toBeHidden();
 });

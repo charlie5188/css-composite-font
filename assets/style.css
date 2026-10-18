@@ -2,6 +2,7 @@
    window: editor (presets | fonts | typography) | type tester. The page itself never scrolls; each pane scrolls on its own.
    Below 1000px one pane at a time, switched by tabs at the bottom. Export and About are side-bar dialogs. */
 :root{
+  color-scheme:light;
   --bg:#F4F4F2;
   --sheet:#FFFFFF;
   --ink:#111112;
@@ -32,9 +33,10 @@
   --fs-2xl:22px;     /* 大号字样 */
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
   --r-s:2px;         /* 小记号：色块、进度条 */
-  --r:4px;           /* 默认：输入框、按钮、卡片、浮层、对话框 */
-  --r-pill:999px;    /* 胶囊：主次按钮、筛选按钮、开关 */
-  --ctl-h:30px;      /* 工具按钮、图标按钮、工具条里的控件的高度 */
+  --r:4px;           /* 输入框、选择控件、卡片、浮层、对话框 */
+  --r-pill:999px;    /* 操作按钮：文字用胶囊、纯图标用圆形；也用于筛选和开关 */
+  --ctl-h:32px;      /* 普通按钮与工具条控件的统一高度 */
+  --ctl-h-sm:26px;   /* 表格、列表里的紧凑操作 */
   --shadow-pop:0 18px 40px -18px rgba(0,0,0,.35);
 }
 :root:lang(zh-Hant){--ui:"Instrument Sans","PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif}
@@ -82,7 +84,8 @@ button{cursor:pointer}
 /* ================= 组件 =================
    新控件先从这里选，不要另起样式（见 AGENTS.md 的 Design system）。
    按钮只有五种：.btn（次要，细边胶囊）、.btn.primary（主要，实心）、.btn-ghost（工具：无边框，悬停浅底，可带图标和文字）、
-   .btn-icon（只有图标的方形工具按钮；.sm 小一号，.mini 是嵌在文字里的小图标）、.btn-text（文字链接样式）。
+   .btn-icon（只有图标的圆形工具按钮；.sm 小一号，.mini 是嵌在文字里的小图标）、.btn-text（文字链接样式）。
+   普通操作统一高度与圆角，以实心、描边、无边框区分强调程度；紧凑工具另用 .sm / .mini，选择控件保留自己的形状。
    危险操作加 .danger；要点两次才执行的用 armConfirm()，确认中加 .armed */
 /* 表单元素的基础样子：用 :where() 把权重降到最低，组件类（.cell-in 等）总能盖过它 */
 :where(select,input[type=text],input[type=number],input:not([type])){background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:6px 8px;min-width:0}
@@ -90,12 +93,12 @@ button{cursor:pointer}
 /* 下拉框：不用浏览器自带的箭头（太贴右边），换成自己画的，离右边框 10px。灰色在深浅两种主题下都看得清 */
 select{-webkit-appearance:none;appearance:none;padding-right:30px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6l6 -6' fill='none' stroke='%23888884' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:12px 12px;text-overflow:ellipsis}
 :where(input[type=number]){font-family:var(--mono);font-variant-numeric:tabular-nums}
-.btn{border:1px solid var(--ink);background:transparent;border-radius:var(--r-pill);padding:6px 16px;font-size:var(--fs-m);white-space:nowrap;color:var(--ink);text-decoration:none}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;height:var(--ctl-h);border:1px solid var(--ink);background:transparent;border-radius:var(--r-pill);padding:0 var(--sp-4);font-size:var(--fs-m);white-space:nowrap;color:var(--ink);text-decoration:none}
 .btn:hover{background:var(--ink);color:var(--sheet)}
 .btn.primary{background:var(--ink);color:var(--sheet)}
 .btn.primary:hover{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-.btn-ghost,.btn-icon{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;height:var(--ctl-h);padding:0 var(--sp-2);border:0;border-radius:var(--r);background:none;font-size:var(--fs-s);color:var(--ink-2);white-space:nowrap;text-decoration:none}
+.btn-ghost,.btn-icon{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;height:var(--ctl-h);padding:0 var(--sp-2);border:0;border-radius:var(--r-pill);background:none;font-size:var(--fs-m);color:var(--ink-2);white-space:nowrap;text-decoration:none}
 .btn-ghost:hover,.btn-icon:hover,.btn-ghost:has(+ .pop:popover-open),.btn-icon:has(+ .pop:popover-open){background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink)}
 /* 图标：Tabler Icons 的线条图标（下拉箭头和菜单里的勾也是，画在 CSS 里），sprite 在 index.html 开头。线宽统一 1.75（24 格），16px 下约 1.2px */
 .sprite{position:absolute;width:0;height:0;overflow:hidden}
@@ -104,9 +107,9 @@ select{-webkit-appearance:none;appearance:none;padding-right:30px;background-ima
 .btn-ghost svg{width:16px;height:16px;flex:none}
 .btn-icon{width:var(--ctl-h);padding:0;font-size:var(--fs-l)}
 .btn-icon svg{width:16px;height:16px;flex:none}
-.btn-icon.sm{width:26px;height:26px}
+.btn-icon.sm{width:var(--ctl-h-sm);height:var(--ctl-h-sm)}
 .btn-icon.sm svg{width:15px;height:15px}
-.btn-icon.mini{width:auto;height:auto;padding:2px;border-radius:var(--r-s);color:var(--faint);line-height:0}
+.btn-icon.mini{width:auto;height:auto;padding:2px;color:var(--faint);line-height:0}
 .btn-icon.mini:hover{background:none;color:var(--ink)}
 .btn-icon.mini svg{width:14px;height:14px}
 .btn-ghost[aria-disabled="true"],.btn-icon[aria-disabled="true"]{color:var(--faint);cursor:default;background:none}
@@ -148,6 +151,16 @@ select.cell-in{padding-right:18px;background-position:right 3px center;backgroun
 @media(hover:none){.cell-step-actions{opacity:1}}
 .cell-in.own{font-weight:500}
 .cell-in.set{color:var(--accent);font-weight:500}
+/* 颜色字段：原生色板配十六进制输入，沿用普通字段的边框与聚焦方式。 */
+.color-field{display:inline-flex;align-items:center;gap:var(--sp-1);height:var(--ctl-h);padding:0 var(--sp-1);border:1px solid var(--line);border-radius:var(--r);background:var(--sheet);min-width:0}
+.color-field:hover{border-color:var(--faint)}
+.color-field:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.color-field input[type=color]{width:24px;height:24px;flex:none;padding:0;border:0;background:none;cursor:pointer}
+.color-field input[type=color]::-webkit-color-swatch-wrapper{padding:0}
+.color-field input[type=color]::-webkit-color-swatch{border:1px solid var(--line);border-radius:var(--r-s)}
+.color-field input[type=color]::-moz-color-swatch{border:1px solid var(--line);border-radius:var(--r-s)}
+.color-field input[type=text]{width:8ch;padding:0;border:0;border-radius:0;background:none;font-size:var(--fs-s)}
+.color-field input:focus{outline:none}
 select.cell-in[data-auto]:not(.set){color:var(--faint)}      /* 下拉框里推算的值：和输入框的占位文字一样是灰色 */
 select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 /* 浮层：菜单、说明、分组开关共用一个外观。.menu 是一列菜单项（.mm-item）；.mm-radio / .mm-check 选中时前面打勾 */
@@ -163,6 +176,12 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 .mm-radio[aria-checked="true"]::before,.mm-check[aria-pressed="true"]::before{opacity:1}
 .mm-radio[aria-checked="true"]{font-weight:600}
 .mm-note{margin:2px 10px 6px;font-size:var(--fs-s);line-height:1.55;color:var(--muted)}
+.settings-block{display:grid;gap:var(--sp-2);margin:0;padding:var(--sp-2) 10px;border:0;min-width:0}
+.settings-row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);font-size:var(--fs-m)}
+.settings-row select{max-width:65%;font-size:var(--fs-s)}
+.settings-actions{display:flex;justify-content:flex-end}
+.settings-actions .btn-text:disabled{color:var(--faint);cursor:default}
+.more-menu{width:min(300px,calc(100vw - 24px));max-height:calc(100dvh - 68px);overflow-y:auto;overscroll-behavior:contain}
 /* 小节标题：左边等宽小标题（.label），右边是这一节的操作 */
 .sec-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--sp-2) var(--sp-3);margin:var(--sp-6) 0 var(--sp-2)}
 /* 层级靠字号、字重和留白，不靠分隔线：小节标题（.sec-title）> 条目名（.typo-name）> 表头、说明（等宽小字 .label、灰字） */
@@ -183,17 +202,22 @@ input[type=range]::-moz-range-track{height:2px;background:var(--line)}
 input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--ink);border:0}
 input[type=range]:hover::-webkit-slider-thumb,input[type=range]:active::-webkit-slider-thumb{background:var(--accent)}
 input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-thumb{background:var(--accent)}
+/* 数字框展开的紧凑滑杆；节点与滑块中心共用 13px 的拇指留白。 */
+.range-pop{width:288px;max-width:calc(100vw - 16px);padding:var(--sp-3) var(--sp-4)}
+.range-pop input[type=range]{display:block;margin:0;height:28px}
+.range-pop input[type=range]:disabled{cursor:default;opacity:.5}
+.range-ticks{position:relative;height:var(--ctl-h-sm);margin:0 6.5px;font:var(--fs-xs)/1.5 var(--mono);color:var(--muted)}
+.range-ticks>*{position:absolute;left:var(--tick);transform:translateX(-50%);display:inline-flex;align-items:center;justify-content:center;height:var(--ctl-h-sm);font-variant-numeric:tabular-nums}
+.range-ticks>*::before{content:"";position:absolute;top:-12px;left:50%;height:4px;width:1px;background:var(--muted);pointer-events:none}
+.range-ticks .btn-text{min-width:32px;font:inherit}
+.range-ticks .cur{color:var(--ink);font-weight:600}
 
 /* ---------- top bar ---------- */
 /* 标题用正在调的复合字体排：改了设定马上看得到 */
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:52px;padding:0 16px;border-bottom:1px solid var(--ink);background:var(--bg)}
 .brand{margin:-.25em 0;padding:.25em 0;min-width:0;font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-size:21px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}      /* 省略号要 overflow:hidden；上下留出空间，西文的降部（p、g）不被裁掉 */
-.top-right{display:flex;align-items:center;gap:18px;flex:none}
-.ex-toggle{padding:5px 16px}
-.topbar .btn-ghost{font-size:var(--fs-m)}
+.top-right{display:flex;align-items:center;gap:var(--sp-2);flex:none}
 /* 字体文件在后台生成时：按钮底边是进度条；生成好了、对话框关着时，右上角一个小点 */
-/* 「⋯」菜单 */
-#moreBtn{margin-left:-8px}
 /* 语言：选中的那一项前面打勾；没选的留出同样的位置，文字才对齐 */
 .ex-toggle{position:relative;overflow:hidden}
 .ex-toggle.running::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:var(--pct,0%);background:var(--accent);transition:width .3s}
@@ -209,6 +233,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 /* ---------- presets（左栏的第一个页签）---------- */
 .presets{padding-top:4px}
 .sec-head.preset-head{margin:var(--sp-4) 0 var(--sp-3)}
+.preset-list{display:contents}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
 .pcard-wrap{position:relative;display:grid;grid-template-columns:minmax(0,1fr)}      /* 卡片宽度只由外层网格决定，不被里面的字样撑开 */
 .pcard-wrap[hidden]{display:none}
@@ -216,11 +241,18 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .pcard{display:grid;gap:6px;align-content:start;min-width:0;container-type:inline-size;text-align:left;padding:14px 14px 13px;border:1px solid var(--line);background:var(--sheet);border-radius:var(--r);color:inherit}
 .pcard:hover{border-color:var(--faint)}
 .pcard[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+/* 当前配置是编辑中的内容，不是可套用的模板；保存动作固定在卡片底部。 */
+.pcurrent{background:var(--bg);grid-template-rows:auto auto 1fr auto}
+.pcurrent:hover{border-color:var(--line)}
+.pcurrent .pspec{font-family:var(--cf),var(--generic);font-weight:var(--fw,400)}
+.current-actions{display:grid;gap:var(--sp-1);align-self:end}
+.current-actions .btn{width:100%}
+
 /* 缩略字样：固定行高，各卡片的基线和下面的文字位置一致；只裁横向，g 的下伸部分不会被切掉 */
 /* 字号跟着卡片宽度缩：放不下时缩小，而不是把卡片撑宽 */
 .pspec{display:block;min-width:0;height:58px;font-size:min(46px,27cqi);line-height:58px;white-space:nowrap;overflow-x:clip;overflow-y:visible;margin-bottom:8px;font-feature-settings:normal}
 .ptag{font-family:var(--mono);font-size:var(--fs-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
-.pname{font-size:var(--fs-l);font-weight:600;line-height:1.3}
+.pname{font-size:var(--fs-l);font-weight:600;line-height:1.3;min-width:0;overflow-wrap:anywhere}
 .pmiss{font-size:var(--fs-s);line-height:1.4;color:var(--warn)}
 .pdel{position:absolute;top:6px;right:6px}
 #saveDlg{width:min(460px,calc(100vw - 32px))}
@@ -267,9 +299,9 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
   .mtabs button{flex:1;border:0;background:none;padding:12px 0 13px;font-size:var(--fs-m);color:var(--muted);border-top:2px solid transparent;margin-top:-1px}
   .mtabs button[aria-selected="true"]{color:var(--ink);font-weight:600;border-top-color:var(--ink)}
 }
-@media (max-width:640px){.topbar{gap:10px;padding:0 12px}.top-right{gap:12px}.brand{font-size:18px}}
+@media (max-width:640px){.topbar{gap:10px;padding:0 12px}.brand{font-size:18px}}
 .mm-about{display:none}
-@media (max-width:480px){.ex-toggle{padding:5px 12px}.top-right{gap:10px}.brand{font-size:18px}#aboutBtn{display:none}.mm-about{display:flex}}      /* 手机：语言只写一个字，给标题留地方 */
+@media (max-width:480px){.topbar .btn{padding-inline:var(--sp-3)}.brand{font-size:18px}#aboutBtn{display:none}.mm-about{display:flex}}      /* 手机：语言只写一个字，给标题留地方 */
 /* 窗格顶上的工具条：一样高 */
 .bench{--bar-h:54px}
 @media (max-width:560px){.compose{--px:8px}}      /* 手机上表格本来就挤：窗格左右留白减半 */
@@ -310,7 +342,10 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .ct-font-range{white-space:nowrap}
 .fsel{flex:1}      /* 外观见 .cell-in。注意只能换 background-color：background 简写会把箭头图也清掉 */
 .fsel.follow{color:var(--muted)}
-.status{flex:none;width:6px;height:6px;border-radius:50%;background:var(--faint)}
+.status{position:relative;flex:none;width:6px;height:6px;border-radius:50%;background:var(--faint);cursor:help}
+/* 扩大状态点的悬停范围，视觉大小与字体名的对齐保持不变。 */
+.status::after{content:"";position:absolute;inset:-9px -3px}
+.status:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
 /* 字体加载状态：只在加载中（闪烁）和失败（红）时出现；加载好、或跟随别的类别时不占位置，把宽度留给字体名 */
 .status.ok{display:none}
 .status.error{background:var(--warn)}
@@ -404,7 +439,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 .busy{font-size:var(--fs-xs);color:var(--muted);pointer-events:none;font-family:var(--mono)}
 .sample-box{display:grid;gap:6px}
 textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);border:1px solid var(--ink);border-radius:var(--r);padding:12px 14px;font-family:var(--ui);font-size:var(--fs-l);line-height:1.7}
-.sheet{--pad:clamp(22px,4.6vw,68px);background:var(--sheet);padding:0 var(--pad) var(--pad);min-width:0;display:grid;gap:14px}
+.sheet{--pad:clamp(22px,4.6vw,68px);background:var(--proof-bg,var(--sheet));padding:0 var(--pad) var(--pad);min-width:0;display:grid;gap:14px}
 /* 校样的工具条：贴着白纸顶边通栏，一行。左边示例页签（放不下时横向滚动），右边字号、行高、「显示」；长文往下滚时停在窗口顶上 */
 .sheet-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;line-height:1.4;font-family:var(--ui);min-height:var(--bar-h);margin:0 calc(0px - var(--pad)) calc(var(--pad) - 14px);padding:0 10px 0 16px;background:var(--sheet);border-bottom:1px solid var(--line)}
 .sheet-bar .sample-tabs{flex:1 1 auto;align-self:stretch;gap:12px;margin-bottom:-1px}
@@ -416,12 +451,11 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .sheet-bar .sample-tabs .tab-add{position:sticky;right:0;flex:none;background:linear-gradient(var(--sheet),var(--sheet)) top/100% calc(100% - 1px) no-repeat}      /* 底下 1px 留空：不盖住工具条的底线 */
 .sheet-bar .sample-tabs .tab-add::before{content:"";position:absolute;top:0;bottom:1px;right:100%;width:28px;background:linear-gradient(to right,transparent,var(--sheet));pointer-events:none;opacity:0}
 .sheet-bar .sample-tabs.fade-r .tab-add::before{opacity:1}
-/* 工具条里的「显示」：和数字框同一套样子（无边框，悬停出细框，图标 + 文字 + 小箭头），前面一条竖线隔开 */
+/* 工具条里的「显示」：文字与小箭头，沿用无边框胶囊按钮；前面的竖线分隔数字控件 */
 .bar-sep{width:1px;height:18px;background:var(--line);margin:0 2px}
 .bar-ctrl .view-btn::after{margin-left:2px}
-.vb-ic{width:15px;height:15px;flex:none}
 /* 紧凑的数字框：图标 + 数字 + 单位；图标可以左右拖动 */
-.nf{display:inline-flex;align-items:center;height:30px;padding:0 6px 0 0;border:1px solid transparent;border-radius:var(--r);font-family:var(--mono);font-size:var(--fs-s);color:var(--muted);white-space:nowrap}
+.nf{display:inline-flex;align-items:center;height:var(--ctl-h);padding:0 6px 0 0;border:1px solid transparent;border-radius:var(--r);font-family:var(--mono);font-size:var(--fs-s);color:var(--muted);white-space:nowrap}
 .nf:hover{border-color:var(--line)}
 .nf:focus-within{border-color:var(--ink)}
 .nf-ic{display:grid;place-items:center;width:26px;height:28px;cursor:ew-resize;color:var(--muted);touch-action:none}
@@ -440,7 +474,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* 文字四周的留白一样宽：横排时去掉第一行上面、最后一行下面的半行距（行高多出来的部分），让上下留白量到字面，和左右一致 */
 .sheet:not(.vertical) .proof-text{margin-bottom:calc((1 - var(--lh,1.8)) * var(--fs,40px) / 2)}
 .sheet:not(.vertical) .proof-text{margin-top:calc((1 - var(--lh,1.8)) * var(--fs,40px) / 2)}
-.proof-text{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:var(--fst,normal);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0}
+.proof-text{color:var(--proof-ink,var(--ink));font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:var(--fst,normal);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0}
 /* 行线：每一行的行框（高 = 字号 × 行高）。某一行被撑高时，下面的字就会和线错开 */
 .sheet.rules .proof-text{background-image:linear-gradient(to bottom,var(--ruled) 1px,transparent 1px);background-size:100% calc(1em * var(--lh,1.8));box-shadow:inset 0 -1px var(--ruled)}
 /* 竖排：校样占满参考图上面的整块高度，列多了横向滚动；窗口太矮时最少 240px，整栏再竖向滚动 */
@@ -475,7 +509,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* 不常用的显示选项收进「显示」菜单；按钮上显示开了几项 */
 .view-btn{color:var(--muted)}
 .view-btn::after{content:"";display:inline-block;width:5px;height:5px;margin-left:8px;border-right:1.25px solid currentColor;border-bottom:1.25px solid currentColor;transform:translateY(-2px) rotate(45deg)}
-.view-pop{width:min(320px,calc(100vw - 24px))}      /* 说明文字是全宽的：宽度要定住，不然会被长句撑开 */
+.view-pop{width:min(320px,calc(100vw - 24px));max-height:calc(100dvh - 16px);overflow-y:auto;overscroll-behavior:contain}      /* 说明文字是全宽的：宽度要定住，不然会被长句撑开 */
 .vt{display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;gap:6px 10px;margin-top:4px;padding:8px 10px 0;border-top:1px solid var(--rule)}      /* 三行共用列宽，下拉框对齐 */
 .vt-row{display:contents;font-size:var(--fs-m)}
 .vt-row select{font-size:var(--fs-s);padding-top:4px;padding-bottom:4px}
@@ -496,7 +530,8 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* ---------- metrics & advanced ---------- */
 /* 校样栏：上面校样自己滚动，下面参考图固定 */
 .tester{display:flex;flex-direction:column;overflow:hidden}      /* 窄屏上不显示这一栏时，由 .bench>.tester 的规则隐藏 */
-.proof-scroll{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain}
+.proof-scroll{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;background:var(--proof-bg,var(--sheet))}
+.sample-box,.legend{background:var(--sheet)}
 .panel{position:relative;flex:none;display:grid;min-width:0;border-top:1px solid var(--line)}
 .spec-wrap{min-width:0}
 /* 参考图的「显示」放在白色区域右上角，和校样纸面上的一样 */
@@ -509,7 +544,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .sg-tog.dash .sg-line{border-top-style:dashed}
 .sg-tog[aria-pressed="true"] .sg-line{border-top-color:var(--c)}
 @media (max-width:560px){.spec-bar{padding-left:8px}.sg-tog{padding:0 7px;gap:6px}}
-#spec{display:block;width:100%;height:160px}
+#spec{display:block;width:100%;height:160px;background:var(--proof-bg,var(--sheet))}
 
 /* 排版页签：开头一句说明这些设定不分字重 */
 .typo{min-width:0}
@@ -522,17 +557,19 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .w-sub{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;font-size:var(--fs-s);line-height:1.55;color:var(--muted);margin:0 0 6px}
 .wr-in{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
 .wr-in input{width:62px;font-family:var(--mono);font-size:var(--fs-s);padding:3px 6px}
-#vWNote{margin:0 0 8px}
 .wm{--wm-cols:80px 1fr;display:grid;grid-template-columns:var(--wm-cols);column-gap:8px;overflow-x:auto}      /* 各行用 subgrid 共用同一套列宽，表头和数字才对得齐 */
 .wm-row{grid-column:1/-1;display:grid;grid-template-columns:subgrid;align-items:center;min-height:34px;border-bottom:1px solid var(--rule)}
-.wm-row[data-row]{cursor:pointer}
-.wm-row[data-row]:not(.cur):hover{background:color-mix(in srgb,var(--ink) 4%,transparent)}
+.wm-row[data-row]:not(.off){cursor:pointer}
+.wm-row[data-row]:not(.cur):not(.off):hover{background:color-mix(in srgb,var(--ink) 4%,transparent)}
 .wm-row>:first-child{padding-left:8px}
 .wm-cls{min-height:0;padding:10px 0 2px;border-bottom:0;font-size:var(--fs-s);color:var(--ink)}
 .wm-cls>span{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;padding-bottom:4px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}      /* 类别名盖在它的几列上面 */
 .wm-cls>span:empty{border-bottom:0}
 .wm-clabel{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .wm-cls .btn-icon{flex:none}
+.wm-single{padding-bottom:6px;border-bottom:1px solid var(--line)}
+.wm-single>span{padding-bottom:0;border-bottom:0}
+.wm-single>.wm-wh{justify-content:flex-start;font-family:var(--mono);font-size:var(--fs-xs);color:var(--muted)}
 .wm-sub{min-height:0;padding:0 0 6px;border-bottom-color:var(--line);font-family:var(--mono);font-size:var(--fs-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .wm-sub>span{text-align:right;padding-right:calc(var(--cell-step-w) + var(--sp-1))}
 .wm-sub>.wm-xh,.wm-sub>.wm-wh{text-align:left;padding-right:0}
@@ -540,7 +577,8 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .wm-w{display:flex;align-items:center;gap:6px;min-width:0}
 .wm-x input[type=checkbox]{margin:0;accent-color:var(--ink)}
 .wm-pw{border:0;background:none;padding:6px 0;font:var(--fs-m)/1 var(--mono);color:var(--ink);text-align:left;white-space:nowrap}
-button.wm-pw:hover{text-decoration:underline;text-underline-offset:3px}
+button.wm-pw:not(:disabled):hover{text-decoration:underline;text-underline-offset:3px}
+.wm-pw:disabled{cursor:default}
 .wm-pw small{margin-left:5px;font-family:var(--ui);font-size:var(--fs-xs);color:var(--muted)}
 .wm-row.off .wm-pw{color:var(--muted)}
 .wm-row.cur{background:color-mix(in srgb,var(--accent) 7%,transparent);box-shadow:inset 2px 0 var(--accent)}
