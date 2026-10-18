@@ -842,7 +842,8 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-sources>[data-pane="library"]{display:grid;height:100%;min-height:0;grid-template-rows:minmax(0,1fr)}
 .pk-sources>[data-pane="file"]{display:flex;flex-direction:column;height:100%;min-height:0;max-height:100%;overflow:auto}
 .pk-sources>[data-pane="file"].is-empty #ffDrop{flex:1;min-height:240px;flex-direction:column;justify-content:center;text-align:center}
-.pk-sources>[data-pane="file"]>#ffName,.pk-sources>[data-pane="file"]>#ffError{flex:none}
+.pk-sources>[data-pane="file"]>#ffError{flex:none}
+#ffDrop #ffName{width:100%;margin:0;overflow-wrap:anywhere}
 .pk-detail-content{display:grid;gap:var(--sp-4);min-width:0}
 .pk-detail.is-empty{align-content:center}
 .font-empty-visual{position:relative;display:grid;place-items:center;width:140px;height:140px;margin-bottom:var(--sp-4);border:1px solid var(--line);color:var(--faint);background:linear-gradient(var(--line),var(--line)) center/1px 100% no-repeat,linear-gradient(var(--line),var(--line)) center/100% 1px no-repeat;font-family:var(--generic)}
@@ -889,6 +890,12 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
   .pk-footer>.pk-actions{grid-column:1;grid-row:auto;position:sticky;bottom:0;z-index:2;padding:var(--sp-3) 0 0;border-inline-start:0;background:var(--sheet)}
   .pk .font-options{--font-choice-max:220px}
 }
+/* An empty file library has one full-size drop surface at every breakpoint; importing restores the normal pane layout. */
+.pk-workspace.file-empty{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;overflow:hidden}
+.pk-workspace.file-empty>.pk-sources{grid-column:1;grid-row:1;grid-template-rows:minmax(0,1fr);min-height:0;overflow:hidden;padding-inline-end:0}
+.pk-workspace.file-empty>.pk-sources>[data-pane="file"]{height:100%;max-height:100%;overflow:auto}
+.pk-workspace.file-empty>.pk-detail{display:none}
+.pk-workspace.file-empty>.pk-footer{display:block;grid-column:1;grid-row:2;padding-inline-start:0;border-inline-start:0}
 .pk-header{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3)}
 .pk h3{margin:0;font-size:var(--fs-xl);font-weight:600}
 .pk h3 span{color:var(--muted);font-weight:400}

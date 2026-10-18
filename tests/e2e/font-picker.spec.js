@@ -996,21 +996,29 @@ test('选字标题关闭不保存；可变轴展开后没有第二层折叠', as
 });
 
 
-test('未选字体只显示空状态：大拖放区导入后收紧，失败与切换保留正确状态', async ({ page }) => {
+test('空文件页为整栏拖放区：说明在区内，导入后恢复双栏，失败与切换保留正确状态', async ({ page }) => {
   await fixture(page); await page.locator('#pkSample').fill('Draft 永国字体');
   await page.locator('#picker [data-src="file"]').click();
-  await expect(page.locator('#pkEmptyState')).toBeVisible();
+  await expect(page.locator('#pkEmptyState')).toBeHidden(); await expect(page.locator('.pk-detail')).toBeHidden();
   await expect(page.locator('#pkDetailContent')).toBeHidden();
   await expect(page.locator('#pkAxes')).toBeHidden(); await expect(page.locator('#pkOk')).toBeDisabled();
+  expect(await page.locator('#ffName').evaluate(el => el.closest('#ffDrop') != null)).toBe(true);
+  expect(await page.locator('#ffDrop').evaluate(el => el.getBoundingClientRect().width > el.closest('.pk-workspace').getBoundingClientRect().width * .99)).toBe(true);
+  await page.setViewportSize({width:390,height:844}); await page.emulateMedia({colorScheme:'dark'});
+  await expect(page.locator('#pkCancel')).toBeInViewport(); await expect(page.locator('#pkOk')).toBeInViewport();
+  await expect(page.locator('.pk-detail')).toBeHidden();
+  expect(await page.locator('#ffDrop').evaluate(el => el.getBoundingClientRect().width > el.closest('.pk-workspace').getBoundingClientRect().width * .99)).toBe(true);
+  await page.setViewportSize({width:1483,height:1239}); await page.emulateMedia({colorScheme:'light'});
   expect(await page.locator('#ffDrop').evaluate(el => { const drop = el.getBoundingClientRect(), pane = el.parentElement.getBoundingClientRect(); return drop.height > pane.height * .8 && Math.abs(drop.width - pane.width) < 2; })).toBe(true);
   await page.locator('#picker [data-src="library"]').click();
-  await expect(page.locator('#pkEmptyState')).toBeHidden(); await expect(page.locator('#pkSample')).toHaveValue('Draft 永国字体');
+  await expect(page.locator('#pkEmptyState')).toBeHidden(); await expect(page.locator('.pk-detail')).toBeVisible(); await expect(page.locator('#pkSample')).toHaveValue('Draft 永国字体');
   await page.locator('#picker [data-src="file"]').click();
   await page.locator('#ffFile').setInputFiles({ name:'broken.ttf', mimeType:'font/ttf', buffer:Buffer.from('invalid') });
   await expect(page.locator('#ffError')).toContainText('broken.ttf');
-  await expect(page.locator('#pkEmptyState')).toBeVisible(); await expect(page.locator('#pkOk')).toBeDisabled();
+  await expect(page.locator('#pkEmptyState')).toBeHidden(); await expect(page.locator('.pk-detail')).toBeHidden(); await expect(page.locator('#pkOk')).toBeDisabled();
   await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
-  await expect(page.locator('#pkEmptyState')).toBeHidden(); await expect(page.locator('#pkDetailContent')).toBeVisible();
+  await expect(page.locator('#pkEmptyState')).toBeHidden(); await expect(page.locator('.pk-detail')).toBeVisible(); await expect(page.locator('#pkDetailContent')).toBeVisible();
+  expect(await page.locator('#ffDrop').evaluate(el => el.getBoundingClientRect().width < el.closest('.pk-workspace').getBoundingClientRect().width * .51)).toBe(true);
   await expect(page.locator('#pkOk')).toBeEnabled(); await expect(page.locator('#pkOk')).toHaveText('使用此配置');
   expect(await page.locator('#ffDrop').evaluate(el => el.getBoundingClientRect().height < 100)).toBe(true);
   await expect(page.locator('#pkSample')).toHaveValue('Draft 永国字体');

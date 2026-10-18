@@ -1395,12 +1395,16 @@ function chooseImported(id) {
   updateCand();
   $('#ffOptions').querySelectorAll('[data-imported]').forEach(el => el.setAttribute('aria-selected', el.dataset.imported === id));
 }
+function syncPickerFileLayout() {
+  // Until files exist, the drop target is the entire workspace; keep details mounted for draft restoration.
+  picker.querySelector('.pk-workspace').classList.toggle('file-empty', pickTab === 'file' && $('#ffLibrary').hidden);
+}
 export function renderImportedFonts() {
   const query = searchKey($('#ffSearch').value), box = $('#ffOptions');
   const all = [...importedFonts.values()].filter(entry => files.has(entry.font.fileId));
   const entries = all.filter(entry => searchKey(`${entry.family} ${entry.style} ${entry.font.fileName}`).includes(query));
   $('#ffDrop').parentElement.classList.toggle('is-empty', !all.length);
-  $('#ffLibrary').hidden = !all.length; fileObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
+  $('#ffLibrary').hidden = !all.length; syncPickerFileLayout(); fileObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
   $('#ffResults').textContent = T('pkResults', { n: entries.length });
   box.innerHTML = entries.length ? entries.map((entry, i) => `<button class="font-option" type="button" role="option" tabindex="${i ? -1 : 0}" aria-selected="${pickCand?.fileId === entry.font.fileId}" data-imported="${esc(entry.font.fileId)}"><span class="font-option-name">${esc(entry.family)}${entry.style ? ' · ' + esc(entry.style) : ''}</span><span class="font-option-sample" hidden>${esc(catalogSample(catalogInfo(entry.family)))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoImportedResults'))}</p>`;
   fileObserver = new IntersectionObserver(events => events.forEach(entry => {
@@ -1432,7 +1436,7 @@ export function setPickTab(tab) {
   picker.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== pane; });
   if (pane === 'file') renderImportedFonts();
   else { renderCatalog(); if (!localReadAttempted) readInstalledFonts(); else showLocalReadState(); }
-  updateCand();
+  syncPickerFileLayout(); updateCand();
 }
 export function candFromFields() {
   const base = pickW ? objOf(pickTarget).font : null;
