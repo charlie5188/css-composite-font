@@ -969,7 +969,7 @@ test('选字缺字高亮复用首页波浪线：只检查输入文字，保留�
   await openClassPicker(page, 'han'); await page.locator('#picker [data-src="file"]').click();
   await page.locator('#ffOptions [data-imported]').click(); await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
   await page.locator('#sampleTabs [data-act=addcustom]').click();
-  await page.locator('#sample').fill('A国'); await page.locator('#viewBtn').click();
+  await page.locator('#proofText').fill('A国'); await page.locator('#viewBtn').click();
   if (await page.locator('#vMiss').getAttribute('aria-pressed') !== 'true') await page.locator('#vMiss').click();
   await page.keyboard.press('Escape');
   await expect.poll(() => page.evaluate(() => [...(CSS.highlights.get('cf-miss2') || [])].map(r => r.toString()).join(''))).toContain('国');

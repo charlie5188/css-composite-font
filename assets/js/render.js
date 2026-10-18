@@ -1,3 +1,4 @@
+import { redrawProof } from './proof-editor.js';
 import { showMissingGlyphTip, paintMissingGlyphs, syncWeightControl } from './ui-controls.js';
 import { $, T, UI, debounce, esc, root, tr } from './i18n.js';
 import { CLASSES, CLS, GROUPS, classOf, fmtRanges, inRanges, isMoved } from './unicode.js';
@@ -561,35 +562,37 @@ export function renderPreview() {
    Only baseline shifts require spans; fall back to span coloring when Highlight API is unavailable. */
   const hl = HL_OK && v.colorize, spanColor = v.colorize && !HL_OK;
   pt.classList.toggle('colorize', spanColor);
-  if (!(spanColor || anyShift())) pt.textContent = v.text;
-  else {
-    /* Merge unwrapped text into one node; adjacent Western/digit/Han text nodes can overlap in Chrome vertical layout. */
-    /* For span coloring, split by class. Otherwise split only by baseline shift, keeping equal-shift letters and digits, such as '27.6km', in one span so element boundaries do not break spacing. */
-    const frag = document.createDocumentFragment(), shifts = new Map();
-    const shiftOf = o => { if (!shifts.has(o)) shifts.set(o, settingOf(o).shift); return shifts.get(o); };
-    const keyOf = o => spanColor ? o : shiftOf(o);
-    let cur = null, buf = '', plain = '';
-    const flush = () => {
-      if (!buf) return;
-      const sh = shiftOf(cur);
-      if (!spanColor && !sh) plain += buf;
-      else {
-        if (plain) { frag.append(plain); plain = ''; }
-        const s = document.createElement('span');
-        s.className = 'r';
-        if (spanColor) s.dataset.k = cur[0] === '#' ? 'custom' : cur;
-        if (sh) s.style.setProperty('--sh', sh / 100);
-        s.textContent = buf;
-        frag.append(s);
-      }
-      buf = '';
-    };
-    for (const ch of v.text) { const o = ownerOf(ch.codePointAt(0)); if (cur === null || keyOf(o) !== keyOf(cur)) { flush(); cur = o; } buf += ch; }
-    flush();
-    if (plain) frag.append(plain);
-    pt.replaceChildren(frag);
-    if (v.vertical && state.typo.autospace !== 'no-autospace') vAutospace(pt);
-  }
+  redrawProof(pt, () => {
+    if (!(spanColor || anyShift())) pt.textContent = v.text;
+    else {
+      /* Merge unwrapped text into one node; adjacent Western/digit/Han text nodes can overlap in Chrome vertical layout. */
+      /* For span coloring, split by class. Otherwise split only by baseline shift, keeping equal-shift letters and digits, such as '27.6km', in one span so element boundaries do not break spacing. */
+      const frag = document.createDocumentFragment(), shifts = new Map();
+      const shiftOf = o => { if (!shifts.has(o)) shifts.set(o, settingOf(o).shift); return shifts.get(o); };
+      const keyOf = o => spanColor ? o : shiftOf(o);
+      let cur = null, buf = '', plain = '';
+      const flush = () => {
+        if (!buf) return;
+        const sh = shiftOf(cur);
+        if (!spanColor && !sh) plain += buf;
+        else {
+          if (plain) { frag.append(plain); plain = ''; }
+          const s = document.createElement('span');
+          s.className = 'r';
+          if (spanColor) s.dataset.k = cur[0] === '#' ? 'custom' : cur;
+          if (sh) s.style.setProperty('--sh', sh / 100);
+          s.textContent = buf;
+          frag.append(s);
+        }
+        buf = '';
+      };
+      for (const ch of v.text) { const o = ownerOf(ch.codePointAt(0)); if (cur === null || keyOf(o) !== keyOf(cur)) { flush(); cur = o; } buf += ch; }
+      flush();
+      if (plain) frag.append(plain);
+      pt.replaceChildren(frag);
+      if (v.vertical && state.typo.autospace !== 'no-autospace') vAutospace(pt);
+    }
+  });
   paintClasses(pt, hl);
   checkMissSoon();
   const legend = $('#legend');
@@ -679,10 +682,9 @@ export const orderedSamples = () => { const first = SAMPLE_ORDER[UI] || SAMPLE_O
 export function renderSampleTabs() {
   const v = state.view, cur = v.sample, cs = v.customs || [];
   const name = i => T('customSample') + (cs.length > 1 ? ' ' + (i + 1) : '');
-  $('#sampleTabs').innerHTML = orderedSamples().map(k => [k, SAMPLES[k]]).map(([k, s]) => `<button type="button" role="tab" data-sample="${k}" aria-selected="${cur === k}">${esc(tr(s.label))}</button>`).join('') +
-    cs.map((c, i) => `<span class="ctab"><button type="button" role="tab" data-sample="c${i}" aria-selected="${cur === 'c' + i}" aria-controls="sampleBox">${esc(name(i))}</button><button type="button" class="ctab-x" data-act="delcustom" data-i="${i}" aria-label="${esc(T('customDel'))}" title="${esc(T('customDel'))}"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></span>`).join('') +
+  $('#sampleTabs').innerHTML = orderedSamples().map(k => [k, SAMPLES[k]]).map(([k, s]) => `<button type="button" role="tab" data-sample="${k}" aria-selected="${cur === k}" aria-controls="proofText">${esc(tr(s.label))}</button>`).join('') +
+    cs.map((c, i) => `<span class="ctab"><button type="button" role="tab" data-sample="c${i}" aria-selected="${cur === 'c' + i}" aria-controls="proofText">${esc(name(i))}</button><button type="button" class="ctab-x" data-act="delcustom" data-i="${i}" aria-label="${esc(T('customDel'))}" title="${esc(T('customDel'))}"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></span>`).join('') +
     `<button type="button" class="tab-add" data-act="addcustom" aria-label="${esc(T('customAdd'))}" title="${esc(T('customAdd'))}"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></button>`;
-  $('#sampleBox').hidden = !/^c\d+$/.test(cur);      // Only custom sample tabs are editable.
   tabFade();
 }
 /* Scroll overflowing sample tabs horizontally; fade any hidden edge to signal more content. */
@@ -725,7 +727,6 @@ export function syncToolbar() {
   document.querySelectorAll('#specBar [data-sg]').forEach(b => b.setAttribute('aria-pressed', !!sh[b.dataset.sg]));
   for (const t of TYPO) { const el = $('#ty-' + t.key); if (el) el.value = state.typo[t.key]; }
   renderTypoStatus();
-  $('#sample').value = v.text;
   $('#exName').value = state.name;
   $('#exWeights').innerHTML = WEIGHTS.map(w => `<button type="button" data-w="${w}" aria-pressed="${state.weights.includes(w)}" title="${esc(wTip(w))}"${wTag(w) ? ' class="wl"' : ''}>${w}${wTag(w)}</button>`).join('');
   renderWHint();

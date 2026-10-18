@@ -1,3 +1,4 @@
+import { initProofEditor } from './proof-editor.js';
 import { refresh } from './refresh.js';
 import { bindPopover, bindWeightControl, syncWeightControl, showMissingGlyphTip, paintMissingGlyphs, placePopover, searchKey } from './ui-controls.js';
 import { catalogInfo, catalogOrder, catalogStyles, localStyleWeight, localWeightInfo, localItalicInfo, filterCatalog, sortCatalog } from './font-catalog.js';
@@ -605,17 +606,22 @@ export function initToolbar() {
 
   const v = () => state.view;
   /* Multiple custom sample tabs persist independently. The trailing add button starts one from the current text; switching tabs preserves it, and only delete removes it. */
+  const revealSample = () => {
+    const tab = $('#sampleTabs [aria-selected="true"]');
+    (tab?.closest('.ctab') || tab)?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  };
   const customAt = k => { const m = /^c(\d+)$/.exec(k); return m ? v().customs[+m[1]] : null; };
   const showSample = k => {
     const c = customAt(k);
     if (c) { v().sample = k; v().text = c.text; if (c.lang) state.typo.lang = c.lang; }
     else { v().sample = k; v().text = SAMPLES[k].text; state.typo.lang = SAMPLES[k].lang; }
     refresh('toolbar', 'editor', 'preview', 'export', 'fonts');      // Language changes also update the Zhuyin row and regional checks.
+    revealSample();
   };
   $('#sampleTabs').addEventListener('click', e => {
     if (e.target.closest('[data-act="addcustom"]')) {
       v().customs.push({ text: v().text, lang: state.typo.lang });
-      showSample('c' + (v().customs.length - 1)); $('#sample').focus();
+      showSample('c' + (v().customs.length - 1)); $('#proofText').focus();
       return;
     }
     const del = e.target.closest('[data-act="delcustom"]');
@@ -628,7 +634,7 @@ export function initToolbar() {
     }
     const b = e.target.closest('[data-sample]'); if (!b) return;
     showSample(b.dataset.sample);
-    if (customAt(b.dataset.sample)) $('#sample').focus();
+    if (customAt(b.dataset.sample)) $('#proofText').focus();
   });
   $('.pane-bar').addEventListener('click', e => {
     const b = e.target.closest('[data-ltab]'); if (!b) return;
@@ -640,7 +646,7 @@ export function initToolbar() {
     if (t.scrollWidth <= t.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
     t.scrollLeft += e.deltaY; e.preventDefault();
   }, { passive: false });
-  new ResizeObserver(tabFade).observe($('#sampleTabs'));
+  new ResizeObserver(() => { revealSample(); tabFade(); }).observe($('#sampleTabs'));
   /* Ignore temporarily out-of-range size/line-height input while typing; clamp on blur or Enter. */
   const NUM = { size: { el: '#vSize', min: 12, max: 160, dp: 0, px: 0.5 }, lh: { el: '#vLh', min: 1, max: 2.6, dp: 2, px: 0.01 } };
   const setNum = (k, x) => {
@@ -702,11 +708,18 @@ export function initToolbar() {
   $('#proofText').addEventListener('pointermove', e => missTipAt(e.clientX, e.clientY));
   $('#proofText').addEventListener('pointerleave', () => { $('#missTip').hidden = true; });
   document.addEventListener('scroll', () => { $('#missTip').hidden = true; $('#pkMissTip').hidden = true; }, { passive: true, capture: true });      // Also dismiss when a pane scrolls; scroll events do not bubble.
-  $('#sample').addEventListener('input', e => {
-    v().text = e.target.value;
-    const m = /^c(\d+)$/.exec(v().sample); if (m && v().customs[+m[1]]) v().customs[+m[1]].text = e.target.value;
+  initProofEditor($('#proofText'), { getText: () => v().text, getKey: () => v().sample, redraw: renderPreview, commit: text => {
+    // Fork a built-in sample once; subsequent edits belong to that same persisted custom tab.
+    const custom = customAt(v().sample);
+    if (custom) custom.text = text;
+    else {
+      v().customs.push({ text, lang: state.typo.lang }); v().sample = 'c' + (v().customs.length - 1);
+      renderSampleTabs();
+      revealSample();
+    }
+    v().text = text; $('#missTip').hidden = true;
     refresh('preview'); reloadForText();
-  });
+  } });
   for (const box of ['#typoRows', '#featRows']) {      // Text layout settings and font features share the same cards and selects.
   $(box).addEventListener('click', e => {
     const lm = e.target.closest('[data-lm]');
@@ -1276,17 +1289,17 @@ function librarySourceLabel(item) {
   const summary = item.weightType === 'continuous' && range ? T('pkContinuousSummary', params)
     : item.weightType === 'stepped' && range && weights.length ? T(weights.length <= 2 ? 'pkSteppedFewSummary' : 'pkSteppedSummary', params)
     : range && weights.length ? T(weights.length <= 2 ? 'pkKnownFewWeightSummary' : 'pkKnownWeightSummary', params) : T('fontWeightUnknownLabel');
-  return (item.kind === 'google' ? 'Google Fonts' : T('srcLocal')) + ' · ' + summary;
+  return summary;
 }
 function librarySourceHint(item) {
-  return librarySourceLabel(item) + (item.weights?.length ? '\n' + T('fontWeightList', { weights: item.weights.join(', ') }) : '');
+  return (item.kind === 'google' ? 'Google Fonts' : T('srcLocal')) + ' · ' + librarySourceLabel(item) + (item.weights?.length ? '\n' + T('fontWeightList', { weights: item.weights.join(', ') }) : '');
 }
 function syncLocalWeightLabels() {
   // Metadata labels may change in place; membership and order wait for a user action.
   const facts = new Map(localGroups().map(([family, faces]) => [family, localWeightInfo(faces, localAxes, localWeights)]));
   for (const row of $('#gfOptions').querySelectorAll('[data-local-family]')) {
     const info = facts.get(row.dataset.localFamily); if (!info) continue;
-    row.querySelector('.font-option-source').textContent = librarySourceLabel({ ...info, kind: 'local' });
+    row.querySelector('.font-option-weights').textContent = librarySourceLabel({ ...info, kind: 'local' });
     row.querySelector('.font-option-source').title = librarySourceHint({ ...info, kind: 'local' });
   }
 }
@@ -1366,7 +1379,7 @@ export function renderCatalog() {
   const entries = filterCatalog(libraryChoices(), query, pickerFilterValues('gfStyle'), $('#gfBold').checked, pickerFilterValues('pkWeightType').filter(value => value !== 'bold'), pickerFilterValues('pkCoverage'), $('#gfItalic').checked).filter(item => !sourceFilter.length || sourceFilter.includes(item.kind));
   catalogObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
   const selected = selectedLibraryId(), focusId = entries.some(item => item.id === selected) ? selected : entries[0]?.id;
-  box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.id === focusId ? 0 : -1}" aria-selected="${item.id === selected}" data-choice="${esc(item.id)}" ${item.kind === 'google' ? `data-family="${esc(item.family)}"` : `data-local-family="${esc(item.family)}" data-local-face="${esc(item.face)}"`}><span class="font-option-title"><span class="font-option-name" title="${esc(item.family)}">${esc(item.family)}${item.nativeName && item.nativeName !== item.family ? `<span class="font-option-native"> · ${esc(item.nameIsAlias ? T('pkAliasName', { name: item.nativeName }) : item.nativeName)}</span>` : ''}</span><span class="font-option-source" title="${esc(librarySourceHint(item))}">${esc(librarySourceLabel(item))}</span></span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
+  box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.id === focusId ? 0 : -1}" aria-selected="${item.id === selected}" data-choice="${esc(item.id)}" ${item.kind === 'google' ? `data-family="${esc(item.family)}"` : `data-local-family="${esc(item.family)}" data-local-face="${esc(item.face)}"`}><span class="font-option-title"><span class="font-option-name" title="${esc(item.family)}">${esc(item.family)}${item.nativeName && item.nativeName !== item.family ? `<span class="font-option-native"> · ${esc(item.nameIsAlias ? T('pkAliasName', { name: item.nativeName }) : item.nativeName)}</span>` : ''}</span><span class="font-option-source" title="${esc(librarySourceHint(item))}"><svg class="ic" aria-hidden="true"><use href="#i-${item.kind === 'google' ? 'brand-google' : 'device-desktop'}"/></svg><span class="vh">${esc(item.kind === 'google' ? 'Google Fonts' : T('srcLocal'))} · </span><span class="font-option-weights">${esc(librarySourceLabel(item))}</span></span></span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
   $('#gfResults').textContent = T('pkResults', { n: entries.length });
   const filters = sourceFilter.length + pickerFilterValues('gfStyle').length + pickerFilterValues('pkWeightType').length + pickerFilterValues('pkCoverage').length + Number($('#gfItalic').checked);
   $('#pkFilterClear').hidden = !filters;

@@ -373,7 +373,10 @@ test('撤销 / 重做：按钮和快捷键，输入框里的 ⌘Z 不抢', async
   await expect(size).toHaveValue(before);
   await page.click('#redoBtn');
   await expect(size).toHaveValue('131');
-  await page.click('#proofText');      // With focus outside an input, Cmd+Z undoes settings.
+  await page.click('#proofText');      // The directly editable proof owns text undo, even before its first edit.
+  await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z');
+  await expect(size).toHaveValue('131');
+  await page.click('.brand');           // Outside editors, Cmd+Z still undoes font settings.
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z');
   await expect(size).toHaveValue(before);
 });

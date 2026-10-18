@@ -510,12 +510,12 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--she
 .sample-tabs .tab-add{color:var(--muted);font-size:18px;line-height:1;min-width:32px;padding:11px 8px 9px;text-align:center}      /* Expand the small add icon's clickable area. */
 .sample-tabs .tab-add:hover{color:var(--ink)}
 .busy{font-size:var(--fs-xs);color:var(--muted);pointer-events:none;font-family:var(--mono)}
-.sample-box{display:grid;gap:6px}
 textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);border:1px solid var(--ink);border-radius:var(--r);padding:12px 14px;font-family:var(--ui);font-size:var(--fs-l);line-height:1.7}
 .sheet{--pad:clamp(22px,4.6vw,68px);background:var(--proof-bg,var(--sheet));padding:0 var(--pad) var(--pad);min-width:0;display:grid;gap:14px}
 /* One proof toolbar spans the sheet's top: horizontally scrollable samples on the left, size/line height/View on the right. Keep it visible while long text scrolls. */
 .sheet-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;line-height:1.4;font-family:var(--ui);min-height:var(--bar-h);margin:0 calc(0px - var(--pad)) calc(var(--pad) - 14px);padding:0 10px 0 16px;background:var(--sheet);border-bottom:1px solid var(--line)}
-.sheet-bar .sample-tabs{flex:1 1 auto;align-self:stretch;gap:12px;margin-bottom:-1px}
+/* Keep a revealed tab clear of the sticky Add action, including on narrow screens. */
+.sheet-bar .sample-tabs{scroll-padding-inline-end:calc(var(--sp-6) + var(--sp-3));flex:1 1 auto;align-self:stretch;gap:12px;margin-bottom:-1px}
 .sheet-bar .sample-tabs button{display:inline-flex;align-items:center;justify-content:center;padding-top:2px;padding-bottom:0}
 .sheet-bar .sample-tabs .ctab{align-items:stretch}
 .bar-ctrl{display:flex;align-items:center;gap:4px;flex:none}
@@ -547,14 +547,14 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* Equal whitespace around the proof: remove leading/trailing half-leading in horizontal text so vertical padding is measured to glyph ink, matching side padding. */
 .sheet:not(.vertical) .proof-text{margin-bottom:calc((1 - var(--lh,1.8)) * var(--fs,40px) / 2)}
 .sheet:not(.vertical) .proof-text{margin-top:calc((1 - var(--lh,1.8)) * var(--fs,40px) / 2)}
-.proof-text{color:var(--proof-ink,var(--ink));font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:var(--fst,normal);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0}
+.proof-text{outline:none;cursor:text;min-height:1em;color:var(--proof-ink,var(--ink));font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:var(--fst,normal);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0}
 /* Guides mark line boxes (font size x line height). If one line grows taller, following glyphs no longer align with the guides. */
 .sheet.rules .proof-text{background-image:linear-gradient(to bottom,var(--ruled) 1px,transparent 1px);background-size:100% calc(1em * var(--lh,1.8));box-shadow:inset 0 -1px var(--ruled)}
 /* Vertical proof fills the height above the specimen and scrolls horizontally for extra columns. Keep at least 240px on short screens, allowing the pane to scroll vertically. */
 .sheet.vertical .proof-text{writing-mode:vertical-rl;width:100%;height:100%;min-height:240px;overflow-x:auto;overflow-y:hidden}
 .proof-scroll:has(>.sheet.vertical){display:flex;flex-direction:column}
 .proof-scroll>.sheet.vertical{flex:1 1 auto;display:flex;flex-direction:column}
-.sheet.vertical>.sheet-bar,.sheet.vertical>.sample-box,.proof-scroll>.legend{flex:none}
+.sheet.vertical>.sheet-bar,.proof-scroll>.legend{flex:none}
 .sheet.vertical>div:last-child{flex:1 1 0;min-height:240px;display:grid}
 .sheet.rules.vertical .proof-text{background-image:linear-gradient(to left,var(--ruled) 1px,transparent 1px);background-size:calc(1em * var(--lh,1.8)) 100%;background-position:right top;background-attachment:local;box-shadow:none}
 .r{position:relative;inset-block-start:calc(var(--sh,0) * -1em)}
@@ -601,7 +601,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 /* The proof scrolls above a fixed specimen below. */
 .tester{display:flex;flex-direction:column;overflow:hidden}      /* The .bench>.tester rule hides this pane when inactive on narrow screens. */
 .proof-scroll{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;background:var(--proof-bg,var(--sheet))}
-.sample-box,.legend{background:var(--sheet)}
+.legend{background:var(--sheet)}
 .panel{position:relative;flex:none;display:grid;min-width:0;border-top:1px solid var(--line)}
 .spec-wrap{min-width:0}
 /* Place specimen View at the white area's top-right, matching the proof sheet. */
@@ -871,7 +871,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .font-option-title{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-3);min-width:0}
 .font-option-title .font-option-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .font-option-native{font-weight:400;color:var(--muted)}
-.font-option-source{flex:0 1 auto;max-width:60%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-xs);font-weight:400;color:var(--muted)}
+.font-option-source{display:inline-flex;align-items:center;gap:var(--sp-1);flex:0 1 auto;max-width:60%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-xs);font-weight:400;color:var(--muted)}
 @container(max-width:420px){
   .font-option-title{display:grid;grid-template-columns:minmax(0,1fr);justify-content:stretch;gap:0}
   .font-option-source{max-width:100%;justify-self:end}
@@ -999,3 +999,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-feedback{display:grid;justify-items:start;gap:var(--sp-2)}
 
 .pk-browse>.results-toolbar{margin-top:var(--sp-4)}
+
+.font-option-source>.ic{flex:none;width:var(--fs-l);height:var(--fs-l)}
+.font-option-weights{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.proof-text:focus-visible{outline:1px solid var(--line);outline-offset:var(--sp-2);border-radius:var(--r)}
