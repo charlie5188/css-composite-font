@@ -103,6 +103,7 @@ test('导入字体：重复文件去重，取消后可跨类别复用，无效�
   await expect(page.locator('#pkOk')).toBeEnabled();
   expect(await page.evaluate(async () => (await import('./assets/js/ui.js')).pickCand.fileId)).toBe(id);
   await page.locator('#pkOk').click();
+  await expect(page.locator('#picker')).not.toBeVisible();
   expect(await page.evaluate(async () => { const c = await import('./assets/js/core.js'); return [c.state.classes.latin.font.fileId, c.files.has(c.state.classes.latin.font.fileId)]; })).toEqual([id, true]);
 });
 
@@ -215,4 +216,74 @@ test('类别样张：繁体汉字、假名、数字与空校样，支持键盘�
   await expect(page.locator('#pkSample')).toContainText('0123456789');
   await page.locator('#pkSampleMode [data-pk-sample="class"]').focus(); await page.keyboard.press('ArrowRight');
   await expect(page.locator('#pkSampleMode [data-pk-sample="custom"]')).toHaveAttribute('aria-checked', 'true');
+});
+
+async function matchingFixture(page, W = 400) {
+  await fixture(page, 'latin'); await page.locator('#pkCancel').click();
+  await page.evaluate(async W => {
+    const c = await import('./assets/js/core.js'), u = await import('./assets/js/ui.js');
+    const buffer = await (await fetch('/tests/fixtures/NotoSansJP-Subset.ttf')).arrayBuffer();
+    c.files.set('picker-ref', { name: 'NotoSansJP-Subset.ttf', buffer });
+    const s = c.stateFromPreset(c.PRESETS.find(p => p.id === 'gothic-jp'));
+    s.classes.han.font = { kind: 'file', fileId: 'picker-ref', fileName: 'NotoSansJP-Subset.ttf' };
+    s.classes.latin.font = c.G('Inter'); s.classes.latin.size = 150; s.classes.latin.shift = 5;
+    s.classes.kana.size = 137; s.weights = [400, 700]; s.wOver = {}; s.italic = false;
+    c.setState(s); c.normalizeState(); u.changed({ fonts: true }); await c.rebuildNow(); c.recordHistory();
+    u.openPicker({ type: 'class', id: 'latin' }, W);
+  }, W);
+  await page.locator('#picker [data-src="file"]').click();
+  await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
+  await expect(page.locator('#pkOk')).toBeEnabled();
+}
+const matchSettings = page => page.evaluate(async () => {
+  const c = await import('./assets/js/core.js');
+  return JSON.parse(JSON.stringify({ classes: c.state.classes, over: c.state.wOver, weights: c.state.weights }));
+});
+
+test('选择时自动匹配：默认勾选、仅调整所选类别，字体和匹配一次撤销', async ({ page }) => {
+  await fixture(page); await expect(page.locator('#pkAutoFitField')).toBeHidden();
+  await page.locator('#pkCancel').click(); await matchingFixture(page);
+  const before = await matchSettings(page);
+  await expect(page.locator('#pkAutoFit')).toBeChecked();
+  await page.locator('#pkOk').click(); await expect(page.locator('#picker')).not.toBeVisible();
+  const after = await matchSettings(page);
+  expect(after.classes.latin.size).not.toBe(150);
+  expect(after.classes.kana).toEqual(before.classes.kana);
+  expect(after.classes.han).toEqual(before.classes.han);
+  await page.locator('#undoBtn').click(); expect(await matchSettings(page)).toEqual(before);
+  await page.locator('#redoBtn').click(); expect(await matchSettings(page)).toEqual(after);
+  await page.click('#ltabFonts');
+  await page.locator('.ct-row[data-id="latin"] .fsel').selectOption('pick');
+  await page.locator('#pkAutoFit').uncheck();
+  await page.locator('#ffWeightNum').fill('450'); await page.locator('#ffWeightNum').dispatchEvent('change');
+  await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
+  expect((await matchSettings(page)).classes.latin.size).toBe(after.classes.latin.size);
+  expect((await matchSettings(page)).classes.latin.font.weight).toBe(450);
+});
+
+test('选择时自动匹配：单档不改变基础设置，取消测量不留下字体或调整', async ({ page }) => {
+  await matchingFixture(page, 700);
+  const before = await matchSettings(page);
+  await page.locator('#pkOk').click(); await expect(page.locator('#picker')).not.toBeVisible();
+  const after = await matchSettings(page);
+  expect(after.classes.latin).toEqual(before.classes.latin);
+  expect(after.over[700].latin.font.kind).toBe('file'); expect(after.over[700].latin.size).not.toBe(150);
+  await page.locator('#undoBtn').click(); expect(await matchSettings(page)).toEqual(before);
+  await page.click('#ltabFonts');
+  await page.locator('.ct-row[data-id="latin"] .fsel').selectOption('pick');
+  await page.locator('#picker [data-src="file"]').click(); await page.locator('#ffOptions [data-imported]').click();
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  await page.evaluate(() => {
+    const load = document.fonts.load.bind(document.fonts), pending = []; let blocked = true;
+    document.fonts.load = (spec, text) => {
+      if (blocked && spec.includes('__cf_fit')) return new Promise(resolve => pending.push(() => load(spec, text).then(resolve)));
+      return load(spec, text);
+    };
+    window.fitPending = pending; window.releaseFit = () => { blocked = false; pending.forEach(run => run()); };
+  });
+  await page.locator('#pkOk').click();
+  await expect.poll(() => page.evaluate(() => window.fitPending.length)).toBeGreaterThan(0);
+  await page.locator('#pkCancel').click(); await page.evaluate(() => window.releaseFit());
+  await expect.poll(() => page.evaluate(() => [...document.fonts].filter(f => f.family.startsWith('__cf_fit')).length)).toBe(0);
+  expect(await matchSettings(page)).toEqual(before);
 });

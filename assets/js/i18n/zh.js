@@ -1,5 +1,7 @@
 /* UI text: Simplified Chinese. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkMatching: "正在匹配…",
+  pkAutoFit: "自动调整以匹配汉字",
   pkNoProofChars: "当前校样没有此类字符",
   pkSampleText: "输入预览文字",
   pkSampleSize: "字号",

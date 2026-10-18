@@ -1,5 +1,7 @@
 /* UI text: Japanese. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkMatching: "調整中…",
+  pkAutoFit: "漢字に合わせて自動調整",
   pkNoProofChars: "校正にこのクラスの文字がありません",
   pkSampleText: "プレビューする文字",
   pkSampleSize: "サイズ",

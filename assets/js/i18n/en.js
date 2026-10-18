@@ -1,5 +1,7 @@
 /* UI text: English. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkMatching: "Matching…",
+  pkAutoFit: "Auto-adjust to match Han",
   pkNoProofChars: "The proof has no characters from this class",
   pkSampleText: "Enter preview text",
   pkSampleSize: "Size",

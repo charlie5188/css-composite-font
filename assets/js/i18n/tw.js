@@ -1,5 +1,7 @@
 /* UI text: Traditional Chinese (Taiwan). Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkMatching: "正在比對…",
+  pkAutoFit: "自動調整以搭配漢字",
   pkNoProofChars: "目前校樣沒有這類字元",
   pkSampleText: "輸入預覽文字",
   pkSampleSize: "字級",

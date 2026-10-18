@@ -6,7 +6,7 @@ import { initAppearance } from './appearance.js';
 import { FIT_SAMPLES, chooseFits, createFitter } from './autofit.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, classOf, inRanges, parseChars, rebuildClassRanges } from './unicode.js';
-import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
+import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownFontAt, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
 import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
@@ -26,6 +26,7 @@ export function changed({ fonts = false, editor = true, fontChange = false } = {
   markCustomPreset();
   saveState();
   if (notice) { refresh('toolbar', 'export', 'fxFields'); toast(notice); }
+  return notice;
 }
 /* Check only when the user commits a font/follow change, never during ordinary refresh, background loading or undo.
    Manually rechecked weights and wider families therefore stay selected; unknown loading-time ranges remain untouched. */
@@ -1041,13 +1042,13 @@ export function applyPreset(id) {
 export const SHIFT_MIN = 2;
 const fitShift = v => Math.abs(v) < SHIFT_MIN ? 0 : Math.min(30, Math.max(-30, v));
 const sameFitFont = (a, b) => sameFontAs(a, b) || (a?.kind === 'file' && b?.kind === 'file' && a.fileId && a.fileId === b.fileId);
-function autoTargets() {
-  const targets = CLASSES.filter(c => c.id !== 'han' && !state.classes[c.id].follow && state.classes[c.id].font).map(c => ({
+function autoTargets(st = state) {
+  const targets = CLASSES.filter(c => c.id !== 'han' && !st.classes[c.id].follow && st.classes[c.id].font).map(c => ({
     key: c.id, ref: c.id === 'digit' ? 'latin' : 'han',
     sample: c.id === 'latin' ? '' : [...FIT_SAMPLES[c.id]].filter(ch => classOf(ch.codePointAt(0)) === c.id).join(''),
     width: ['punct', 'symbol', 'shared'].includes(c.id),
   }));
-  state.custom.forEach((o, i) => {
+  st.custom.forEach((o, i) => {
     if (o.follow || !o.font || !parseChars(o.chars).length) return;
     const ranges = parseChars(o.chars), count = ranges.reduce((n, [a, b]) => n + b - a + 1, 0);
     // Each custom group shares one size/baseline; mixed classes or oversized groups have no reliable single reference.
@@ -1057,6 +1058,31 @@ function autoTargets() {
     targets.push({ key: '#' + i, ref, sample: chars.join(''), minimum: 1, width: ['punct', 'symbol', 'shared'].includes(ref) });
   });
   return targets;
+}
+function applyFitResults(key, fits, list, cont) {
+  const o = objByKey(key), base = fits.get(BASE_W);
+  if (base) {
+    if (!cont && base.weight != null) o.font = { ...o.font, weight: base.weight };
+    setSizeAt(key, BASE_W, base.size === inheritedSize(key, BASE_W) ? null : base.size);
+    o.shift = fitShift(base.shift) || null;
+  }
+  for (const W of list) {
+    if (W === BASE_W) continue;
+    const fit = fits.get(W);
+    if (!fit) continue;
+    const baseSize = o.size ?? 100;
+    setSizeAt(key, W, Math.abs(fit.size - baseSize) >= .5 ? fit.size : null);
+    if (!cont && fit.weight != null) {
+      const ov = ((state.wOver[W] ||= {})[key] ||= {});
+      if (ov.font) ov.font = { ...ov.font, weight: fit.weight };
+      else {
+        const expected = fontAtWeight(o.font, W), avail = expected.kind === 'google' && gfWeights(expected.family);
+        const auto = avail && !Array.isArray(vfAxisNow(expected)) ? avail.reduce((a, b) => Math.abs(b - expected.weight) < Math.abs(a - expected.weight) ? b : a) : expected.weight;
+        if (fit.weight === auto) delete ov.weight; else ov.weight = fit.weight;
+      }
+      pruneOv(W, key);
+    }
+  }
 }
 export let autoBusy = false, autoDoneTimer = 0;
 export async function autoAdjust() {
@@ -1101,31 +1127,7 @@ export async function autoAdjust() {
     }
     if (!planned.size) return toast(skipped.size ? T('autoSkipped', { classes: [...skipped].map(keyName).join(T('joiner')) }) : T('autoSameFont'));
     recordHistory();
-    for (const [key, { fits }] of planned) {
-      const o = objByKey(key), base = fits.get(BASE_W);
-      if (base) {
-        if (!cont && base.weight != null) o.font = { ...o.font, weight: base.weight };
-        setSizeAt(key, BASE_W, base.size === inheritedSize(key, BASE_W) ? null : base.size);
-        o.shift = fitShift(base.shift) || null;
-      }
-      for (const W of list) {
-        if (W === BASE_W) continue;
-        const fit = fits.get(W);
-        if (!fit) continue;
-        const baseSize = o.size ?? 100;
-        setSizeAt(key, W, Math.abs(fit.size - baseSize) >= .5 ? fit.size : null);
-        if (!cont && fit.weight != null) {
-          const ov = ((state.wOver[W] ||= {})[key] ||= {});
-          if (ov.font) ov.font = { ...ov.font, weight: fit.weight };
-          else {
-            const expected = fontAtWeight(o.font, W), avail = expected.kind === 'google' && gfWeights(expected.family);
-            const auto = avail && !Array.isArray(vfAxisNow(expected)) ? avail.reduce((a, b) => Math.abs(b - expected.weight) < Math.abs(a - expected.weight) ? b : a) : expected.weight;
-            if (fit.weight === auto) delete ov.weight; else ov.weight = fit.weight;
-          }
-          pruneOv(W, key);
-        }
-      }
-    }
+    for (const [key, { fits }] of planned) applyFitResults(key, fits, list, cont);
     lab.textContent = T('autoAdjDone'); btn.classList.add('done');
     autoDoneTimer = setTimeout(() => { btn.classList.remove('done'); lab.textContent = T('autoAdj'); }, 1800);
     syncToolbar(); changed({ fonts: true });
@@ -1235,6 +1237,7 @@ export function initPresets() {
 /* ================= Font picker dialog ================= */
 export let pickTarget = null, pickCand = null, pickTab = 'google';
 let pickerProofWeight = 400, pickerProofKey = '', pickerPreviewToken = 0;
+let pickerApplyToken = 0, pickerApplyBusy = false;
 export let pickW = null;   // When editing a non-400 row with its own font, choose a weight, font name or file only for that step.
 export const picker = $('#picker');
 let pickCatalog = [], catalogObserver;
@@ -1579,6 +1582,7 @@ export function updateCand() {
   paintPickerCandidate();
 }
 function paintPickerCandidate() {
+  if (pickerApplyBusy) return;
   const f = pickCand, token = ++pickerPreviewToken;
   const ok = $('#pkOk'), st = $('#pkStatus'), sample = $('#pkSample');
   /* Show specimens only when the font is available. Rendering complete UI-font text before selection, during checks or after failure would imply false coverage. */
@@ -1589,11 +1593,11 @@ function paintPickerCandidate() {
   const s = source(previewFont(viewed), { retry: true });
   ok.disabled = true; st.textContent = T('pkChecking'); sample.style.fontFamily = 'var(--ui)';
   s.promise.then(async () => {
-    if (pickCand !== f || token !== pickerPreviewToken) return;
+    if (pickCand !== f || token !== pickerPreviewToken || pickerApplyBusy) return;
     if (s.status === 'ok') {
       try { await document.fonts.load(`32px "${s.family}"`, sample.dataset.text || sample.textContent); }
       catch (error) { if (token === pickerPreviewToken) { st.textContent = T('pkPreviewUnavailable'); st.classList.add('caution'); } return; }
-      if (pickCand !== f || token !== pickerPreviewToken) return;
+      if (pickCand !== f || token !== pickerPreviewToken || pickerApplyBusy) return;
       sample.style.fontFamily = `"${s.family}", var(--ui)`;
       sample.hidden = false;
       st.textContent = f.kind === 'google' ? T('pkGoogleOk', { n: s.faces.length }) : f.kind === 'local' ? T('pkLocalOk') : T('pkFileOk');
@@ -1654,6 +1658,7 @@ export function gfWeightVal() {
 }
 export function openPicker(t, W = BASE_W) {      // W is the target weight when opening from a weight row.
   pickTarget = t;
+  $('#pkAutoFitField').hidden = t.type === 'class' && t.id === 'han'; $('#pkAutoFit').checked = true;
   const o = objOf(t), key = keyOf(t);
   pickerProofKey = ''; $('#ffWeightField').hidden = true;
   pickVary = { ...(o.vary || {}) };
@@ -1698,6 +1703,83 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   setPickTab(pickW ? (ovf || o.font).kind : cur?.kind || 'google');
   if (pickTab === 'google') $('#gfSearch').focus();
 }
+/* Build the proposed configuration off-screen. Measurement never changes live settings, so Cancel and a failed check preserve the user's work. */
+function applyPickerChoice(st, d) {
+  const o = d.key[0] === '#' ? st.custom[+d.key.slice(1)] : st.classes[d.key], c = d.font;
+  const same = d.W && sameFontAs(c, o.font), only = d.W && !same && d.scope === 'w';
+  if (only) {
+    const ov = ((st.wOver[d.W] ||= {})[d.key] ||= {});
+    ov.font = c.kind === 'google' ? G(c.family, d.weight || d.W) : c; delete ov.weight;
+    if (d.vary) o.vary = { ...(o.vary || {}), ...d.vary };
+  } else if (same) {
+    delete st.wOver[d.W]?.[d.key]?.font;
+    o.vary = d.vary;
+    if (o.font.kind === 'google' || o.font.kind === 'file' && o.font.axis) {
+      const v = o.font.kind === 'google' ? d.weight : c.weight, ov = ((st.wOver[d.W] ||= {})[d.key] ||= {});
+      if (v && (o.font.kind === 'google' || v !== fontAtWeight(o.font, d.W, true).weight)) ov.weight = v; else delete ov.weight;
+    } else {
+      const k = fontKey(o.font) + '|' + d.W;
+      if (d.name && d.name !== d.placeholder) st.weightNames[k] = d.name; else delete st.weightNames[k];
+    }
+  } else {
+    if (d.W) delete st.wOver[d.W]?.[d.key]?.font;
+    o.follow = null; o.font = d.W && c.kind === 'google' && !d.weight ? G(c.family, 400) : c; o.vary = d.vary;
+  }
+  return !!(same || only);
+}
+function resolvePickerDraft(st, key, W, depth = 0) {
+  const o = key[0] === '#' ? st.custom[+key.slice(1)] : st.classes[key], ov = W !== BASE_W ? st.wOver[W]?.[key] : null;
+  if (o.follow && depth < 4) {
+    const r = resolvePickerDraft(st, o.follow, W, depth + 1);
+    return { ...r, size: ov?.size ?? o.size ?? r.size, shift: o.shift ?? r.shift };
+  }
+  // Static installed faces use draft names; the normal resolver reads live state for these names.
+  const font = W !== BASE_W && !ov?.font && o.font?.kind === 'local' && !o.font.axis
+    ? L(st.weightNames[fontKey(o.font) + '|' + W] || autoLocal(o.font, W).name) : ownFontAt(o, ov, W, true);
+  return { font: st.wmode === 'cont' && Array.isArray(vfAxisNow(font)) ? { ...font, weight: W } : font,
+    size: ov?.size ?? o.size ?? 100, shift: o.shift ?? 0, vary: o.vary || null };
+}
+function setPickerApplyBusy(busy) {
+  pickerApplyBusy = busy;
+  picker.querySelector('.pk-workspace').inert = busy; picker.querySelector('.tabs').inert = busy; $('#pkScope').inert = busy;
+  $('#pkAutoFit').disabled = busy; $('#pkOk').disabled = busy; $('#pkOk').textContent = T(busy ? 'pkMatching' : 'pkUse');
+  if (busy) $('#pkOk').setAttribute('aria-busy', 'true'); else $('#pkOk').removeAttribute('aria-busy');
+}
+async function applyPicker() {
+  if (!pickCand || !pickTarget || pickerApplyBusy) return;
+  const name = pickCand.kind === 'local' ? $('#lfName') : $('#ffPath');
+  const d = { key: keyOf(pickTarget), font: structuredClone(pickCand), W: pickW,
+    scope: picker.querySelector('[name="pkScope"]:checked')?.value, weight: gfWeightVal(), vary: cleanVary(pickCand), name: name.value.trim(), placeholder: name.placeholder };
+  const token = ++pickerApplyToken, snapshot = histSnap(), draft = JSON.parse(JSON.stringify(state)), onlyStep = applyPickerChoice(draft, d);
+  const cont = draft.wmode === 'cont', list = onlyStep ? [d.W] : [...new Set([BASE_W, ...(cont ? WEIGHTS.filter(W => stepSpan(W)) : draft.weights)])].sort((a, b) => a - b);
+  let fits, notice = '';
+  if (!$('#pkAutoFitField').hidden && $('#pkAutoFit').checked) {
+    setPickerApplyBusy(true);
+    const target = autoTargets(draft).find(t => t.key === d.key), fitter = createFitter();
+    try {
+      if (target?.ref && (target.key === 'latin' || target.sample)) {
+        const rows = [];
+        for (const W of list) {
+          $('#pkOk').textContent = T('autoAdjProgress', { i: rows.length + 1, n: list.length });
+          const han = resolvePickerDraft(draft, target.ref, W), latin = resolvePickerDraft(draft, target.key, W);
+          if (!sameFitFont(han.font, latin.font)) rows.push(await fitter.fit({ ...target, W, han, latin }, !cont));
+          if (token !== pickerApplyToken || !picker.open) return;
+          if (histSnap() !== snapshot) { toast(T('autoCancelled')); return; }
+        }
+        if (rows.length && rows.every(r => r.candidates.length)) fits = chooseFits(rows);
+        else notice = rows.length ? T('autoSkipped', { classes: keyName(d.key) }) : T('autoSameFont');
+      } else notice = T('autoSkipped', { classes: keyName(d.key) });
+    } catch (error) { console.warn('Picker auto-fit failed', error); notice = T('autoSkipped', { classes: keyName(d.key) }); }
+    finally { fitter.dispose(); if (token === pickerApplyToken) setPickerApplyBusy(false); }
+  }
+  if (token !== pickerApplyToken || !picker.open || histSnap() !== snapshot) return;
+  recordHistory(); // Font selection, matching and export trimming form a single undo step.
+  applyPickerChoice(state, d);
+  if (fits?.size) applyFitResults(d.key, fits, list, cont);
+  picker.close();
+  const trimmed = changed({ fonts: true, fontChange: true }); refresh('export');
+  if (notice) toast([notice, trimmed].filter(Boolean).join(' '));
+}
 export function initPicker() {
   $('#pkSampleMode').addEventListener('click', e => { const el = e.target.closest('[data-pk-sample]'); if (!el) return; pickerSampleMode = el.dataset.pkSample; renderPickerSample(); paintPickerCandidate(); });
   $('#pkSampleMode').addEventListener('keydown', e => { if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return; e.preventDefault(); const els = [...e.currentTarget.querySelectorAll('button:not(:disabled)')], i = els.indexOf(e.target), next = e.key === 'Home' ? 0 : e.key === 'End' ? els.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + els.length) % els.length; els[next].click(); els[next].focus(); });
@@ -1723,7 +1805,7 @@ export function initPicker() {
     if (next != null) { e.preventDefault(); options.forEach((el, j) => { el.tabIndex = j === next ? 0 : -1; }); options[next]?.focus(); }
   });
   $('#gfTry').addEventListener('click', () => chooseCatalog($('#gfSearch').value.trim()));
-  picker.addEventListener('close', () => { fileImportToken++; catalogObserver?.disconnect(); localObserver?.disconnect(); fileObserver?.disconnect(); });
+  picker.addEventListener('close', () => { pickerApplyToken++; setPickerApplyBusy(false); fileImportToken++; catalogObserver?.disconnect(); localObserver?.disconnect(); fileObserver?.disconnect(); });
   picker.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => setPickTab(b.dataset.src)));
   $('#gfFamily').addEventListener('input', updateCandSoon);
   $('#gfFamily').addEventListener('change', () => { syncGfWeight(); updateCand(); });
@@ -1783,44 +1865,7 @@ export function initPicker() {
     }
   });
   $('#pkCancel').addEventListener('click', () => picker.close());
-  $('#pkOk').addEventListener('click', () => {
-    if (!pickCand || !pickTarget) return;
-    recordHistory(); // Group the font change and automatic unchecking into one undo step; first record any pending edits.
-    const o = objOf(pickTarget);
-    /* For non-400 weights, selecting another weight/name/file in the same family affects only that step; a different family replaces all weights. */
-    const base = o.font, c = pickCand, key = keyOf(pickTarget);
-    const sameFont = pickW && sameFontAs(c, base);
-    const onlyW = pickW && !sameFont && picker.querySelector('[name="pkScope"]:checked')?.value === 'w';
-    if (onlyW) {          // Replace only this step's font; Google Automatic uses the step's own weight.
-      const ov = ((state.wOver[pickW] ||= {})[key] ||= {});
-      ov.font = c.kind === 'google' ? G(c.family, gfWeightVal() || pickW) : c;
-      delete ov.weight;
-      o.vary = { ...(o.vary || {}), ...cleanVary(c) };
-      picker.close();
-      changed({ fonts: true, fontChange: true }); refresh('export');
-      return;
-    }
-    if (pickW) delete state.wOver[pickW]?.[key]?.font;
-    if (sameFont) {       // Store only this step's weight/name/file; clear the override when it matches the automatic result.
-      const k = fontKey(o.font) + '|' + pickW;
-      o.vary = cleanVary(o.font);
-      if (o.font.kind === 'google' || o.font.kind === 'file' && o.font.axis) {
-        const v = o.font.kind === 'google' ? gfWeightVal() : c.weight, ov = ((state.wOver[pickW] ||= {})[key] ||= {});
-        if (v && (o.font.kind === 'google' || v !== fontAtWeight(o.font, pickW, true).weight)) ov.weight = v; else delete ov.weight;
-      } else {
-        const el = o.font.kind === 'local' ? $('#lfName') : $('#ffPath'), v = el.value.trim();
-        if (v && v !== el.placeholder) state.weightNames[k] = v; else delete state.weightNames[k];
-      }
-      picker.close();
-      changed({ fonts: true, fontChange: true }); refresh('export');
-      return;
-    }
-    o.follow = null;     // Selecting a font makes the class independent while preserving its size and baseline settings.
-    o.font = pickW && c.kind === 'google' && !gfWeightVal() ? G(c.family, 400) : c;
-    o.vary = cleanVary(c);
-    picker.close();
-    changed({ fonts: true, fontChange: true });
-  });
+  $('#pkOk').addEventListener('click', applyPicker);
 }
 
 /* ================= UI language ================= */
