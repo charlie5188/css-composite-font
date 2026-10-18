@@ -1,3 +1,4 @@
+import { paintMissingGlyphs, syncWeightControl } from './ui-controls.js';
 import { $, T, UI, debounce, esc, root, tr } from './i18n.js';
 import { CLASSES, CLS, GROUPS, classOf, fmtRanges, inRanges, isMoved } from './unicode.js';
 import { BASE_W, EA_FEAT, autoNames, clampW, defaultFontWeight, contFont, stepSpan, NUM_FEAT, NUM_TAGS, SAMPLES, TYPO, WEIGHTS, anyShift, axesOf, axisLabel, axisOf, finalFont, fontAtWeight, fontKey, gfWeights, weightChain, fontLabel, inheritedShift, inheritedSize, liveFamily, numLabel, numTags, objByKey, ownFontAt, ownSize, ownerOf, resolveCls, resolveCustom, settingOf, sources, srcError, state, typoValue, usedFont, vfAxisNow } from './core.js';
@@ -119,7 +120,7 @@ export function formsOf(f) {
 }
 /* Measure the full-width comma's ink centroid within its body. Fonts containing multiple regional forms (Source Han, Noto CJK) switch by lang, so measure with the language set. */
 export const punctMemo = new Map();      // 'font|language' -> 'center' | 'corner' | null; undefined = measuring.
-export const regionChanged = debounce(() => { renderEditor(); renderLangWarn(); }, 80);
+export const regionChanged = debounce(() => { renderEditor({ preserveActive: true }); renderLangWarn(); }, 80);
 export function punctPos(s, lang) {
   const k = s.family + '|' + lang;
   if (punctMemo.has(k)) return punctMemo.get(k);
@@ -168,7 +169,11 @@ export function renderLangWarn() {
   el.hidden = !list.length;
   if (list.length) el.textContent = T('exRegWarn', { lang: langName(lang), list: list.join(T('joiner')) });
 }
-export function renderEditor() { renderClassRows(); renderWeights(); }
+export function renderEditor({ preserveActive = false } = {}) {
+  // Background font metadata must not replace a field between focus and the next input event.
+  if (preserveActive && $('#editor').contains(document.activeElement)) return renderChipsStatus();
+  renderClassRows(); renderWeights();
+}
 /* Class samples may exceed their cells, especially two full-width marks or enlarged Western text. Use halt to narrow punctuation where supported (see CSS).
    If still too wide, reduce only this sample's font size proportionally, without distortion. Allow 4px overflow on each side: pane padding on the left, half the gap on the right. */
 export function fitGlyphs() {
@@ -657,24 +662,7 @@ export function missTipAt(x, y) {
 }
 export const checkMissSoon = debounce(checkMiss, 120);
 /* Mark missing glyphs with Highlight API without changing DOM or disturbing vertical layout. */
-export function paintMiss() {
-  if (!HL_OK) return;
-  const sets = [null, new Highlight(), new Highlight()];
-  sets[1].priority = sets[2].priority = 1;      // Draw above class colors.
-  if (missMap?.size) {
-    const walker = document.createTreeWalker($('#proofText'), NodeFilter.SHOW_TEXT);
-    while (walker.nextNode()) {
-      const node = walker.currentNode;
-      let i = 0;
-      for (const ch of node.data) {
-        const lv = missMap.get(ch)?.lv;
-        if (lv) { const r = new Range(); r.setStart(node, i); r.setEnd(node, i + ch.length); sets[lv].add(r); }
-        i += ch.length;
-      }
-    }
-  }
-  CSS.highlights.set('cf-miss1', sets[1]); CSS.highlights.set('cf-miss2', sets[2]);
-}
+export function paintMiss() { paintMissingGlyphs($('#proofText'), ch => missMap?.get(ch)?.lv); }
 export const HL_OK = typeof CSS !== 'undefined' && 'highlights' in CSS && typeof Highlight === 'function';
 export const HL_KEYS = ['latin', 'digit', 'kana', 'bopo', 'punct', 'symbol', 'shared', 'custom'];
 export function paintClasses(el, on) {
@@ -733,37 +721,10 @@ export function syncLeftTab() {
 }
 /* Rebuild stops only when export domain or UI language changes, preserving the slider and focus while dragging. */
 export function syncPreviewWeight({ preserveInput = false } = {}) {
-  const cont = state.wmode === 'cont', ws = state.weights, v = state.view;
-  const wn = $('#vWn'), slider = $('#vWSlider'), ticks = $('#vWTicks');
-  const w = cont ? v.wcont : v.weight;
-  wn.min = cont ? state.wrange[0] : ws[0]; wn.max = cont ? state.wrange[1] : ws.at(-1); wn.step = cont ? 1 : 'any';
-  if (!preserveInput) wn.value = w;
-  const domain = cont ? state.wrange : ws, signature = UI + ':' + state.wmode + ':' + domain.join(',');
-  if (slider.dataset.domain !== signature) {
-    slider.dataset.domain = signature;
-    slider.min = cont ? domain[0] : 0; slider.max = cont ? domain[1] : Math.max(1, ws.length - 1);
-    slider.step = 1; slider.disabled = !cont && ws.length === 1;
-    ticks.classList.toggle('steps', !cont);
-    const shortcuts = cont ? [400, 700].filter(n => n >= domain[0] && n <= domain[1]) : [];
-    const stops = cont ? [...new Set([...domain, ...shortcuts])].sort((a, b) => a - b) : domain;
-    const percent = n => (n - domain[0]) * 100 / (domain[1] - domain[0]);
-    // Place labels in one row at their true values. Omit endpoint text too close to a shortcut in the fixed-width popup, retaining range and ticks.
-    // Common-weight marks are jump buttons; the continuous slider must not snap to 400 or 700.
-    ticks.innerHTML = stops.map((n, i) => {
-      const pos = cont ? percent(n) : domain.length === 1 ? 0 : i * 100 / (domain.length - 1);
-      const attrs = `style="--tick:${pos}%" data-weight="${esc(n)}"`;
-      const label = !cont || !shortcuts.some(s => Math.abs(percent(s) - pos) < 16);
-      return shortcuts.includes(n) ? `<button type="button" class="btn-text" ${attrs} aria-label="${esc(wTip(n))}" title="${esc(wTip(n))}">${n}</button>` : `<span ${attrs} aria-hidden="true">${label ? esc(n) : ''}</span>`;
-    }).join('');
-  }
-  slider.value = cont ? w : ws.indexOf(w);
-  slider.setAttribute('aria-valuetext', w);
-  ticks.querySelectorAll('[data-weight]').forEach(el => {
-    const current = +el.dataset.weight === w;
-    el.classList.toggle('cur', current);
-    if (el.tagName === 'BUTTON') el.setAttribute('aria-pressed', current);
-  });
+  const continuous = state.wmode === 'cont';
+  syncWeightControl({ input: $('#vWn'), slider: $('#vWSlider'), ticks: $('#vWTicks') }, { continuous, domain: continuous ? state.wrange : state.weights, value: continuous ? state.view.wcont : state.view.weight, label: wTip, locale: UI, preserveInput });
 }
+
 export function syncToolbar() {
   const v = state.view;
   renderCurrentPreset();

@@ -1,5 +1,5 @@
 import { refresh } from './refresh.js';
-import { bindPopover, placePopover, searchKey } from './ui-controls.js';
+import { bindPopover, bindWeightControl, syncWeightControl, paintMissingGlyphs, placePopover, searchKey } from './ui-controls.js';
 import { catalogInfo, catalogOrder, catalogStyles, localWeightInfo, localItalicInfo, filterCatalog, sortCatalog } from './font-catalog.js';
 import { CATALOG_SAMPLES } from './font-catalog-data.js';
 import { importFontFile, importedFonts, rememberImportedFont } from './font-files.js';
@@ -9,7 +9,7 @@ import { FIT_SAMPLES, chooseFits, createFitter } from './autofit.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, classOf, inRanges, parseChars, rebuildClassRanges } from './unicode.js';
 import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownFontAt, ownSize, presetDirty, presetSnap, rebuild, fileStyle, fileWeight, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
-import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, stepperCell, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
+import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, wTip, MISS_SKIP, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, stepperCell, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
 /* ================= Interaction: character-class table ================= */
@@ -654,7 +654,8 @@ export function initToolbar() {
     el.addEventListener('keydown', e => { if (e.key === 'Enter') el.blur(); });
   }
   /* Scrub icons horizontally: font size changes by 1 per 2px; line height by 0.01 per 1px. */
-  const SCRUB = { ...NUM, pickerSize: { el: '#pkSampleSize', px: 0.5, get: () => +$('#pkSampleSize').value, set: setPickerSampleSize }, w: { el: '#vWn', px: 1, get: () => state.wmode === 'cont' ? v().wcont : v().weight, set: setPreviewW } };      // Weight changes by 1 per pixel, snapping to the nearest selected step in stepped mode.
+  let showWeightSlider;
+  const SCRUB = { ...NUM, pickerWeight: { el: '#pkProofWeightNum', px: 1, get: () => pickerProofWeight, set: setPickerProof }, pickerSize: { el: '#pkSampleSize', px: 0.5, get: () => +$('#pkSampleSize').value, set: setPickerSampleSize }, w: { el: '#vWn', px: 1, get: () => state.wmode === 'cont' ? v().wcont : v().weight, set: setPreviewW } };      // Weight changes by 1 per pixel, snapping to the nearest selected step in stepped mode.
   document.querySelectorAll('[data-scrub]').forEach(ic => {
     let suppressClick = false;
     ic.addEventListener('pointerdown', e => {
@@ -677,11 +678,11 @@ export function initToolbar() {
       };
       ic.addEventListener('pointermove', move); ic.addEventListener('pointerup', up); ic.addEventListener('pointercancel', up);
     });
-    if (ic.dataset.scrub === 'w') ic.addEventListener('click', e => {
+    if (['w', 'pickerWeight'].includes(ic.dataset.scrub)) ic.addEventListener('click', e => {
       e.preventDefault();
       // Open during click to avoid native popover dismissal on pointer release. A drag returning to its origin is still not a click.
       if (suppressClick && e.detail !== 0) { suppressClick = false; return; }
-      showWeightSlider();
+      (ic.dataset.scrub === 'w' ? showWeightSlider : showPickerWeightSlider)();
     });
   });
   bindPopover($('#viewPop'), $('#viewBtn'), { align: 'end', gap: 6, flip: false });
@@ -695,48 +696,7 @@ export function initToolbar() {
   for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vRules', 'rules'], ['vMiss', 'miss'], ['vItalic', 'italic']])
     $('#' + id).addEventListener('click', () => { v()[key] = !v()[key]; refresh('toolbar', 'preview', 'export'); });
   $('#viewTypo').addEventListener('change', e => { const k = e.target.dataset.vtypo; if (k) { state.typo[k] = e.target.value; syncViewTypo(); refresh('preview'); } });
-  /* Space exported stepped weights evenly by index; continuous mode uses actual numeric values. */
-  const wn = $('#vWn'), slider = $('#vWSlider'), pop = $('#vWPop');
-  let returningFocus = false;
-  const positionWeightSlider = bindPopover(pop, $('#vWnLab'), { align: 'end', gap: 6 });
-  function showWeightSlider() {
-    syncPreviewWeight({ preserveInput: true });
-    if (!pop.matches(':popover-open')) pop.showPopover();
-    positionWeightSlider();
-  }
-  pop.addEventListener('toggle', e => {
-    for (const el of [wn, $('#vWBtn')]) el.setAttribute('aria-expanded', e.newState === 'open');
-    positionWeightSlider();
-  });
-  wn.addEventListener('focus', () => { if (!returningFocus) showWeightSlider(); });
-  wn.addEventListener('click', showWeightSlider);
-  slider.addEventListener('input', () => setPreviewW(state.wmode === 'cont' ? +slider.value : state.weights[+slider.value]));
-  $('#vWTicks').addEventListener('click', e => {
-    const b = e.target.closest('button[data-weight]');
-    if (b && state.wmode === 'cont') setPreviewW(+b.dataset.weight);
-  });
-  pop.addEventListener('keydown', e => {
-    if (e.key !== 'Escape') return;
-    e.preventDefault(); returningFocus = true;
-    pop.hidePopover(); wn.focus({ preventScroll: true }); returningFocus = false;
-  });
-  wn.addEventListener('input', () => {
-    const x = parseFloat(wn.value);
-    if (state.wmode === 'cont' ? x >= state.wrange[0] && x <= state.wrange[1] : state.weights.includes(x)) setPreviewW(x, { preserveInput: true });
-  });
-  const commitWeight = () => { const x = parseFloat(wn.value); if (Number.isFinite(x)) setPreviewW(x); else syncPreviewWeight(); };
-  wn.addEventListener('change', commitWeight);
-  wn.addEventListener('blur', commitWeight);
-  wn.addEventListener('keydown', e => {
-    if (e.key === 'Enter') { wn.blur(); if (pop.matches(':popover-open')) pop.hidePopover(); return; }
-    if (e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
-    e.preventDefault();
-    if (state.wmode === 'cont') setPreviewW(v().wcont + (e.key === 'ArrowUp' ? 1 : -1) * (e.shiftKey ? 10 : 1));
-    else {
-      const ws = state.weights, i = Math.max(0, ws.indexOf(v().weight));
-      setPreviewW(ws[Math.min(ws.length - 1, Math.max(0, i + (e.key === 'ArrowUp' ? 1 : -1)))]);
-    }
-  });
+  showWeightSlider = bindWeightControl({ input: $('#vWn'), button: $('#vWBtn'), anchor: $('#vWnLab'), pop: $('#vWPop'), slider: $('#vWSlider'), ticks: $('#vWTicks'), get: () => ({ continuous: state.wmode === 'cont', domain: state.wmode === 'cont' ? state.wrange : state.weights, value: state.wmode === 'cont' ? v().wcont : v().weight }), set: setPreviewW, sync: syncPreviewWeight });
   const reloadForText = debounce(() => rebuild(), 600);
   $('#proofText').addEventListener('pointermove', e => missTipAt(e.clientX, e.clientY));
   $('#proofText').addEventListener('pointerleave', () => { $('#missTip').hidden = true; });
@@ -1216,7 +1176,7 @@ export let pickW = null;   // When editing a non-400 row with its own font, choo
 export const picker = $('#picker');
 let pickCatalog = [], catalogObserver;
 const catalogCoverageByFace = new Map();
-let pickerLibraryKind = 'google';
+let pickerLibraryKind = 'google', pickerMissing = null, showPickerWeightSlider;
 function pickerOwns(ch) {
   const owner = ownerOf(ch.codePointAt(0)), key = keyOf(pickTarget);
   return owner === key || key === 'han' && owner === 'other';
@@ -1227,8 +1187,15 @@ function pickerClassSample() {
   const samples = { han, latin: 'Hamburg Aa Gg Rr', digit: '0123456789 11980 2026', kana: 'あいうえお アイウエオ かなカナ', shared: '“ ” ‘ ’ — …… ·', punct: '「 」 『 』 （ ） 、 。 ！ ？', symbol: '①②③ ※ → ℃ ＡＢＣ １２３', bopo: 'ㄅㄆㄇㄈ ㄉㄊㄋㄌ ㄧㄨㄩ ˊˇˋ˙' };
   return [...(samples[pickTarget.id] || CLS[pickTarget.id].sample)].map(ch => /\s/.test(ch) || pickerOwns(ch) ? ch : ' ').join('').replace(/\s+/g, ' ').trim();
 }
+function syncPickerMirror() {
+  const sample = $('#pkSample'), mirror = $('#pkSampleMirror');
+  if (mirror.textContent !== sample.value) mirror.textContent = sample.value;
+  for (const property of ['fontFamily', 'fontSize', 'fontWeight', 'fontVariationSettings', 'fontSynthesis']) mirror.style[property] = sample.style[property];
+  paintMissingGlyphs(mirror, ch => !MISS_SKIP.test(ch) && pickerMissing?.has(ch) ? 2 : 0, 'cf-picker');
+}
 function sizePickerSample() {
   const sample = $('#pkSample');
+  syncPickerMirror();
   if (!sample.clientWidth) return;
   sample.style.height = '0px'; sample.style.height = (sample.scrollHeight + 2) + 'px';
 }
@@ -1456,7 +1423,7 @@ export function setPickTab(tab) {
   pickTab = tab;
   if (tab !== 'file') pickerLibraryKind = tab;
   const pane = tab === 'file' ? 'file' : 'library';
-  for (const id of ['pkSourcePop', 'gfStylePop', 'pkWeightTypePop', 'pkCoveragePop', 'pkSortPop']) { const pop = $('#'+id); if (pop.matches(':popover-open')) pop.hidePopover(); }
+  for (const id of ['pkSourcePop', 'gfStylePop', 'pkWeightTypePop', 'pkCoveragePop', 'pkSortPop', 'pkWeightPop']) { const pop = $('#'+id); if (pop.matches(':popover-open')) pop.hidePopover(); }
   picker.querySelectorAll('[data-src]').forEach(b => { b.setAttribute('aria-selected', b.dataset.src === pane); b.tabIndex = b.dataset.src === pane ? 0 : -1; });
   picker.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== pane; });
   if (pane === 'file') renderImportedFonts();
@@ -1551,7 +1518,7 @@ export function applySampleAxes() {
   if (pickerWeightAxis(f)) parts.unshift(`"wght" ${pickerProofWeight}`);
   $('#pkSample').style.fontVariationSettings = parts.join(', ');
   $('#pkSample').style.fontWeight = String(pickerProofWeight);
-  $('#pkSample').style.fontSynthesis = 'none';
+  $('#pkSample').style.fontSynthesis = 'none'; syncPickerMirror();
 }
 export const previewFont = f => f?.kind === 'google' && extraAxes(f).length ? { ...f, xa: extraAxes(f).map(a => a[0]).sort() } : f;
 export const cleanVary = f => { const o = Object.fromEntries(Object.entries(pickVary).filter(([t]) => axisOf(f, t))); return Object.keys(o).length ? o : undefined; };
@@ -1604,16 +1571,13 @@ export async function renderCoverage(s, f) {
   const tok = ++covTok, box = $('#pkCov'), sample = $('#pkSample');
   const text = sample.value;
   const sampleChars = [...new Set([...text].filter(c => c.trim() && c !== '·'))];
-  const targetChars = [...new Set([...(state.view.text || '')].filter(c => c.trim() && pickerOwns(c)))];
-  $('#pkTargetCoverage').textContent = T('pkCheckingCoverage');
+  $('#pkCovStatus').textContent = T('pkCheckingCoverage');
   let miss;
-  try { miss = await waitForPicker(missingIn(s, [...new Set([...COV_SETS.flatMap(([, cs]) => [...cs]), ...sampleChars, ...targetChars])])); } catch (error) { miss = null; }
-  if (tok !== covTok || pickCand !== f || !picker.open) return;
-  if (!miss) { $('#pkTargetCoverage').textContent = T('pkCoverageUnknown'); $('#pkTargetCoverage').className = 'hint'; box.innerHTML = ''; return; }
-  const targetMissing = targetChars.filter(ch => miss.has(ch)), targetNote = $('#pkTargetCoverage');
-  targetNote.textContent = targetChars.length ? targetMissing.length ? T('pkTargetMissing', { class: keyName(keyOf(pickTarget)), n: targetMissing.length, chars: targetMissing.slice(0, 20).join('') + (targetMissing.length > 20 ? '…' : '') }) : T('pkTargetOk', { class: keyName(keyOf(pickTarget)), n: targetChars.length }) : '';
-  // Successful checks remain available to assistive technology without competing with the specimen.
-  targetNote.className = targetMissing.length ? 'callout' : 'hint vh';
+  try { miss = await waitForPicker(missingIn(s, [...new Set([...COV_SETS.flatMap(([, cs]) => [...cs]), ...sampleChars])])); } catch (error) { miss = null; }
+  if (tok !== covTok || pickCand !== f || !picker.open || sample.value !== text) return;
+  $('#pkCovStatus').textContent = miss ? '' : T('pkCoverageUnknown');
+  pickerMissing = miss; syncPickerMirror();
+  if (!miss) { box.innerHTML = ''; return; }
   box.innerHTML = COV_SETS.filter(([key]) => !['covLatin', 'covDigit', 'covKR'].includes(key)).map(([k, cs]) => {
     const list = [...cs], have = list.filter(c => !miss.has(c)).length;
     const cls = have === list.length ? 'ok' : have ? 'part' : 'none';
@@ -1635,7 +1599,7 @@ export function renderPunct(s, f, token = pickerPreviewToken, attempts = 0) {
 export function resetCoverage() {
   $('#pkPunct').hidden = true;
   covTok++;
-  $('#pkCov').innerHTML = ''; $('#pkTargetCoverage').textContent = ''; $('#pkTargetCoverage').className = 'hint';
+  $('#pkCov').innerHTML = ''; $('#pkCovStatus').textContent = ''; pickerMissing = null; syncPickerMirror();
 }
 function pickerWeightAxis(f) { return f && (f.kind === 'google' ? f.family in vfCache ? Array.isArray(vfCache[f.family]) ? vfCache[f.family] : null : axisOf(f, 'wght')?.slice(1, 3) : f.axis); }
 function setPickerDetailTab(tab) {
@@ -1651,24 +1615,19 @@ function syncPickerMetadata(f) {
   $('#pkInfoSource').textContent = !f ? '' : f.kind === 'google' ? 'Google Fonts' : f.kind === 'local' ? T('srcLocal') : f.fileName || T('srcFile');
   $('#pkInfoScript').textContent = labels[script] ? T(labels[script]) : T('pkNotProvided');
 }
-function syncPickerProof(f) {
+function syncPickerProof(f, { preserveInput = false } = {}) {
   syncPickerMetadata(f);
   const axis = pickerWeightAxis(f), weights = f?.kind === 'google' ? gfWeights(f.family) : null;
   const key = f ? fontKey(f) + '|' + (f.weight || 400) : '';
   if (key !== pickerProofKey) { pickerProofKey = key; pickerProofWeight = f?.weight || 400; }
   if (axis) pickerProofWeight = Math.max(axis[0], Math.min(axis[1], pickerProofWeight));
   else if (weights?.length) pickerProofWeight = weights.reduce((a, b) => Math.abs(b - pickerProofWeight) < Math.abs(a - pickerProofWeight) ? b : a);
-  $('#pkPreviewTools').hidden = !f;
+  $('#pkWeightControl').hidden = !f;
   $('#pkApplied').hidden = !f; $('#gfApplyField').hidden = f?.kind !== 'google';
   $('#lfVarField').hidden = f?.kind !== 'local' || localData.has(f.name);
   $('#pkSelectedName').textContent = f?.kind === 'file' ? importedFonts.get(f.fileId)?.family || f.fileName : f?.kind === 'google' ? f.family : f?.name || T('pkEmpty');
   $('#lfFaceField').hidden = f?.kind !== 'local' || !localGroups().some(([, faces]) => faces.length > 1 && faces.some(face => face.fullName === f.name));
-  $('#pkProofWeight').hidden = !axis; $('#pkProofWeightNum').hidden = !axis;
-  $('#pkProofWeightSelect').hidden = !!axis || !weights?.length;
-  $('#pkProofStyle').hidden = !!axis || !!weights?.length;
-  if (axis) for (const el of [$('#pkProofWeight'), $('#pkProofWeightNum')]) { el.min = axis[0]; el.max = axis[1]; el.value = pickerProofWeight; }
-  if (weights?.length) { $('#pkProofWeightSelect').innerHTML = weights.map(w => `<option value="${w}">${w}</option>`).join(''); $('#pkProofWeightSelect').value = pickerProofWeight; }
-  picker.querySelectorAll('[data-proof-weight]').forEach(el => { const w = +el.dataset.proofWeight; el.hidden = axis ? w < axis[0] || w > axis[1] : !weights?.includes(w); });
+  syncWeightControl({ input: $('#pkProofWeightNum'), slider: $('#pkProofWeight'), ticks: $('#pkProofTicks') }, { ...pickerWeightDomain(), value: pickerProofWeight, label: wTip, locale: UI, preserveInput });
   $('#ffWeightField').hidden = f?.kind !== 'file' || !f.axis;
   if (f?.kind === 'file' && f.axis) { const input = $('#ffWeightNum'); input.min = f.axis[0]; input.max = f.axis[1]; input.value = f.weight || 400; }
   const target = pickW && (sameFontAs(f, objOf(pickTarget).font) || picker.querySelector('[name="pkScope"]:checked')?.value === 'w') ? pickW : 400;
@@ -1676,11 +1635,17 @@ function syncPickerProof(f) {
   $('#pkAppliedSummary').textContent = f && (f.kind === 'google' || axis) ? T('pkMappingSummary', { weight: f.weight || 400, target }) : '';
   $('#pkAppliedSummary').title = $('#pkWeightMapping').textContent;
 }
-function setPickerProof(value) {
+function pickerWeightDomain() {
+  const axis = pickerWeightAxis(pickCand), weights = pickCand?.kind === 'google' ? gfWeights(pickCand.family) : null;
+  return { continuous: !!axis, domain: axis || weights || [pickCand?.weight || 400], value: pickerProofWeight };
+}
+function setPickerProof(value, { preserveInput = false } = {}) {
   if (!pickCand || !Number.isFinite(value)) return;
-  const axis = pickerWeightAxis(pickCand);
-  if (axis && (value < axis[0] || value > axis[1])) return;
-  pickerProofWeight = value; syncPickerProof(pickCand); applySampleAxes(); paintPickerCandidate();
+  const { continuous, domain } = pickerWeightDomain();
+  const next = continuous ? Math.round(Math.max(domain[0], Math.min(domain.at(-1), value))) : domain.reduce((a, b) => Math.abs(b - value) < Math.abs(a - value) ? b : a);
+  const changed = next !== pickerProofWeight;
+  pickerProofWeight = next; syncPickerProof(pickCand, { preserveInput }); applySampleAxes();
+  if (changed) paintPickerCandidate();
 }
 export function updateCand() {
   const f = candFromFields();
@@ -1915,7 +1880,9 @@ function pickerNumber(input) {
 }
 export function initPicker() {
   picker.querySelectorAll('input[type="number"]:not(.nf input)').forEach(pickerNumber);
-  for (const [pop, button] of [['pkSourcePop', 'pkSourceBtn'], ['gfStylePop', 'gfStyleBtn'], ['pkWeightTypePop', 'pkWeightTypeBtn'], ['pkCoveragePop', 'pkCoverageBtn'], ['pkSortPop', 'pkSortBtn']]) bindPopover($('#'+pop), $('#'+button), { within: picker, inset: 16, align: button === 'pkSortBtn' ? 'end' : 'start' });
+  showPickerWeightSlider = bindWeightControl({ input: $('#pkProofWeightNum'), button: $('#pkWeightBtn'), anchor: $('#pkWeightControl'), pop: $('#pkWeightPop'), slider: $('#pkProofWeight'), ticks: $('#pkProofTicks'), get: pickerWeightDomain, set: setPickerProof, sync: options => syncPickerProof(pickCand, options), within: picker });
+  const pickerPops = [['pkSourcePop', 'pkSourceBtn'], ['gfStylePop', 'gfStyleBtn'], ['pkWeightTypePop', 'pkWeightTypeBtn'], ['pkCoveragePop', 'pkCoverageBtn'], ['pkSortPop', 'pkSortBtn']];
+  for (const [pop, button] of pickerPops) bindPopover($('#'+pop), $('#'+button), { within: picker, inset: 16, align: button === 'pkSortBtn' ? 'end' : 'start' });
   picker.querySelectorAll('[data-filter-clear]').forEach(button => button.addEventListener('click', () => { $('#'+button.dataset.filterClear).querySelectorAll('input').forEach(input => { input.checked = false; }); renderCatalog(); }));
   $('#pkFilterClear').addEventListener('click', () => { clearPickerFilters(); renderCatalog(); $('#gfSearch').focus(); });
   picker.addEventListener('click', e => {
@@ -1946,9 +1913,6 @@ export function initPicker() {
   new ResizeObserver(([entry]) => { if (entry.contentRect.width !== sampleWidth) { sampleWidth = entry.contentRect.width; sizePickerSample(); } }).observe($('#pkSample'));
   $('#pkSampleSize').addEventListener('input', e => { const size = +e.target.value; if (size >= 8 && size <= 96) setPickerSampleSize(size); });
   $('#pkSampleSize').addEventListener('blur', e => { setPickerSampleSize(+e.target.value); });
-  for (const id of ['pkProofWeight', 'pkProofWeightNum', 'pkProofWeightSelect']) $('#'+id).addEventListener('input', e => { if (e.target.value !== '') setPickerProof(+e.target.value); });
-  $('#pkProofWeightNum').addEventListener('blur', () => syncPickerProof(pickCand));
-  picker.querySelectorAll('[data-proof-weight]').forEach(el => el.addEventListener('click', () => setPickerProof(+el.dataset.proofWeight)));
   $('#ffWeightNum').addEventListener('input', updateCand);
   $('#ffWeightNum').addEventListener('change', updateCand);
   $('#pkScope').addEventListener('change', () => { syncGfWeight(); updateCand(); });
@@ -1993,6 +1957,8 @@ export function initPicker() {
     // Native close events are queued; an earlier dialog must not cancel one that has already reopened.
     if (picker.open) return;
     for (const [id] of pickerPops) { const pop = $('#'+id); if (pop.matches(':popover-open')) pop.hidePopover(); }
+    if ($('#pkWeightPop').matches(':popover-open')) $('#pkWeightPop').hidePopover();
+    pickerMissing = null; syncPickerMirror();
     pickerPreviewToken++; covTok++; pickerApplyToken++; setPickerApplyBusy(false); fileImportToken++; catalogObserver?.disconnect(); fileObserver?.disconnect(); });
   picker.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => setPickTab(b.dataset.src)));
   $('#gfWeight').addEventListener('change', updateCand);

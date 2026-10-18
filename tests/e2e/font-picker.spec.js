@@ -416,7 +416,7 @@ test('导入字体：重复文件去重，取消后可跨类别复用，无效�
   await page.locator('#ffFile').setInputFiles([font, font]);
   await expect(page.locator('#ffOptions [data-imported]')).toHaveCount(1);
   await expect(page.locator('#pkOk')).toBeEnabled();
-  await expect(page.locator('#pkTargetCoverage')).toContainText('汉字缺少');
+  await expect(page.locator('#pkTargetCoverage')).toHaveCount(0);
   await page.locator('#ffSearch').fill('Ｊ ｏ-ｓ_ｔ');
   await expect(page.locator('#ffOptions [data-imported]')).toHaveCount(1);
   const id = await page.locator('#ffOptions [data-imported]').getAttribute('data-imported');
@@ -461,9 +461,9 @@ test('预览字重不保存：连续字重可单独试粗体，静态字体只�
   expect(await page.locator('#pkSample').evaluate(el => el.style.fontVariationSettings)).toContain('700');
   expect(await page.evaluate(async () => JSON.stringify((await import('./assets/js/core.js')).state.classes.han))).toBe(original);
   await page.locator('#gfSearch').fill('Shippori'); await page.locator('#gfOptions [data-family="Shippori Mincho"]').click();
-  await expect(page.locator('#pkProofWeightSelect option')).toHaveCount(5);
+  await expect(page.locator('#pkProofTicks [data-weight]')).toHaveCount(5);
   await expect(page.locator('#gfWeight option')).toHaveCount(5);
-  await page.locator('#pkProofWeightSelect').selectOption('700');
+  await page.locator('#pkProofWeightNum').fill('700');
   await expect(page.locator('#pkOk')).toBeEnabled();
   await expect(page.locator('#gfWeight')).toHaveValue('400');
   await page.locator('#pkOk').click();
@@ -741,7 +741,7 @@ test('状态反馈：无法完成字符检查时显示未知，避免伪造全�
   await fixture(page); await page.locator('#picker [data-src="file"]').click();
   await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
   await expect(page.locator('#pkOk')).toBeEnabled();
-  await expect(page.locator('#pkTargetCoverage')).toContainText('无法确认');
+  await page.locator('#pkInfoTab').click(); await expect(page.locator('#pkCovStatus')).toContainText('无法确认');
   await expect(page.locator('#pkCov .cov.ok')).toHaveCount(0);
 });
 
@@ -888,4 +888,61 @@ test('精简筛选栏：清除搜索保留筛选和候选，行距紧凑，底�
   await expect(page.locator('#pkSource input[value="google"]')).toBeChecked(); await expect(page.locator('#pkSelectedName')).toHaveText('BIZ UDGothic');
   expect(await page.locator('.pk-actions').evaluate(el => getComputedStyle(el).borderTopWidth)).toBe('0px');
   expect(await page.locator('.pk-browse>.results-toolbar').evaluate(el => getComputedStyle(el).marginTop)).toBe('16px');
+});
+
+
+test('选字工具栏复用字重交互：B、数字、滑杆与刻度同步，分档只选真实档位，预览不保存', async ({ page }) => {
+  await fixture(page, 'latin');
+  await page.locator('#gfSearch').fill('Inter'); await page.locator('#gfOptions [data-family="Inter"]').click();
+  await expect(page.locator('#pkPreviewTools,#pkTargetCoverage')).toHaveCount(0);
+  await page.locator('#pkWeightBtn').focus(); await page.keyboard.press('Enter');
+  await expect(page.locator('#pkWeightPop')).toBeVisible();
+  await page.locator('#pkProofTicks button[data-weight="700"]').click();
+  await expect(page.locator('#pkProofWeightNum')).toHaveValue('700');
+  await expect(page.locator('#pkProofWeight')).toHaveValue('700');
+  await expect(page.locator('#pkSampleMirror')).toHaveCSS('font-weight', '700');
+  await expect(page.locator('#gfWeightNum')).toHaveValue('400');
+  await page.keyboard.press('Escape'); await expect(page.locator('#pkWeightPop')).toBeHidden(); await expect(page.locator('#pkProofWeightNum')).toBeFocused();
+  await page.keyboard.press('ArrowUp'); await expect(page.locator('#pkProofWeightNum')).toHaveValue('701');
+  await page.locator('#pkSample').click();
+  const icon = await page.locator('#pkWeightBtn').boundingBox();
+  await page.mouse.move(icon.x + 10, icon.y + 10); await page.mouse.down(); await page.mouse.move(icon.x + 30, icon.y + 10); await page.mouse.up();
+  await expect(page.locator('#pkProofWeightNum')).toHaveValue('721'); await expect(page.locator('#pkWeightPop')).toBeHidden();
+  await page.locator('#gfSearch').fill('DM Sans'); await page.locator('#gfOptions [data-family="DM Sans"]').click();
+  await page.locator('#pkProofWeightNum').fill('1000'); await expect(page.locator('#pkProofWeightNum')).toHaveValue('1000');
+  expect(await page.locator('#pkProofWeightNum').evaluate(el => { const ctx = document.createElement('canvas').getContext('2d'); ctx.font = getComputedStyle(el).font; return el.clientWidth >= ctx.measureText(el.value).width; })).toBe(true);
+  await page.evaluate(async () => (await import('./assets/js/core.js')).seedVf('Shippori Mincho'));
+  await page.locator('#gfSearch').fill('Shippori Mincho'); await page.locator('#gfOptions [data-family="Shippori Mincho"]').click();
+  await page.locator('#pkProofWeightNum').fill('650'); await page.locator('#pkProofWeightNum').press('Enter');
+  await expect(page.locator('#pkProofWeightNum')).toHaveValue('600');
+  await page.locator('#pkWeightBtn').click(); await page.locator('#pkProofWeight').fill('4');
+  await expect(page.locator('#pkProofWeightNum')).toHaveValue('800');
+  await expect(page.locator('#gfWeight')).toHaveValue('400');
+  expect(await page.locator('.pk-workspace').evaluate(el => { const workspace = el.getBoundingClientRect(), detail = el.querySelector('.pk-detail').getBoundingClientRect(); return Math.abs(detail.left - (workspace.left + workspace.width / 2)) < 1; })).toBe(true);
+});
+
+test('选字缺字高亮复用首页波浪线：只检查输入文字，保留输入法、光标、主校样及草稿', async ({ page }) => {
+  const errors = []; page.on('pageerror', e => errors.push(e.message));
+  await fixture(page); await page.locator('#picker [data-src="file"]').click();
+  await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  await page.locator('#pkSample').fill('A国𠮷あ\nB');
+  await expect.poll(() => page.evaluate(() => [...(CSS.highlights.get('cf-picker-miss2') || [])].map(range => range.toString()).join(''))).toBe('国𠮷あ');
+  await expect(page.locator('#pkSample')).toBeFocused(); await expect(page.locator('#pkSampleMirror')).toHaveText('A国𠮷あ\nB');
+  expect(await page.locator('#pkSampleMirror').getAttribute('aria-hidden')).toBe('true');
+  expect(await page.evaluate(() => { const node = document.querySelector('#proofText').firstChild, range = new Range(); range.setStart(node, 0); range.setEnd(node, 1); CSS.highlights.set('cf-miss2', new Highlight(range)); document.querySelector('#pkSample').dispatchEvent(new InputEvent('input', { isComposing:true })); return CSS.highlights.get('cf-miss2').size; })).toBe(1);
+  await page.locator('#pkSample').evaluate(el => { el.setSelectionRange(2, 2); el.dispatchEvent(new CompositionEvent('compositionstart')); el.dispatchEvent(new InputEvent('input', { isComposing:true })); el.dispatchEvent(new CompositionEvent('compositionend')); });
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  expect(await page.locator('#pkSample').evaluate(el => el.selectionStart)).toBe(2);
+  await page.locator('#pkSampleSize').fill('48');
+  await expect(page.locator('#pkSampleMirror')).toHaveCSS('font-size', '48px');
+  const alignment = await page.locator('#pkSampleBox').evaluate(el => { const input = el.querySelector('textarea'), mirror = el.querySelector('.pk-sample-mirror'); return ['width','padding','lineHeight','fontFamily','fontSize','fontWeight','fontVariationSettings','whiteSpace'].every(key => getComputedStyle(input)[key] === getComputedStyle(mirror)[key]); });
+  expect(alignment).toBe(true);
+  await page.locator('#pkSample').fill('ABC');
+  await expect.poll(() => page.evaluate(() => CSS.highlights.get('cf-picker-miss2')?.size)).toBe(0);
+  await page.locator('#pkSample').fill('国');
+  await expect.poll(() => page.evaluate(() => CSS.highlights.get('cf-picker-miss2')?.size)).toBe(1);
+  await page.locator('#pkCancel').click();
+  expect(await page.evaluate(() => CSS.highlights.get('cf-picker-miss2').size)).toBe(0);
+  expect(errors).toEqual([]);
 });

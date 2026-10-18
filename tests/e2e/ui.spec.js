@@ -554,3 +554,19 @@ test('字体状态点：连续模式重载和中间字重使用实际可变来�
   failVariable = false; await page.reload();
   await expect(dot).toHaveClass('status ok'); await expect(dot).toBeHidden();
 });
+
+
+test('后台字体资料更新保留正在编辑的表格控件和数字草稿', async ({ page }) => {
+  await open(page); await page.click('#ltabFonts');
+  const input = page.locator('#wMatrix .mnum[data-k="latin"][data-w="600"]');
+  await input.fill('119');
+  const preserved = await input.evaluate(async el => {
+    const render = await import('./assets/js/render.js'), core = await import('./assets/js/core.js');
+    render.regionChanged(); core.weightNamesChanged();
+    // Both callbacks are debounced; inspect the original node after they have run.
+    await new Promise(resolve => setTimeout(resolve, 150));
+    return el.isConnected && document.activeElement === el && el.value === '119';
+  });
+  expect(preserved).toBe(true); await input.press('Tab');
+  await expect(input).toHaveValue('119');
+});

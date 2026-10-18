@@ -838,7 +838,7 @@ export function defaultFontWeight(f) {
   const weights = gfWeights(f.family);
   return weights?.length ? weights.reduce((a, b) => Math.abs(b - BASE_W) < Math.abs(a - BASE_W) ? b : a) : BASE_W;
 }
-export const weightNamesChanged = debounce(() => { renderEditor(); renderExport(); if (state.view.weight !== BASE_W) rebuild(); }, 60);
+export const weightNamesChanged = debounce(() => { renderEditor({ preserveActive: true }); renderExport(); if (state.view.weight !== BASE_W) rebuild(); }, 60);
 
 /* ================= Resolve classes to actual font / size / baseline ================= */
 export function rootOf(id, depth = 0) { const c = state.classes[id]; return c.follow && depth < 4 ? rootOf(c.follow, depth + 1) : id; }
