@@ -616,7 +616,7 @@ test('选择时自动匹配：单档不改变基础设置，取消测量不留�
   });
   await page.locator('#pkOk').click();
   await expect.poll(() => page.evaluate(() => window.fitPending.length)).toBeGreaterThan(0);
-  await page.locator('#pkCancel').click(); await page.evaluate(() => window.releaseFit());
+  await page.locator('#pkClose').click(); await page.evaluate(() => window.releaseFit());
   await expect.poll(() => page.evaluate(() => [...document.fonts].filter(f => f.family.startsWith('__cf_fit')).length)).toBe(0);
   expect(await matchSettings(page)).toEqual(before);
 });
@@ -921,7 +921,7 @@ test('选字工具栏复用字重交互：B、数字、滑杆与刻度同步，�
   expect(await page.locator('.pk-workspace').evaluate(el => { const workspace = el.getBoundingClientRect(), detail = el.querySelector('.pk-detail').getBoundingClientRect(); return Math.abs(detail.left - (workspace.left + workspace.width / 2)) < 1; })).toBe(true);
 });
 
-test('选字缺字高亮复用首页波浪线：只检查输入文字，保留输入法、光标、主校样及草稿', async ({ page }) => {
+test('选字缺字高亮复用首页波浪线：只检查输入文字，保留输入法、光标、主校样及草稿', async ({ page }, testInfo) => {
   const errors = []; page.on('pageerror', e => errors.push(e.message));
   await fixture(page); await page.locator('#picker [data-src="file"]').click();
   await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
@@ -929,6 +929,24 @@ test('选字缺字高亮复用首页波浪线：只检查输入文字，保留�
   await page.locator('#pkSample').fill('A国𠮷あ\nB');
   await expect.poll(() => page.evaluate(() => [...(CSS.highlights.get('cf-picker-miss2') || [])].map(range => range.toString()).join(''))).toBe('国𠮷あ');
   await expect(page.locator('#pkSample')).toBeFocused(); await expect(page.locator('#pkSampleMirror')).toHaveText('A国𠮷あ\nB');
+  const hoverGlyph = async text => {
+    const box = await page.evaluate(text => {
+      const range = [...CSS.highlights.get('cf-picker-miss2')].find(r => r.toString() === text), b = range.getBoundingClientRect();
+      return { x: b.left + b.width / 2, y: b.top + b.height / 2 };
+    }, text);
+    await page.mouse.move(box.x, box.y);
+  };
+  await hoverGlyph('国');
+  await expect(page.locator('#pkMissTip')).toBeVisible();
+  await expect(page.locator('#pkMissTip')).toContainText('国');
+  await expect(page.locator('#pkMissTip')).toContainText('系统字体');
+  await expect(page.locator('#pkMissTip')).toContainText('Jost');
+  await expect(page.locator('#pkMissTip')).toBeInViewport();
+  await page.screenshot({ path: testInfo.outputPath('missing-tooltip.png') });
+  await hoverGlyph('𠮷'); await expect(page.locator('#pkMissTip')).toContainText('𠮷');
+  await page.locator('#pkSample').click(); await expect(page.locator('#pkMissTip')).toBeHidden();
+  await hoverGlyph('あ'); await expect(page.locator('#pkMissTip')).toBeVisible();
+  await page.locator('[data-pk-detail=info]').hover(); await expect(page.locator('#pkMissTip')).toBeHidden();
   expect(await page.locator('#pkSampleMirror').getAttribute('aria-hidden')).toBe('true');
   expect(await page.evaluate(() => { const node = document.querySelector('#proofText').firstChild, range = new Range(); range.setStart(node, 0); range.setEnd(node, 1); CSS.highlights.set('cf-miss2', new Highlight(range)); document.querySelector('#pkSample').dispatchEvent(new InputEvent('input', { isComposing:true })); return CSS.highlights.get('cf-miss2').size; })).toBe(1);
   await page.locator('#pkSample').evaluate(el => { el.setSelectionRange(2, 2); el.dispatchEvent(new CompositionEvent('compositionstart')); el.dispatchEvent(new InputEvent('input', { isComposing:true })); el.dispatchEvent(new CompositionEvent('compositionend')); });
@@ -942,7 +960,39 @@ test('选字缺字高亮复用首页波浪线：只检查输入文字，保留�
   await expect.poll(() => page.evaluate(() => CSS.highlights.get('cf-picker-miss2')?.size)).toBe(0);
   await page.locator('#pkSample').fill('国');
   await expect.poll(() => page.evaluate(() => CSS.highlights.get('cf-picker-miss2')?.size)).toBe(1);
-  await page.locator('#pkCancel').click();
+  await page.emulateMedia({ colorScheme: 'dark' }); await page.setViewportSize({ width: 390, height: 844 });
+  await page.locator('#pkSample').scrollIntoViewIfNeeded(); await hoverGlyph('国');
+  await expect(page.locator('#pkMissTip')).toBeVisible(); await expect(page.locator('#pkMissTip')).toBeInViewport();
+  await page.locator('#pkClose').click();
   expect(await page.evaluate(() => CSS.highlights.get('cf-picker-miss2').size)).toBe(0);
+  await expect(page.locator('#pkMissTip')).toBeHidden();
+  await page.setViewportSize({ width: 1416, height: 1239 }); await page.emulateMedia({ colorScheme: 'light' });
+  await openClassPicker(page, 'han'); await page.locator('#picker [data-src="file"]').click();
+  await page.locator('#ffOptions [data-imported]').click(); await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
+  await page.locator('#sampleTabs [data-act=addcustom]').click();
+  await page.locator('#sample').fill('A国'); await page.locator('#viewBtn').click();
+  if (await page.locator('#vMiss').getAttribute('aria-pressed') !== 'true') await page.locator('#vMiss').click();
+  await page.keyboard.press('Escape');
+  await expect.poll(() => page.evaluate(() => [...(CSS.highlights.get('cf-miss2') || [])].map(r => r.toString()).join(''))).toContain('国');
+  const proofBox = await page.evaluate(() => { const r = [...CSS.highlights.get('cf-miss2')].find(r => r.toString() === '国'), b = r.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+  await page.mouse.move(proofBox.x, proofBox.y); await expect(page.locator('#missTip')).toBeVisible(); await expect(page.locator('#missTip')).toContainText('国');
   expect(errors).toEqual([]);
+});
+
+
+test('选字标题关闭不保存；可变轴展开后没有第二层折叠', async ({ page }) => {
+  await fixture(page);
+  const before = await matchSettings(page);
+  await page.locator('#gfSearch').fill('Fraunces');
+  await page.locator('#gfOptions [data-family="Fraunces"]').click();
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  if (await page.locator('#pkApplied').getAttribute('open') === null) await page.locator('#pkApplied > summary').click();
+  await page.locator('#pkAxes > summary').click();
+  await expect(page.locator('#pkAxes [data-axmode="opsz"]')).toBeVisible();
+  for (const axis of ['SOFT', 'WONK']) await expect(page.locator(`#pkAxes input[type=number][data-ax="${axis}"]`)).toBeVisible();
+  await expect(page.locator('#pkAxes details')).toHaveCount(0);
+  await page.locator('#gfWeightNum').fill('550');
+  await page.locator('#pkClose').click();
+  await expect(page.locator('#picker')).not.toBeVisible();
+  expect(await matchSettings(page)).toEqual(before);
 });

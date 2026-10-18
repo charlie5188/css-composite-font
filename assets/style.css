@@ -871,6 +871,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
   .pk-workspace>.pk-actions{grid-column:1;grid-row:3;position:sticky;bottom:0;z-index:2;padding:var(--sp-3) 0 0;border-inline-start:0;background:var(--sheet)}
   .pk .font-options{--font-choice-max:220px}
 }
+.pk-header{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3)}
 .pk h3{margin:0;font-size:var(--fs-xl);font-weight:600}
 .pk h3 span{color:var(--muted);font-weight:400}
 .pk .tabs{margin-top:0;box-shadow:inset 0 -1px 0 var(--line);overflow-y:hidden}
@@ -945,11 +946,10 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .ax-row .btn-text:disabled{visibility:hidden}
 /* details does not reliably support grid layout; arrange its contents inside .ax-body. */
 .ax-body{display:grid;gap:12px;padding-top:10px}
-.pk-axes>summary,.ax-more>summary{display:flex;gap:10px;align-items:baseline;cursor:pointer;list-style:none;min-width:0}
-.pk-axes>summary::-webkit-details-marker,.ax-more>summary::-webkit-details-marker{display:none}
-.pk-axes>summary::before,.ax-more>summary::before{content:'';flex:none;width:6px;height:6px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:translateY(-2px) rotate(-45deg);transition:transform .15s}
-.pk-axes[open]>summary::before,.ax-more[open]>summary::before{transform:translateY(-4px) rotate(45deg)}
-.ax-more>summary{font-size:var(--fs-m);color:var(--muted)}
+.pk-axes>summary{display:flex;gap:10px;align-items:baseline;cursor:pointer;list-style:none;min-width:0}
+.pk-axes>summary::-webkit-details-marker{display:none}
+.pk-axes>summary::before{content:'';flex:none;width:6px;height:6px;border:solid currentColor;border-width:0 1.5px 1.5px 0;transform:translateY(-2px) rotate(-45deg);transition:transform .15s}
+.pk-axes[open]>summary::before{transform:translateY(-4px) rotate(45deg)}
 .pk-scope{display:flex;gap:6px 16px;flex-wrap:wrap;align-items:center;font-size:var(--fs-m);margin-right:auto}
 .pk-scope>span{color:var(--muted);font-size:var(--fs-s)}
 .pk-scope label{display:inline-flex;gap:6px;align-items:center}

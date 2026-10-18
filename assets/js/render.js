@@ -1,4 +1,4 @@
-import { paintMissingGlyphs, syncWeightControl } from './ui-controls.js';
+import { showMissingGlyphTip, paintMissingGlyphs, syncWeightControl } from './ui-controls.js';
 import { $, T, UI, debounce, esc, root, tr } from './i18n.js';
 import { CLASSES, CLS, GROUPS, classOf, fmtRanges, inRanges, isMoved } from './unicode.js';
 import { BASE_W, EA_FEAT, autoNames, clampW, defaultFontWeight, contFont, stepSpan, NUM_FEAT, NUM_TAGS, SAMPLES, TYPO, WEIGHTS, anyShift, axesOf, axisLabel, axisOf, finalFont, fontAtWeight, fontKey, gfWeights, weightChain, fontLabel, inheritedShift, inheritedSize, liveFamily, numLabel, numTags, objByKey, ownFontAt, ownSize, ownerOf, resolveCls, resolveCustom, settingOf, sources, srcError, state, typoValue, usedFont, vfAxisNow } from './core.js';
@@ -636,30 +636,12 @@ export async function checkMiss() {
 }
 /* Show details beside an underlined missing glyph on hover. */
 export function missTipAt(x, y) {
-  const tip = $('#missTip');
-  const hide = () => { tip.hidden = true; };
-  if (!missMap?.size) return hide();
-  const pos = document.caretPositionFromPoint?.(x, y), rng = pos ? null : document.caretRangeFromPoint?.(x, y);
-  const node = pos ? pos.offsetNode : rng?.startContainer, off = pos ? pos.offset : rng?.startOffset;
-  if (!node || node.nodeType !== 3 || !$('#proofText').contains(node)) return hide();
-  /* The caret falls between characters; inspect both neighbors and choose the one actually under the pointer. */
-  for (const start of [off, off - 1, off - 2]) {
-    if (start < 0 || start >= node.data.length) continue;
-    const ch = String.fromCodePoint(node.data.codePointAt(start)), info = missMap.get(ch);
-    if (!info) continue;
-    const r = new Range(); r.setStart(node, start); r.setEnd(node, start + ch.length);
-    const b = r.getBoundingClientRect();
-    if (x < b.left || x > b.right || y < b.top || y > b.bottom) continue;
-    tip.textContent = T(info.lv === 1 ? 'missTipBy' : 'missTipSys', { c: ch, font: info.from, by: info.by });
-    tip.className = 'miss-tip lv' + info.lv;
-    tip.hidden = false;
-    const w = tip.offsetWidth, h = tip.offsetHeight;
-    tip.style.left = Math.max(8, Math.min(b.left, innerWidth - w - 8)) + 'px';
-    tip.style.top = (b.bottom + 6 + h > innerHeight ? b.top - h - 6 : b.bottom + 6) + 'px';
-    return;
-  }
-  hide();
+  showMissingGlyphTip($('#proofText'), $('#missTip'), x, y, {
+    infoOf: ch => missMap?.get(ch),
+    textOf: (ch, info) => T(info.lv === 1 ? 'missTipBy' : 'missTipSys', { c: ch, font: info.from, by: info.by })
+  });
 }
+
 export const checkMissSoon = debounce(checkMiss, 120);
 /* Mark missing glyphs with Highlight API without changing DOM or disturbing vertical layout. */
 export function paintMiss() { paintMissingGlyphs($('#proofText'), ch => missMap?.get(ch)?.lv); }

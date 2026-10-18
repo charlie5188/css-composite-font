@@ -46,6 +46,26 @@ export function paintMissingGlyphs(root, levelOf, prefix = 'cf') {
   CSS.highlights.set(prefix + '-miss1', sets[1]); CSS.highlights.set(prefix + '-miss2', sets[2]);
 }
 
+/* Hit-test painted ranges rather than caret positions: a native textarea may cover its paint-only mirror. */
+export function showMissingGlyphTip(root, tip, x, y, { prefix = 'cf', infoOf, textOf }) {
+  tip.hidden = true;
+  if (!('highlights' in CSS)) return;
+  const bounds = root.getBoundingClientRect();
+  if (x < bounds.left || x > bounds.right || y < bounds.top || y > bounds.bottom) return;
+  for (const level of [1, 2]) for (const range of CSS.highlights.get(prefix + '-miss' + level) || []) {
+    if (!root.contains(range.startContainer)) continue;
+    const box = [...range.getClientRects()].find(b => x >= b.left && x <= b.right && y >= b.top && y <= b.bottom);
+    if (!box) continue;
+    const ch = range.toString(), info = infoOf(ch);
+    if (!info) return;
+    tip.textContent = textOf(ch, info); tip.className = 'miss-tip lv' + level; tip.hidden = false;
+    const w = tip.offsetWidth, h = tip.offsetHeight;
+    tip.style.left = Math.max(8, Math.min(box.left, innerWidth - w - 8)) + 'px';
+    tip.style.top = Math.max(8, Math.min(box.bottom + 6 + h > innerHeight - 8 ? box.top - h - 6 : box.bottom + 6, innerHeight - h - 8)) + 'px';
+    return;
+  }
+}
+
 /* The same weight field maps a continuous axis or discrete steps to the shared slider/ticks. Its owner supplies the state. */
 export function syncWeightControl({ input, slider, ticks }, { continuous, domain, value, label = String, locale = '', preserveInput = false }) {
   input.min = domain[0]; input.max = domain.at(-1); input.step = continuous ? 1 : 'any';

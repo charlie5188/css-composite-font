@@ -1,5 +1,5 @@
 import { refresh } from './refresh.js';
-import { bindPopover, bindWeightControl, syncWeightControl, paintMissingGlyphs, placePopover, searchKey } from './ui-controls.js';
+import { bindPopover, bindWeightControl, syncWeightControl, showMissingGlyphTip, paintMissingGlyphs, placePopover, searchKey } from './ui-controls.js';
 import { catalogInfo, catalogOrder, catalogStyles, localWeightInfo, localItalicInfo, filterCatalog, sortCatalog } from './font-catalog.js';
 import { CATALOG_SAMPLES } from './font-catalog-data.js';
 import { importFontFile, importedFonts, rememberImportedFont } from './font-files.js';
@@ -700,7 +700,7 @@ export function initToolbar() {
   const reloadForText = debounce(() => rebuild(), 600);
   $('#proofText').addEventListener('pointermove', e => missTipAt(e.clientX, e.clientY));
   $('#proofText').addEventListener('pointerleave', () => { $('#missTip').hidden = true; });
-  document.addEventListener('scroll', () => { $('#missTip').hidden = true; }, { passive: true, capture: true });      // Also dismiss when a pane scrolls; scroll events do not bubble.
+  document.addEventListener('scroll', () => { $('#missTip').hidden = true; $('#pkMissTip').hidden = true; }, { passive: true, capture: true });      // Also dismiss when a pane scrolls; scroll events do not bubble.
   $('#sample').addEventListener('input', e => {
     v().text = e.target.value;
     const m = /^c(\d+)$/.exec(v().sample); if (m && v().customs[+m[1]]) v().customs[+m[1]].text = e.target.value;
@@ -1188,6 +1188,7 @@ function pickerClassSample() {
   return [...(samples[pickTarget.id] || CLS[pickTarget.id].sample)].map(ch => /\s/.test(ch) || pickerOwns(ch) ? ch : ' ').join('').replace(/\s+/g, ' ').trim();
 }
 function syncPickerMirror() {
+  $('#pkMissTip').hidden = true;
   const sample = $('#pkSample'), mirror = $('#pkSampleMirror');
   if (mirror.textContent !== sample.value) mirror.textContent = sample.value;
   for (const property of ['fontFamily', 'fontSize', 'fontWeight', 'fontVariationSettings', 'fontSynthesis']) mirror.style[property] = sample.style[property];
@@ -1477,10 +1478,9 @@ export function renderAxes() {
   let body = `<p class="hint">${esc(T('axUnknown'))}</p>`;
   if (ax.length) {
     const g = f.kind === 'google';
-    /* Show common axes first (width, optical size, grade, slant); collapse the mostly parametric axes under More, expanding when customized. */
+    /* Keep common axes first, but expose every axis in the same disclosure. */
     const MAIN = ['wdth', 'opsz', 'GRAD', 'slnt'], rank = t => MAIN.includes(t) ? MAIN.indexOf(t) : 9;
     const sorted = [...ax].sort((x, y) => rank(x[0]) - rank(y[0]) || (x[0] < y[0] ? -1 : 1));
-    const main = sorted.filter(a => MAIN.includes(a[0])), more = sorted.filter(a => !MAIN.includes(a[0]));
     const row = ([t, lo, hi, def]) => {
       const v = pickVary[t], st = axStep(lo, hi), lab = esc(axisLabel(t));
       const name = `<span class="ax-name">${lab}<small>${esc(t)} · ${lo}–${hi}</small></span>`;
@@ -1492,9 +1492,7 @@ export function renderAxes() {
       }
       return `<div class="ax-row">${name}${ctl(typeof v === 'number' ? v : def)}<button type="button" class="btn-text" data-axreset="${t}"${typeof v === 'number' ? '' : ' disabled'}>${esc(T('axReset'))}</button></div>`;
     };
-    const rest = main.length ? more : [];
-    body = `<p class="hint">${esc(T(g ? 'axNoteG' : 'axNote'))}</p>` + (main.length ? main : more).map(row).join('') +
-      (rest.length ? `<details class="ax-more"${rest.some(a => a[0] in pickVary) ? ' open' : ''}><summary>${esc(T('axMore', { n: rest.length }))}</summary><div class="ax-body">${rest.map(row).join('')}</div></details>` : '');
+    body = `<p class="hint">${esc(T(g ? 'axNoteG' : 'axNote'))}</p>` + sorted.map(row).join('');
   }
   box.innerHTML = `<summary><b>${esc(T('axHead'))}</b><span class="ax-sum"></span></summary><div class="ax-body">${body}</div>`;
   box.querySelectorAll('input[type="number"]').forEach(pickerNumber);
@@ -1906,6 +1904,11 @@ export function initPicker() {
     const next = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
     tabs[next].click(); tabs[next].focus();
   });
+  $('#pkSample').addEventListener('pointermove', e => showMissingGlyphTip($('#pkSampleMirror'), $('#pkMissTip'), e.clientX, e.clientY, {
+    prefix: 'cf-picker', infoOf: ch => pickerMissing?.has(ch) && pickCand,
+    textOf: (ch, font) => T('missTipPicker', { c: ch, font: shortName(font) })
+  }));
+  for (const event of ['pointerleave', 'pointerdown', 'keydown']) $('#pkSample').addEventListener(event, () => { $('#pkMissTip').hidden = true; });
   const checkSample = debounce(() => paintPickerCandidate(), 200);
   $('#pkSample').addEventListener('input', e => { sizePickerSample(); if (!e.isComposing) checkSample(); });
   $('#pkSample').addEventListener('compositionend', checkSample);
@@ -1998,7 +2001,7 @@ export function initPicker() {
   });
   axBox.addEventListener('click', e => { const t = e.target.closest('[data-axreset]')?.dataset.axreset; if (t) { delete pickVary[t]; renderAxes(); } });
   $('#lfQuery').addEventListener('click', readInstalledFonts);
-  $('#pkCancel').addEventListener('click', () => picker.close());
+  for (const id of ['pkCancel', 'pkClose']) $('#'+id).addEventListener('click', () => picker.close());
   $('#pkOk').addEventListener('click', applyPicker);
 }
 
