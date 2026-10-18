@@ -215,7 +215,7 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 .file-drop{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-3);padding:var(--sp-4);border:1px dashed var(--line);border-radius:var(--r)}
 .file-drop.dragging{border-color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent)}
 /* Font choices share one stable name/specimen layout across font sources. */
-.font-options{display:grid;align-content:start;overflow:auto;min-height:84px;height:min(var(--font-choice-max,320px),calc(var(--font-choice-count,4)*80px + 8px));gap:var(--sp-1);padding:var(--sp-1);border:1px solid var(--line);border-radius:var(--r)}
+.font-options{display:grid;align-content:start;overflow:auto;min-height:84px;height:min(var(--font-choice-max,320px),calc(var(--font-choice-count,4)*var(--font-choice-row,80px) + 8px));gap:var(--sp-1);padding:var(--sp-1);border:1px solid var(--line);border-radius:var(--r)}
 .font-option{display:grid;grid-template-rows:auto 32px;gap:var(--sp-1);text-align:left;width:100%;min-height:76px;padding:var(--sp-2) var(--sp-3);border:1px solid transparent;border-radius:var(--r);background:transparent;color:var(--ink);cursor:pointer}
 .font-option:hover{background:color-mix(in srgb,var(--ink) 7%,transparent)}
 .font-option[aria-selected="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
@@ -807,10 +807,19 @@ button.wl small{font-family:var(--ui);font-size:var(--fs-xs);margin-left:5px;opa
 /* ---------- dialog ---------- */
 dialog{border:1px solid var(--ink);border-radius:var(--r);background:var(--sheet);color:var(--ink);padding:0;width:min(600px,calc(100vw - 32px));max-height:calc(100vh - 48px)}
 dialog::backdrop{background:rgba(8,8,10,.45)}
-#picker{width:min(960px,calc(100vw - 32px))}
-.pk{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:var(--sp-4);padding:var(--sp-5);max-height:calc(100dvh - 48px)}
-.pk-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--sp-5);overflow:auto;min-height:0}
+#picker{width:min(1280px,calc(100vw - 48px));overflow:hidden}
+.pk{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:var(--sp-4);padding:var(--sp-5);height:min(860px,calc(100dvh - 48px));max-height:calc(100dvh - 48px)}
+/* Give browsing most of the workspace; its scroll position is independent of the selected font's details. */
+.pk-workspace{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(340px,1fr);gap:var(--sp-5);overflow:hidden;min-height:0}
 .pk-sources,.pk-detail{display:grid;align-content:start;gap:var(--sp-4);min-width:0}
+.pk-sources{min-height:0;overflow:auto;scrollbar-gutter:stable}
+.pk-detail{min-height:0;overflow:auto;padding:var(--sp-5);background:var(--bg);border-radius:var(--r);scrollbar-gutter:stable}
+.pk-sources>[data-pane="library"]{height:100%;min-height:0;grid-template-rows:minmax(0,1fr) auto auto}
+.pk-sources>[data-pane="library"]>.pk-browse{display:flex;flex-direction:column;min-height:0}
+#gfOptions{flex:1 1 auto;height:auto;max-height:calc(var(--font-choice-count,4)*88px + 8px)}
+.pk .font-options{--font-choice-max:520px;--font-choice-row:88px}
+.pk .font-option{grid-template-rows:auto 40px;min-height:84px}
+.pk .font-option-sample{font-size:30px;line-height:40px}
 .pk-browse{display:grid;gap:var(--sp-2);margin-bottom:var(--sp-4)}
 .pk-browse>input{width:100%}
 .pk-name-actions,.pk-local-status{display:grid;gap:var(--sp-2);justify-items:start;font-size:var(--fs-s)}
@@ -822,7 +831,17 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-search>input{width:100%;min-width:0}
 .pk-search .btn-ghost{flex:none}
 #pkFilterBtn:has(.badge:not([hidden])){color:var(--ink)}
-@media(max-width:760px){.pk-workspace{grid-template-columns:minmax(0,1fr)}.pk .font-options{--font-choice-max:220px}.pk{padding:var(--sp-4)}}
+@media(max-width:860px){
+  #picker{width:calc(100vw - 32px)}
+  .pk{padding:var(--sp-4)}
+  /* Use one workspace scroll on narrow screens so neither pane becomes a tiny nested viewport. */
+  .pk-workspace{grid-template-columns:minmax(0,1fr);overflow:auto;align-content:start;gap:var(--sp-4)}
+  .pk-sources,.pk-detail{overflow:visible;scrollbar-gutter:auto}
+  .pk-sources>[data-pane="library"]{height:auto;grid-template-rows:auto}
+  #gfOptions{flex:none;height:min(220px,calc(var(--font-choice-count,4)*88px + 8px))}
+  .pk-detail{padding:var(--sp-4)}
+  .pk .font-options{--font-choice-max:220px}
+}
 .pk h3{margin:0;font-size:var(--fs-xl);font-weight:600}
 .pk h3 span{color:var(--muted);font-weight:400}
 .pk .tabs{margin-top:0;box-shadow:inset 0 -1px 0 var(--line);overflow-y:hidden}
@@ -836,7 +855,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 #pkSelectedName{grid-column:1;grid-row:1}
 #pkVfTag{grid-column:1/-1;grid-row:2}
 .pk-preview-head>.btn-ghost{grid-column:2;grid-row:1;margin-top:calc(-1 * var(--sp-1))}
-.pk-preview #pkSample{min-height:132px;padding-block:var(--sp-5)}
+.pk-preview #pkSample{min-height:200px;padding-block:var(--sp-5)}
 #pkSample{font-size:32px;line-height:1.3;overflow-wrap:anywhere;white-space:pre-wrap;max-height:240px;overflow:auto}
 .pk-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:var(--fs-s);color:var(--muted)}
 .pk-punct.bad{color:var(--caution);background:var(--caution-bg);padding:2px 7px;border-radius:var(--r)}
@@ -863,7 +882,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .vh{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .pk .hint{margin:0}
 .pk-selected{display:grid;gap:var(--sp-1)}
-.pk-selected h5{margin:0;font-size:var(--fs-l);font-weight:600;overflow-wrap:anywhere}
+.pk-selected h5{margin:0;font-size:var(--fs-xl);font-weight:600;overflow-wrap:anywhere}
 .pk-apply{display:grid;gap:var(--sp-3)}
 .pk-apply>.field{max-width:180px}
 .pk-disclosure>summary{font-size:var(--fs-s);color:var(--muted);cursor:pointer}
