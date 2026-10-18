@@ -521,7 +521,6 @@ test('类别样张：西文不混入汉字，校样按实际归属提取；自�
     c.refreshCustomRanges(); c.state.view.text = '汉字 Alpha Beta 123';
   });
   const configured = await page.evaluate(async () => JSON.stringify((await import('./assets/js/share.js')).shareSnapshot()));
-  await page.locator('#pkSampleBtn').click();
   await page.locator('#pkSampleMode [data-pk-sample="proof"]').click();
   await expect(page.locator('#pkSample')).toHaveText('lpha Beta');
   await page.locator('#pkSampleMode [data-pk-sample="custom"]').click();
@@ -546,7 +545,6 @@ test('类别样张：繁体汉字、假名、数字与空校样，支持键盘�
   await expect(page.locator('#pkSampleMode [data-pk-sample="proof"]')).toBeDisabled();
   await page.locator('#pkCancel').click(); await openClassPicker(page, 'digit');
   await expect(page.locator('#pkSample')).toContainText('0123456789');
-  await page.locator('#pkSampleBtn').click();
   await page.locator('#pkSampleMode [data-pk-sample="class"]').focus(); await page.keyboard.press('ArrowRight');
   await expect(page.locator('#pkSampleMode [data-pk-sample="custom"]')).toHaveAttribute('aria-checked', 'true');
 });
@@ -628,7 +626,7 @@ test('信息层级：预览、应用与详情分组，短列表收紧，数字�
   await expect(page.locator('#pkBrowseTitle,#pkPreviewTitle')).toHaveCount(0);
   await expect(page.locator('#picker .pk > .tabs [role=tab]')).toHaveCount(2);
   await expect(page.locator('#gfFamily')).toBeHidden();
-  await expect(page.locator('#pkDetails')).not.toHaveAttribute('open', '');
+  await expect(page.locator('#pkDetails')).toBeHidden();
   await expect(page.locator('#pkApplied #gfWeightNum')).toBeHidden();
   await expect(page.locator('#pkAppliedSummary')).toHaveText('组合 400 → 字体 400');
   await page.locator('#pkApplied > summary').click();
@@ -636,7 +634,6 @@ test('信息层级：预览、应用与详情分组，短列表收紧，数字�
   const weight = page.locator('#gfWeightNum'); await weight.locator('..').hover();
   await weight.locator('..').locator('[data-step="up"]').click();
   await expect(weight).toHaveValue('410');
-  await page.locator('#pkSampleBtn').click();
   await page.locator('#pkSampleSize').locator('..').hover();
   await page.locator('#pkSampleSize').locator('..').locator('[data-step="up"]').click();
   await expect(page.locator('#pkSampleSize')).toHaveValue('33');
@@ -654,6 +651,36 @@ test('信息层级：预览、应用与详情分组，短列表收紧，数字�
     await expect(page.locator('#pkAppliedTitle')).not.toHaveText('pkAppliedTitle');
     await expect(page.locator('#pkSampleSize').locator('..').locator('[data-step="up"]')).not.toHaveAttribute('aria-label', '');
   }
+});
+
+test('预览与信息：样张自然撑高、详情标签精简、切换保留草稿，右栏操作与长文本滚动独立', async ({ page }) => {
+  await fixture(page, 'latin');
+  await page.locator('#gfSearch').fill('BIZ');
+  await expect(page.locator('#pkSampleBtn,#pkSamplePop')).toHaveCount(0);
+  await page.locator('[data-pk-sample="custom"]').click();
+  await page.locator('#pkSampleText').fill('Hamburg '.repeat(120));
+  await expect.poll(() => page.locator('#pkSample').evaluate(el => el.getBoundingClientRect().height)).toBeGreaterThan(240);
+  expect(await page.locator('#pkSample').evaluate(el => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
+  await page.locator('#pkInfoTab').click();
+  await expect(page.locator('#pkDetails')).toBeVisible(); await expect(page.locator('#pkPreviewPanel')).toBeHidden();
+  await expect(page.locator('#pkInfoSource')).toHaveText('Google Fonts');
+  await expect(page.locator('#pkCov')).not.toContainText('拉丁字母'); await expect(page.locator('#pkCov')).not.toContainText('数字'); await expect(page.locator('#pkCov')).not.toContainText('韩文');
+  await expect(page.locator('#pkCov .cov-note')).toHaveCount(0);
+  await page.locator('#pkInfoTab').focus(); await page.keyboard.press('ArrowLeft');
+  await expect(page.locator('#pkPreviewTab')).toBeFocused(); await expect(page.locator('#pkPreviewPanel')).toBeVisible();
+  await expect(page.locator('#pkSampleText')).toHaveValue('Hamburg '.repeat(120));
+  await page.locator('#gfSearch').fill('');
+  expect(await page.locator('#picker').evaluate(el => {
+    const list = el.querySelector('#gfOptions'), rows = [...list.querySelectorAll('.font-option')], source = el.querySelector('.pk-sources').getBoundingClientRect(), action = el.querySelector('.pk-actions').getBoundingClientRect(), detail = el.querySelector('.pk-detail').getBoundingClientRect();
+    return getComputedStyle(list).borderTopWidth === '0px' && getComputedStyle(rows[1]).borderTopColor !== 'rgba(0, 0, 0, 0)' && action.left >= detail.left && Math.abs(source.bottom - action.bottom) < 2 && Math.abs(list.getBoundingClientRect().bottom - source.bottom) < 2;
+  })).toBe(true);
+  await expect(page.locator('#pkOk')).toBeInViewport();
+  await page.setViewportSize({ width:390, height:844 }); await page.emulateMedia({ colorScheme:'dark' });
+  await expect(page.locator('#pkCancel')).toBeInViewport(); await expect(page.locator('#pkOk')).toBeInViewport();
+  await page.locator('#pkInfoTab').click(); await expect(page.locator('#pkDetails')).toBeVisible();
+  await expect(page.locator('#pkOk')).toBeInViewport();
+  await page.locator('#pkCancel').click(); await openClassPicker(page, 'latin');
+  await expect(page.locator('#pkPreviewTab')).toHaveAttribute('aria-selected', 'true');
 });
 
 test('状态反馈：无搜索结果保留候选，名称草稿不探测，加载失败可重试恢复', async ({ page }) => {
@@ -761,7 +788,7 @@ test('状态反馈：上一轮排队的关闭事件不能中止重新打开的�
 });
 
 
-test('选字筛选栏：搜索下方直接筛选与清除；手机四语言换行，样张弹层 Escape 不关闭对话框', async ({ page }) => {
+test('选字筛选栏：搜索下方直接筛选与清除；手机四语言换行，内联样张控件与筛选 Escape 不关闭对话框', async ({ page }) => {
   await fixture(page, 'latin');
   await page.locator('#gfSearch').fill('Noto');
 
@@ -783,12 +810,11 @@ test('选字筛选栏：搜索下方直接筛选与清除；手机四语言换�
     await expect(page.locator('#pkWeightTypeBtn')).toBeInViewport();
     await expect(page.locator('.pk-actions #pkAutoFit')).toBeInViewport();
     await expect(page.locator('#pkCancel')).toBeInViewport(); await expect(page.locator('#pkOk')).toBeInViewport();
-    await page.locator('#pkSampleBtn').click(); await page.locator('[data-pk-sample="custom"]').click();
+    await page.locator('[data-pk-sample="custom"]').click();
     await page.locator('#pkSampleText').fill('Hamburg');
-    await expect.poll(() => page.locator('#pkSamplePop').evaluate(el => {
-      const r = el.getBoundingClientRect(), d = el.closest('dialog').getBoundingClientRect();
-      return r.left >= d.left && r.right <= d.right && r.top >= 0 && r.bottom <= innerHeight && el.scrollWidth <= el.clientWidth;
-    })).toBeTruthy();
+    await expect(page.locator('#pkSampleText')).toBeVisible();
+    expect(await page.locator('#picker').evaluate(el => el.scrollWidth <= el.clientWidth)).toBeTruthy();
+    await page.locator('#pkSourceBtn').click();
     await page.keyboard.press('Escape'); await expect(page.locator('#picker')).toBeVisible();
   }
 });
