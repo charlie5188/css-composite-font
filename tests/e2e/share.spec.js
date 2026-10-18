@@ -26,7 +26,9 @@ test('分享当前未保存配置，排除私有正文、预设库和历史；�
   for (const secret of ['PRIVATE SENDER PROOF', 'PRIVATE PRESET', 'PRIVATE SNAPSHOT', 'presetBase', 'customs']) expect(decoded).not.toContain(secret);
   expect(expected.classes.latin.size).toBe(123.5);
   const receiver = await context.newPage();
-  await open(receiver); await pick(receiver, 'gothic-jp');
+  await open(receiver);
+  // The sender can still persist a draft into shared storage; establish the recipient fixture without opening an unrelated preset-save prompt.
+  await receiver.evaluate(async () => (await import('./assets/js/ui.js')).applyPreset('gothic-jp'));
   await receiver.evaluate(async () => {
     const c = await import('./assets/js/core.js');
     c.state.view.customs = [{ text: 'RECIPIENT OWN PROOF', lang: 'en' }]; c.recordHistory(); c.saveState();

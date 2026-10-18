@@ -811,7 +811,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk .tabs{margin-top:-6px;box-shadow:inset 0 -1px 0 var(--line);overflow-y:hidden}
 .pk-grid{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:10px}
 .pk-grid .field input,.pk-grid .field select{width:100%}
-.pk .field input{width:100%}
+.pk .field input,.pk .field select{width:100%}
 /* Font picker: font source, preview card, collapsed axes, then scope and actions. */
 .pk-preview{border:1px solid var(--line);border-radius:var(--r);padding:16px 18px 14px;display:grid;gap:10px}
 #pkSample{font-size:32px;line-height:1.3;overflow-wrap:anywhere}

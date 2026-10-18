@@ -1,5 +1,9 @@
 /* UI text: Simplified Chinese. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkLocalNotConfirmed: "尚未在此机确认",
+  pkNoLocalResults: "没有匹配的本机字体，可读取列表或用完整名称指定。",
+  pkManualName: "用完整名称指定…",
+  pkLocalStyle: "样式",
   pkTargetMissing: "当前类别缺少 {n} 个字：{chars}",
   pkTargetOk: "当前类别的 {n} 个校样字符均可用",
   pkTryName: "尝试「{name}」",
@@ -519,7 +523,7 @@ export default {
   gfHint: "从列表里选，或输入 fonts.google.com 上任意字族的英文名。",
   lfName: "含字重的完整名或 PostScript 名",
   lfPh: "例如 PingFang SC Regular",
-  lfQuery: "读取本机字体列表",
+  lfQuery: "读取本机字体",
   lfMsg: "Chrome / Edge 可用，会请求权限",
   lfWait: "等待授权…",
   lfNoApi: "这个浏览器不支持读取字体列表，直接输入名称即可",

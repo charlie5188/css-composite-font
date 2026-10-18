@@ -1270,10 +1270,45 @@ export function renderCatalog() {
   }), { root: box });
   box.querySelectorAll('[data-family]').forEach(el => catalogObserver.observe(el));
 }
+let localFontRecords = null, localObserver;
+function localGroups() {
+  const records = localFontRecords !== null ? localFontRecords : LOCAL_COMMON.map(([fullName, postscriptName]) => ({ fullName, postscriptName, family: fullName.replace(WORD_RE, '').replace(/\s+(?:W\d|Roman)$/, '').trim(), style: fullName.match(WORD_RE)?.[2] || fullName.match(/\bW\d$/)?.[0] || (/\bRoman$/.test(fullName) ? 'Roman' : 'Regular') }));
+  const groups = new Map();
+  for (const item of records) { if (!groups.has(item.family)) groups.set(item.family, []); groups.get(item.family).push(item); }
+  return [...groups].sort(([a], [b]) => a.localeCompare(b));
+}
+function selectLocalFamily(family, keepFace = false) {
+  const faces = localGroups().find(([name]) => name === family)?.[1]; if (!faces?.length) return;
+  const current = $('#lfName').value, face = (keepFace && faces.find(f => f.fullName === current)) || faces.find(f => /regular|normal|book/i.test(f.style)) || faces[0];
+  $('#lfFaceField').hidden = false;
+  $('#lfFace').innerHTML = faces.map(f => `<option value="${esc(f.fullName)}">${esc(f.style)}</option>`).join('');
+  $('#lfFace').value = face.fullName; $('#lfName').value = face.fullName;
+  $('#lfOptions').querySelectorAll('[data-local-family]').forEach(el => el.setAttribute('aria-selected', el.dataset.localFamily === family));
+  if (!keepFace) updateCand();
+}
+export function renderLocalFonts() {
+  const box = $('#lfOptions'), query = $('#lfFamilySearch').value.trim().toLowerCase(), current = $('#lfName').value;
+  const groups = localGroups().filter(([family, faces]) => `${family} ${faces.map(f => f.fullName + ' ' + f.postscriptName).join(' ')}`.toLowerCase().includes(query));
+  localObserver?.disconnect();
+  box.innerHTML = groups.length ? groups.map(([family, faces], i) => `<button type="button" class="font-option" role="option" tabindex="${i ? -1 : 0}" aria-selected="${faces.some(f => f.fullName === current)}" data-local-family="${esc(family)}" data-local-face="${esc(faces.find(f => /regular|normal|book/i.test(f.style))?.fullName || faces[0].fullName)}"><span class="font-option-name">${esc(family)}</span><span class="font-option-sample" hidden>Ag 0123</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoLocalResults'))}</p>`;
+  localObserver = new IntersectionObserver(entries => entries.forEach(async entry => {
+    if (!entry.isIntersecting) return; const el = entry.target; localObserver.unobserve(el);
+    const src = source(L(el.dataset.localFace, localAlt.get(el.dataset.localFace) ? [localAlt.get(el.dataset.localFace)] : [])); await src.promise;
+    if (!el.isConnected) return;
+    const status = el.querySelector('[data-font-state]'), sample = el.querySelector('.font-option-sample');
+    if (src.status !== 'ok') { status.textContent = T('pkLocalNotConfirmed'); return; }
+    sample.style.fontFamily = `"${src.family}", var(--ui)`; sample.hidden = false; status.hidden = true;
+  }), { root: box });
+  box.querySelectorAll('[data-local-family]').forEach(el => localObserver.observe(el));
+  const selected = groups.find(([, faces]) => faces.some(f => f.fullName === current));
+  $('#lfFaceField').hidden = !selected;
+  if (selected) selectLocalFamily(selected[0], true);
+}
 export function setPickTab(tab) {
   pickTab = tab;
   picker.querySelectorAll('[data-src]').forEach(b => b.setAttribute('aria-selected', b.dataset.src === tab));
   picker.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== tab; });
+  if (tab === 'local') renderLocalFonts();
   updateCand();
 }
 export function candFromFields() {
@@ -1285,9 +1320,10 @@ export function candFromFields() {
   if (pickTab === 'local') {
     const n = $('#lfName').value.trim() || (base ? $('#lfName').placeholder : ''); if (!n) return null;
     const ps = localAlt.get(n), f = L(n, ps && ps !== n ? [ps] : []), fa = localAxesOf(n);
+    if (localData.has(n)) $('#lfVar').checked = !!fa?.axes?.some(a => a[0] === 'wght' && a[2] > 10);
     if (fa) { setFontAxes(f, fa, pickW || 400); if (f.axis) $('#lfVar').checked = true; }      // If local fonts were enumerated, read axes directly from their files.
     if (localStyle.get(n)) f.cls = localStyle.get(n);
-    else if ($('#lfVar').checked) { f.axis = [100, 900]; f.weight = pickW || 400; }      // For manually declared variable fonts, let the font clamp to its own range.
+    else if (!localData.has(n) && $('#lfVar').checked) { f.axis = [100, 900]; f.weight = pickW || 400; }      // For manually declared variable fonts, let the font clamp to its own range.
     return f;
   }
   if (pickCand?.kind === 'file' && pickCand !== base) return pickCand;
@@ -1534,6 +1570,7 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   $('#ffPathField').hidden = !(pickW && o.font.kind === 'file');
   if (pickW && o.font.kind === 'file') { const g = guessPath(o.font.fileName, W); $('#ffPath').placeholder = g; $('#ffPath').value = state.weightNames[k] || g; }
   $('#ffFile').value = ''; $('#ffItal').value = '';
+  $('#lfFamilySearch').value = ''; $('#lfManual').open = false;
   $('#lfMsg').hidden = true; $('#lfMsg').classList.remove('caution');
   pickCand = ovf?.kind === 'file' ? ovf : cur?.kind === 'file' ? cur : null;
   $('#pkSample').textContent = $('#pkSample').dataset.text = `${t.type === 'class' ? CLS[t.id].sample : (state.custom[t.i].chars || '')} · 永国字體 あア Hamburg 0123`;
@@ -1544,6 +1581,10 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   if (pickTab === 'google') $('#gfSearch').focus();
 }
 export function initPicker() {
+  $('#lfFamilySearch').addEventListener('input', renderLocalFonts);
+  $('#lfOptions').addEventListener('click', e => { const el = e.target.closest('[data-local-family]'); if (el) selectLocalFamily(el.dataset.localFamily); });
+  $('#lfOptions').addEventListener('keydown', e => { if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return; e.preventDefault(); const els = [...e.currentTarget.querySelectorAll('[data-local-family]')], i = els.indexOf(e.target.closest('[data-local-family]')), n = e.key === 'Home' ? 0 : e.key === 'End' ? els.length - 1 : Math.max(0, Math.min(els.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1))); els.forEach((el, j) => { el.tabIndex = j === n ? 0 : -1; }); els[n]?.focus(); });
+  $('#lfFace').addEventListener('change', () => { $('#lfName').value = $('#lfFace').value; updateCand(); });
   $('#gfSearch').addEventListener('input', renderCatalog);
   $('#gfSearch').addEventListener('keydown', e => { if (e.key === 'ArrowDown') { e.preventDefault(); $('#gfOptions [tabindex="0"]')?.focus(); } });
   $('#gfStyle').addEventListener('change', renderCatalog); $('#gfBold').addEventListener('change', renderCatalog);
@@ -1554,7 +1595,7 @@ export function initPicker() {
     if (next != null) { e.preventDefault(); options.forEach((el, j) => { el.tabIndex = j === next ? 0 : -1; }); options[next]?.focus(); }
   });
   $('#gfTry').addEventListener('click', () => chooseCatalog($('#gfSearch').value.trim()));
-  picker.addEventListener('close', () => catalogObserver?.disconnect());
+  picker.addEventListener('close', () => { catalogObserver?.disconnect(); localObserver?.disconnect(); });
   picker.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => setPickTab(b.dataset.src)));
   $('#gfFamily').addEventListener('input', updateCandSoon);
   $('#gfFamily').addEventListener('change', updateCand);
@@ -1601,17 +1642,17 @@ export function initPicker() {
   $('#lfQuery').addEventListener('click', async () => {
     const msg = $('#lfMsg');
     msg.classList.remove('caution'); msg.hidden = false;
-    if (!('queryLocalFonts' in window)) { msg.textContent = T('lfNoApi'); msg.classList.add('caution'); return; }
+    if (!('queryLocalFonts' in window)) { msg.textContent = T('lfNoApi'); msg.classList.add('caution'); $('#lfManual').open = true; return; }
     try {
       msg.textContent = T('lfWait');
       const list = await window.queryLocalFonts();
-      const seen = new Set(), opts = [];
-      for (const f of list) { if (seen.has(f.fullName)) continue; seen.add(f.fullName); localAlt.set(f.fullName, f.postscriptName); localData.set(f.fullName, f); opts.push(`<option value="${esc(f.fullName)}">${esc(f.family)} · ${esc(f.style)}</option>`); }
+      const seen = new Set(), opts = []; localFontRecords = [];
+      for (const f of list) { if (seen.has(f.fullName)) continue; seen.add(f.fullName); localFontRecords.push(f); localAlt.set(f.fullName, f.postscriptName); localData.set(f.fullName, f); opts.push(`<option value="${esc(f.fullName)}">${esc(f.family)} · ${esc(f.style)}</option>`); }
       $('#lfList').innerHTML = opts.join('');
       msg.textContent = T('lfCount', { n: opts.length });
-      $('#lfName').focus();
+      renderLocalFonts(); $('#lfFamilySearch').focus();
     } catch (e) {
-      msg.textContent = e && e.name === 'SecurityError' ? T('lfSec') : T('lfDenied');
+      msg.textContent = e && e.name === 'SecurityError' ? T('lfSec') : T('lfDenied'); $('#lfManual').open = true;
       msg.classList.add('caution');
     }
   });

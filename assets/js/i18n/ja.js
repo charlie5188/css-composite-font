@@ -1,5 +1,9 @@
 /* UI text: Japanese. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkLocalNotConfirmed: "この端末では未確認",
+  pkNoLocalResults: "一致するフォントがありません。一覧を取得するか正式名を入力してください。",
+  pkManualName: "正式名で指定…",
+  pkLocalStyle: "スタイル",
   pkTargetMissing: "このクラスで {n} 文字が未収録：{chars}",
   pkTargetOk: "校正内のこのクラスの {n} 文字に対応",
   pkTryName: "「{name}」を試す",
@@ -519,7 +523,7 @@ export default {
   gfHint: "一覧から選ぶか、fonts.google.com にある任意のファミリー名を英語で入力します。",
   lfName: "ウェイトを含むフルネームまたは PostScript 名",
   lfPh: "例：Hiragino Sans W3",
-  lfQuery: "ローカルフォントを一覧表示",
+  lfQuery: "ローカルフォントを取得",
   lfMsg: "Chrome / Edge で使えます。許可を求められます",
   lfWait: "許可を待っています…",
   lfNoApi: "このブラウザはフォント一覧の取得に対応していません。名前を直接入力してください",

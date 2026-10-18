@@ -1,5 +1,9 @@
 /* UI text: English. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkLocalNotConfirmed: "Not confirmed on this computer",
+  pkNoLocalResults: "No matching installed fonts. Read the list or specify an exact name.",
+  pkManualName: "Specify an exact name…",
+  pkLocalStyle: "Style",
   pkTargetMissing: "Missing {n} characters in this class: {chars}",
   pkTargetOk: "All {n} proof characters in this class are available",
   pkTryName: "Try “{name}”",

@@ -1,5 +1,9 @@
 /* UI text: Traditional Chinese (Taiwan). Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkLocalNotConfirmed: "尚未在這台電腦確認",
+  pkNoLocalResults: "沒有符合的本機字型，可讀取清單或以完整名稱指定。",
+  pkManualName: "以完整名稱指定…",
+  pkLocalStyle: "樣式",
   pkTargetMissing: "目前類別缺少 {n} 個字元：{chars}",
   pkTargetOk: "目前類別的 {n} 個校樣字元皆可用",
   pkTryName: "嘗試「{name}」",
@@ -519,7 +523,7 @@ export default {
   gfHint: "從清單裡選，或輸入 fonts.google.com 上任意字族的英文名。",
   lfName: "含字重的完整名或 PostScript 名",
   lfPh: "例如 PingFang TC Regular",
-  lfQuery: "讀取本機字型清單",
+  lfQuery: "讀取本機字型",
   lfMsg: "Chrome / Edge 可用，會要求權限",
   lfWait: "等待授權…",
   lfNoApi: "這個瀏覽器不支援讀取字型清單，直接輸入名稱即可",
