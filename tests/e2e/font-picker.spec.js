@@ -1003,6 +1003,9 @@ test('空文件页为整栏拖放区：说明在区内，导入后恢复双栏�
   await expect(page.locator('#pkDetailContent')).toBeHidden();
   await expect(page.locator('#pkAxes')).toBeHidden(); await expect(page.locator('#pkOk')).toBeDisabled();
   expect(await page.locator('#ffName').evaluate(el => el.closest('#ffDrop') != null)).toBe(true);
+  await expect(page.locator('#ffName')).toHaveText('只在浏览器里读取，不会上传');
+  expect(await page.locator('#ffDrop').evaluate(el => getComputedStyle(el).rowGap)).toBe('24px');
+  expect(await page.locator('#ffName').evaluate(el => el.parentElement.classList.contains('file-drop-note'))).toBe(true);
   expect(await page.locator('#ffDrop').evaluate(el => el.getBoundingClientRect().width > el.closest('.pk-workspace').getBoundingClientRect().width * .99)).toBe(true);
   await page.setViewportSize({width:390,height:844}); await page.emulateMedia({colorScheme:'dark'});
   await expect(page.locator('#pkCancel')).toBeInViewport(); await expect(page.locator('#pkOk')).toBeInViewport();
@@ -1043,4 +1046,89 @@ test('可变轴位于 footer，确认文案随字体变化，窄屏仍可操作�
   await page.evaluate(async () => (await import('./assets/js/core.js')).seedVf('Shippori Mincho'));
   await page.locator('#gfSearch').fill('Shippori Mincho'); await page.locator('#gfOptions [data-family="Shippori Mincho"]').click();
   await expect(page.locator('#pkAxes')).toBeHidden(); await expect(page.locator('#pkOk')).toHaveText('使用这个字体');
+});
+
+test('信息面板：统一字段、实际字符数与命名资料，来源缺失不冒充字体未提供', async ({ page }) => {
+  await fixture(page);
+  await page.locator('#pkInfoTab').click();
+  await expect(page.locator('#pkMetaFamily')).not.toHaveText('');
+  await expect(page.locator('#pkMetaDesigner')).toHaveText('当前来源未提供');
+  await expect(page.locator('#pkMetaPostscript')).toHaveText('当前来源未提供');
+  await page.locator('#picker [data-src="file"]').click();
+  await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
+  await expect(page.locator('#pkMetaEnglish')).toHaveText('Jost Regular');
+  await expect(page.locator('#pkMetaLocalized')).toHaveText('字体里没有提供');
+  await expect(page.locator('#pkMetaPostscript')).toHaveText('Jost-Regular');
+  await expect(page.locator('#pkMetaFamily')).toHaveText('Jost');
+  await expect(page.locator('#pkMetaStyle')).toHaveText('Regular');
+  await expect(page.locator('#pkMetaCharacters')).toHaveText('524 个'); // The fixture has 535 glyphs, but only 524 mapped characters.
+  await expect(page.locator('#pkMetaDesigner')).toHaveText('字体里没有提供');
+  await expect(page.locator('#pkMetaVariable')).toHaveText('可变字体');
+  await expect(page.locator('#pkMetaSpacing')).toHaveText('非等宽字体');
+  await expect(page.locator('#pkMetaSize')).toContainText('KB');
+  await expect(page.locator('#pkMetaLicense')).toContainText('SIL Open Font License');
+  await expect(page.locator('#pkMetaLicenseUrl a')).toHaveAttribute('href', 'http://scripts.sil.org/OFL');
+  await expect(page.locator('#pkMetaLicenseUrl a')).toHaveAttribute('rel', 'noopener noreferrer');
+  for (const lang of ['en', 'tw', 'ja', 'zh']) {
+    await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
+    await expect(page.locator('#pkMetaPostscript')).toHaveText('Jost-Regular');
+    await expect(page.locator('[data-t="pkMetaCredits"]')).not.toHaveText('');
+  }
+  await page.setViewportSize({ width:390, height:844 }); await page.emulateMedia({ colorScheme:'dark' });
+  await expect(page.locator('#pkOk')).toBeInViewport();
+  expect(await page.locator('#pkDetails').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+  await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/NotoSansCJKjp-Subset.otf'));
+  await expect(page.locator('#pkMetaManufacturer')).toHaveText('Adobe');
+  await expect(page.locator('#pkMetaCharacters')).toHaveText('121 个');
+  await expect(page.locator('#pkMetaDesigner')).toContainText('Ryoko');
+  const unsafe = require('fs').readFileSync(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
+  let namesAt = 0;
+  for (let i = 0; i < unsafe.readUInt16BE(4); i++) { const at = 12 + i * 16; if (unsafe.toString('ascii', at, at + 4) === 'name') namesAt = unsafe.readUInt32BE(at + 8); }
+  for (let i = 0; i < unsafe.readUInt16BE(namesAt + 2); i++) {
+    const at = namesAt + 6 + i * 12; if (unsafe.readUInt16BE(at + 6) !== 14) continue;
+    const size = unsafe.readUInt16BE(at + 8), start = namesAt + unsafe.readUInt16BE(namesAt + 4) + unsafe.readUInt16BE(at + 10), unicode = [0, 3].includes(unsafe.readUInt16BE(at));
+    unsafe.fill(0, start, start + size);
+    [...'javascript:alert(1)'].forEach((c, j) => unicode ? unsafe.writeUInt16BE(c.charCodeAt(0), start + j * 2) : unsafe.writeUInt8(c.charCodeAt(0), start + j));
+  }
+  await page.locator('#ffFile').setInputFiles({ name:'Unsafe-license.ttf', mimeType:'font/ttf', buffer:unsafe });
+  await expect(page.locator('#pkMetaLicenseUrl')).toHaveText('javascript:alert(1)');
+  await expect(page.locator('#pkMetaLicenseUrl a')).toHaveCount(0);
+});
+
+test('字体资料解析：TTF、OTF、WOFF 与 WOFF2 限制，保留中文及英文命名', async ({ page }) => {
+  await fixture(page);
+  const result = await page.evaluate(async () => {
+    const { readFontMetadata } = await import('./assets/js/font-metadata.js');
+    const jp = await readFontMetadata(await (await fetch('tests/fixtures/NotoSansJP-Subset.ttf')).arrayBuffer());
+    // Construct an uncompressed WOFF from the same licensed fixture to exercise its table directory.
+    const binary = await (await fetch('tests/fixtures/Jost%5Bwght%5D.ttf')).arrayBuffer(), src = new DataView(binary), n = src.getUint16(4);
+    const out = new Uint8Array(44 + n * 20 + binary.byteLength), view = new DataView(out.buffer); view.setUint32(0, 0x774f4646); view.setUint16(12, n);
+    let offset = 44 + n * 20;
+    for (let i = 0; i < n; i++) {
+      const s = 12 + i * 16, d = 44 + i * 20, start = src.getUint32(s + 8), size = src.getUint32(s + 12);
+      view.setUint32(d, src.getUint32(s)); view.setUint32(d + 4, offset); view.setUint32(d + 8, size); view.setUint32(d + 12, size);
+      out.set(new Uint8Array(binary, start, size), offset); offset += size;
+    }
+    const woff = await readFontMetadata(out.buffer);
+    const unsupported = new ArrayBuffer(48); new DataView(unsupported).setUint32(0, 0x774f4632);
+    const woff2 = await readFontMetadata(unsupported);
+    const entries = [[4, 0x804, '测试字体 常规'], [4, 0x409, 'Example Regular'], [6, 0x409, 'Example-Regular']];
+    const nameSize = 6 + entries.length * 12 + entries.reduce((sum, [, , value]) => sum + value.length * 2, 0);
+    const named = new ArrayBuffer(28 + nameSize), namedView = new DataView(named); namedView.setUint32(0, 0x00010000); namedView.setUint16(4, 1);
+    namedView.setUint32(12, 0x6e616d65); namedView.setUint32(20, 28); namedView.setUint32(24, nameSize);
+    namedView.setUint16(30, entries.length); namedView.setUint16(32, 6 + entries.length * 12);
+    let storage = 6 + entries.length * 12;
+    entries.forEach(([id, language, value], i) => {
+      const at = 34 + i * 12;
+      namedView.setUint16(at, 3); namedView.setUint16(at + 2, 1); namedView.setUint16(at + 4, language); namedView.setUint16(at + 6, id);
+      namedView.setUint16(at + 8, value.length * 2); namedView.setUint16(at + 10, storage - 6 - entries.length * 12);
+      [...value].forEach((c, j) => namedView.setUint16(28 + storage + j * 2, c.charCodeAt(0))); storage += value.length * 2;
+    });
+    const names = (await readFontMetadata(named)).names;
+    return { jp, woff, woff2, names };
+  });
+  expect(result.names.localized.zh).toBe('测试字体 常规'); expect(result.names.localized.en).toBe('Example Regular'); expect(result.names.postscript).toBe('Example-Regular');
+  expect(result.jp.names.style).toBe('Thin'); expect(result.jp.characterCount).toBe(52);
+  expect(result.woff.names.postscript).toBe('Jost-Regular'); expect(result.woff.characterCount).toBe(524);
+  expect(result.woff2.supported).toBe(false); expect(result.woff2.names).toBe(null); expect(result.woff2.characterCount).toBe(null); expect(result.woff2.variable).toBe(null);
 });

@@ -2,6 +2,7 @@ import { refresh } from './refresh.js';
 import { bindPopover, bindWeightControl, syncWeightControl, showMissingGlyphTip, paintMissingGlyphs, placePopover, searchKey } from './ui-controls.js';
 import { catalogInfo, catalogOrder, catalogStyles, localWeightInfo, localItalicInfo, filterCatalog, sortCatalog } from './font-catalog.js';
 import { CATALOG_SAMPLES } from './font-catalog-data.js';
+import { readFontMetadata } from './font-metadata.js';
 import { importFontFile, importedFonts, rememberImportedFont } from './font-files.js';
 import { initShare } from './share.js';
 import { initAppearance } from './appearance.js';
@@ -1604,14 +1605,64 @@ function setPickerDetailTab(tab) {
   picker.querySelectorAll('[data-pk-detail]').forEach(button => { const selected = button.dataset.pkDetail === tab; button.setAttribute('aria-selected', selected); button.tabIndex = selected ? 0 : -1; });
   $('#pkPreviewPanel').hidden = tab !== 'preview'; $('#pkDetails').hidden = tab !== 'info';
   if (tab === 'preview') sizePickerSample();
+  else syncPickerMetadata(pickCand);
+}
+// Read detailed binary facts only on demand, never while scanning the installed library.
+const pickerMetadata = new Map();
+const metadataKey = f => f?.kind === 'file' ? 'file:' + f.fileId : f?.kind === 'local' ? 'local:' + f.name : '';
+function requestPickerMetadata(f) {
+  const key = metadataKey(f), file = f?.kind === 'file' ? files.get(f.fileId) : null, record = f?.kind === 'local' ? localData.get(f.name) : null;
+  if (!key || pickerMetadata.has(key) || !file && !record || $('#pkDetails').hidden) return;
+  pickerMetadata.set(key, { pending: true });
+  (async () => {
+    try { pickerMetadata.set(key, await readFontMetadata(file?.buffer || await (await record.blob()).arrayBuffer())); }
+    catch (error) { pickerMetadata.set(key, { supported: false }); }
+    // A late result must never populate another candidate's information panel.
+    if (picker.open && metadataKey(pickCand) === key) syncPickerMetadata(pickCand);
+  })();
 }
 function syncPickerMetadata(f) {
-  const family = f?.kind === 'google' ? f.family : f?.kind === 'file' ? importedFonts.get(f.fileId)?.family : localGroups().find(([, faces]) => faces.some(face => face.fullName === f?.name))?.[0] || f?.name;
+  requestPickerMetadata(f);
+  const data = pickerMetadata.get(metadataKey(f)), names = data?.names;
+  const record = f?.kind === 'local' ? localData.get(f.name) : null;
+  const family = names?.family || (f?.kind === 'google' ? f.family : f?.kind === 'file' ? importedFonts.get(f.fileId)?.family : record?.family || f?.name);
   const known = family ? catalogInfo(family) : null;
   const script = known?.primaryScript || ({ sc: 'Hans', tw: 'Hant', hk: 'Hant', jp: 'Jpan', kr: 'Kore', latin: 'Latn' })[known?.region];
   const labels = { Hans: 'pkCoverSc', Hant: 'pkCoverTc', Jpan: 'pfJp', Hira: 'covKana', Kana: 'covKana', Kore: 'covKR', Hang: 'covKR', Latn: 'covLatin' };
-  $('#pkInfoSource').textContent = !f ? '' : f.kind === 'google' ? 'Google Fonts' : f.kind === 'local' ? T('srcLocal') : f.fileName || T('srcFile');
-  $('#pkInfoScript').textContent = labels[script] ? T(labels[script]) : T('pkNotProvided');
+  const missing = data?.pending ? 'pkMetaReading' : data?.supported ? 'pkMetaAbsent' : 'pkMetaUnavailable';
+  const put = (id, value, fallback = missing) => {
+    const el = $('#'+id), present = value !== null && value !== undefined && value !== '';
+    el.textContent = present ? value : T(fallback); el.toggleAttribute('data-unavailable', !present);
+  };
+  put('pkInfoSource', !f ? '' : f.kind === 'google' ? 'Google Fonts' : f.kind === 'local' ? T('srcLocal') : f.fileName || T('srcFile'));
+  put('pkInfoScript', labels[script] ? T(labels[script]) : '', 'pkMetaUnavailable');
+  const locale = UI === 'en' ? 'en' : UI;
+  put('pkMetaLocalized', names?.localized[locale] || (UI === 'tw' ? names?.localized.zh : UI === 'zh' ? names?.localized.tw : ''));
+  put('pkMetaEnglish', names?.localized.en);
+  put('pkMetaFamily', family);
+  put('pkMetaStyle', names?.style || record?.style || (f?.kind === 'file' ? importedFonts.get(f.fileId)?.style : ''));
+  put('pkMetaPostscript', names?.postscript || record?.postscriptName);
+  const styles = catalogStyles(family || '', f?.cls || known?.style), styleKeys = { serif: 'pkSerif', sans: 'pkSans', other: 'pkOther', fangsong: 'pkFangsong', kai: 'pkKai', rounded: 'pkRounded', textbook: 'pkTextbook', handwriting: 'pkHandwriting', brush: 'pkBrush' };
+  put('pkMetaCategory', styles?.map(key => T(styleKeys[key])).join(T('joiner')), 'pkMetaUnavailable');
+  const faces = f?.kind === 'local' ? localGroups().find(([, faces]) => faces.some(face => face.fullName === f.name))?.[1].length
+    : f?.kind === 'file' ? [...importedFonts.values()].filter(entry => entry.family === family && files.has(entry.font.fileId)).length : null;
+  put('pkMetaFaces', faces ? T('pkMetaFaceCount', { n: faces }) : null, 'pkMetaUnavailable');
+  put('pkMetaCharacters', data?.characterCount != null ? T('pkMetaCharacterCount', { n: data.characterCount.toLocaleString(UI === 'tw' ? 'zh-TW' : UI) }) : null);
+  put('pkMetaSpacing', data?.monospaced != null ? T(data.monospaced ? 'pkMetaMono' : 'pkMetaProportional') : null);
+  const variable = data?.variable ?? (f?.axesUnknown || f?.axis || f?.axes?.length || f?.kind === 'google' && axisOf(f, 'wght') ? true : f?.kind === 'google' && gfWeights(f.family)?.length ? false : null);
+  put('pkMetaVariable', variable == null ? null : T(variable ? 'pkMetaVariableFont' : 'pkMetaStatic'));
+  const size = data?.size || (f?.kind === 'file' ? files.get(f.fileId)?.buffer.byteLength : null);
+  put('pkMetaSize', size == null ? null : size < 1024 * 1024 ? (size / 1024).toFixed(2) + ' KB' : (size / 1024 / 1024).toFixed(2) + ' MB');
+  for (const [id, value] of [['pkMetaDesigner', names?.designer], ['pkMetaManufacturer', names?.manufacturer], ['pkMetaLicense', names?.license], ['pkMetaLicenseUrl', names?.licenseUrl]]) put(id, value);
+  // Embedded URLs are untrusted font content. Only HTTP(S) URLs become links.
+  if (names?.licenseUrl) {
+    try {
+      const url = new URL(names.licenseUrl);
+      if (['https:', 'http:'].includes(url.protocol)) {
+        const a = document.createElement('a'); a.href = url.href; a.textContent = names.licenseUrl; a.target = '_blank'; a.rel = 'noopener noreferrer'; $('#pkMetaLicenseUrl').replaceChildren(a);
+      }
+    } catch (error) { /* Keep malformed URLs as plain text. */ }
+  }
 }
 function syncPickerUseLabel() {
   const key = pickerApplyBusy ? 'pkMatching' : pickCand && (pickerWeightAxis(pickCand) || extraAxes(pickCand).length) ? 'pkUseConfig' : 'pkUse';
@@ -2023,6 +2074,7 @@ export function applyUI() {
   document.querySelectorAll('[data-ta]').forEach(el => el.dataset.ta.split(';').forEach(p => { const [a, k] = p.split(':'); el.setAttribute(a, T(k)); }));
   document.querySelectorAll('[data-ui]').forEach(el => { el.hidden = el.dataset.ui !== UI; });
   syncPickerNumbers(); syncPickerUseLabel();
+  if (picker.open) { syncPickerMetadata(pickCand); $('#ffName').textContent = pickCand?.kind === 'file' ? pickCand.fileName : T('ffHint'); }
   if (picker.open && pickTab !== 'file') { renderCatalog(); showLocalReadState(); }
   renderAboutToc();
   document.querySelectorAll('#moreMenu [data-ui-lang]').forEach(b => { b.setAttribute('aria-checked', b.dataset.uiLang === UI); b.tabIndex = b.dataset.uiLang === UI ? 0 : -1; });

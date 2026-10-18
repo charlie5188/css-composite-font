@@ -843,7 +843,9 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-sources>[data-pane="file"]{display:flex;flex-direction:column;height:100%;min-height:0;max-height:100%;overflow:auto}
 .pk-sources>[data-pane="file"].is-empty #ffDrop{flex:1;min-height:240px;flex-direction:column;justify-content:center;text-align:center}
 .pk-sources>[data-pane="file"]>#ffError{flex:none}
-#ffDrop #ffName{width:100%;margin:0;overflow-wrap:anywhere}
+.file-drop-note{display:grid;gap:var(--sp-1);min-width:0;overflow-wrap:anywhere}
+.file-drop-note p{margin:0}
+.pk-sources>[data-pane="file"].is-empty #ffDrop{row-gap:var(--sp-5)}
 .pk-detail-content{display:grid;gap:var(--sp-4);min-width:0}
 .pk-detail.is-empty{align-content:center}
 .font-empty-visual{position:relative;display:grid;place-items:center;width:140px;height:140px;margin-bottom:var(--sp-4);border:1px solid var(--line);color:var(--faint);background:linear-gradient(var(--line),var(--line)) center/1px 100% no-repeat,linear-gradient(var(--line),var(--line)) center/100% 1px no-repeat;font-family:var(--generic)}
@@ -907,9 +909,13 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-preview{display:grid;gap:var(--sp-4)}
 .pk-sample-controls{display:flex;align-items:center;justify-content:flex-end;gap:var(--sp-2);flex-wrap:wrap}
 .pk-info{display:grid;gap:var(--sp-4)}
-.pk-metadata{display:grid;grid-template-columns:max-content minmax(0,1fr);gap:var(--sp-3);margin:0;font-size:var(--fs-m)}
+.pk-info-group{display:grid;gap:var(--sp-3);min-width:0}
+.pk-info-group>.hint{margin:0}
+.pk-metadata{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:var(--sp-3);margin:0;font-size:var(--fs-m)}
 .pk-metadata dt{color:var(--muted)}
-.pk-metadata dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.pk-metadata dd{margin:0;min-width:0;overflow-wrap:anywhere;white-space:pre-line}
+.pk-metadata dd[data-unavailable]{color:var(--muted)}
+#pkMetaLicense{max-height:12em;overflow:auto}
 #lfFaceField{max-width:100%}
 #lfFaceField select{width:100%}
 .pk-sample-box{position:relative;min-width:0}
