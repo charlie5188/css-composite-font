@@ -78,13 +78,58 @@ test('中日字体库：完整使用官方目录，新增字体支持中英文�
   const choice = page.locator('#gfOptions [data-family="ZCOOL KuaiLe"]');
   await expect(choice).toHaveCount(1);
   await selectFilter(page, 'pkWeightType', 'stepped');
-  await expect(choice.locator('.font-option-source')).toContainText('分档 1 档');
+  await expect(choice.locator('.font-option-source')).toContainText('分档 400');
   await choice.click();
   await expect(page.locator('#pkSelectedName')).toHaveText('ZCOOL KuaiLe');
   await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'ready');
   await expect(page.locator('#pkOk')).toBeEnabled();
   await page.locator('#pkFilterClear').click(); await page.locator('#gfSearch').fill('Yuji');
   await expect(page.locator('#gfOptions [data-family="Yuji Boku"]')).toHaveCount(1);
+});
+
+test('字符覆盖筛选只显示已确认符合的字体；未检查字体清除筛选后仍可查看', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.queryLocalFonts = async () => ['Fixture Latin', 'ZZ Unread'].map(family => ({ family, fullName: family+' Regular', postscriptName: family.replaceAll(' ', '')+'-Regular', style: 'Regular', blob: async () => (await fetch('/tests/fixtures/Jost%5Bwght%5D.ttf')).blob() }));
+  });
+  await fixture(page, 'latin');
+  await page.locator('#gfSearch').fill('Fixture Latin');
+  const latin = page.locator('#gfOptions [data-local-family="Fixture Latin"]');
+  await expect(latin.locator('.font-option-sample')).toBeVisible();
+  await page.locator('#gfSearch').fill('');
+  await selectFilter(page, 'pkCoverage', ['sc']);
+  await expect(page.locator('#gfOptions [data-family="Noto Sans SC"]')).toHaveCount(1);
+  await expect(page.locator('#gfOptions [data-family="Inter"]')).toHaveCount(0);
+  await expect(page.locator('#gfOptions [data-local-family="Fixture Latin"]')).toHaveCount(0);
+  await expect(page.locator('#gfOptions [data-local-family="ZZ Unread"]')).toHaveCount(0);
+  await selectFilter(page, 'pkCoverage', []);
+  await expect(page.locator('#gfOptions [data-local-family="ZZ Unread"]')).toHaveCount(1);
+  const matches = await page.evaluate(async () => {
+    const { filterCatalog } = await import('./assets/js/font-catalog.js');
+    return filterCatalog([{ family: 'Confirmed', coverage: { sc: true, kana: true } }, { family: 'Partial', coverage: { sc: true } }, { family: 'Unknown' }, { family: 'No Han', coverage: { sc: false, kana: true } }], '', [], false, [], ['sc', 'kana']).map(f => f.family);
+  });
+  expect(matches).toEqual(['Confirmed']);
+});
+
+test('字体来源与字重：桌面右上、小档数列出值，窄列表换行后靠右', async ({ page }) => {
+  await fixture(page);
+  await selectFilter(page, 'pkSource', 'google');
+  await page.locator('#gfSearch').fill('BIZ UDPGothic');
+  const row = page.locator('#gfOptions [data-family="BIZ UDPGothic"]');
+  await expect(row.locator('.font-option-source')).toHaveText('Google Fonts · 分档 400、700');
+  const desktop = await row.evaluate(el => {
+    const name = el.querySelector('.font-option-name').getBoundingClientRect(), source = el.querySelector('.font-option-source').getBoundingClientRect();
+    return source.left >= name.right && Math.abs(source.top - name.top) < 6;
+  });
+  expect(desktop).toBe(true);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({ colorScheme: 'dark' });
+  for (const lang of ['zh', 'tw', 'ja', 'en']) {
+    await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
+    expect(await row.evaluate(el => {
+      const name = el.querySelector('.font-option-name').getBoundingClientRect(), source = el.querySelector('.font-option-source').getBoundingClientRect(), title = el.querySelector('.font-option-title').getBoundingClientRect();
+      return source.top >= name.bottom && Math.abs(source.right - title.right) < 2 && source.right <= innerWidth && el.scrollWidth <= el.clientWidth;
+    })).toBe(true);
+  }
 });
 
 test('字体排序：名称、已知范围与精简菜单，保留搜索筛选与候选且加载后顺序不变', async ({ page }) => {
@@ -161,7 +206,7 @@ test('新增筛选：字重类型、全选类别覆盖和中日文风格联合�
   }
 });
 
-test('字体资料：仿宋楷体教科书体独立，圆体兼属黑体，未知字重和覆盖保留', async ({ page }) => {
+test('字体资料：仿宋楷体教科书体独立，圆体兼属黑体，未知字重保留、覆盖须确认', async ({ page }) => {
   await fixture(page);
   const result = await page.evaluate(async () => {
     const { catalogStyles, catalogInfo, filterCatalog } = await import('./assets/js/font-catalog.js');
@@ -171,7 +216,7 @@ test('字体资料：仿宋楷体教科书体独立，圆体兼属黑体，未�
     return { styles, matches: filterCatalog(fonts, '', ['kai'], false, ['stepped'], ['sc', 'kana']).map(f => f.family), google: ['Inter', 'Klee One', 'Zen Maru Gothic'].map(f => ({ type: catalogInfo(f).weightType, styles: catalogInfo(f).styles })) };
   });
   expect(result.styles).toEqual([['fangsong'], ['kai'], ['kai'], ['textbook'], ['sans', 'rounded'], ['serif'], ['serif'], ['serif', 'rounded']]);
-  expect(result.matches).toEqual(['Unknown', 'Both']);
+  expect(result.matches).toEqual(['Both']);
   expect(result.google).toEqual([{ type: 'continuous', styles: ['sans'] }, { type: 'stepped', styles: ['handwriting'] }, { type: 'stepped', styles: ['sans', 'rounded'] }]);
 });
 
@@ -233,7 +278,7 @@ test('意大利体筛选：实际款式与 ital 轴、未知资料保留，清�
   await expect(page.locator('#gfSearch')).toHaveValue('Garamond');
   await expect(page.locator('#pkSort input[value="weights"]')).toBeChecked();
   await page.locator('#gfSearch').fill('BIZ');
-  await expect(page.locator('#gfOptions [data-family="BIZ UDPGothic"] .font-option-source')).toContainText('分档 2 档 · 400–700');
+  await expect(page.locator('#gfOptions [data-family="BIZ UDPGothic"] .font-option-source')).toContainText('分档 400、700');
 });
 
 test('本机字重范围：汇总命名分档，读取轴后原地更新，与预览一致且不移动候选', async ({ page }) => {
@@ -245,7 +290,7 @@ test('本机字重范围：汇总命名分档，读取轴后原地更新，与�
   await page.locator('#gfSearch').fill('Fixture Family');
   await page.locator('#pkSortBtn').click(); await page.locator('#pkSort input[value="weights"]').click();
   const row = page.locator('#gfOptions [data-local-family="Fixture Family"]');
-  await expect(row.locator('.font-option-source')).toContainText('400–700');
+  await expect(row.locator('.font-option-source')).toContainText('已发现 400、700');
   await page.evaluate(() => { window.originalWeightRow = document.querySelector('#gfOptions [data-local-family="Fixture Family"]'); });
   await row.click(); await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'ready');
   await expect(page.locator('#pkVfTag')).toContainText('100–900');
@@ -349,7 +394,7 @@ test('导入字体：重复文件去重，取消后可跨类别复用，无效�
   await page.locator('#ffFile').setInputFiles([font, font]);
   await expect(page.locator('#ffOptions [data-imported]')).toHaveCount(1);
   await expect(page.locator('#pkOk')).toBeEnabled();
-  await expect(page.locator('#pkTargetCoverage')).toContainText('缺少');
+  await expect(page.locator('#pkTargetCoverage')).toContainText('汉字缺少');
   await page.locator('#ffSearch').fill('Ｊ ｏ-ｓ_ｔ');
   await expect(page.locator('#ffOptions [data-imported]')).toHaveCount(1);
   const id = await page.locator('#ffOptions [data-imported]').getAttribute('data-imported');
@@ -423,10 +468,10 @@ test('逐档选择：自动字重随应用范围改变，应用全部时明确�
   await fixture(page); await page.locator('#pkCancel').click();
   await page.evaluate(async () => (await import('./assets/js/ui.js')).openPicker({ type: 'class', id: 'han' }, 700));
   await page.locator('#gfSearch').fill('Noto Sans SC'); await page.locator('#gfOptions [data-family="Noto Sans SC"]').click();
-  await expect(page.locator('#pkWeightMapping')).toHaveText('字体的 700 将用于组合的 700。');
+  await expect(page.locator('#pkWeightMapping')).toHaveText('组合字重 700 将使用这款字体的 700。');
   await page.locator('#pkApplied > summary').click();
   await page.locator('#pkScope [value="all"]').check();
-  await expect(page.locator('#pkWeightMapping')).toHaveText('字体的 400 将用于组合的 400。');
+  await expect(page.locator('#pkWeightMapping')).toHaveText('组合字重 400 将使用这款字体的 400。');
   await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
   expect(await page.evaluate(async () => (await import('./assets/js/core.js')).state.classes.han.font.weight)).toBe(400);
 });
@@ -563,7 +608,7 @@ test('信息层级：预览、应用与详情分组，短列表收紧，数字�
   await expect(page.locator('#gfFamily')).toBeHidden();
   await expect(page.locator('#pkDetails')).not.toHaveAttribute('open', '');
   await expect(page.locator('#pkApplied #gfWeightNum')).toBeHidden();
-  await expect(page.locator('#pkAppliedSummary')).toHaveText('400 → 400');
+  await expect(page.locator('#pkAppliedSummary')).toHaveText('组合 400 → 字体 400');
   await page.locator('#pkApplied > summary').click();
   await expect(page.locator('#pkApplied #gfWeightNum')).toBeVisible();
   const weight = page.locator('#gfWeightNum'); await weight.locator('..').hover();
@@ -745,7 +790,7 @@ test('合并字体库：自动枚举一次、同名字体区分来源，共享�
   await expect(page.locator('#gfOptions [data-family="Inter"]')).toHaveCount(1);
   await expect(page.locator('#gfOptions [data-local-family="Inter"]')).toHaveCount(1);
   await expect(page.locator('#gfOptions [data-family="Inter"] .font-option-source')).toHaveText('Google Fonts · 连续 100–900');
-  await expect(page.locator('#gfOptions [data-local-family="Inter"] .font-option-source')).toContainText('本机字体 · 已知 1 档');
+  await expect(page.locator('#gfOptions [data-local-family="Inter"] .font-option-source')).toContainText('本机字体 · 已发现 400');
   await page.locator('#gfItalic').check();
   await expect(page.locator('#gfOptions [data-family="Inter"]')).toHaveCount(1);
   await expect(page.locator('#gfOptions [data-local-family="Inter"]')).toHaveCount(1);

@@ -227,7 +227,7 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 .file-drop{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-3);padding:var(--sp-4);border:1px dashed var(--line);border-radius:var(--r)}
 .file-drop.dragging{border-color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent)}
 /* Font choices share one stable name/specimen layout across font sources. */
-.font-options{display:grid;align-content:start;overflow:auto;min-height:84px;height:min(var(--font-choice-max,320px),calc(var(--font-choice-count,4)*var(--font-choice-row,80px) + 8px));gap:var(--sp-1);padding:var(--sp-1);border:1px solid var(--line);border-radius:var(--r)}
+.font-options{container-type:inline-size;display:grid;align-content:start;overflow:auto;min-height:84px;height:min(var(--font-choice-max,320px),calc(var(--font-choice-count,4)*var(--font-choice-row,80px) + 8px));gap:var(--sp-1);padding:var(--sp-1);border:1px solid var(--line);border-radius:var(--r)}
 .font-option{display:grid;grid-template-rows:auto 32px;gap:var(--sp-1);text-align:left;width:100%;min-height:76px;padding:var(--sp-2) var(--sp-3);border:1px solid transparent;border-radius:var(--r);background:transparent;color:var(--ink);cursor:pointer}
 .font-option:hover{background:color-mix(in srgb,var(--ink) 7%,transparent)}
 .font-option[aria-selected="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
@@ -836,10 +836,14 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-browse>input{width:100%}
 .pk-name-actions,.pk-local-status{display:grid;gap:var(--sp-2);justify-items:start;font-size:var(--fs-s)}
 .pk-name-actions .btn-text{max-width:100%;text-align:left;overflow-wrap:anywhere}
-.font-option-title{display:grid;align-content:start;min-width:0}
-.font-option-title .font-option-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.font-option-title{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-3);min-width:0}
+.font-option-title .font-option-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .font-option-native{font-weight:400;color:var(--muted)}
-.font-option-source{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-xs);font-weight:400;color:var(--muted)}
+.font-option-source{flex:0 1 auto;max-width:60%;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--fs-xs);font-weight:400;color:var(--muted)}
+@container(max-width:420px){
+  .font-option-title{display:grid;grid-template-columns:minmax(0,1fr);justify-content:stretch;gap:0}
+  .font-option-source{max-width:100%;justify-self:end}
+}
 .pk-search{display:flex;gap:var(--sp-2);align-items:center}
 .pk-search>input{width:100%;min-width:0}
 @media(max-width:860px){

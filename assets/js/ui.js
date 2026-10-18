@@ -1300,10 +1300,10 @@ function localFamilyWeightInfo(name) {
 }
 function librarySourceLabel(item) {
   const weights = item.weights || [], range = item.weightRange || (weights.length ? [weights[0], weights.at(-1)] : null);
-  const params = { n: weights.length, a: range?.[0], b: range?.[1] };
+  const params = { n: weights.length, a: range?.[0], b: range?.[1], weights: weights.join(T('joiner')) };
   const summary = item.weightType === 'continuous' && range ? T('pkContinuousSummary', params)
-    : item.weightType === 'stepped' && range && weights.length ? T('pkSteppedSummary', params)
-    : range && weights.length ? T('pkKnownWeightSummary', params) : T('fontWeightUnknownLabel');
+    : item.weightType === 'stepped' && range && weights.length ? T(weights.length <= 2 ? 'pkSteppedFewSummary' : 'pkSteppedSummary', params)
+    : range && weights.length ? T(weights.length <= 2 ? 'pkKnownFewWeightSummary' : 'pkKnownWeightSummary', params) : T('fontWeightUnknownLabel');
   return (item.kind === 'google' ? 'Google Fonts' : T('srcLocal')) + ' · ' + summary;
 }
 function librarySourceHint(item) {
@@ -1609,7 +1609,7 @@ export async function renderCoverage(s, f) {
   if (tok !== covTok || pickCand !== f || !picker.open) return;
   if (!miss) { $('#pkTargetCoverage').textContent = T('pkCoverageUnknown'); $('#pkTargetCoverage').className = 'hint'; box.innerHTML = ''; return; }
   const targetMissing = targetChars.filter(ch => miss.has(ch)), targetNote = $('#pkTargetCoverage');
-  targetNote.textContent = targetChars.length ? targetMissing.length ? T('pkTargetMissing', { n: targetMissing.length, chars: targetMissing.slice(0, 20).join('') + (targetMissing.length > 20 ? '…' : '') }) : T('pkTargetOk', { n: targetChars.length }) : '';
+  targetNote.textContent = targetChars.length ? targetMissing.length ? T('pkTargetMissing', { class: keyName(keyOf(pickTarget)), n: targetMissing.length, chars: targetMissing.slice(0, 20).join('') + (targetMissing.length > 20 ? '…' : '') }) : T('pkTargetOk', { class: keyName(keyOf(pickTarget)), n: targetChars.length }) : '';
   // Successful checks remain available to assistive technology without competing with the specimen.
   targetNote.className = targetMissing.length ? 'callout' : 'hint vh';
   box.innerHTML = COV_SETS.map(([k, cs]) => {
@@ -1660,7 +1660,7 @@ function syncPickerProof(f) {
   if (f?.kind === 'file' && f.axis) { const input = $('#ffWeightNum'); input.min = f.axis[0]; input.max = f.axis[1]; input.value = f.weight || 400; }
   const target = pickW && (sameFontAs(f, objOf(pickTarget).font) || picker.querySelector('[name="pkScope"]:checked')?.value === 'w') ? pickW : 400;
   $('#pkWeightMapping').textContent = f && (f.kind === 'google' || axis) ? T('pkWeightMapping', { weight: f.weight || 400, target }) : '';
-  $('#pkAppliedSummary').textContent = f && (f.kind === 'google' || axis) ? `${f.weight || 400} → ${target}` : '';
+  $('#pkAppliedSummary').textContent = f && (f.kind === 'google' || axis) ? T('pkMappingSummary', { weight: f.weight || 400, target }) : '';
   $('#pkAppliedSummary').title = $('#pkWeightMapping').textContent;
 }
 function setPickerProof(value) {
