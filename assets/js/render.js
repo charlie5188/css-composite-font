@@ -207,7 +207,7 @@ export function renderClassRows() {
   fitGlyphs();
 }
 /* ================= 各字重：每个字重的粗细和大小 =================
-   行是字重（分档：9 档，勾上的才导出；连续：导出范围里的各档），列是有自己字体的类别。
+   行是字重（分档：勾选导出；连续：滑杆选范围，范围外的行仍显示），列是有自己字体的类别。
    400 这一行就是上面表格的基础设定；其他字重灰色的是按 400 推算或沿用的值，自己填的是蓝色。点已勾选行的空白或字重可预览，不改变导出选择。 */
 export function wKeys() {
   const own = o => o && !o.follow && o.font, keys = ['han'];
@@ -270,35 +270,57 @@ export const wAnyAdjusted = () => WEIGHTS.some(wRowAdjusted);
 export function renderWeights() {
   const cont = state.wmode === 'cont', PW = state.view.weight, box = $('#wMatrix');
   const cols = wKeys().map(k => { const o = objByKey(k), own = !o.follow && !!o.font, vf = own && Array.isArray(vfAxisNow(o.font)); return { k, o, vf, w: own && !(cont && vf) }; });
-  const rows = cont ? WEIGHTS.filter(W => stepSpan(W)) : WEIGHTS;
+  const rows = WEIGHTS;
   const sizeOnly = cont && cols.every(c => !c.w);      // 静态字体在连续模式下仍可逐档调整粗细，保留两级表头。
-  const n = cols.reduce((a, c) => a + (c.w ? 2 : 1), 0), lead = cont ? 1 : 2;      // 前面几列：分档时是「导出」勾选 + 字重，连续时只有字重
+  const n = cols.reduce((a, c) => a + (c.w ? 2 : 1), 0), lead = 2;      // 导出选择 + 字重；连续模式用纵向范围滑杆。
   /* 给数字和步进按钮分别留位置；小数不能被箭头挤掉。最后一列是行菜单。 */
   const tracks = cols.map(c => `${c.w ? 'minmax(64px, 1fr) ' : ''}minmax(72px, 1fr)`).join(' ');
-  box.style.setProperty('--wm-cols', `${cont ? '' : 'max-content '}${cont ? 58 : 70}px ${tracks} 28px`);
+  box.classList.toggle('wm-cont', cont);
+  box.style.setProperty('--wm-cols', `${cont ? '40px' : 'max-content'} 70px ${tracks} 28px`);
   /* 重画以后把焦点放回原来那一格（勾选导出、字体加载完重画时） */
-  const act = box.contains(document.activeElement) ? document.activeElement : null;
+  const act = $('#wRows').contains(document.activeElement) ? document.activeElement : null;
   const keep = act && (act.classList[0] ? '.' + CSS.escape(act.classList[0]) : act.tagName.toLowerCase()) + ['k', 'w', 'wx', 'pw', 'wreset'].filter(a => act.dataset[a] != null).map(a => `[data-${a}="${CSS.escape(act.dataset[a])}"]`).join('');
-  const clsHead = `<div class="wm-row wm-cls${sizeOnly ? ' wm-single' : ''}">${sizeOnly ? `<span class="wm-wh">${esc(T('wColWeight'))}</span>` : '<span></span>'.repeat(lead)}${cols.map(c => `<span style="grid-column:span ${c.w ? 2 : 1};--c:var(--c-${c.k[0] === '#' ? 'custom' : c.k})"><i class="dot"></i><span class="wm-clabel" title="${esc(sizeOnly ? T('wClassSize', { c: keyName(c.k) }) : keyName(c.k))}">${esc(sizeOnly ? T('wClassSize', { c: keyName(c.k) }) : keyName(c.k))}</span><button type="button" class="btn-icon sm" data-wreset="${esc(c.k)}"${wColumnAdjusted(c.k) ? '' : ' disabled'} title="${esc(T('wColumnReset', { c: keyName(c.k) }))}" aria-label="${esc(T('wColumnReset', { c: keyName(c.k) }))}"><svg class="ic" aria-hidden="true"><use href="#i-restore"/></svg></button></span>`).join('')}<span></span></div>`;
-  const subHead = `<div class="wm-row wm-sub">${cont ? '' : `<span class="wm-xh">${esc(T('wColExport'))}</span>`}<span class="wm-wh">${esc(T('wColWeight'))}</span>${cols.map(c => (c.w ? `<span${c.vf ? ` title="VF ${vfAxisNow(c.o.font).join('–')}"` : ''}>${esc(T('wColW'))}</span>` : '') + `<span>${esc(T('colSize'))}</span>`).join('')}<span></span></div>`;
-  const body = rows.map(W => {
-    const on = cont || state.weights.includes(W), cur = W === PW;
+  const clsHead = `<div class="wm-row wm-cls${sizeOnly ? ' wm-single' : ''}">${sizeOnly ? `<span class="wm-wh">${esc(T('wColExport'))}</span><span class="wm-wh">${esc(T('wColWeight'))}</span>` : '<span></span>'.repeat(lead)}${cols.map(c => `<span style="grid-column:span ${c.w ? 2 : 1};--c:var(--c-${c.k[0] === '#' ? 'custom' : c.k})"><i class="dot"></i><span class="wm-clabel" title="${esc(sizeOnly ? T('wClassSize', { c: keyName(c.k) }) : keyName(c.k))}">${esc(sizeOnly ? T('wClassSize', { c: keyName(c.k) }) : keyName(c.k))}</span><button type="button" class="btn-icon sm" data-wreset="${esc(c.k)}"${wColumnAdjusted(c.k) ? '' : ' disabled'} title="${esc(T('wColumnReset', { c: keyName(c.k) }))}" aria-label="${esc(T('wColumnReset', { c: keyName(c.k) }))}"><svg class="ic" aria-hidden="true"><use href="#i-restore"/></svg></button></span>`).join('')}<span></span></div>`;
+  const subHead = `<div class="wm-row wm-sub"><span class="wm-xh">${esc(T('wColExport'))}</span><span class="wm-wh">${esc(T('wColWeight'))}</span>${cols.map(c => (c.w ? `<span${c.vf ? ` title="VF ${vfAxisNow(c.o.font).join('–')}"` : ''}>${esc(T('wColW'))}</span>` : '') + `<span>${esc(T('colSize'))}</span>`).join('')}<span></span></div>`;
+  const bodyStart = sizeOnly ? 2 : 3;
+  const body = rows.map((W, i) => {
+    const on = cont ? !!stepSpan(W) : state.weights.includes(W), cur = on && W === PW;
     const tag = W === BASE_W ? T('wBase') : W === 700 ? T('w700') : '';
     const lab = `${W}${tag ? `<small>${esc(tag)}</small>` : ''}`;
-    const cells = on ? cols.map(c => (c.w ? wCell(c.k, c.o, W) : '') + sizeCell(c.k, W)).join('') : '<span></span>'.repeat(n);
-    const menu = on && W !== BASE_W ? `<button type="button" class="btn-icon sm wm-more" data-wmenu="${W}" popovertarget="wRowMenu" aria-haspopup="menu" aria-label="${esc(T('wRowMenu', { w: W }))}" title="${esc(T('wRowMenu', { w: W }))}"><svg class="ic" aria-hidden="true"><use href="#i-dots"/></svg></button>` : '';
-    return `<div class="wm-row${on ? '' : ' off'}${cur ? ' cur' : ''}" data-row="${W}"${cur ? ' aria-current="true"' : ''}>
+    const cells = cont || on ? cols.map(c => (c.w ? wCell(c.k, c.o, W) : '') + sizeCell(c.k, W)).join('') : '<span></span>'.repeat(n);
+    const menu = (cont || on) && W !== BASE_W ? `<button type="button" class="btn-icon sm wm-more" data-wmenu="${W}" popovertarget="wRowMenu" aria-haspopup="menu" aria-label="${esc(T('wRowMenu', { w: W }))}" title="${esc(T('wRowMenu', { w: W }))}"><svg class="ic" aria-hidden="true"><use href="#i-dots"/></svg></button>` : '';
+    return `<div class="wm-row${on ? '' : ' off'}${cur ? ' cur' : ''}" data-row="${W}"${cont ? ` style="grid-row:${bodyStart + i}"` : ''}${cur ? ' aria-current="true"' : ''}>
       ${cont ? '' : `<span class="wm-x"><input type="checkbox" data-wx="${W}"${on ? ' checked' : ''} aria-label="${esc(T('wExportAria', { w: W }))}" title="${esc(T('wExportAria', { w: W }))}"></span>`}<span class="wm-w"><button type="button" class="wm-pw" data-pw="${W}"${on ? ` title="${esc(T('wPreviewTip', { w: W }))}"` : ' disabled'}>${lab}</button></span>${cells}<span class="wm-act">${menu}</span>
     </div>`;
   }).join('');
-  box.innerHTML = clsHead + (sizeOnly ? '' : subHead) + body;
+  $('#wRows').innerHTML = clsHead + (sizeOnly ? '' : subHead) + body;
+  const range = $('#wRange');
+  range.hidden = !cont;
+  range.style.gridRow = `${bodyStart} / span ${rows.length}`;
+  // 范围控件不随表格重建，字体异步加载时也不会中断指针捕获。
+  if (cont) syncWeightRange(range.dataset.draft ? JSON.parse(range.dataset.draft) : state.wrange);
   if (keep) box.querySelector(keep)?.focus({ preventScroll: true });
   $('#wReset').hidden = !wAnyAdjusted();
-  /* 连续模式：直接设置导出范围，字体自身的范围已在基础设定中说明。 */
-  const sub = $('#wSub');
-  sub.hidden = !cont;
-  if (!cont || sub.contains(document.activeElement)) return;      // 正在改范围：不重画
-  sub.innerHTML = `<span class="wr-in"><span>${esc(T('wSubCont'))}</span><input type="number" id="wLo" min="100" max="900" step="1" value="${state.wrange[0]}" aria-label="${esc(T('wrLo'))}"><span aria-hidden="true">–</span><input type="number" id="wHi" min="100" max="900" step="1" value="${state.wrange[1]}" aria-label="${esc(T('wrHi'))}"></span>`;
+}
+/* 拖动只预览选择范围，松手才提交设置：一次拖动可以一次撤销，不改动范围外已保存的调整。 */
+export function syncWeightRange([lo, hi] = state.wrange) {
+  const range = $('#wRange');
+  range.style.setProperty('--range-start', `${(lo - 100) / 8}%`);
+  range.style.setProperty('--range-end', `${(hi - 100) / 8}%`);
+  range.dataset.tight = hi - lo < 60;
+  range.querySelectorAll('[data-end]').forEach((thumb, i) => {
+    thumb.setAttribute('aria-valuemin', i ? lo + 1 : 100);
+    thumb.setAttribute('aria-valuemax', i ? 900 : hi - 1);
+    thumb.setAttribute('aria-valuenow', i ? hi : lo);
+  });
+  $('#wRows').querySelectorAll('[data-row]').forEach(row => {
+    const W = +row.dataset.row, on = lo <= Math.min(900, W + 50) && hi >= Math.max(100, W - 49);
+    row.classList.toggle('off', !on);
+    row.querySelector('[data-pw]').disabled = !on;
+    const cur = on && W === state.view.weight;
+    row.classList.toggle('cur', cur);
+    if (cur) row.setAttribute('aria-current', 'true'); else row.removeAttribute('aria-current');
+  });
 }
 /* 改了数值以后就地更新各格（不重建表格，保持输入焦点和键盘连续调整） */
 export function syncMatrix() {

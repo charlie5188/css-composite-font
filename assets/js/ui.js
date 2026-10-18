@@ -5,7 +5,7 @@ import { FIT_SAMPLES, chooseFits, createFitter } from './autofit.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, classOf, inRanges, parseChars, rebuildClassRanges } from './unicode.js';
 import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
-import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, tabFade } from './render.js';
+import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
 /* ================= 交互：字符类别表 ================= */
@@ -187,22 +187,78 @@ export function setWeights(ws) {
   const changed = constrainPreviewWeight();
   refresh('toolbar', 'editor', 'export', ...(changed ? ['fonts'] : []));
 }
-/* 连续模式的导出范围：各字重里和导出对话框里各有一组，校样的字重也只走这个范围 */
+/* 连续模式的导出范围：表格旁的滑杆和导出对话框共用设置，校样也只走这个范围。 */
 export function setWRange(lo, hi) {
   if (!Number.isFinite(lo) || !Number.isFinite(hi)) { renderExport(); return; }
   if (lo > hi) [lo, hi] = [hi, lo];
   lo = Math.min(899, Math.max(100, Math.round(lo))); hi = Math.min(900, Math.max(lo + 1, Math.round(hi)));
   state.wrange = [lo, hi];
-  for (const [a, b] of [['exWLo', 'wLo'], ['exWHi', 'wHi']]) { const x = a === 'exWLo' ? lo : hi; $('#' + a).value = x; if ($('#' + b)) $('#' + b).value = x; }
+  $('#exWLo').value = lo; $('#exWHi').value = hi;
   constrainPreviewWeight();
   refresh('toolbar', 'editor', 'fonts', 'export');
+}
+/* 两个端点沿字重行移动；拖动期间只更新控件与选中行，提交后才裁剪预览、重建字体并保存。 */
+{
+  const range = $('#wRange');
+  let drag = null;
+  const move = e => {
+    if (!drag || e.pointerId !== drag.id) return;
+    const rect = range.getBoundingClientRect(), values = [...drag.initial];
+    const value = Math.round((100 + (e.clientY - rect.top) / rect.height * 800) / 100) * 100;
+    // 不能越过另一个端点；另一个端点可能来自导出对话框中的精确输入。
+    values[drag.end] = drag.end ? Math.max(Math.ceil((values[0] + 1) / 100) * 100, Math.min(900, value)) : Math.min(Math.floor((values[1] - 1) / 100) * 100, Math.max(100, value));
+    drag.values = values;
+    range.dataset.draft = JSON.stringify(values);
+    syncWeightRange(values);
+  };
+  const finish = (e, cancel = false) => {
+    if (!drag || e.pointerId != null && e.pointerId !== drag.id) return;
+    const { id, values, initial } = drag;
+    drag = null;
+    delete range.dataset.draft;
+    range.classList.remove('dragging');
+    if (range.hasPointerCapture(id)) range.releasePointerCapture(id);
+    if (!cancel && values.some((v, i) => v !== initial[i])) setWRange(...values);
+    else syncWeightRange();
+  };
+  range.addEventListener('pointerdown', e => {
+    if (!e.isPrimary || e.button !== 0 || drag) return;
+    e.preventDefault();
+    const rect = range.getBoundingClientRect(), at = 100 + (e.clientY - rect.top) / rect.height * 800;
+    const end = e.target.closest('[data-end]')?.dataset.end ?? (Math.abs(at - state.wrange[0]) <= Math.abs(at - state.wrange[1]) ? 0 : 1);
+    recordHistory();
+    drag = { id: e.pointerId, end: +end, initial: [...state.wrange], values: [...state.wrange] };
+    range.querySelector(`[data-end="${end}"]`).focus({ preventScroll: true });
+    range.setPointerCapture(e.pointerId);
+    range.classList.add('dragging');
+    range.dataset.draft = JSON.stringify(drag.values);
+    // 点滑轨即移动最近端点；点滑块只开始拖动，精确输入的值不会在按下时跳动。
+    if (!e.target.closest('[data-end]')) move(e);
+  });
+  range.addEventListener('pointermove', move);
+  range.addEventListener('pointerup', e => finish(e));
+  range.addEventListener('pointercancel', e => finish(e, true));
+  range.addEventListener('lostpointercapture', e => finish(e, true));
+  range.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && drag) { e.preventDefault(); finish(e, true); return; }
+    const thumb = e.target.closest('[data-end]');
+    if (!thumb || drag || !['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.key)) return;
+    e.preventDefault();
+    const end = +thumb.dataset.end, values = [...state.wrange];
+    let value = values[end];
+    if (e.key === 'Home') value = +thumb.getAttribute('aria-valuemin');
+    else if (e.key === 'End') value = +thumb.getAttribute('aria-valuemax');
+    else value += (/Up|Left/.test(e.key) ? -1 : 1) * (e.shiftKey ? 10 : 100);
+    values[end] = Math.min(+thumb.getAttribute('aria-valuemax'), Math.max(+thumb.getAttribute('aria-valuemin'), value));
+    if (values[end] !== state.wrange[end]) { recordHistory(); setWRange(...values); }
+  });
 }
 $('#wMatrix').addEventListener('click', e => {
   /* 行的空白、列间距也能预览；控件继续处理自己的点击，不把导出勾选或菜单点击当成选行。 */
   const row = e.target.closest('[data-row]');
   if (row && !e.target.closest('button,input,select,textarea,label,a')) {
     const W = +row.dataset.row;
-    if (state.wmode === 'cont' || state.weights.includes(W)) setPreviewW(W);
+    if (state.wmode === 'cont' ? stepSpan(W) : state.weights.includes(W)) setPreviewW(W);
     return;
   }
   const b = e.target.closest('button'); if (!b) return;
@@ -441,8 +497,6 @@ export function initSpecSplit() {
   });
 }
 $('#wMatrix').addEventListener('focusin', e => { const el = e.target; if (el.matches('input[data-w], select[data-w]')) previewSoft(+el.dataset.w); });
-$('#wSub').addEventListener('change', e => { if (e.target.id === 'wLo' || e.target.id === 'wHi') setWRange(parseFloat($('#wLo').value), parseFloat($('#wHi').value)); });
-$('#wSub').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.matches('input')) e.target.blur(); });
 /* (i) 说明：所有说明文字共用一个弹层，打开时按 data-info 填入内容 */
 export const INFO = {
   classInfo: () => `<p>${esc(T('inheritHint'))}</p><dl>${CLASSES.map(c => `<dt>${esc(tr(c.name))}</dt><dd>${esc(tr(c.desc))}</dd>`).join('')}</dl>`,

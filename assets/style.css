@@ -195,22 +195,42 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 .dlg-act{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:10px;padding-top:var(--sp-1)}
 /* 黄色提示：字体、浏览器、设定之间有冲突时（后面几个是代码里切换 .warn / .caution 的旧元素） */
 .callout,.w-hint.warn,.typo-note.warn,#pkStatus.caution,#lfMsg.caution{margin:0;font-size:var(--fs-s);line-height:1.55;color:var(--caution);background:var(--caution-bg);padding:6px 10px;border-radius:var(--r)}
+:root{--slider-thumb-size:12px;--slider-track-size:2px;--slider-half:calc(var(--slider-thumb-size)/2)}
+/* 所有滑杆共用中性色、圆形滑块与聚焦环。原生滑块中心不到输入框边缘，轨道也要缩进半个滑块。 */
 input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;height:20px;width:100%;min-width:0;cursor:pointer}
-input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--line)}
-input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--ink);margin-top:-5.5px;border:0}
-input[type=range]::-moz-range-track{height:2px;background:var(--line)}
-input[type=range]::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:var(--ink);border:0}
-input[type=range]:hover::-webkit-slider-thumb,input[type=range]:active::-webkit-slider-thumb{background:var(--accent)}
-input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-thumb{background:var(--accent)}
-/* 数字框展开的紧凑滑杆；节点与滑块中心共用 13px 的拇指留白。 */
+input[type=range]::-webkit-slider-runnable-track{height:var(--slider-track-size);background:linear-gradient(to right,transparent var(--slider-half),var(--line) var(--slider-half) calc(100% - var(--slider-half)),transparent calc(100% - var(--slider-half)))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:var(--slider-thumb-size);height:var(--slider-thumb-size);border-radius:var(--r-pill);background:var(--ink);margin-top:calc((var(--slider-track-size) - var(--slider-thumb-size))/2);border:0}
+input[type=range]::-moz-range-track{height:var(--slider-track-size);background:linear-gradient(to right,transparent var(--slider-half),var(--line) var(--slider-half) calc(100% - var(--slider-half)),transparent calc(100% - var(--slider-half)))}
+input[type=range]::-moz-range-thumb{width:var(--slider-thumb-size);height:var(--slider-thumb-size);border-radius:var(--r-pill);background:var(--ink);border:0}
+input[type=range]:hover::-webkit-slider-thumb,input[type=range]:active::-webkit-slider-thumb{box-shadow:0 0 0 var(--sp-1) color-mix(in srgb,var(--ink) 12%,transparent)}
+input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-thumb{box-shadow:0 0 0 var(--sp-1) color-mix(in srgb,var(--ink) 12%,transparent)}
+input[type=range]:focus-visible{outline:none}
+input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 2px var(--sheet),0 0 0 3px var(--ink)}
+input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--sheet),0 0 0 3px var(--ink)}
+/* 数字框展开的紧凑滑杆；节点、轨道端点和滑块中心共用同一份留白。 */
 .range-pop{width:288px;max-width:calc(100vw - 16px);padding:var(--sp-3) var(--sp-4)}
 .range-pop input[type=range]{display:block;margin:0;height:28px}
 .range-pop input[type=range]:disabled{cursor:default;opacity:.5}
-.range-ticks{position:relative;height:var(--ctl-h-sm);margin:0 6.5px;font:var(--fs-xs)/1.5 var(--mono);color:var(--muted)}
+.range-ticks{position:relative;height:var(--ctl-h-sm);margin:0 var(--slider-half);font:var(--fs-xs)/1.5 var(--mono);color:var(--muted)}
 .range-ticks>*{position:absolute;left:var(--tick);transform:translateX(-50%);display:inline-flex;align-items:center;justify-content:center;height:var(--ctl-h-sm);font-variant-numeric:tabular-nums}
 .range-ticks>*::before{content:"";position:absolute;top:-12px;left:50%;height:4px;width:1px;background:var(--muted);pointer-events:none}
 .range-ticks .btn-text{min-width:32px;font:inherit}
 .range-ticks .cur{color:var(--ink);font-weight:600}
+/* 纵向双端范围：与表格行对齐；保留完整滑轨，范围外仍能看见可选的端点。 */
+.range-vertical{position:relative;min-height:0;touch-action:none;cursor:pointer;--range-start:0%;--range-end:100%}
+.range-rail,.range-fill{position:absolute;left:50%;width:var(--slider-track-size);transform:translateX(-50%);border-radius:var(--r-pill);pointer-events:none}
+.range-rail{inset-block:0;background:var(--line)}
+.range-fill{top:var(--range-start);bottom:calc(100% - var(--range-end));background:var(--ink)}
+.range-thumb{position:absolute;left:50%;top:var(--range-start);transform:translate(-50%,-50%);width:32px;height:var(--ctl-h-sm);padding:0;border:0;border-radius:var(--r);background:none;touch-action:none;cursor:ns-resize;z-index:1}
+.range-thumb[data-end="1"]{top:var(--range-end)}
+.range-thumb::before{content:"";display:block;width:var(--slider-thumb-size);height:var(--slider-thumb-size);margin:auto;border-radius:var(--r-pill);background:var(--ink)}
+.range-thumb:hover::before,.range-vertical.dragging .range-thumb:focus::before{box-shadow:0 0 0 var(--sp-1) color-mix(in srgb,var(--ink) 12%,transparent)}
+.range-thumb:focus-visible{outline:none;z-index:2}
+.range-thumb:focus-visible::before{box-shadow:0 0 0 2px var(--sheet),0 0 0 3px var(--ink)}
+.range-thumb::after{content:attr(aria-valuenow);display:none;position:absolute;left:calc(100% - var(--sp-1));top:50%;transform:translateY(-50%);padding:var(--sp-1) var(--sp-2);border:1px solid var(--line);border-radius:var(--r);background:var(--sheet);color:var(--ink);font:var(--fs-s)/1.2 var(--mono);box-shadow:var(--shadow-pop);pointer-events:none}
+.range-thumb:hover::after,.range-thumb:focus-visible::after,.range-vertical.dragging .range-thumb:focus::after{display:block}
+.range-vertical[data-tight="true"] .range-thumb[data-end="0"]{left:calc(50% - 7px)}
+.range-vertical[data-tight="true"] .range-thumb[data-end="1"]{left:calc(50% + 7px)}
 
 /* ---------- top bar ---------- */
 /* 标题用正在调的复合字体排：改了设定马上看得到 */
@@ -554,10 +574,14 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .sec-head.base-head{margin-top:var(--sp-4)}
 .base-head .wand{margin:-6px -8px -6px 0}
 .w-acts{display:inline-flex;align-items:center;gap:6px}
-.w-sub{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;font-size:var(--fs-s);line-height:1.55;color:var(--muted);margin:0 0 6px}
-.wr-in{display:inline-flex;align-items:center;gap:6px;color:var(--ink)}
-.wr-in input{width:62px;font-family:var(--mono);font-size:var(--fs-s);padding:3px 6px}
 .wm{--wm-cols:80px 1fr;display:grid;grid-template-columns:var(--wm-cols);column-gap:8px;overflow-x:auto}      /* 各行用 subgrid 共用同一套列宽，表头和数字才对得齐 */
+.wm-rows{display:contents}
+.wm-cont .range-vertical{grid-column:1;margin-block:17px}
+.wm-cont .wm-row[data-row]{grid-column:2/-1}
+.wm-cont .wm-row[data-row]>:first-child{padding-left:0}
+.wm-cont .wm-single>.wm-wh:first-child{padding-left:0;justify-content:center}
+.wm-cont .wm-sub>.wm-xh{padding-left:0;text-align:center}
+.wm-cont .wm-row.off>:not(.wm-w){visibility:hidden}
 .wm-row{grid-column:1/-1;display:grid;grid-template-columns:subgrid;align-items:center;min-height:34px;border-bottom:1px solid var(--rule)}
 .wm-row[data-row]:not(.off){cursor:pointer}
 .wm-row[data-row]:not(.cur):not(.off):hover{background:color-mix(in srgb,var(--ink) 4%,transparent)}

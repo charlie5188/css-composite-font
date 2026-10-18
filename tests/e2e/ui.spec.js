@@ -498,7 +498,8 @@ test('连续字重表：纯大小表头合并，静态字体保留粗细列，�
   const original = await page.evaluate(async () => JSON.stringify((await import('./assets/js/core.js')).state.wOver));
   await page.click('#vWMode [data-m="cont"]');
   await expect(page.locator('#vWNote')).toHaveCount(0);
-  await expect(page.locator('#wSub > span')).toHaveCount(1);
+  await expect(page.locator('#wRange')).toBeVisible();
+  await expect(page.locator('#wSub')).toHaveCount(0);
   await expect(page.locator('#wMatrix .wm-sub')).toHaveCount(0);
   const names = { zh: ['汉字大小', '半角西文大小'], tw: ['漢字大小', '半形西文大小'], ja: ['漢字のサイズ', '半角欧文のサイズ'], en: ['Han size', 'Western size'] };
   for (const [lang, labels] of Object.entries(names)) {

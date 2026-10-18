@@ -17,7 +17,7 @@ try {
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=IBM+Plex+Mono:wght@400;500&display=swap">
-<link rel="stylesheet" href="assets/style.css?v=b3ec0b60">
+<link rel="stylesheet" href="assets/style.css?v=372a9518">
 <!-- 模块的缓存版本号：模块之间互相 import 时不带 ?v=，靠 import map 换成带版本号的地址（tools/rehash.py 生成） -->
 <script type="importmap">{
  "imports": {
@@ -29,15 +29,15 @@ try {
   "./assets/js/export.js": "./assets/js/export.js?v=00e8050f",
   "./assets/js/gfmeta.js": "./assets/js/gfmeta.js?v=d21e19f7",
   "./assets/js/i18n.js": "./assets/js/i18n.js?v=897d7490",
-  "./assets/js/i18n/en.js": "./assets/js/i18n/en.js?v=d89acc65",
-  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=0c175d7f",
-  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=798ea506",
-  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=8207c53d",
+  "./assets/js/i18n/en.js": "./assets/js/i18n/en.js?v=d3114065",
+  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=d3fd3dd3",
+  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=9f144e6b",
+  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=e4cb1e24",
   "./assets/js/main.js": "./assets/js/main.js?v=77ec7ac1",
   "./assets/js/refresh.js": "./assets/js/refresh.js?v=4dffc5b8",
-  "./assets/js/render.js": "./assets/js/render.js?v=a255df23",
+  "./assets/js/render.js": "./assets/js/render.js?v=33cfe361",
   "./assets/js/share.js": "./assets/js/share.js?v=b6df1781",
-  "./assets/js/ui.js": "./assets/js/ui.js?v=32008f8f",
+  "./assets/js/ui.js": "./assets/js/ui.js?v=09b7857d",
   "./assets/js/unicode.js": "./assets/js/unicode.js?v=0d857075"
  }
 }</script>
@@ -121,8 +121,14 @@ try {
       <div class="ct-add-row"><button type="button" class="ct-add" id="addCustom"><span class="plus" aria-hidden="true"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></span><span data-t="addCustomRow"></span></button><button type="button" class="info" data-info="customInfo" popovertarget="infoPop" data-ta="aria-label:infoAria"><svg class="ic" aria-hidden="true"><use href="#i-info-circle"/></svg></button></div>
       <!-- 各字重：行是字重、列是有自己字体的类别。分档 / 连续决定有哪些行、粗细能不能单独设定 -->
       <div class="sec-head w-head"><h3 class="sec-title lab-i"><span data-t="wTitle"></span><button type="button" class="info" data-info="wmodeInfo" popovertarget="infoPop" data-ta="aria-label:infoAria"><svg class="ic" aria-hidden="true"><use href="#i-info-circle"/></svg></button></h3><span class="w-acts"><button type="button" class="btn-icon wreset" id="wReset" hidden data-ta="title:wResetTip;aria-label:wResetTip"><svg class="ic" aria-hidden="true"><use href="#i-restore"/></svg></button><span class="seg" id="vWMode" role="radiogroup" data-ta="aria-label:exWMode"><button type="button" role="radio" data-m="steps" data-t="wmStepsShort" data-ta="title:wmStepsTip"></button><button type="button" role="radio" data-m="cont" data-t="wmContShort" data-ta="title:wmContTip"></button></span></span></div>
-      <div class="w-sub" id="wSub"></div>
-      <div class="wm" id="wMatrix" role="group" data-ta="aria-label:wTitle"></div>
+      <div class="wm" id="wMatrix" role="group" data-ta="aria-label:wTitle">
+        <div class="range-vertical" id="wRange" role="group" data-ta="aria-label:wSubCont" hidden>
+          <span class="range-rail" aria-hidden="true"></span><span class="range-fill" aria-hidden="true"></span>
+          <button type="button" class="range-thumb" data-end="0" role="slider" aria-orientation="vertical" data-ta="aria-label:wrLo"></button>
+          <button type="button" class="range-thumb" data-end="1" role="slider" aria-orientation="vertical" data-ta="aria-label:wrHi"></button>
+        </div>
+        <div class="wm-rows" id="wRows"></div>
+      </div>
       <div class="pop menu" id="wRowMenu" popover role="menu"></div>
       <!-- 字体特性：选哪个字形（OpenType 特性）和行高度量，属于字体，但不分字重 -->
       <div class="sec-head feat-head"><h3 class="sec-title lab-i"><span data-t="featTitle"></span></h3><span class="sec-acts"><span class="typo-changed" id="featChanged"></span><button type="button" class="btn-text typo-reset" id="featReset" data-t="typoReset" hidden></button></span></div>
@@ -307,7 +313,7 @@ try {
         <h3>导出多个字重</h3>
         <p>字体名下用「连续字重」「分档字重」说明可用的粗细：连续字重可在范围内输入任意值，例如「连续字重 200–900」；分档字重只有固定档位，例如「分档字重 400、700」，档位较多时显示最轻到最重的范围，悬停可查看完整档位。这些标注说明字体本身的能力；导出模式在「各字重」里另选。范围无法准确读取时不推测，已知存在可变轴但字重范围不明时标为「字重范围未知」。跟随其他类别的字体信息看来源行。</p>
         <p>连续模式下，预览或网页设为 <code>font-weight: 450</code>，可变字体就显示 450，不必只选 400 或 500；超出字体支持范围时使用最近的端点，静态字体使用最接近的一档。可变字体的单独粗细调整暂不生效，切回分档即可恢复。</p>
-        <p>连续模式可直接输入导出范围。表格只有大小列时，使用「汉字大小」「半角西文大小」等单行表头；有静态字体可调粗细时，保留类别与粗细、大小两级表头。</p>
+        <p>滑杆统一使用与按钮一致的黑白配色，横向轨道两端与滑块中心及刻度对齐。连续模式在表格左侧拖动两个滑块，按 100 一档选择导出范围。范围外的行保留并置灰，已有调整不会丢失；范围内仍包含中间字重。精确端点可在「导出」中输入。键盘方向键每次移动 100，配合 Shift 每次移动 10。拖动在松手时保存，可一次撤销，Esc 取消本次拖动。表格只有大小列时，使用「汉字大小」「半角西文大小」等单行表头；有静态字体可调粗细时，保留类别与粗细、大小两级表头。</p>
         <p>分档模式下，在「各字重」里勾选要导出的字重（导出对话框里也能选），每个字重各生成一组规则。点击已勾选行的空白处即可预览该字重，不会改变导出勾选。点击校样工具栏的 B 图标或字重框可展开滑杆，也可直接输入数字或拖动 B 图标；数字会实时同步。分档模式只预览已勾选的字重，滑杆显示对应节点；连续模式在导出范围内无级调整，范围内的 400（Regular）和 700（Bold）刻度可点击跳转。范围端点与常用刻度统一显示在滑杆下方，过近的端点文字会省略。取消当前预览的字重时，自动切到最近的已勾选字重；输入范围外或未勾选的值，确认时也会收进可用范围。工具里设定的字体对应 400；其他字重里，Google Fonts 的字体按同样的差值换算（例如 500 的字体在 700 时取 800），没有这个字重就取最接近的；本机字体会按名称推测粗体（例如 W3 → W6、Regular → Bold），并在这台电脑上检测。各字体的粗细分布并不一致：「各字重」一览表里可以按字重单独调整各类别的大小和粗细。可变字体的粗细可直接输入任意数值，右侧箭头或键盘 ↑↓ 每次增减 10，Shift + ↑↓ 每次增减 100；静态 Google Fonts 字体按 100 档调整，缺档时跳到下一个可用字重。本机字体名、字体文件，或者只给这个字重换的字体，点那一格，或者用这一行末尾的「⋯」菜单里的「换字体…」，在「选择字体」里指定。Google Fonts 的静态字体只列出它实际有的字重；灰色是推算的值，蓝色是单独设定的，选回灰色那一档就取消单独设定。</p>
         <p>各字重的规则没法合并。CSS 变量（<code>var()</code>）在 <code>@font-face</code> 里无效，浏览器会直接丢掉这条描述。同一个 font-family 里，如果有的规则写 <code>font-weight: 700</code>、有的写 <code>400 700</code>，实测 Chrome 会把它们分成两组，只用其中一组，合成就失效了。</p>
         <p>真正占体积的是汉字字体在 Google Fonts 上的上百个分片。「基础字体：引用 Google Fonts」会用 <code>@import</code> 直接引用 Google 的 CSS，把这个字体排在 font-family 的第二位，自己只写需要覆盖它的类别，导出的 CSS 通常只有几 KB。服务器一般会用 gzip 压缩 CSS，导出区显示的 gzip 体积更接近实际传输量。字体文件只按页面用到的字符下载，与 CSS 长度无关。</p>
@@ -381,7 +387,7 @@ try {
         <h3>匯出多個字重</h3>
         <p>字型名下使用「連續字重」「分段字重」說明可用的粗細：連續字重可在範圍內輸入任意值，例如「連續字重 200–900」；分段字重只有固定檔位，例如「分段字重 400、700」，檔位較多時顯示最細到最粗的範圍，滑鼠移到標示上可查看完整檔位。這些標示說明字型本身的能力；匯出模式在「各字重」裡另外選擇。無法確切讀取範圍時不推測，已知具有可變軸但字重範圍不明時標為「字重範圍未知」。跟隨其他類別時，請查看來源列的字型資訊。</p>
         <p>連續模式下，校樣或網頁設為 <code>font-weight: 450</code>，可變字型就顯示 450，不必只選 400 或 500；超出字型支援範圍時使用最接近的端點，靜態字型使用最接近的一段。可變字型的個別粗細調整暫不生效，切回分段即可恢復。</p>
-        <p>連續模式可直接輸入匯出範圍。表格只有大小欄時，使用「漢字大小」「半形西文大小」等單列表頭；有靜態字型可調整粗細時，保留類別與粗細、大小兩層表頭。</p>
+        <p>滑桿統一使用與按鈕一致的黑白配色，水平軌道兩端與滑塊中心及刻度對齊。連續模式在表格左側拖曳兩個滑塊，以 100 為單位選擇匯出範圍。範圍外的列會保留並顯示為灰色，原有調整不會遺失；範圍內仍包含中間字重。精確端點可在「匯出」中輸入。鍵盤方向鍵每次移動 100，搭配 Shift 每次移動 10。拖曳在放開時儲存，可一次復原，Esc 取消這次拖曳。表格只有大小欄時，使用「漢字大小」「半形西文大小」等單列表頭；有靜態字型可調整粗細時，保留類別與粗細、大小兩層表頭。</p>
         <p>分段模式下，在「各字重」裡勾選要匯出的字重（匯出對話框裡也能選），每個字重各生成一組規則。點選已勾選列的空白處即可預覽該字重，不會改變匯出勾選。點選校樣工具列的 B 圖示或字重欄位可展開滑桿，也可直接輸入數字或拖曳 B 圖示；數字會即時同步。分段模式只預覽已勾選的字重，滑桿顯示對應節點；連續模式在匯出範圍內無段調整，範圍內的 400（Regular）與 700（Bold）刻度可點選跳轉。範圍端點與常用刻度統一顯示在滑桿下方，過近的端點文字會省略。取消目前預覽的字重時，自動切換至最接近的已勾選字重；輸入範圍外或未勾選的值，確認時也會調整至可用範圍。工具裡設定的字型對應 400；其他字重裡，Google Fonts 的字型按同樣的差值換算（例如 500 的字型在 700 時取 800），沒有這個字重就取最接近的；本機字型會按名稱推測粗體（例如 W3 → W6、Regular → Bold），並在這台電腦上檢測。各字型的粗細分布並不一致：「各字重」表格裡可以按字重個別調整各類別的大小與粗細。可變字型的粗細可直接輸入任意數值，右側箭頭或鍵盤 ↑↓ 每次增減 10，Shift + ↑↓ 每次增減 100；靜態 Google Fonts 字型按 100 檔調整，缺檔時跳到下一個可用字重。本機字型名、字型檔案，或者只給這個字重換的字型，點那一格，或者用這一列末尾的「⋯」選單裡的「換字型…」，在「選擇字型」裡指定。Google Fonts 的靜態字型只列出它實際有的字重；灰色是推算的值，藍色是單獨設定的，選回灰色那一檔就取消單獨設定。</p>
         <p>各字重的規則沒法合併。CSS 變數（<code>var()</code>）在 <code>@font-face</code> 裡無效，瀏覽器會直接丟掉這條描述。同一個 font-family 裡，如果有的規則寫 <code>font-weight: 700</code>、有的寫 <code>400 700</code>，實測 Chrome 會把它們分成兩組，只用其中一組，合成就失效了。</p>
         <p>真正佔體積的是漢字字型在 Google Fonts 上的上百個分片。「基礎字型：引用 Google Fonts」會用 <code>@import</code> 直接引用 Google 的 CSS，把這個字型排在 font-family 的第二位，自己只寫需要覆蓋它的類別，匯出的 CSS 通常只有幾 KB。伺服器一般會用 gzip 壓縮 CSS，匯出區顯示的 gzip 體積更接近實際傳輸量。字型檔案只按頁面用到的字元下載，與 CSS 長度無關。</p>
@@ -455,7 +461,7 @@ try {
         <h3>複数のウェイトを書き出す</h3>
         <p>フォント名の下に「連続ウェイト」「段階ウェイト」と表示します。連続ウェイトは「連続ウェイト 200–900」のように、その範囲で任意の太さを入力できます。段階ウェイトは「段階ウェイト 400、700」のように決まった太さを持ち、数が多い場合は最小〜最大の範囲を表示します。マウスを重ねると全ウェイトを確認できます。これはフォント自体の情報で、書き出しモードは「ウェイト別」で選びます。正確な範囲は推測せず、可変軸があってもウェイト範囲が不明なら「ウェイト範囲不明」と表示します。ほかのクラスに追従する場合は、追従元の行の情報を参照してください。</p>
         <p>連続モードでは、プレビューや Web ページで <code>font-weight: 450</code> を指定すると、可変フォントも 450 で表示され、400 と 500 の間も使えます。フォントの対応範囲外では最も近い端点、静的フォントでは最も近い段階の太さを使います。可変フォントの太さの個別設定は一時的に無効になり、段階モードに戻すと復元されます。</p>
-        <p>連続モードでは書き出す範囲を直接入力できます。サイズ列だけの場合は「漢字のサイズ」「半角欧文のサイズ」などの見出しを一段で表示します。静的フォントの太さを調整できる場合は、クラス名と太さ・サイズの二段の見出しを使います。</p>
+        <p>スライダーはボタンと同じモノクロ配色を使い、横方向のトラックの両端をハンドルの中心と目盛りに揃えています。連続モードでは、表の左側にある2つのハンドルをドラッグして、100刻みで書き出す範囲を選びます。範囲外の行はグレーで残り、保存済みの調整も保持されます。範囲内の中間ウェイトも使えます。正確な端点は「書き出し」で入力できます。矢印キーで100、Shiftを押しながら操作すると10ずつ移動します。ドラッグは離したときに保存され、1回で取り消せます。Escでドラッグをキャンセルできます。サイズ列だけの場合は「漢字のサイズ」「半角欧文のサイズ」などの見出しを一段で表示します。静的フォントの太さを調整できる場合は、クラス名と太さ・サイズの二段の見出しを使います。</p>
         <p>段階モードでは、「ウェイト別」で書き出すウェイトにチェックを入れると（書き出しダイアログでも選べます）、ウェイトごとに規則を 1 組ずつ生成します。選択済みの行の空白部分をクリックすると、そのウェイトをプレビューできます。書き出しのチェックは変わりません。プレビューの B アイコンかウェイト欄をクリックするとスライダーが開きます。直接入力や B アイコンのドラッグでも調整でき、数値はすぐに反映されます。段階モードでは選択済みのウェイトだけを使い、スライダーに目盛りを表示します。連続モードでは書き出し範囲内で無段階に調整できます。範囲内にある 400（Regular）と 700（Bold）の目盛りをクリックすると、そのウェイトに切り替わります。端点と目盛りのラベルはスライダーの下に一列で表示し、近すぎる端点のラベルは省略します。現在のウェイトの選択を外すと、最も近い選択済みウェイトに切り替わります。範囲外や未選択の値を入力した場合も、確定時に使える値へ調整します。ツールで設定したフォントは 400 に対応します。ほかのウェイトでは、Google Fonts のフォントは同じ差分で換算し（500 のフォントなら 700 のとき 800）、そのウェイトがなければ最も近いものを使います。ローカルフォントは名前から太字の名前を推測し（W3 → W6、Regular → Bold など）、このデバイスで確認します。フォントごとにウェイトの分布は異なるので、「ウェイト別」の表でウェイトごとに各クラスのサイズと太さを個別に調整できます。可変フォントの太さは任意の数値を直接入力でき、右側の矢印やキーボードの ↑↓ で 10 ずつ、Shift + ↑↓ で 100 ずつ調整できます。静的な Google Fonts は 100 刻みで調整し、存在しないウェイトは飛ばします。ローカルフォント名やファイル、そのウェイトだけ別のフォントにする場合は、そのセルか、行の末尾にある「⋯」メニューの「フォントを変更…」から「フォントを選択」で指定します。Google Fonts の静的フォントは実際にあるウェイトだけを表示します。グレーは自動で決まった値、青は個別に設定した値で、グレーの値を選び直すと個別の設定が解除されます。</p>
         <p>ウェイトごとの規則はまとめられません。CSS 変数（<code>var()</code>）は <code>@font-face</code> の中では無効で、ブラウザはその記述を捨てます。同じ font-family の中に <code>font-weight: 700</code> の規則と <code>400 700</code> の規則が混ざると、Chrome は実測で別のグループとして扱い、片方しか使わないため、合成が効かなくなります。</p>
         <p>容量の大半は、Google Fonts で 100 以上に分割された漢字フォントの規則です。「ベースフォント：Google Fonts を参照」では Google の CSS を <code>@import</code> で直接参照し、そのフォントを font-family の 2 番目に置いて、上書きするクラスだけを書き出します。書き出す CSS は通常数 KB です。サーバーは CSS を gzip で圧縮するのが一般的なので、書き出し欄の gzip 後のサイズが実際の転送量に近い値です。フォントファイルはページで使う文字の分だけダウンロードされ、CSS の長さとは関係ありません。</p>
@@ -529,7 +535,7 @@ try {
         <h3>Exporting several weights</h3>
         <p>Font names show “Continuous weights” or “Stepped weights”. Continuous weights accept any value in their range, for example “Continuous weights 200–900”. Stepped weights offer fixed values, for example “Stepped weights 400, 700”; longer lists show their lightest-to-heaviest range, with the full list on hover. These labels describe the font’s capabilities; choose the export mode separately in Weights. Ranges are never guessed. Fonts with variable axes but no readable weight range show “Weight range unknown”. Fonts that follow another class use the information in that class’s row.</p>
         <p>In Continuous mode, setting the preview or web page to <code>font-weight: 450</code> displays variable fonts at 450, rather than choosing between 400 and 500. Values outside a font’s supported range use the nearest endpoint; static fonts use the nearest weight. Individual variable font weight adjustments are temporarily ignored and restored when you switch to Stepped.</p>
-        <p>In Continuous mode, enter the export range directly. When the table has only size columns, it uses one header row, such as “Han size” and “Western size”. Static fonts with adjustable weights keep the two header rows for class names, weight and size.</p>
+        <p>Sliders use the same neutral colors as buttons, with horizontal track endpoints aligned to thumb centers and ticks. In Continuous mode, drag the two handles beside the weight rows to choose an export range in steps of 100. Rows outside the range stay visible but inactive, and their saved adjustments are kept. The range still includes intermediate weights; exact endpoints can be entered in Export. Keyboard arrows move a handle by 100, or 10 with Shift. A drag is saved on release and can be undone in one step; Escape cancels it. When the table has only size columns, it uses one header row, such as “Han size” and “Western size”. Static fonts with adjustable weights keep the two header rows for class names, weight and size.</p>
         <p>In Stepped mode, check the weights to export in Weights (you can also choose them in the export dialog); each weight gets its own set of rules. Click empty space in a selected row to preview its weight without changing the export selection. Click the B icon or preview weight field to open a slider. You can also type a number or drag B; the number updates as you adjust it. Stepped mode previews only selected export weights, shown as slider stops. Continuous mode adjusts smoothly within the export range, with clickable marks for 400 (Regular) and 700 (Bold) when they fall within that range. Endpoints and shortcut labels share one row below the slider; endpoint labels are omitted when too close to a shortcut. Removing the current preview weight selects the nearest remaining weight. Typed values outside the range or between selected weights snap to an available value when committed. The fonts you set in the tool correspond to 400. For other weights, Google Fonts fonts are shifted by the same difference (a font set at 500 becomes 800 at 700), or the nearest available weight if that one doesn’t exist; for installed fonts, the tool guesses the bold name (W3 → W6, Regular → Bold, and so on) and checks for it on this computer. Fonts don’t distribute their weights the same way: in the Weights table you can adjust each class’s size and weight separately for each weight. For variable fonts, type any weight or use the arrows on the right or keyboard ↑↓ to adjust it by 10 (Shift + ↑↓ for 100). Static Google Fonts step by 100, skipping unavailable weights. To set an installed font name, a font file, or a different font for just that weight, click that cell, or use “change font…” in the “⋯” menu at the end of the row, and choose it in “Choose font”. For static Google Fonts fonts, only the weights the font actually has are listed; grey values are computed, blue ones are set for that row, and picking the grey value again clears the row’s setting.</p>
         <p>The rules for different weights can’t be combined. CSS variables (<code>var()</code>) don’t work inside <code>@font-face</code>; the browser simply drops the descriptor. If some rules in one font-family say <code>font-weight: 700</code> and others say <code>400 700</code>, Chrome (in testing) splits them into two groups and uses only one, and the composite font stops working.</p>
         <p>Most of the size comes from the hundreds of slices of the Han font on Google Fonts. “Base font: Link Google Fonts (shortest)” references Google’s CSS directly with <code>@import</code>, puts that font second in font-family, and writes only the classes that override it, so the exported CSS is usually just a few KB. Servers usually compress CSS with gzip, so the gzip size shown in the export panel is closer to what is actually transferred. Font files are downloaded only for the characters a page uses, regardless of the length of the CSS.</p>

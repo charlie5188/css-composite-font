@@ -175,6 +175,11 @@ for a role that already has one; if something is really missing, add it to that 
   heading), `.callout` (yellow notice), `.dlg-form` + `.dlg-act` (small dialog: title, fields, buttons bottom right), `.badge` (count pill), `.info` (the (i) button that opens `#infoPop`), tooltips through `title`.
 - **Color fields:** `.color-field` pairs a native color well with an editable hex value and a shared focus ring.
   `.settings-block`, `.settings-row` and `.settings-actions` arrange controls inside settings popovers.
+- **Vertical ranges:** `.range-vertical` pairs `.range-rail`, `.range-fill` and two `.range-thumb` controls.
+  Give each thumb a slider role, vertical orientation and current bounds. Keep the controls mounted during
+  table refreshes; preview the selection while dragging, then commit on release as one undoable change.
+  All sliders share `--slider-thumb-size`, `--slider-track-size` and `--slider-half`, neutral ink thumbs,
+  muted rails and the same hover/focus rings. Horizontal rails and ticks end at the thumb centers.
 - **Icons:** Tabler Icons (outline, MIT; license in `assets/LICENSE-tabler-icons.txt`) as an SVG sprite at the top of
   `index.html`. Use `<svg class="ic" aria-hidden="true"><use href="#i-name"/></svg>`; to add one, copy its paths from
   the Tabler outline set into a new `<symbol id="i-name" viewBox="0 0 24 24">`. Stroke width (1.75) and size come from
