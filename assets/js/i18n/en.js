@@ -1,5 +1,6 @@
 /* UI text: English. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkSampleOptions: "Sample options",
   pkImporting: "Reading font files…",
   pkLocalReadFailed: "Could not read installed fonts. Retry or enter an exact name.",
   pkNoSampleGlyphs: "This font has no glyphs for the current specimen.",

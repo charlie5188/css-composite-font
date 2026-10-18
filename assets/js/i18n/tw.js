@@ -1,5 +1,6 @@
 /* UI text: Traditional Chinese (Taiwan). Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkSampleOptions: "樣張設定",
   pkImporting: "正在讀取字型檔案…",
   pkLocalReadFailed: "無法讀取本機字型，可重試或輸入完整名稱。",
   pkNoSampleGlyphs: "此字型沒有可用於目前樣張的字形。",

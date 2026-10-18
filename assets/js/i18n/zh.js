@@ -1,5 +1,6 @@
 /* UI text: Simplified Chinese. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkSampleOptions: "样张设置",
   pkImporting: "正在读取字体文件…",
   pkLocalReadFailed: "无法读取本机字体，可重试或输入完整名称。",
   pkNoSampleGlyphs: "这个字体没有可用于当前样张的字形。",

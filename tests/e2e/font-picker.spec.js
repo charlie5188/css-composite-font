@@ -28,7 +28,8 @@ test('字体列表：按校样语言和类别初排，别名搜索、已知筛�
     return filterCatalog([{ family: 'Unknown', aliases: '', style: null, bold: null }, { family: 'No bold', aliases: '', style: 'sans', bold: false }], '', 'serif', true).map(x => x.family);
   });
   expect(entries).toEqual(['Unknown']);
-  await page.locator('#gfSearch').fill('Shippori'); await page.locator('#gfBold').check();
+  await page.locator('#gfSearch').fill('Shippori'); await page.locator('#pkFilterBtn').click(); await page.locator('#gfBold').check();
+  await expect(page.locator('#pkFilterCount')).toHaveText('1'); await page.locator('#pkFilterBtn').click();
   await expect(options).toHaveCount(1);
   await page.locator('#gfSearch').fill('Klee One');
   await expect(options).toHaveCount(0);
@@ -149,7 +150,9 @@ test('预览字重不保存：连续字重可单独试粗体，静态字体只�
 test('上传的连续字体：预览与应用字重各自保存到正确位置', async ({ page }) => {
   await fixture(page); await page.locator('#picker [data-src="file"]').click();
   await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
+  await page.locator('#pkApplied > summary').click();
   await expect(page.locator('#ffWeightField')).toBeVisible();
+  if (await page.locator('#pkApplied').getAttribute('open') === null) await page.locator('#pkApplied > summary').click();
   await page.locator('#ffWeightNum').fill('450'); await page.locator('#ffWeightNum').dispatchEvent('change');
   await page.locator('#pkProofWeightNum').fill('700');
   await expect(page.locator('#pkOk')).toBeEnabled();
@@ -165,6 +168,7 @@ test('逐档选择：自动字重随应用范围改变，应用全部时明确�
   await page.evaluate(async () => (await import('./assets/js/ui.js')).openPicker({ type: 'class', id: 'han' }, 700));
   await page.locator('#gfSearch').fill('Noto Sans SC'); await page.locator('#gfOptions [data-family="Noto Sans SC"]').click();
   await expect(page.locator('#pkWeightMapping')).toHaveText('字体的 700 将用于组合的 700。');
+  await page.locator('#pkApplied > summary').click();
   await page.locator('#pkScope [value="all"]').check();
   await expect(page.locator('#pkWeightMapping')).toHaveText('字体的 400 将用于组合的 400。');
   await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
@@ -177,6 +181,7 @@ test('逐档上传字体：读取该档实际粗细，保存单档映射不改�
   await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
   await page.evaluate(async () => (await import('./assets/js/ui.js')).openPicker({ type: 'class', id: 'han' }, 700));
   await expect(page.locator('#ffWeightNum')).toHaveValue('700');
+  if (await page.locator('#pkApplied').getAttribute('open') === null) await page.locator('#pkApplied > summary').click();
   await page.locator('#ffWeightNum').fill('450'); await page.locator('#ffWeightNum').dispatchEvent('change');
   await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
   expect(await page.evaluate(async () => { const c = await import('./assets/js/core.js'); return [c.state.classes.han.font.weight, c.state.wOver[700].han.weight]; })).toEqual([400, 450]);
@@ -193,6 +198,7 @@ test('类别样张：西文不混入汉字，校样按实际归属提取；自�
     c.refreshCustomRanges(); c.state.view.text = '汉字 Alpha Beta 123';
   });
   const configured = await page.evaluate(async () => JSON.stringify((await import('./assets/js/share.js')).shareSnapshot()));
+  await page.locator('#pkSampleBtn').click();
   await page.locator('#pkSampleMode [data-pk-sample="proof"]').click();
   await expect(page.locator('#pkSample')).toHaveText('lpha Beta');
   await page.locator('#pkSampleMode [data-pk-sample="custom"]').click();
@@ -217,6 +223,7 @@ test('类别样张：繁体汉字、假名、数字与空校样，支持键盘�
   await expect(page.locator('#pkSampleMode [data-pk-sample="proof"]')).toBeDisabled();
   await page.locator('#pkCancel').click(); await page.locator('.ct-row[data-id="digit"] .fsel').selectOption('pick');
   await expect(page.locator('#pkSample')).toContainText('0123456789');
+  await page.locator('#pkSampleBtn').click();
   await page.locator('#pkSampleMode [data-pk-sample="class"]').focus(); await page.keyboard.press('ArrowRight');
   await expect(page.locator('#pkSampleMode [data-pk-sample="custom"]')).toHaveAttribute('aria-checked', 'true');
 });
@@ -258,6 +265,7 @@ test('选择时自动匹配：默认勾选、仅调整所选类别，字体和�
   await page.click('#ltabFonts');
   await page.locator('.ct-row[data-id="latin"] .fsel').selectOption('pick');
   await page.locator('#pkAutoFit').uncheck();
+  if (await page.locator('#pkApplied').getAttribute('open') === null) await page.locator('#pkApplied > summary').click();
   await page.locator('#ffWeightNum').fill('450'); await page.locator('#ffWeightNum').dispatchEvent('change');
   await expect(page.locator('#pkOk')).toBeEnabled(); await page.locator('#pkOk').click();
   expect((await matchSettings(page)).classes.latin.size).toBe(after.classes.latin.size);
@@ -296,10 +304,14 @@ test('信息层级：预览、应用与详情分组，短列表收紧，数字�
   await expect(page.locator('#pkSelectedName')).toHaveText('Noto Serif SC');
   await expect(page.locator('#gfFamily')).toBeHidden();
   await expect(page.locator('#pkDetails')).not.toHaveAttribute('open', '');
+  await expect(page.locator('#pkApplied #gfWeightNum')).toBeHidden();
+  await expect(page.locator('#pkAppliedSummary')).toHaveText('400 → 400');
+  await page.locator('#pkApplied > summary').click();
   await expect(page.locator('#pkApplied #gfWeightNum')).toBeVisible();
   const weight = page.locator('#gfWeightNum'); await weight.locator('..').hover();
   await weight.locator('..').locator('[data-step="up"]').click();
   await expect(weight).toHaveValue('410');
+  await page.locator('#pkSampleBtn').click();
   await page.locator('#pkSampleSize').locator('..').hover();
   await page.locator('#pkSampleSize').locator('..').locator('[data-step="up"]').click();
   await expect(page.locator('#pkSampleSize')).toHaveValue('33');
@@ -416,4 +428,31 @@ test('状态反馈：上一轮排队的关闭事件不能中止重新打开的�
   await expect(page.locator('#pkSelectedName')).toHaveText('Inter');
   release(); await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'ready');
   await expect(page.locator('#pkOk')).toBeEnabled();
+});
+
+
+test('选字弹层：筛选状态可见且可清除，Escape 只关闭弹层；手机 footer 与样张工具保持可用', async ({ page }) => {
+  await fixture(page, 'latin');
+  await page.locator('#gfSearch').fill('Noto');
+  await page.locator('#pkFilterBtn').click();
+  await page.locator('#gfStyle').selectOption('serif'); await page.locator('#gfBold').check();
+  await expect(page.locator('#pkFilterCount')).toHaveText('2');
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#picker')).toBeVisible(); await expect(page.locator('#pkFilterPop')).toBeHidden();
+  await page.locator('#pkFilterBtn').click(); await page.locator('#pkFilterClear').click();
+  await expect(page.locator('#gfSearch')).toHaveValue('Noto'); await expect(page.locator('#pkFilterCount')).toBeHidden();
+  await page.keyboard.press('Escape');
+  await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
+  for (const lang of ['zh', 'tw', 'ja', 'en']) {
+    await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
+    await expect(page.locator('.pk-actions #pkAutoFit')).toBeInViewport();
+    await expect(page.locator('#pkCancel')).toBeInViewport(); await expect(page.locator('#pkOk')).toBeInViewport();
+    await page.locator('#pkSampleBtn').click(); await page.locator('[data-pk-sample="custom"]').click();
+    await page.locator('#pkSampleText').fill('Hamburg');
+    await expect.poll(() => page.locator('#pkSamplePop').evaluate(el => {
+      const r = el.getBoundingClientRect(), d = el.closest('dialog').getBoundingClientRect();
+      return r.left >= d.left && r.right <= d.right && r.top >= 0 && r.bottom <= innerHeight && el.scrollWidth <= el.clientWidth;
+    })).toBeTruthy();
+    await page.keyboard.press('Escape'); await expect(page.locator('#picker')).toBeVisible();
+  }
 });
