@@ -29,6 +29,7 @@ export default {
   pkRetry: "重试加载",
   pkNoImportedResults: "没有匹配的已导入字体。",
   pkSort: "排序",
+  pkSortCurrent: "排序：{sort}",
   pkSortName: "名称 A–Z",
   pkSortWeights: "字重范围：广到窄",
   pkKnownWeights: "已发现字重",

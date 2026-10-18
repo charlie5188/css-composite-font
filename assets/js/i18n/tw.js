@@ -29,6 +29,7 @@ export default {
   pkRetry: "重試載入",
   pkNoImportedResults: "沒有符合的已匯入字型。",
   pkSort: "排序",
+  pkSortCurrent: "排序：{sort}",
   pkSortName: "名稱 A–Z",
   pkSortWeights: "字重範圍：廣到窄",
   pkKnownWeights: "已知字重",

@@ -202,12 +202,15 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 /* Always-visible filters sit below search; multi-choice menus use the shared popover surface. */
 .filter-bar{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp-2);min-width:0}
 .filter-trigger,.filter-toggle{height:var(--ctl-h);border:1px solid var(--line);border-radius:var(--r-pill);background-color:transparent;font-size:var(--fs-s);color:var(--muted);max-width:100%}
-.filter-sort{margin-inline-start:auto}
 .filter-toggle{display:inline-flex;align-items:center;gap:var(--sp-2);padding:0 var(--sp-3);cursor:pointer}
 .filter-toggle input{margin:0;accent-color:var(--ink)}
 .filter-trigger[data-active="true"],.filter-toggle:has(:checked){color:var(--ink);border-color:var(--ink);background-color:color-mix(in srgb,var(--ink) 5%,transparent)}
 .filter-trigger:hover,.filter-toggle:hover{background-color:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink)}
 .filter-toggle:has(:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
+/* Result counts and ordering belong to the list, separate from search filters. */
+.results-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--sp-1) var(--sp-2);min-width:0}
+.results-toolbar>.hint{margin:0}
+.results-toolbar>.btn-ghost{margin-inline-start:auto;max-width:100%;white-space:normal;text-align:start}
 /* Section header: monospaced label on the left, section actions on the right. */
 .sec-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--sp-2) var(--sp-3);margin:var(--sp-6) 0 var(--sp-2)}
 /* Use type size, weight and spacing for hierarchy, not dividers: .sec-title > .typo-name > monospaced labels and muted notes. */

@@ -29,6 +29,7 @@ export default {
   pkRetry: "読み込みを再試行",
   pkNoImportedResults: "一致する読み込み済みフォントがありません。",
   pkSort: "並べ替え",
+  pkSortCurrent: "並び順：{sort}",
   pkSortName: "名前 A–Z",
   pkSortWeights: "ウェイト範囲が広い順",
   pkKnownWeights: "確認済みウェイト",

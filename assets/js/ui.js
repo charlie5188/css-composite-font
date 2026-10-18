@@ -1349,7 +1349,7 @@ function syncPickerFilters() {
   }
 }
 export function renderCatalog() {
-  $('#pkSortLabel').textContent = $('#pkSort input:checked').closest('label').querySelector('span').textContent;
+  $('#pkSortLabel').textContent = T('pkSortCurrent', { sort: $('#pkSort input:checked').closest('label').querySelector('span').textContent });
   const box = $('#gfOptions'), query = $('#gfSearch').value, sourceFilter = pickerFilterValues('pkSource');
   const focused = box.contains(document.activeElement) ? document.activeElement.closest('[data-choice]')?.dataset.choice : null;
   const entries = filterCatalog(libraryChoices(), query, pickerFilterValues('gfStyle'), $('#gfBold').checked, pickerFilterValues('pkWeightType').filter(value => value !== 'bold'), pickerFilterValues('pkCoverage')).filter(item => !sourceFilter.length || sourceFilter.includes(item.kind));

@@ -29,6 +29,7 @@ export default {
   pkRetry: "Retry loading",
   pkNoImportedResults: "No matching imported fonts.",
   pkSort: "Sort fonts",
+  pkSortCurrent: "Sort: {sort}",
   pkSortName: "Name A–Z",
   pkSortWeights: "Widest weight range",
   pkKnownWeights: "Known weights",
