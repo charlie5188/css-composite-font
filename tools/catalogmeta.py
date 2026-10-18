@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bundle representative coverage for the curated library without runtime font downloads.
+"""Bundle representative coverage for the font library without runtime font downloads.
 
 Usage: python3 tools/catalogmeta.py [google-metadata.json]
 CSS unicode ranges use the same coverage model as the selected-font inspector.
@@ -15,7 +15,7 @@ import sys
 import urllib.parse
 import urllib.request
 
-from gfmeta import load
+from gfmeta import cj_families, load
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SAMPLES = {
@@ -46,7 +46,8 @@ def coverage(css):
 
 def build(metadata):
     core = (ROOT / 'assets/js/core.js').read_text()
-    families = ast.literal_eval(re.search(r'export const GF_LIST = (\[.*?\]);', core, re.S)[1])
+    common = ast.literal_eval(re.search(r'const GF_COMMON = (\[.*?\]);', core, re.S)[1])
+    families = sorted(set(common + cj_families(metadata)))
     records = {f['family']: f for f in metadata['familyMetadataList']}
 
     def fetch(family):

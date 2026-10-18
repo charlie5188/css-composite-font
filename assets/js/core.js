@@ -1,6 +1,6 @@
 import { $, T, UI, debounce, lsGet, lsSet, root, sleep, tr } from './i18n.js';
 import { CLASSES, EFF, classOf, fmtRanges, inRanges, intersect, parseChars, parseRanges, rebuildClassRanges, union } from './unicode.js';
-import { AXIS_NAMES, GF_AXES, GF_ITALIC, GF_STYLE, GF_WEIGHTS } from './gfmeta.js';
+import { AXIS_NAMES, GF_AXES, GF_CJ, GF_ITALIC, GF_STYLE, GF_WEIGHTS } from './gfmeta.js';
 import { checkMissSoon, drawSpecimen, fitGlyphs, refreshVAutospace, renderChipsStatus, renderEditor } from './render.js';
 import { renderExport, renderExportSoon } from './export.js';
 import { localData, renderPresetCardsSoon } from './ui.js';
@@ -33,11 +33,13 @@ export const LOCAL_COMMON = [
   ['Georgia', 'Georgia', ''], ['Times New Roman', 'TimesNewRomanPSMT', ''], ['Arial', 'ArialMT', ''],
 ];
 export const localAlt = new Map(LOCAL_COMMON.map(([n, ps]) => [n, ps]));
-export const GF_LIST = ['Noto Sans SC', 'Noto Serif SC', 'Noto Sans TC', 'Noto Serif TC', 'Noto Sans HK', 'Noto Sans JP', 'Noto Serif JP', 'Noto Sans KR', 'Noto Serif KR',
+const GF_COMMON = ['Noto Sans SC', 'Noto Serif SC', 'Noto Sans TC', 'Noto Serif TC', 'Noto Sans HK', 'Noto Sans JP', 'Noto Serif JP', 'Noto Sans KR', 'Noto Serif KR',
   'LXGW WenKai TC', 'Shippori Mincho', 'Zen Old Mincho', 'Zen Kaku Gothic New', 'Zen Maru Gothic', 'BIZ UDPGothic', 'BIZ UDPMincho', 'M PLUS 2', 'Klee One',
   'ZCOOL XiaoWei', 'Ma Shan Zheng', 'Inter', 'IBM Plex Sans', 'IBM Plex Serif', 'Source Sans 3', 'Source Serif 4', 'EB Garamond', 'Cormorant Garamond',
   'Libre Caslon Text', 'Libre Baskerville', 'Crimson Pro', 'Lora', 'Newsreader', 'Literata', 'Spectral', 'Fraunces', 'Playfair Display', 'DM Sans',
   'Work Sans', 'Manrope', 'Instrument Sans', 'Instrument Serif', 'Roboto', 'Roboto Serif', 'Lato', 'Open Sans', 'Montserrat', 'Jost', 'JetBrains Mono', 'IBM Plex Mono'];
+// Keep familiar Western choices, and include every Chinese/Japanese family from the bundled metadata.
+export const GF_LIST = [...new Set([...GF_COMMON, ...GF_CJ])];
 
 export const files = new Map();          // fileId -> {name, buffer}
 export const sources = new Map();        // fontKey -> {status, faces, family, error, promise}

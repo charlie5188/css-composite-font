@@ -35,8 +35,8 @@ async function fixture(page, category = 'han') {
 test('字体列表：按名称初排，别名搜索、已知筛选与未知资料保留，检查后不移动候选', async ({ page }) => {
   await fixture(page);
   const options = page.locator('#gfOptions [data-family]');
-  expect(await options.first().getAttribute('data-family')).toBe('BIZ UDPGothic');
   const order = await options.evaluateAll(els => els.map(el => el.dataset.family));
+  expect(order).toEqual([...order].sort((a, b) => a.localeCompare(b, 'en', { numeric: true, sensitivity: 'base' })));
   await options.filter({ hasText: 'Noto Serif SC' }).click();
   await expect(page.locator('#pkOk')).toBeEnabled();
   expect(await options.evaluateAll(els => els.map(el => el.dataset.family))).toEqual(order);
@@ -52,12 +52,39 @@ test('字体列表：按名称初排，别名搜索、已知筛选与未知资�
   expect(entries).toEqual(['Unknown']);
   await page.locator('#gfSearch').fill('Shippori'); await setBoldFilter(page);
   await expect(page.locator('#gfBold')).toBeChecked();
-  await expect(options).toHaveCount(1);
+  await expect(page.locator('#gfOptions [data-family="Shippori Mincho"]')).toHaveCount(1);
+  await expect(page.locator('#gfOptions [data-family="Shippori Antique"]')).toHaveCount(0);
   await page.locator('#gfSearch').fill('Klee One');
   await expect(options).toHaveCount(0);
   await page.locator('#pkCancel').click();
   await openClassPicker(page, 'latin');
   expect(await options.first().getAttribute('data-family')).not.toMatch(/Noto.*(?:SC|TC|HK|JP|KR)/);
+});
+
+test('中日字体库：完整使用官方目录，新增字体支持中英文搜索、筛选和选择', async ({ page }) => {
+  await fixture(page, 'latin');
+  const metadata = await page.evaluate(async () => {
+    const { GF_LIST } = await import('./assets/js/core.js');
+    const { GF_CJ } = await import('./assets/js/gfmeta.js');
+    const { CATALOG_COVERAGE } = await import('./assets/js/font-catalog-data.js');
+    const listed = [...document.querySelectorAll('#gfOptions [data-family]')].map(el => el.dataset.family);
+    return { missing: GF_CJ.filter(f => !listed.includes(f)), unchecked: GF_LIST.filter(f => !Object.hasOwn(CATALOG_COVERAGE, f)), unique: new Set(listed).size === listed.length };
+  });
+  expect(metadata).toEqual({ missing: [], unchecked: [], unique: true });
+  await selectFilter(page, 'pkSource', 'google');
+  await page.locator('#gfSearch').fill('ZCOOL');
+  await expect(page.locator('#gfOptions [data-family]')).toHaveCount(3);
+  await page.locator('#gfSearch').fill('站酷快乐');
+  const choice = page.locator('#gfOptions [data-family="ZCOOL KuaiLe"]');
+  await expect(choice).toHaveCount(1);
+  await selectFilter(page, 'pkWeightType', 'stepped');
+  await expect(choice.locator('.font-option-source')).toContainText('分档 1 档');
+  await choice.click();
+  await expect(page.locator('#pkSelectedName')).toHaveText('ZCOOL KuaiLe');
+  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  await page.locator('#pkFilterClear').click(); await page.locator('#gfSearch').fill('Yuji');
+  await expect(page.locator('#gfOptions [data-family="Yuji Boku"]')).toHaveCount(1);
 });
 
 test('字体排序：名称、已知范围与精简菜单，保留搜索筛选与候选且加载后顺序不变', async ({ page }) => {
@@ -244,7 +271,7 @@ test('多选筛选与本机预览：组内任选、组间同时满足，名称�
 test('字体列表：搜索不检测半个名字，可键盘选择，四语言和手机深色布局保持可用', async ({ page }) => {
   await fixture(page);
   await page.locator('#gfSearch').fill('Noto');
-  await expect(page.locator('#gfOptions [data-family]')).toHaveCount(9);
+  await expect(page.locator('#gfOptions [data-family]')).toHaveCount(10);
   await expect(page.locator('#gfFamily')).toHaveValue('Noto Serif SC');
   const first = page.locator('#gfOptions [data-family]').first();
   await first.focus(); await first.press('ArrowDown');
@@ -339,7 +366,7 @@ test('预览字重不保存：连续字重可单独试粗体，静态字体只�
   await expect(page.locator('#gfWeightNum')).toHaveValue('400');
   expect(await page.locator('#pkSample').evaluate(el => el.style.fontVariationSettings)).toContain('700');
   expect(await page.evaluate(async () => JSON.stringify((await import('./assets/js/core.js')).state.classes.han))).toBe(original);
-  await page.locator('#gfSearch').fill('Shippori'); await page.locator('#gfOptions [data-family]').click();
+  await page.locator('#gfSearch').fill('Shippori'); await page.locator('#gfOptions [data-family="Shippori Mincho"]').click();
   await expect(page.locator('#pkProofWeightSelect option')).toHaveCount(5);
   await expect(page.locator('#gfWeight option')).toHaveCount(5);
   await page.locator('#pkProofWeightSelect').selectOption('700');

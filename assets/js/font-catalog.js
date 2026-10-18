@@ -12,6 +12,7 @@ const ALIASES = {
   'Shippori Mincho': 'しっぽり明朝', 'Zen Old Mincho': 'ZENオールド明朝', 'Zen Kaku Gothic New': 'ZEN角ゴシック',
   'Zen Maru Gothic': 'ZEN丸ゴシック 丸ゴ', 'BIZ UDPGothic': 'BIZ UDPゴシック', 'BIZ UDPMincho': 'BIZ UDP明朝',
   'M PLUS 2': 'エムプラス', 'Klee One': 'クレー 手書き', 'ZCOOL XiaoWei': '站酷小薇体 站酷小薇體', 'Ma Shan Zheng': '马善政楷书 馬善政楷書',
+  'ZCOOL KuaiLe': '站酷快乐体 站酷快樂體', 'ZCOOL QingKe HuangYou': '站酷庆科黄油体 站酷慶科黃油體',
   'PingFang SC': '苹方 蘋方 简体 簡體', 'PingFang TC': '苹方 蘋方 繁体 繁體 台湾 台灣', 'PingFang HK': '苹方 蘋方 香港',
   'Songti SC': '宋体 宋體 简体 簡體', 'Songti TC': '宋体 宋體 繁体 繁體',
 };
@@ -23,6 +24,7 @@ const NATIVE_NAMES = {
   'Shippori Mincho': 'しっぽり明朝', 'Zen Old Mincho': 'ZENオールド明朝', 'Zen Kaku Gothic New': 'ZEN角ゴシック',
   'Zen Maru Gothic': 'ZEN丸ゴシック', 'BIZ UDPGothic': 'BIZ UDPゴシック', 'BIZ UDPMincho': 'BIZ UDP明朝',
   'M PLUS 2': 'エムプラス', 'Klee One': 'クレー', 'ZCOOL XiaoWei': '站酷小薇体', 'Ma Shan Zheng': '马善政楷书',
+  'ZCOOL KuaiLe': '站酷快乐体', 'ZCOOL QingKe HuangYou': '站酷庆科黄油体',
   'PingFang SC': '苹方-简', 'PingFang TC': '蘋方-繁', 'PingFang HK': '蘋方-港',
   'Songti SC': '宋体-简', 'Songti TC': '宋體-繁', 'Hiragino Sans GB': '冬青黑体', 'Hiragino Sans': 'ヒラギノ角ゴ',
   'Hiragino Mincho ProN': 'ヒラギノ明朝', 'Microsoft YaHei': '微软雅黑', 'Microsoft JhengHei': '微軟正黑體',
