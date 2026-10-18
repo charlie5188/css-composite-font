@@ -1,5 +1,5 @@
-"""本地预览和测试用的静态服务器：python3 tools/serve.py [端口]
-Python 自带的 http.server 等待连接的队列只有 5 个，页面同时请求十几个 JS 模块时会被拒掉一部分，页面就启动不了。这里把队列调大"""
+"""Static server for local previews and tests: python3 tools/serve.py [port].
+Python's http.server queues only five connections. A page requesting a dozen JS modules can have connections rejected and fail to start, so increase the queue size here."""
 import functools, http.server, os, sys
 
 class Server(http.server.ThreadingHTTPServer):

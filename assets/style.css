@@ -24,19 +24,19 @@
   --ui:"Instrument Sans","PingFang SC","Hiragino Sans GB","Hiragino Sans","Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
   --cf:serif; --generic:serif;
-  /* 设计变量（不随深浅色变）。界面文字只用这 6 级字号；字样、校样、品牌标题这类排版内容按内容定，不在此列 */
-  --fs-xs:11px;      /* 等宽小标题、表头、角标 */
-  --fs-s:12px;       /* 次要文字、提示、工具条里的控件 */
-  --fs-m:13px;       /* 按钮、菜单、表格内容、说明正文 */
-  --fs-l:14px;       /* 页签、卡片名、段落 */
-  --fs-xl:18px;      /* 对话框标题 */
-  --fs-2xl:22px;     /* 大号字样 */
+  /* Theme-independent design tokens. UI text uses these six sizes; specimens, proof text and the brand title are content-sized exceptions. */
+  --fs-xs:11px;      /* Monospaced section labels, headers and annotations. */
+  --fs-s:12px;       /* Secondary text, hints and toolbar controls. */
+  --fs-m:13px;       /* Buttons, menus, table content and explanatory body text. */
+  --fs-l:14px;       /* Tabs, card names and paragraphs. */
+  --fs-xl:18px;      /* Dialog titles. */
+  --fs-2xl:22px;     /* Large specimens. */
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:24px; --sp-6:32px;
-  --r-s:2px;         /* 小记号：色块、进度条 */
-  --r:4px;           /* 输入框、选择控件、卡片、浮层、对话框 */
-  --r-pill:999px;    /* 操作按钮：文字用胶囊、纯图标用圆形；也用于筛选和开关 */
-  --ctl-h:32px;      /* 普通按钮与工具条控件的统一高度 */
-  --ctl-h-sm:26px;   /* 表格、列表里的紧凑操作 */
+  --r-s:2px;         /* Small marks: swatches and progress bars. */
+  --r:4px;           /* Fields, selects, cards, popovers and dialogs. */
+  --r-pill:999px;    /* Pill text buttons, circular icon buttons, filters and switches. */
+  --ctl-h:32px;      /* Shared height for regular buttons and toolbar controls. */
+  --ctl-h-sm:26px;   /* Compact actions in tables and lists. */
   --shadow-pop:0 18px 40px -18px rgba(0,0,0,.35);
 }
 :root:lang(zh-Hant){--ui:"Instrument Sans","PingFang TC","Microsoft JhengHei","Noto Sans TC",system-ui,sans-serif}
@@ -70,9 +70,9 @@ button{cursor:pointer}
 .hint{color:var(--muted);font-size:var(--fs-s)}
 .label{margin:0;font-family:var(--mono);font-size:var(--fs-xs);font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 
-.app{height:100vh;height:100dvh;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;overflow:hidden}      /* 整页固定一屏：各栏自己滚动 */
-.topbar{grid-row:1}.app>.warn{grid-row:2}.bench{grid-row:3}.mtabs{grid-row:4}      /* 提示条隐藏时，工作区也要留在占满剩余空间的那一行 */
-/* 滚动条：细、圆角、跟着主题变色（Chrome 121+ / Firefox 用标准属性，Safari 用 ::-webkit-scrollbar） */
+.app{height:100vh;height:100dvh;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;overflow:hidden}      /* Keep the page to one screen; panes scroll independently. */
+.topbar{grid-row:1}.app>.warn{grid-row:2}.bench{grid-row:3}.mtabs{grid-row:4}      /* When the warning is hidden, keep the workspace in the row filling remaining space. */
+/* Thin, rounded, theme-aware scrollbars: standard properties in Chrome 121+ / Firefox, WebKit pseudo-elements in Safari. */
 *{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--ink) 22%,transparent) transparent}
 .code pre{scrollbar-color:color-mix(in srgb,var(--code-ink) 28%,transparent) transparent}
 ::-webkit-scrollbar{width:10px;height:10px}
@@ -81,16 +81,16 @@ button{cursor:pointer}
 ::-webkit-scrollbar-thumb:hover{background-color:color-mix(in srgb,var(--ink) 38%,transparent)}
 ::-webkit-scrollbar-corner{background:transparent}
 
-/* ================= 组件 =================
-   新控件先从这里选，不要另起样式（见 AGENTS.md 的 Design system）。
-   按钮只有五种：.btn（次要，细边胶囊）、.btn.primary（主要，实心）、.btn-ghost（工具：无边框，悬停浅底，可带图标和文字）、
-   .btn-icon（只有图标的圆形工具按钮；.sm 小一号，.mini 是嵌在文字里的小图标）、.btn-text（文字链接样式）。
-   普通操作统一高度与圆角，以实心、描边、无边框区分强调程度；紧凑工具另用 .sm / .mini，选择控件保留自己的形状。
-   危险操作加 .danger；要点两次才执行的用 armConfirm()，确认中加 .armed */
-/* 表单元素的基础样子：用 :where() 把权重降到最低，组件类（.cell-in 等）总能盖过它 */
+/* ================= Components =================
+   Choose existing controls here before adding a new style; see Design system in AGENTS.md.
+   Five button roles: .btn (secondary outlined pill), .btn.primary (filled primary), .btn-ghost (borderless toolbar action with subtle hover),
+   .btn-icon (circular icon-only, .sm compact, .mini inline), and .btn-text (text link).
+   Regular actions share height and geometry; distinguish emphasis with fill, outline or no border. Compact actions use .sm / .mini; choice controls retain their own shapes.
+   Add .danger for destructive actions, and use armConfirm() with .armed for two-click confirmation. */
+/* Wrap base form styles in :where() to minimize specificity so component classes such as .cell-in always win. */
 :where(select,input[type=text],input[type=number],input:not([type])){background:var(--sheet);border:1px solid var(--line);border-radius:var(--r);padding:6px 8px;min-width:0}
 :where(select,input[type=text],input[type=number]):hover{border-color:var(--faint)}
-/* 下拉框：不用浏览器自带的箭头（太贴右边），换成自己画的，离右边框 10px。灰色在深浅两种主题下都看得清 */
+/* Replace native select arrows, which sit too close to the edge, with an arrow inset 10px. Grey stays legible in both themes. */
 select{-webkit-appearance:none;appearance:none;padding-right:30px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6 9l6 6l6 -6' fill='none' stroke='%23888884' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;background-size:12px 12px;text-overflow:ellipsis}
 :where(input[type=number]){font-family:var(--mono);font-variant-numeric:tabular-nums}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;height:var(--ctl-h);border:1px solid var(--ink);background:transparent;border-radius:var(--r-pill);padding:0 var(--sp-4);font-size:var(--fs-m);white-space:nowrap;color:var(--ink);text-decoration:none}
@@ -100,10 +100,10 @@ select{-webkit-appearance:none;appearance:none;padding-right:30px;background-ima
 .btn:disabled{opacity:.4;cursor:not-allowed}
 .btn-ghost,.btn-icon{display:inline-flex;align-items:center;justify-content:center;gap:6px;flex:none;height:var(--ctl-h);padding:0 var(--sp-2);border:0;border-radius:var(--r-pill);background:none;font-size:var(--fs-m);color:var(--ink-2);white-space:nowrap;text-decoration:none}
 .btn-ghost:hover,.btn-icon:hover,.btn-ghost:has(+ .pop:popover-open),.btn-icon:has(+ .pop:popover-open){background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink)}
-/* 图标：Tabler Icons 的线条图标（下拉箭头和菜单里的勾也是，画在 CSS 里），sprite 在 index.html 开头。线宽统一 1.75（24 格），16px 下约 1.2px */
+/* Tabler outline icons, including CSS select arrows and menu checks. Sprite at the start of index.html; shared 1.75 stroke at 24 units, about 1.2px at 16px. */
 .sprite{position:absolute;width:0;height:0;overflow:hidden}
 .ic{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
-.ic.ext{width:12px;height:12px;vertical-align:-1px}      /* 文字后面的外链箭头 */
+.ic.ext{width:12px;height:12px;vertical-align:-1px}      /* External-link arrow after text. */
 .btn-ghost svg{width:16px;height:16px;flex:none}
 .btn-icon{width:var(--ctl-h);padding:0;font-size:var(--fs-l)}
 .btn-icon svg{width:16px;height:16px;flex:none}
@@ -116,21 +116,21 @@ select{-webkit-appearance:none;appearance:none;padding-right:30px;background-ima
 .btn-text{border:0;background:none;padding:4px 0;font-size:var(--fs-m);color:var(--ink);text-decoration:underline;text-decoration-color:var(--faint);text-underline-offset:4px}
 .btn-text:hover,.btn-text[aria-expanded="true"]{text-decoration-color:var(--ink)}
 .btn-text.danger,.btn-ghost.danger{color:var(--warn)}
-.btn-icon.danger{color:var(--faint)}      /* 列表里每张卡片都有的删除：平时不显眼，悬停才变红 */
+.btn-icon.danger{color:var(--faint)}      /* Per-card delete actions stay subtle until hovered red. */
 .btn-icon.danger:hover{color:var(--warn);background:color-mix(in srgb,var(--warn) 8%,transparent)}
 .btn-icon.mini.danger:hover{background:none}
-/* 点两次才执行：第一次点击后显示确认文字，3 秒内再点才执行（armConfirm）。按钮原来的内容先藏起来 */
+/* Two-click confirmation: first show the confirmation label, then execute within 3 seconds (armConfirm). Hide the original button content. */
 .armed,.armed:hover,.mm-item.armed:hover{color:var(--warn);background:color-mix(in srgb,var(--warn) 10%,transparent)}
 .armed>:not(.arm-lab){display:none}
 .btn-icon.armed{width:auto;padding:0 var(--sp-2)}
 .arm-lab{font-size:var(--fs-s);font-weight:500}
-/* 分段控件：几个互斥的选项 */
+/* Segmented control: mutually exclusive choices. */
 .seg{display:inline-flex;flex:none;border:1px solid var(--line);border-radius:calc(var(--r) + 2px);padding:2px;gap:2px;background:var(--sheet)}
 .seg button{border:0;background:none;border-radius:var(--r);padding:3px 10px;font-size:var(--fs-s);color:var(--muted);white-space:nowrap}
 .seg button:hover{color:var(--ink)}
 .seg button[aria-checked="true"]{background:var(--ink);color:var(--sheet)}
-/* 表格里的输入格（类别表、各字重表）：平时没有边框，悬停出下划线，聚焦时黑线。.cell-num：右对齐的等宽数字。
-   灰色占位符是推算 / 沿用的值；.own 是基础设定里自己填的，.set 是某个字重自己填的（蓝色） */
+/* Class/weight table fields: borderless by default, underlined on hover, black outline on focus. .cell-num is right-aligned monospaced text.
+   Grey placeholders are derived/inherited; .own marks explicit base settings, .set marks blue per-weight overrides. */
 .cell-in{width:100%;min-width:0;padding:5px 4px 4px;border:0;border-bottom:1px solid transparent;border-radius:0;background-color:transparent;font-size:var(--fs-m);color:var(--ink)}
 .cell-in:hover{border-bottom-color:var(--line)}
 .cell-in:focus{border-bottom-color:var(--ink);outline:none;background-color:var(--sheet)}
@@ -139,7 +139,7 @@ select{-webkit-appearance:none;appearance:none;padding-right:30px;background-ima
 .cell-num[type=number]{appearance:textfield}
 .cell-num[type=number]::-webkit-inner-spin-button,.cell-num[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
 select.cell-in{padding-right:18px;background-position:right 3px center;background-size:10px 10px}
-/* 共用步进格：箭头在悬停 / 聚焦时出现，触屏常显；固定留白让数字与表头始终对齐。 */
+/* Shared cell stepper: arrows appear on hover/focus and stay visible on touch. A fixed gutter keeps numbers aligned with headers. */
 :root{--cell-step-w:20px}
 .cell-step{display:grid;grid-template-columns:minmax(0,1fr) var(--cell-step-w);align-items:center;width:100%;min-width:0}
 .cell-step select.cell-in{background-image:none;padding-right:var(--sp-1)}
@@ -151,7 +151,7 @@ select.cell-in{padding-right:18px;background-position:right 3px center;backgroun
 @media(hover:none){.cell-step-actions{opacity:1}}
 .cell-in.own{font-weight:500}
 .cell-in.set{color:var(--accent);font-weight:500}
-/* 颜色字段：原生色板配十六进制输入，沿用普通字段的边框与聚焦方式。 */
+/* Color field: native color well plus hex input, sharing normal field borders and focus behavior. */
 .color-field{display:inline-flex;align-items:center;gap:var(--sp-1);height:var(--ctl-h);padding:0 var(--sp-1);border:1px solid var(--line);border-radius:var(--r);background:var(--sheet);min-width:0}
 .color-field:hover{border-color:var(--faint)}
 .color-field:focus-within{outline:2px solid var(--accent);outline-offset:2px}
@@ -161,9 +161,9 @@ select.cell-in{padding-right:18px;background-position:right 3px center;backgroun
 .color-field input[type=color]::-moz-color-swatch{border:1px solid var(--line);border-radius:var(--r-s)}
 .color-field input[type=text]{width:8ch;padding:0;border:0;border-radius:0;background:none;font-size:var(--fs-s)}
 .color-field input:focus{outline:none}
-select.cell-in[data-auto]:not(.set){color:var(--faint)}      /* 下拉框里推算的值：和输入框的占位文字一样是灰色 */
+select.cell-in[data-auto]:not(.set){color:var(--faint)}      /* Derived select values use the same grey as input placeholders. */
 select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
-/* 浮层：菜单、说明、分组开关共用一个外观。.menu 是一列菜单项（.mm-item）；.mm-radio / .mm-check 选中时前面打勾 */
+/* Shared popover surface for menus, info and group toggles. .menu stacks .mm-item rows; .mm-radio / .mm-check display selection checks. */
 .pop{position:fixed;inset:auto;margin:0;border:1px solid var(--ink);border-radius:var(--r);background:var(--sheet);color:var(--ink);box-shadow:var(--shadow-pop)}
 .menu{padding:6px;width:min(260px,calc(100vw - 24px))}
 .menu:popover-open{display:grid;gap:2px}
@@ -176,27 +176,37 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 .mm-radio[aria-checked="true"]::before,.mm-check[aria-pressed="true"]::before{opacity:1}
 .mm-radio[aria-checked="true"]{font-weight:600}
 .mm-note{margin:2px 10px 6px;font-size:var(--fs-s);line-height:1.55;color:var(--muted)}
-.settings-block{display:grid;gap:var(--sp-2);margin:0;padding:var(--sp-2) 10px;border:0;min-width:0}
-.settings-row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);font-size:var(--fs-m)}
-.settings-row select{max-width:65%;font-size:var(--fs-s)}
-.settings-actions{display:flex;justify-content:flex-end}
+/* Separate settings popovers from command menus. The shell owns outer spacing; groups, rows and notes must not stack independent margins. */
+.settings-pop{--settings-width:300px;width:min(var(--settings-width),calc(100vw - 24px));padding:var(--sp-2);max-height:calc(100dvh - 16px);overflow-y:auto;overscroll-behavior:contain}
+.settings-pop:popover-open{display:grid;gap:0}
+.settings-pop>hr{width:100%;border:0;border-top:1px solid var(--rule);margin:var(--sp-2) 0}
+.settings-group{display:grid;gap:var(--sp-1);margin:0;padding:0;border:0;min-width:0}
+.settings-pop .mm-item{min-height:var(--ctl-h);padding:var(--sp-1) var(--sp-2);gap:var(--sp-2);line-height:1.5}
+.settings-pop :is(.mm-radio,.mm-check)::before{order:1;margin-left:auto}
+.settings-label,.settings-note{margin:0;padding:0 var(--sp-2);color:var(--muted);line-height:1.5}
+.settings-label{font-size:var(--fs-xs)}
+.settings-note{font-size:var(--fs-s)}
+.settings-row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);min-height:var(--ctl-h);padding:0 var(--sp-2);font-size:var(--fs-m)}
+.settings-row select{height:var(--ctl-h);max-width:65%;font-size:var(--fs-s)}
+.settings-fields{display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;gap:var(--sp-1) var(--sp-3);padding:0 var(--sp-2)}
+.settings-fields select{height:var(--ctl-h);font-size:var(--fs-s);padding-top:var(--sp-1);padding-bottom:var(--sp-1)}
+.settings-actions{display:flex;justify-content:flex-end;align-items:center;min-height:var(--ctl-h);padding:0 var(--sp-2)}
 .settings-actions .btn-text:disabled{color:var(--faint);cursor:default}
-.more-menu{width:min(300px,calc(100vw - 24px));max-height:calc(100dvh - 68px);overflow-y:auto;overscroll-behavior:contain}
-/* 小节标题：左边等宽小标题（.label），右边是这一节的操作 */
+/* Section header: monospaced label on the left, section actions on the right. */
 .sec-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--sp-2) var(--sp-3);margin:var(--sp-6) 0 var(--sp-2)}
-/* 层级靠字号、字重和留白，不靠分隔线：小节标题（.sec-title）> 条目名（.typo-name）> 表头、说明（等宽小字 .label、灰字） */
+/* Use type size, weight and spacing for hierarchy, not dividers: .sec-title > .typo-name > monospaced labels and muted notes. */
 .sec-title{margin:0;font-size:var(--fs-xl);font-weight:600;color:var(--ink);line-height:1.3;letter-spacing:-.01em}
 .sec-acts{display:inline-flex;align-items:center;gap:var(--sp-2) var(--sp-3)}
-/* 小对话框（保存预设等）：标题、说明、字段，按钮在右下角，主按钮在最右 */
+/* Small dialogs such as Save preset: title, description and fields, with actions bottom-right and the primary action last. */
 .dlg-form{display:grid;gap:var(--sp-4);padding:22px 24px 20px}
 .dlg-form h2{margin:0;font-size:var(--fs-xl);font-weight:600}
 .dlg-form p{margin:0;font-size:var(--fs-m);line-height:1.6;color:var(--ink-2)}
 .dlg-form .field input{width:100%}
 .dlg-act{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:10px;padding-top:var(--sp-1)}
-/* 黄色提示：字体、浏览器、设定之间有冲突时（后面几个是代码里切换 .warn / .caution 的旧元素） */
+/* Yellow notices for font/browser/setting conflicts; remaining selectors are legacy elements toggling .warn / .caution. */
 .callout,.w-hint.warn,.typo-note.warn,#pkStatus.caution,#lfMsg.caution{margin:0;font-size:var(--fs-s);line-height:1.55;color:var(--caution);background:var(--caution-bg);padding:6px 10px;border-radius:var(--r)}
 :root{--slider-thumb-size:12px;--slider-track-size:2px;--slider-half:calc(var(--slider-thumb-size)/2)}
-/* 所有滑杆共用中性色、圆形滑块与聚焦环。原生滑块中心不到输入框边缘，轨道也要缩进半个滑块。 */
+/* All sliders share neutral colors, circular thumbs and focus rings. Native thumb centers are inset from field edges, so rails need half-thumb insets too. */
 input[type=range]{-webkit-appearance:none;appearance:none;background:transparent;height:20px;width:100%;min-width:0;cursor:pointer}
 input[type=range]::-webkit-slider-runnable-track{height:var(--slider-track-size);background:linear-gradient(to right,transparent var(--slider-half),var(--line) var(--slider-half) calc(100% - var(--slider-half)),transparent calc(100% - var(--slider-half)))}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:var(--slider-thumb-size);height:var(--slider-thumb-size);border-radius:var(--r-pill);background:var(--ink);margin-top:calc((var(--slider-track-size) - var(--slider-thumb-size))/2);border:0}
@@ -207,7 +217,7 @@ input[type=range]:hover::-moz-range-thumb,input[type=range]:active::-moz-range-t
 input[type=range]:focus-visible{outline:none}
 input[type=range]:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 2px var(--sheet),0 0 0 3px var(--ink)}
 input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--sheet),0 0 0 3px var(--ink)}
-/* 数字框展开的紧凑滑杆；节点、轨道端点和滑块中心共用同一份留白。 */
+/* Compact slider opened from a numeric field; ticks, rail endpoints and thumb centers share the same inset. */
 .range-pop{width:288px;max-width:calc(100vw - 16px);padding:var(--sp-3) var(--sp-4)}
 .range-pop input[type=range]{display:block;margin:0;height:28px}
 .range-pop input[type=range]:disabled{cursor:default;opacity:.5}
@@ -216,7 +226,7 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--she
 .range-ticks>*::before{content:"";position:absolute;top:-12px;left:50%;height:4px;width:1px;background:var(--muted);pointer-events:none}
 .range-ticks .btn-text{min-width:32px;font:inherit}
 .range-ticks .cur{color:var(--ink);font-weight:600}
-/* 纵向双端范围：与表格行对齐；保留完整滑轨，范围外仍能看见可选的端点。 */
+/* Vertical dual-ended range aligned with table rows; retain the full rail so endpoints outside the selected range remain visible. */
 .range-vertical{position:relative;min-height:0;touch-action:none;cursor:pointer;--range-start:0%;--range-end:100%}
 .range-rail,.range-fill{position:absolute;left:50%;width:var(--slider-track-size);transform:translateX(-50%);border-radius:var(--r-pill);pointer-events:none}
 .range-rail{inset-block:0;background:var(--line)}
@@ -233,15 +243,15 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--she
 .range-vertical[data-tight="true"] .range-thumb[data-end="1"]{left:calc(50% + 7px)}
 
 /* ---------- top bar ---------- */
-/* 标题用正在调的复合字体排：改了设定马上看得到 */
+/* Render the title with the live composite font so setting changes are visible immediately. */
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:16px;min-height:52px;padding:0 16px;border-bottom:1px solid var(--ink);background:var(--bg)}
-.brand{margin:-.25em 0;padding:.25em 0;min-width:0;font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-size:21px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}      /* 省略号要 overflow:hidden；上下留出空间，西文的降部（p、g）不被裁掉 */
+.brand{margin:-.25em 0;padding:.25em 0;min-width:0;font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-size:21px;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}      /* Ellipsis requires overflow:hidden; leave vertical room for Western descenders such as p and g. */
 .top-right{display:flex;align-items:center;gap:var(--sp-2);flex:none}
-/* 字体文件在后台生成时：按钮底边是进度条；生成好了、对话框关着时，右上角一个小点 */
-/* 语言：选中的那一项前面打勾；没选的留出同样的位置，文字才对齐 */
+/* During background baking, show progress on the button's bottom edge; show a top-right status dot when done with the dialog closed. */
+/* Selected languages show a check; other rows reserve the same marker space to keep labels aligned. */
 .ex-toggle{position:relative;overflow:hidden}
 .ex-toggle.running::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:var(--pct,0%);background:var(--accent);transition:width .3s}
-.ex-toggle.running:hover::after{background:var(--accent-ink)}      /* 悬停时按钮变成强调色，进度条换成反色 */
+.ex-toggle.running:hover::after{background:var(--accent-ink)}      /* When hover changes the button to accent, invert the progress-bar color. */
 .ex-toggle.ready{overflow:visible}
 .ex-toggle.ready::before{content:"";position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
 .gh{font-family:var(--mono);font-size:var(--fs-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--ink);text-decoration:none;padding-bottom:1px;border-bottom:1px solid var(--faint)}
@@ -250,26 +260,26 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--she
 .warn{background:var(--warn);color:#fff;padding:8px 16px;font-size:var(--fs-m)}
 .warn code{font-family:var(--mono)}
 
-/* ---------- presets（左栏的第一个页签）---------- */
+/* ---------- Presets: first left-pane tab ---------- */
 .presets{padding-top:4px}
 .sec-head.preset-head{margin:var(--sp-4) 0 var(--sp-3)}
 .preset-list{display:contents}
 .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
-.pcard-wrap{position:relative;display:grid;grid-template-columns:minmax(0,1fr)}      /* 卡片宽度只由外层网格决定，不被里面的字样撑开 */
+.pcard-wrap{position:relative;display:grid;grid-template-columns:minmax(0,1fr)}      /* The outer grid alone determines card width; specimen text must not widen it. */
 .pcard-wrap[hidden]{display:none}
 .preset-acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 20px}
 .pcard{display:grid;gap:6px;align-content:start;min-width:0;container-type:inline-size;text-align:left;padding:14px 14px 13px;border:1px solid var(--line);background:var(--sheet);border-radius:var(--r);color:inherit}
 .pcard:hover{border-color:var(--faint)}
 .pcard[aria-pressed="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
-/* 当前配置是编辑中的内容，不是可套用的模板；保存动作固定在卡片底部。 */
+/* Current setup is work in progress, not an applicable template; anchor save actions at the card bottom. */
 .pcurrent{background:var(--bg);grid-template-rows:auto auto 1fr auto}
 .pcurrent:hover{border-color:var(--line)}
 .pcurrent .pspec{font-family:var(--cf),var(--generic);font-weight:var(--fw,400)}
 .current-actions{display:grid;gap:var(--sp-1);align-self:end}
 .current-actions .btn{width:100%}
 
-/* 缩略字样：固定行高，各卡片的基线和下面的文字位置一致；只裁横向，g 的下伸部分不会被切掉 */
-/* 字号跟着卡片宽度缩：放不下时缩小，而不是把卡片撑宽 */
+/* Fixed specimen line height keeps baselines and labels aligned across cards. Clip horizontally only so g descenders remain visible. */
+/* Scale specimens down with card width instead of letting them expand cards. */
 .pspec{display:block;min-width:0;height:58px;font-size:min(46px,27cqi);line-height:58px;white-space:nowrap;overflow-x:clip;overflow-y:visible;margin-bottom:8px;font-feature-settings:normal}
 .ptag{font-family:var(--mono);font-size:var(--fs-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .pname{font-size:var(--fs-l);font-weight:600;line-height:1.3;min-width:0;overflow-wrap:anywhere}
@@ -284,29 +294,29 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--she
 .pf-end{display:flex;align-items:center;gap:var(--sp-2);padding-right:10px;font-size:var(--fs-s);color:var(--muted)}
 .pf-end .mm-item{flex:1;width:auto}
 .pf-end .mono{white-space:nowrap}
-.pf-menu .mm-item{padding-top:6px;padding-bottom:6px}      /* 三组选项，比普通菜单紧一点 */
+.pf-menu .mm-item{padding-top:6px;padding-bottom:6px}      /* Three filter groups, denser than a standard menu. */
 #pfBtn .badge{margin-left:-2px}
 .pf-none{grid-column:1/-1;margin:var(--sp-4) 0;font-size:var(--fs-m);color:var(--muted)}
 @media (max-width:480px){.pgrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}.pspec{font-size:min(36px,27cqi);height:46px;line-height:46px}}
 
 /* ---------- bench ---------- */
-/* 工作区占满顶栏下面的空间：左窗格编辑、右窗格校样和参考图，中间细线隔开。
-   每个窗格顶上一条一样高的工具条，底线连成一条；所有控件都用同一套扁平样子 */
-.bench{position:relative;display:grid;grid-template-columns:var(--left-w,minmax(400px,520px)) 0 minmax(0,1fr);min-height:0;background:var(--sheet)}      /* 中间 0 宽的一列是分界线，--left-w 是拖动后的宽度 */
-.bench>*{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain}      /* 每栏自己滚动，滚到底也不带动别的 */
+/* Fill the space below the top bar with editor, proof and specimen panes separated by a thin divider.
+   Pane toolbars share height and a continuous bottom rule; controls use the same flat styling. */
+.bench{position:relative;display:grid;grid-template-columns:var(--left-w,minmax(400px,520px)) 0 minmax(0,1fr);min-height:0;background:var(--sheet)}      /* A zero-width middle column holds the divider; --left-w stores the dragged pane width. */
+.bench>*{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain}      /* Panes scroll independently without chaining at their edges. */
 .compose{--px:16px;padding:0 var(--px) 20px;border-right:1px solid var(--line)}
-/* 分界线：看不见的 9px 拖动区，悬停、拖动、键盘聚焦时显示一条线 */
+/* Invisible 9px divider hit area; show its line on hover, drag or keyboard focus. */
 .bench>.split{position:relative;z-index:3;overflow:visible;cursor:col-resize;touch-action:none;outline:none}
 .split::before{content:"";position:absolute;inset:0 -5px 0 -4px}
 .split::after{content:"";position:absolute;top:0;bottom:0;left:-2px;width:3px;background:transparent;transition:background .12s}
 .split:hover::after,.split:focus-visible::after,.splitting .split::after,.hsplitting .hsplit::after{background:var(--accent)}
 .splitting,.splitting *{cursor:col-resize!important;user-select:none}
-/* 参考图上边的分界线：上下拖动调高度 */
+/* Drag the divider above the specimen vertically to resize it. */
 .hsplit{position:absolute;left:0;right:0;top:0;height:0;z-index:3;cursor:row-resize;touch-action:none;outline:none}
 .hsplit::before{inset:-5px 0 -4px}
 .hsplit::after{left:0;right:0;top:-2px;bottom:auto;width:auto;height:3px}
 .hsplitting,.hsplitting *{cursor:row-resize!important;user-select:none}
-/* 窄屏：一次只显示一栏，底部页签切换 */
+/* Narrow screens show one pane, selected with bottom tabs. */
 .mtabs{display:none}
 @media (max-width:1000px){
   .bench{grid-template-columns:minmax(0,1fr)}
@@ -321,14 +331,14 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--she
 }
 @media (max-width:640px){.topbar{gap:10px;padding:0 12px}.brand{font-size:18px}}
 .mm-about{display:none}
-@media (max-width:480px){.topbar .btn{padding-inline:var(--sp-3)}.brand{font-size:18px}#aboutBtn{display:none}.mm-about{display:flex}}      /* 手机：语言只写一个字，给标题留地方 */
-/* 窗格顶上的工具条：一样高 */
+@media (max-width:480px){.topbar .btn{padding-inline:var(--sp-3)}.brand{font-size:18px}#aboutBtn{display:none}.mm-about{display:flex}}      /* On phones, shorten language labels to leave room for the title. */
+/* Pane toolbars share the same height. */
 .bench{--bar-h:54px}
-@media (max-width:560px){.compose{--px:8px}}      /* 手机上表格本来就挤：窗格左右留白减半 */
-/* 表头「字体」旁的魔法棒：一键匹配西文大小、字重和基线。表头是等宽小字，按钮用正常的界面字 */
-.wand{color:var(--ink)}      /* 外观见 .btn-ghost；下面是调整中、完成的样子 */
+@media (max-width:560px){.compose{--px:8px}}      /* Halve horizontal pane padding on phones to make room for dense tables. */
+/* Auto-fit wand beside the font header; the header is small monospaced text, while the action uses regular UI text. */
+.wand{color:var(--ink)}      /* Base appearance comes from .btn-ghost; these styles cover adjustment and completion states. */
 .wand:disabled{opacity:1;cursor:progress}
-/* 调整中：魔法棒换成转圈，文字显示进度；完成后短暂显示绿色对勾 */
+/* While fitting, replace the wand with a spinner and show progress; briefly show a green check when complete. */
 .wand .spin,.wand .ok-mark{display:none}
 .wand[aria-busy="true"]{color:var(--accent)}
 .wand[aria-busy="true"] svg,.wand.done svg{display:none}
@@ -339,17 +349,17 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--she
 @keyframes wandspin{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.wand[aria-busy="true"] .spin{animation-duration:2.4s}}
 
-/* 类别名短、字体名长：类别列固定为最长类别名（加齿轮）的宽度，其余都给字体列；类别下的小字说明可以折行 */
+/* Size the class column for its longest name plus gear; give remaining width to font names and allow class descriptions to wrap. */
 .ct-row{--name-w:108px;display:grid;grid-template-columns:28px var(--name-w) minmax(0,1fr) 72px 72px 14px;gap:8px;align-items:center;padding:6px 0;border-bottom:1px solid var(--rule);--c:var(--c-custom)}
 .ct-head{font-family:var(--mono);font-size:var(--fs-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:14px 0 8px;border-bottom:1px solid var(--line)}
 .ct-head .r{text-align:right;padding-right:var(--sp-1)}
-.ct-head .r.lab-i{display:flex;justify-content:flex-end;gap:4px;white-space:nowrap}      /* 放不下时往左边空着的表头里伸 */
+.ct-head .r.lab-i{display:flex;justify-content:flex-end;gap:4px;white-space:nowrap}      /* Allow overflow into the empty header space on the left. */
 :root:lang(ja) .ct-row{--name-w:126px}
 :root:lang(en) .ct-row{--name-w:122px}
-:root:lang(en) .ct-name .nm{white-space:normal}      /* 英文类别名长：允许折行，齿轮跟在后面 */
+:root:lang(en) .ct-name .nm{white-space:normal}      /* Long English class names may wrap, with the gear following them. */
 :root:lang(en) .ct-head{letter-spacing:.04em}
-.ct-row[data-id="punct"] .ct-glyph,.ct-row[data-id="shared"] .ct-glyph{font-feature-settings:"halt"}      /* 全角标点挤成半角，两个字样才放得进格子 */
-.ct-glyph{font-family:var(--cf),var(--generic);font-size:22px;line-height:1.3;white-space:nowrap;overflow:visible;text-align:center}      /* 不裁切：g 的下伸、放大后的西文都要完整显示（左右可以伸进旁边的间隙）*/
+.ct-row[data-id="punct"] .ct-glyph,.ct-row[data-id="shared"] .ct-glyph{font-feature-settings:"halt"}      /* Narrow full-width punctuation so two specimen marks fit in one cell. */
+.ct-glyph{font-family:var(--cf),var(--generic);font-size:22px;line-height:1.3;white-space:nowrap;overflow:visible;text-align:center}      /* Do not clip descenders or enlarged Western specimens; allow overflow into neighboring gaps. */
 .ct-name{display:grid;gap:1px;min-width:0;line-height:1.25}
 .ct-name .nm{font-size:var(--fs-m);font-weight:500;display:flex;align-items:center;gap:6px;white-space:nowrap}
 .ct-name small{font-size:var(--fs-xs);color:var(--muted);line-height:1.35}
@@ -360,13 +370,13 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--she
 .ct-font-meta{padding:0 var(--sp-1);line-height:1.4;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
 .ct-font-meta:not([hidden]){display:flex;flex-wrap:wrap;column-gap:var(--sp-1)}
 .ct-font-range{white-space:nowrap}
-.fsel{flex:1}      /* 外观见 .cell-in。注意只能换 background-color：background 简写会把箭头图也清掉 */
+.fsel{flex:1}      /* Appearance comes from .cell-in. Change background-color only; background shorthand would remove the select arrow. */
 .fsel.follow{color:var(--muted)}
 .status{position:relative;flex:none;width:6px;height:6px;border-radius:50%;background:var(--faint);cursor:help}
-/* 扩大状态点的悬停范围，视觉大小与字体名的对齐保持不变。 */
+/* Expand status-dot hover targets without moving the visible dot or font-name alignment. */
 .status::after{content:"";position:absolute;inset:-9px -3px}
 .status:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
-/* 字体加载状态：只在加载中（闪烁）和失败（红）时出现；加载好、或跟随别的类别时不占位置，把宽度留给字体名 */
+/* Show status dots only while loading (pulsing) or failed (red); loaded/followed fonts free that space for their names. */
 .status.ok{display:none}
 .status.error{background:var(--warn)}
 .status.loading{animation:pulse 1s ease-in-out infinite}
@@ -402,7 +412,7 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--she
 .tip{position:fixed;inset:auto;margin:0;padding:5px 9px;white-space:pre-line;border:0;border-radius:var(--r);background:var(--ink);color:var(--sheet);font:var(--fs-s)/1.45 var(--ui);max-width:min(280px,calc(100vw - 8px));pointer-events:none;box-shadow:0 6px 16px -6px rgba(0,0,0,.35);animation:tipin .12s ease-out}
 @keyframes tipin{from{opacity:0;transform:translateY(-2px)}}
 @media (prefers-reduced-motion:reduce){.tip{animation:none}}
-.info-pop .ip-tech{margin-top:var(--sp-3);padding:var(--sp-2) var(--sp-3) var(--sp-3);background:var(--bg);border-radius:var(--r)}      /* 技术细节：用底色和正文分开，不画线 */
+.info-pop .ip-tech{margin-top:var(--sp-3);padding:var(--sp-2) var(--sp-3) var(--sp-3);background:var(--bg);border-radius:var(--r)}      /* Separate technical details with a background tint, not rules. */
 .info-pop .ip-head{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-2);margin:0}
 .info-pop .ip-head code{font-family:var(--mono);font-size:var(--fs-s);font-weight:600;color:var(--ink);background:none;padding:0}
 .info-pop .ip-head span{font-size:var(--fs-xs);color:var(--muted)}
@@ -420,12 +430,12 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--she
 .info-pop dl{margin:10px 0 0;display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 12px}
 .info-pop dt{font-weight:600;color:var(--ink);white-space:nowrap}
 .info-pop dd{margin:0}
-.info-pop dl.stack{grid-template-columns:minmax(0,1fr);gap:2px}      /* 选项名很长时：名称在上，说明在下 */
+.info-pop dl.stack{grid-template-columns:minmax(0,1fr);gap:2px}      /* For long option names, stack name above description. */
 .info-pop dl.stack dt{white-space:normal}
 .info-pop dl.stack dd+dt{margin-top:8px}
 .info-pop dl+p{margin-top:10px}
 .info-pop code,.info-pop .mono{font-family:var(--mono);font-size:.92em}
-/* 表格最后一行「+ 添加例外字符」：整行都能点，加号对齐字样那一列 */
+/* The final Add custom characters row is fully clickable; align its add icon with specimen glyphs. */
 .ct-add-row{display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--rule)}
 .ct-add{flex:1;display:flex;align-items:center;gap:8px;min-height:44px;padding:0;border:0;background:none;font-size:var(--fs-m);color:var(--muted);text-align:left}
 .ct-add .plus{width:28px;display:grid;place-items:center}
@@ -434,47 +444,47 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--she
 
 /* ---------- tester ---------- */
 .tester{min-width:0}
-/* 左窗格的工具条：「字体 / 排版」两个页签，和右边的示例页签同一个样子 */
+/* Left-pane Fonts / Text layout tabs match the right-pane sample tabs. */
 .pane-bar{display:flex;align-items:stretch;gap:22px;min-height:var(--bar-h);margin:0 calc(0px - var(--px));padding:0 var(--px);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;background:var(--sheet)}
 .pane-bar [role="tab"]{display:inline-flex;align-items:center;gap:6px;border:0;background:none;padding:2px 0 0;font-size:var(--fs-l);color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
 .pane-bar [role="tab"]:hover{color:var(--ink)}
 .pane-bar [role="tab"][aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--ink)}
-.badge{display:inline-grid;place-items:center;min-width:16px;height:16px;padding:0 4px;border-radius:var(--r-pill);background:var(--accent);color:var(--sheet);font-size:var(--fs-xs);font-weight:500;font-family:var(--mono)}      /* 排版改了几项 */
+.badge{display:inline-grid;place-items:center;min-width:16px;height:16px;padding:0 4px;border-radius:var(--r-pill);background:var(--accent);color:var(--sheet);font-size:var(--fs-xs);font-weight:500;font-family:var(--mono)}      /* Count modified text-layout settings. */
 .badge:empty{display:none}
 .pane-bar .busy{align-self:center;margin-left:auto;flex:none}
-/* 撤销 / 重做：页签那一排的右端。不能用时变淡，但照样有提示 */
+/* Undo / redo at the tab row's right edge; dim unavailable actions while retaining tooltips. */
 .pane-bar .hist{display:flex;align-self:center;gap:2px;margin-right:-6px}
-/* 页签的下划线要压在分隔线上：整排往下挪 1px，而不是让按钮超出容器（那样会出现 1px 的垂直滚动） */
+/* Overlap tab underlines with the divider by shifting the entire row down 1px. Overflowing buttons instead would create a 1px vertical scroll range. */
 .sample-tabs{display:flex;gap:16px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none;min-width:0;margin-bottom:-1px}
 .sample-tabs::-webkit-scrollbar{display:none}
 .sample-tabs button{border:0;background:none;padding:14px 0 11px;font-size:var(--fs-m);color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
 .sample-tabs button:hover{color:var(--ink)}
 .sample-tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
-/* 自定义页签：名字后面跟一个小 ×；没有自定义时最右边是「+ 自定义」 */
+/* Custom tabs have a small trailing delete button; without custom tabs, the trailing action adds one. */
 .sample-tabs .ctab{display:inline-flex;align-items:center;gap:2px;flex:none}
 .sample-tabs .ctab-x{border:0;padding:14px 2px 11px;font-size:var(--fs-l);line-height:1;color:var(--faint);border-bottom:2px solid transparent}
 .sample-tabs .ctab-x:hover{color:var(--warn)}
-.sample-tabs .tab-add{color:var(--muted);font-size:18px;line-height:1;min-width:32px;padding:11px 8px 9px;text-align:center}      /* 「+」本身很小：把可点的范围放大 */
+.sample-tabs .tab-add{color:var(--muted);font-size:18px;line-height:1;min-width:32px;padding:11px 8px 9px;text-align:center}      /* Expand the small add icon's clickable area. */
 .sample-tabs .tab-add:hover{color:var(--ink)}
 .busy{font-size:var(--fs-xs);color:var(--muted);pointer-events:none;font-family:var(--mono)}
 .sample-box{display:grid;gap:6px}
 textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);border:1px solid var(--ink);border-radius:var(--r);padding:12px 14px;font-family:var(--ui);font-size:var(--fs-l);line-height:1.7}
 .sheet{--pad:clamp(22px,4.6vw,68px);background:var(--proof-bg,var(--sheet));padding:0 var(--pad) var(--pad);min-width:0;display:grid;gap:14px}
-/* 校样的工具条：贴着白纸顶边通栏，一行。左边示例页签（放不下时横向滚动），右边字号、行高、「显示」；长文往下滚时停在窗口顶上 */
+/* One proof toolbar spans the sheet's top: horizontally scrollable samples on the left, size/line height/View on the right. Keep it visible while long text scrolls. */
 .sheet-bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:8px;line-height:1.4;font-family:var(--ui);min-height:var(--bar-h);margin:0 calc(0px - var(--pad)) calc(var(--pad) - 14px);padding:0 10px 0 16px;background:var(--sheet);border-bottom:1px solid var(--line)}
 .sheet-bar .sample-tabs{flex:1 1 auto;align-self:stretch;gap:12px;margin-bottom:-1px}
 .sheet-bar .sample-tabs button{display:inline-flex;align-items:center;justify-content:center;padding-top:2px;padding-bottom:0}
 .sheet-bar .sample-tabs .ctab{align-items:stretch}
 .bar-ctrl{display:flex;align-items:center;gap:4px;flex:none}
 .sample-tabs.fade-l{-webkit-mask-image:linear-gradient(to right,transparent,#000 36px);mask-image:linear-gradient(to right,transparent,#000 36px)}
-/* 「+」总是贴在页签区右端看得见；后面还有页签时，它左边淡出一段盖住被截断的页签 */
-.sheet-bar .sample-tabs .tab-add{position:sticky;right:0;flex:none;background:linear-gradient(var(--sheet),var(--sheet)) top/100% calc(100% - 1px) no-repeat}      /* 底下 1px 留空：不盖住工具条的底线 */
+/* Keep Add visible at the tab area's right edge, fading clipped tabs behind it when more remain. */
+.sheet-bar .sample-tabs .tab-add{position:sticky;right:0;flex:none;background:linear-gradient(var(--sheet),var(--sheet)) top/100% calc(100% - 1px) no-repeat}      /* Leave the bottom 1px clear so the toolbar rule remains visible. */
 .sheet-bar .sample-tabs .tab-add::before{content:"";position:absolute;top:0;bottom:1px;right:100%;width:28px;background:linear-gradient(to right,transparent,var(--sheet));pointer-events:none;opacity:0}
 .sheet-bar .sample-tabs.fade-r .tab-add::before{opacity:1}
-/* 工具条里的「显示」：文字与小箭头，沿用无边框胶囊按钮；前面的竖线分隔数字控件 */
+/* View uses text and a chevron in a borderless pill; a preceding vertical separator divides numeric controls. */
 .bar-sep{width:1px;height:18px;background:var(--line);margin:0 2px}
 .bar-ctrl .view-btn::after{margin-left:2px}
-/* 紧凑的数字框：图标 + 数字 + 单位；图标可以左右拖动 */
+/* Compact numeric control: icon + number + unit; scrub the icon horizontally. */
 .nf{display:inline-flex;align-items:center;height:var(--ctl-h);padding:0 6px 0 0;border:1px solid transparent;border-radius:var(--r);font-family:var(--mono);font-size:var(--fs-s);color:var(--muted);white-space:nowrap}
 .nf:hover{border-color:var(--line)}
 .nf:focus-within{border-color:var(--ink)}
@@ -488,16 +498,16 @@ textarea{width:100%;min-height:110px;resize:vertical;background:var(--sheet);bor
 .nf .unit{margin-left:2px;color:var(--faint);font-variant-numeric:tabular-nums}
 .nf output.unit::before{content:"· ";white-space:pre}
 body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
-/* 窄屏：页签单独一行在上，数字框和「显示」在下 */
+/* On narrow screens, put sample tabs above numeric fields and View. */
 @media (max-width:620px){.sheet-bar{flex-wrap:wrap;padding:0 8px 4px 12px;gap:0 8px}.sheet-bar .sample-tabs{flex-basis:100%;min-height:44px;border-bottom:1px solid var(--line);margin:0 -8px 4px -12px;padding:0 0 0 12px}.bar-ctrl{flex:1}.bar-sep{margin-left:auto}}
 .sheet>div{min-width:0}
-/* 文字四周的留白一样宽：横排时去掉第一行上面、最后一行下面的半行距（行高多出来的部分），让上下留白量到字面，和左右一致 */
+/* Equal whitespace around the proof: remove leading/trailing half-leading in horizontal text so vertical padding is measured to glyph ink, matching side padding. */
 .sheet:not(.vertical) .proof-text{margin-bottom:calc((1 - var(--lh,1.8)) * var(--fs,40px) / 2)}
 .sheet:not(.vertical) .proof-text{margin-top:calc((1 - var(--lh,1.8)) * var(--fs,40px) / 2)}
 .proof-text{color:var(--proof-ink,var(--ink));font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:var(--fst,normal);font-size:var(--fs,40px);line-height:var(--lh,1.8);white-space:pre-wrap;overflow-wrap:break-word;margin:0}
-/* 行线：每一行的行框（高 = 字号 × 行高）。某一行被撑高时，下面的字就会和线错开 */
+/* Guides mark line boxes (font size x line height). If one line grows taller, following glyphs no longer align with the guides. */
 .sheet.rules .proof-text{background-image:linear-gradient(to bottom,var(--ruled) 1px,transparent 1px);background-size:100% calc(1em * var(--lh,1.8));box-shadow:inset 0 -1px var(--ruled)}
-/* 竖排：校样占满参考图上面的整块高度，列多了横向滚动；窗口太矮时最少 240px，整栏再竖向滚动 */
+/* Vertical proof fills the height above the specimen and scrolls horizontally for extra columns. Keep at least 240px on short screens, allowing the pane to scroll vertically. */
 .sheet.vertical .proof-text{writing-mode:vertical-rl;width:100%;height:100%;min-height:240px;overflow-x:auto;overflow-y:hidden}
 .proof-scroll:has(>.sheet.vertical){display:flex;flex-direction:column}
 .proof-scroll>.sheet.vertical{flex:1 1 auto;display:flex;flex-direction:column}
@@ -505,7 +515,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .sheet.vertical>div:last-child{flex:1 1 0;min-height:240px;display:grid}
 .sheet.rules.vertical .proof-text{background-image:linear-gradient(to left,var(--ruled) 1px,transparent 1px);background-size:calc(1em * var(--lh,1.8)) 100%;background-position:right top;background-attachment:local;box-shadow:none}
 .r{position:relative;inset-block-start:calc(var(--sh,0) * -1em)}
-/* 类别着色（Highlight API）：底色 + 下划线；竖排时下划线自动在字的右侧 */
+/* Highlight API class colors use fill plus underline; vertical underlines appear on the glyphs' right side. */
 ::highlight(cf-latin){background-color:color-mix(in srgb,var(--c-latin) 18%,transparent);text-decoration:underline 2px color-mix(in srgb,var(--c-latin) 70%,transparent)}
 ::highlight(cf-digit){background-color:color-mix(in srgb,var(--c-digit) 18%,transparent);text-decoration:underline 2px color-mix(in srgb,var(--c-digit) 70%,transparent)}
 ::highlight(cf-kana){background-color:color-mix(in srgb,var(--c-kana) 18%,transparent);text-decoration:underline 2px color-mix(in srgb,var(--c-kana) 70%,transparent)}
@@ -520,45 +530,42 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .r[data-k="digit"]{--k:var(--c-digit)} .r[data-k="bopo"]{--k:var(--c-bopo)}
 .r[data-k="custom"]{--k:var(--c-custom)}
 .colorize .r[data-k="other"],.colorize .r[data-k="han"]{background:none;box-shadow:none}
-/* 竖排、类别着色、对照：和字号、行高一样是看校样的方式，放在同一排 */
-/* 连续字重下不生效的设定：黄色提示，整行宽 */
+/* Vertical text, class colors and comparisons are preview controls alongside size and line height. */
+/* Show settings inactive in continuous mode as a full-width yellow notice. */
 .wrange{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 .field .wrange input{width:64px;font-family:var(--mono);font-size:var(--fs-m)}
 .wr-chips{margin-left:8px}
 .chips.wr-chips button{width:auto;padding:4px 10px;white-space:nowrap}
-/* 不常用的显示选项收进「显示」菜单；按钮上显示开了几项 */
+/* Less common proof controls live in View; its button indicates the active count. */
 .view-btn{color:var(--muted)}
 .view-btn::after{content:"";display:inline-block;width:5px;height:5px;margin-left:8px;border-right:1.25px solid currentColor;border-bottom:1.25px solid currentColor;transform:translateY(-2px) rotate(45deg)}
-.view-pop{width:min(320px,calc(100vw - 24px));max-height:calc(100dvh - 16px);overflow-y:auto;overscroll-behavior:contain}      /* 说明文字是全宽的：宽度要定住，不然会被长句撑开 */
-.vt{display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;gap:6px 10px;margin-top:4px;padding:8px 10px 0;border-top:1px solid var(--rule)}      /* 三行共用列宽，下拉框对齐 */
+.view-pop{--settings-width:320px}      /* Long notes and hex fields need a slightly wider variant; reuse all other settings-popover layout rules. */
 .vt-row{display:contents;font-size:var(--fs-m)}
-.vt-row select{font-size:var(--fs-s);padding-top:4px;padding-bottom:4px}
 .vt-row:has(select:disabled)>span{color:var(--faint)}
 .vt-row select:disabled{opacity:.5;cursor:not-allowed}
-.vt-note{margin:4px 10px;font-size:var(--fs-xs);line-height:1.5;color:var(--muted)}
 .legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 14px;font-size:var(--fs-s);color:var(--muted);padding:0 16px 14px}
 .legend span{display:inline-flex;align-items:center;gap:6px}
 .legend i{width:8px;height:8px;border-radius:var(--r-s);background:var(--c)}
-/* 缺字：只加波浪下划线。一级（合成字体里的其他字体代替）黄色，二级（落到系统字体）红色 */
+/* Missing glyphs use wavy underlines only: yellow for fallback within the composite, red for system fallback. */
 ::highlight(cf-miss1){text-decoration:underline wavy 1.5px var(--miss1)}
 ::highlight(cf-miss2){text-decoration:underline wavy 1.5px var(--warn)}
-/* 缺字：鼠标停在标了波浪线的字上时弹出的说明 */
+/* Hover details for underlined missing glyphs. */
 .miss-tip{position:fixed;z-index:30;max-width:min(320px,calc(100vw - 16px));padding:7px 10px;border-radius:var(--r);background:var(--caution-bg);color:var(--caution);border:1px solid color-mix(in srgb,var(--caution) 35%,transparent);font-size:var(--fs-s);line-height:1.55;box-shadow:0 10px 24px -12px rgba(0,0,0,.35);pointer-events:none}
 .miss-tip[hidden]{display:none}
 .miss-tip.lv2{color:var(--warn);border-color:color-mix(in srgb,var(--warn) 40%,transparent)}
 
 /* ---------- metrics & advanced ---------- */
-/* 校样栏：上面校样自己滚动，下面参考图固定 */
-.tester{display:flex;flex-direction:column;overflow:hidden}      /* 窄屏上不显示这一栏时，由 .bench>.tester 的规则隐藏 */
+/* The proof scrolls above a fixed specimen below. */
+.tester{display:flex;flex-direction:column;overflow:hidden}      /* The .bench>.tester rule hides this pane when inactive on narrow screens. */
 .proof-scroll{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;background:var(--proof-bg,var(--sheet))}
 .sample-box,.legend{background:var(--sheet)}
 .panel{position:relative;flex:none;display:grid;min-width:0;border-top:1px solid var(--line)}
 .spec-wrap{min-width:0}
-/* 参考图的「显示」放在白色区域右上角，和校样纸面上的一样 */
+/* Place specimen View at the white area's top-right, matching the proof sheet. */
 .spec-wrap{position:relative}
-/* 参考图的工具条：和校样的工具条一样贴着顶边通栏。每个开关前面是那一组参考线的样子（颜色、虚实），兼作图例 */
+/* The specimen toolbar spans the top like the proof toolbar. Each guide toggle doubles as a legend with its line color and dash pattern. */
 .spec-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:2px;min-height:40px;padding:4px 10px 4px 16px;border-bottom:1px solid var(--line);line-height:1.4;font-family:var(--ui)}
-.sg-tog{gap:7px;color:var(--faint)}      /* 外观见 .btn-ghost */
+.sg-tog{gap:7px;color:var(--faint)}      /* Appearance comes from .btn-ghost. */
 .sg-tog[aria-pressed="true"]{color:var(--ink)}
 .sg-tog .sg-line{display:block;flex:none;width:16px;border-top:2px solid var(--line)}
 .sg-tog.dash .sg-line{border-top-style:dashed}
@@ -566,15 +573,15 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 @media (max-width:560px){.spec-bar{padding-left:8px}.sg-tog{padding:0 7px;gap:6px}}
 #spec{display:block;width:100%;height:160px;background:var(--proof-bg,var(--sheet))}
 
-/* 排版页签：开头一句说明这些设定不分字重 */
+/* The Text layout tab starts by explaining that its settings apply across weights. */
 .typo{min-width:0}
 .typo-head{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:14px 0 2px}
 .typo-scope{flex:1 1 220px;font-size:var(--fs-s);line-height:1.55;color:var(--muted)}
-/* 各字重：标题一行（右边是分档 / 连续），一行说明，下面是字重 × 类别的表。行和上面的类别表一样用细线隔开 */
+/* Weights: title and mode switch above a weight-by-class matrix; separate rows with thin rules like the class table. */
 .sec-head.base-head{margin-top:var(--sp-4)}
 .base-head .wand{margin:-6px -8px -6px 0}
 .w-acts{display:inline-flex;align-items:center;gap:6px}
-.wm{--wm-cols:80px 1fr;display:grid;grid-template-columns:var(--wm-cols);column-gap:8px;overflow-x:auto}      /* 各行用 subgrid 共用同一套列宽，表头和数字才对得齐 */
+.wm{--wm-cols:80px 1fr;display:grid;grid-template-columns:var(--wm-cols);column-gap:8px;overflow-x:auto}      /* Rows use subgrid to share column widths and align headers with numbers. */
 .wm-rows{display:contents}
 .wm-cont .range-vertical{grid-column:1;margin-block:17px}
 .wm-cont .wm-row[data-row]{grid-column:2/-1}
@@ -587,7 +594,7 @@ body.scrubbing,body.scrubbing *{cursor:ew-resize!important;user-select:none}
 .wm-row[data-row]:not(.cur):not(.off):hover{background:color-mix(in srgb,var(--ink) 4%,transparent)}
 .wm-row>:first-child{padding-left:8px}
 .wm-cls{min-height:0;padding:10px 0 2px;border-bottom:0;font-size:var(--fs-s);color:var(--ink)}
-.wm-cls>span{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;padding-bottom:4px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}      /* 类别名盖在它的几列上面 */
+.wm-cls>span{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;padding-bottom:4px;border-bottom:1px solid var(--line);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}      /* Class names span their respective columns. */
 .wm-cls>span:empty{border-bottom:0}
 .wm-clabel{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .wm-cls .btn-icon{flex:none}
@@ -608,24 +615,24 @@ button.wm-pw:not(:disabled):hover{text-decoration:underline;text-underline-offse
 .wm-row.cur{background:color-mix(in srgb,var(--accent) 7%,transparent);box-shadow:inset 2px 0 var(--accent)}
 .wm-row.cur .wm-pw{color:var(--accent);font-weight:600}
 .wm-c{position:relative;display:flex;align-items:center;min-width:0}
-/* 格子里的数字：和类别表的数字框一样，灰色是推算 / 沿用的值，基础设定是黑色，各字重自己填的是蓝色 */
+/* Matrix numbers match class fields: grey for derived/inherited values, black for explicit base values, blue for per-weight overrides. */
 .wm-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;padding-right:calc(var(--cell-step-w) + var(--sp-1))}
 .wm-name.guess{color:var(--caution)}
 .wm-c.swapped .cell-in{color:var(--accent);font-style:italic}
-/* 单独换字体：悬停这一行时出现在格子左边 */
+/* Per-step font replacement actions appear at the cell edge on hover. */
 .wm-act{display:flex;justify-content:center}
-.wm-more{opacity:0}      /* 行末菜单：鼠标移到这一行、或键盘移到它上面时才显示 */
+.wm-more{opacity:0}      /* Reveal row-end menus on row hover, keyboard focus or while open. */
 .wm-row:hover .wm-more,.wm-more:focus-visible,.wm-more:popover-open,.wm-more[aria-expanded="true"]{opacity:1}
 @media (hover:none){.wm-more{opacity:1}}
-/* 字体页签最后的「字体特性」：标题和例外字符一样，后面一句说明不分字重 */
+/* Font features finish the Fonts tab, using the custom-character heading pattern with an all-weights scope note. */
 #featRows{padding-top:0}
 .typo-changed{font-size:var(--fs-s);color:var(--accent);white-space:nowrap}
 .typo-reset{font-size:var(--fs-s);padding:0;white-space:nowrap}
 .typo-body{display:grid;gap:var(--sp-2);padding:0 0 var(--sp-3)}
-/* 左列较窄：名称和选项并排，浏览器支持另起一行 */
-.typo-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:var(--sp-2) var(--sp-3);align-items:center;padding:var(--sp-3) 0}      /* 条目之间只留白，不画线 */
+/* In the narrow editor, put labels beside choices and browser support below. */
+.typo-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:var(--sp-2) var(--sp-3);align-items:center;padding:var(--sp-3) 0}      /* Separate items with spacing, not rules. */
 .typo-unsup{grid-column:1/-1;margin:0;font-size:var(--fs-s);line-height:1.5;color:var(--caution)}
-/* 数字样式的字样卡片：标题在上，卡片占整行 */
+/* Numeric specimen cards span the full row beneath their heading. */
 .typo-row.tiles{grid-template-columns:minmax(0,1fr)}
 .typo-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(var(--tile-w,86px),100%),1fr));gap:6px}
 .typo-tiles button{display:grid;gap:5px;justify-items:center;align-content:start;padding:10px 6px 8px;border:1px solid var(--line);border-radius:var(--r);background:var(--sheet);color:var(--ink);text-align:center;min-width:0}
@@ -635,23 +642,23 @@ button.wm-pw:not(:disabled):hover{text-decoration:underline;text-underline-offse
 .tt-l{font-size:var(--fs-xs);line-height:1.35;color:var(--muted)}
 .tt-l small{display:block;font-size:var(--fs-xs);color:var(--faint)}
 .typo-tiles button[aria-checked="true"] .tt-l{color:var(--ink)}
-.typo-tiles button.lack .tt-s{position:relative;justify-self:stretch;color:transparent}      /* 字体里没有的特性：不显示字样，只写一句 */
+.typo-tiles button.lack .tt-s{position:relative;justify-self:stretch;color:transparent}      /* For unsupported features, omit the specimen and show a short explanation. */
 .typo-tiles button.lack .tt-s::after{content:attr(data-lack);position:absolute;inset:0;display:grid;place-items:center;font:var(--fs-xs)/1.3 var(--ui);letter-spacing:0;color:var(--faint);white-space:normal}
-.typo-tiles button.lack{border:1px dashed var(--faint)}      /* 当前字体不支持：虚线描边；选中时加粗、警告色 */
+.typo-tiles button.lack{border:1px dashed var(--faint)}      /* Unsupported features use a dashed outline; selected ones use a heavier warning outline. */
 .typo-tiles button.lack:hover{border-color:var(--muted)}
-.typo-tiles button.lack[aria-checked="true"]{border:2px dashed var(--caution);box-shadow:none;padding:9px 5px 7px}      /* 加粗的边框多占 1px，内边距相应减少，内容不跳动 */
+.typo-tiles button.lack[aria-checked="true"]{border:2px dashed var(--caution);box-shadow:none;padding:9px 5px 7px}      /* Reduce padding by 1px when the border thickens so content does not shift. */
 .tt-l code{display:block;margin-top:2px;font-family:var(--mono);font-size:var(--fs-xs);color:var(--faint);overflow-wrap:anywhere}
-/* 示意图：灰色，选中时变黑；虚线是版心边缘 */
+/* Illustrations are grey, turning black when selected; dashed lines mark text-area edges. */
 .tt-pic{line-height:0;color:var(--faint)}
 .typo-tiles button[aria-checked="true"] .tt-pic,.typo-tiles button:hover .tt-pic{color:var(--ink)}
 .tt-svg{width:58px;height:36px;fill:currentColor}
-.lm-pic .tt-svg{width:84px;height:52px}      /* 行高度量：要看出行距是不是均匀，图大一点 */
+.lm-pic .tt-svg{width:84px;height:52px}      /* Enlarge line-metric illustrations enough to judge spacing consistency. */
 .tt-svg .tt-edge{stroke:var(--accent);stroke-width:.6;stroke-dasharray:1.5 1.5;fill:none}
 .tt-svg .tt-mark{stroke:currentColor;stroke-width:1.1;fill:none}
-/* 真的排一段：窄框（4 个字宽），左边一条线是版心边缘，看行首有没有缩进 */
+/* Render actual text in a four-character-wide box, with a left text-area edge to reveal indentation. */
 .tt-box{display:block;width:4em;font-size:19px;line-height:1.35;white-space:normal;text-align:start;overflow:visible;padding-left:0;box-shadow:-1px 0 0 var(--accent);min-height:2.7em}
 .tt-box[lang="ja"]{width:5em}
-/* 禁则：4 字宽、3 行，标点和间距固定（不跟着别的设置变），只看在哪里断行 */
+/* Line-breaking samples are four characters wide and three lines high, with fixed punctuation and spacing so only break positions vary. */
 .tt-box.tt-lb{width:4em;min-height:4.05em;text-spacing-trim:space-all;text-autospace:no-autospace;font-feature-settings:normal}
 .typo-note{grid-column:1/-1;margin:2px 0 0;font-size:var(--fs-s);line-height:1.55;color:var(--muted)}
 .typo-name{display:flex;align-items:center;gap:7px;line-height:1.35}
@@ -660,18 +667,18 @@ button.wm-pw:not(:disabled):hover{text-decoration:underline;text-underline-offse
 @media (max-width:700px){.typo-row{grid-template-columns:minmax(0,1fr)}}
 
 /* ---------- export ---------- */
-/* 侧栏对话框（导出、原理与限制）：左边窄栏是标题和设置 / 目录，右边是内容；两边各自滚动。窄屏时占满屏幕，整个一起滚 */
+/* Export/About side dialogs: narrow settings/contents column on the left and content on the right, each scrolling independently. On narrow screens use one full-screen scroller. */
 .side-dlg{width:min(1200px,calc(100vw - 32px));height:calc(100dvh - 48px);max-height:none;overflow:hidden}
 .dlg-grid{position:relative;height:100%;display:grid;grid-template-columns:minmax(260px,340px) minmax(0,1fr)}
 .dlg-side{min-width:0;overflow:auto;display:grid;align-content:start;gap:16px;padding:26px 24px;border-right:1px solid var(--line);background:var(--bg);overscroll-behavior:contain}
 .dlg-side .ex-title{margin:0}
 .dlg-body{min-width:0;overflow:auto;padding:26px clamp(20px,4vw,48px) 32px;overscroll-behavior:contain}
-.dlg-body:focus{outline:none}      /* 打开时焦点在内容上：可以直接用键盘滚动 */
+.dlg-body:focus{outline:none}      /* Focus content on opening so keyboard scrolling works immediately. */
 .dlg-x{position:absolute;top:10px;right:10px;z-index:7;color:var(--muted)}
 .dlg-x .ic{width:20px;height:20px}
 @media (max-width:760px){.side-dlg{width:100vw;height:100dvh;max-width:none;border:0;border-radius:0}.dlg-grid{display:block;overflow:auto}.dlg-side,.dlg-body{overflow:visible}.dlg-side{border-right:0;border-bottom:1px solid var(--line);padding-right:52px}.dlg-x{position:fixed}}
 .ex-title{margin:0 0 18px;font-size:clamp(22px,2.4vw,28px);font-weight:500;letter-spacing:-.015em;line-height:1.15}
-/* 导出的两种：左栏里上下两张卡片，选中的描黑边（和预设卡片一样） */
+/* Export-kind cards stack in the left column; selected cards use the same black outline as presets. */
 .ex-kinds{display:grid;gap:8px}
 .ex-kinds [role="tab"]{display:grid;gap:3px;text-align:left;padding:11px 14px 12px;border:1px solid var(--line);border-radius:var(--r);background:var(--sheet);color:var(--muted)}
 .ex-kinds [role="tab"] b{font-size:var(--fs-l);font-weight:600}
@@ -679,16 +686,16 @@ button.wm-pw:not(:disabled):hover{text-decoration:underline;text-underline-offse
 .ex-kinds [role="tab"]:hover{border-color:var(--faint);color:var(--ink-2)}
 .ex-kinds [role="tab"][aria-selected="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);color:var(--ink)}
 .ex-kinds [role="tab"][aria-selected="true"] span{color:var(--muted)}
-.export[data-kind="css"] :is(.kind-font,.kind-app),.export[data-kind="font"] :is(.kind-css,.kind-app,.kind-code),.export[data-kind="app"] :is(.kind-css,.kind-font){display:none}      /* 三种导出各自的设置和结果；.kind-code 是网页和 App 共用的代码区 */
+.export[data-kind="css"] :is(.kind-font,.kind-app),.export[data-kind="font"] :is(.kind-css,.kind-app,.kind-code),.export[data-kind="app"] :is(.kind-css,.kind-font){display:none}      /* Each export kind has separate settings and output; .kind-code is shared by web and app code. */
 .ex-side .ex-fields{padding-top:16px;border-top:1px solid var(--line)}
 .ex-side .ex-fields .ex-fields{padding-top:0;border-top:0}
-/* CSS / JS 页签和「复制」：长代码往下滚时停在顶上 */
-/* 粘性定位从滚动容器的内边距以内算起：右边内容区顶上不留内边距，改由页签条自己留，滚动时上面才不会露出一条代码 */
+/* Keep CSS/JS tabs and Copy visible while long output scrolls. */
+/* Sticky offsets begin inside scroller padding. Move top padding from the content pane to its tab bar so code cannot peek above the sticky bar. */
 .dlg-body.ex-out{padding-top:0}
-.ex-out .ex-top{position:sticky;top:0;z-index:5;padding:12px 40px 0 0;background:var(--sheet)}      /* 右上角留给关闭按钮 */
+.ex-out .ex-top{position:sticky;top:0;z-index:5;padding:12px 40px 0 0;background:var(--sheet)}      /* Reserve the top-right corner for Close. */
 .ex-out .kind-font{padding-top:20px}
 .ex-out .code pre{max-height:none}
-/* 原理与限制：左栏是标题、简介和目录 */
+/* About uses the left column for title, introduction and contents. */
 .about-toc{display:grid;gap:2px;margin-top:4px;padding-top:12px;border-top:1px solid var(--line)}
 .about-toc a{font-size:var(--fs-m);line-height:1.5;color:var(--muted);text-decoration:none;padding:3px 0}
 .about-toc a:hover{color:var(--ink)}
@@ -699,18 +706,18 @@ button.wm-pw:not(:disabled):hover{text-decoration:underline;text-underline-offse
 .ex-fields .field>input[type=text],.ex-fields .field>select{width:100%}
 .ex-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 20px;border-bottom:1px solid var(--line);margin-bottom:14px}
 .ex-actions{display:flex;gap:10px;flex-wrap:wrap;padding:6px 0}
-@media (max-width:560px){.ex-actions{order:-1;flex-basis:100%}}      /* 窄屏：按钮放在标签页上面，标签页贴着分隔线 */
+@media (max-width:560px){.ex-actions{order:-1;flex-basis:100%}}      /* On narrow screens, place actions above tabs, with tabs touching the divider. */
 .field{display:grid;gap:6px}
-/* 字体和适用语言不一致的提示：紧跟在「适用语言」下面 */
+/* Show font/language mismatches directly below the export language field. */
 .field label,.field .flabel{font-size:var(--fs-s);color:var(--muted)}
 .field input{width:210px}
 .chips{display:flex;flex-wrap:wrap;gap:4px}
 .chips button{border:1px solid var(--line);background:var(--sheet);border-radius:var(--r-pill);padding:4px 0;width:44px;font-family:var(--mono);font-size:var(--fs-s);color:var(--muted)}
 .chips button:hover{border-color:var(--faint);color:var(--ink)}
 .chips button[aria-pressed="true"]{background:var(--ink);color:var(--sheet);border-color:var(--ink)}
-/* 字重按钮：400、700 直接写上「正文」「粗体」 */
+/* Label 400 and 700 weight buttons as Body and Bold. */
 .chips button.wl{width:auto;padding:4px 10px}
-.chips.tags button{width:auto;padding:4px 10px;font-family:var(--ui)}      /* 文字标签的筛选按钮：宽度随文字 */
+.chips.tags button{width:auto;padding:4px 10px;font-family:var(--ui)}      /* Text filter chips size to their labels. */
 button.wl small{font-family:var(--ui);font-size:var(--fs-xs);margin-left:5px;opacity:.75}
 .w-hint{margin:2px 0 0;font-size:var(--fs-s);line-height:1.6}
 .w-hint .btn-text{font-size:var(--fs-s);white-space:nowrap;color:inherit}
@@ -720,7 +727,7 @@ button.wl small{font-family:var(--ui);font-size:var(--fs-xs);margin-left:5px;opa
 .tabs button:hover{color:var(--ink)}
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
 .ex-bar{padding:0 0 12px}
-/* 导出 · 字体文件：用到的字体（许可）→ 输出 → 进度和结果 */
+/* Font-file export: used fonts/licenses, output choices, then progress and results. */
 .fx{display:grid;gap:22px;padding:6px 0 20px;max-width:76ch}
 .fx p{margin:0;line-height:1.7;color:var(--ink-2)}
 .fx-intro{font-size:var(--fs-l)}
@@ -750,7 +757,7 @@ button.wl small{font-family:var(--ui);font-size:var(--fs-xs);margin-left:5px;opa
 .fx-run{display:grid;gap:10px;padding-top:14px;border-top:1px solid var(--line)}
 .fx-go{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px}
 .fx-sum{font-size:var(--fs-m);line-height:1.6;color:var(--ink-2);min-width:0}
-.fx-limits{margin-top:32px;padding-top:16px;border-top:1px solid var(--line)}      /* 不那么重要：和上面拉开距离 */
+.fx-limits{margin-top:32px;padding-top:16px;border-top:1px solid var(--line)}      /* Separate lower-priority content with extra space above. */
 .fx-limits ul{margin:0;padding-left:1.2em;display:grid;gap:5px}
 .fx-limits li{font-size:var(--fs-m);line-height:1.65;color:var(--ink-2)}
 .fx-bar{height:4px;border-radius:var(--r-s);background:var(--rule);overflow:hidden}
@@ -789,7 +796,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-grid{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:10px}
 .pk-grid .field input,.pk-grid .field select{width:100%}
 .pk .field input{width:100%}
-/* 选字体对话框：字体 → 预览卡片 → 可变轴（收起）→ 应用范围和按钮 */
+/* Font picker: font source, preview card, collapsed axes, then scope and actions. */
 .pk-preview{border:1px solid var(--line);border-radius:var(--r);padding:16px 18px 14px;display:grid;gap:10px}
 #pkSample{font-size:32px;line-height:1.3;overflow-wrap:anywhere}
 .pk-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:var(--fs-s);color:var(--muted)}
@@ -805,7 +812,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .file-btn:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
 .vh{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .pk .hint{margin:0}
-/* 本机找不到字体：黄色提示，不显示回退字体的预览 */
+/* If a local font is missing, show a yellow notice instead of a fallback-font specimen. */
 .vf-tag{display:inline-flex;align-items:center;flex:none;font:600 var(--fs-xs)/1 var(--mono);letter-spacing:.06em;padding:3px 5px 2px;border-radius:var(--r);background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);white-space:nowrap}
 .pk-cov{display:flex;flex-wrap:wrap;gap:5px}
 .pk-cov:empty{display:none}
@@ -818,7 +825,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .cov-note i{display:inline-block;width:10px;height:10px;vertical-align:-1px;margin-right:4px}
 #pkSample .miss{color:var(--warn)}
 .pk-check{display:flex;gap:8px;align-items:center;font-size:var(--fs-m);margin-top:10px}
-/* 可变轴：每行「名称 · 滑块 · 数值 · 默认」 */
+/* Each variation-axis row contains name, slider, value and reset. */
 .pk-axes>summary{font-size:var(--fs-m)}
 .pk-axes>summary b{font-weight:600;flex:none}
 .ax-sum{font-size:var(--fs-s);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
@@ -830,10 +837,10 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .ax-row.mode{grid-template-columns:minmax(96px,auto) minmax(0,1fr)}
 .ax-row.mode.fix{grid-template-columns:minmax(96px,auto) auto minmax(0,1fr) 70px}
 .ax-row.mode.fix .ax-mode{grid-column:auto}
-.ct-ax{grid-column:3/4;display:flex;flex-wrap:wrap;gap:2px 12px;font-size:var(--fs-xs);color:var(--muted);margin:-4px 0 4px}      /* 可变轴的设定写在字体列下面 */
+.ct-ax{grid-column:3/4;display:flex;flex-wrap:wrap;gap:2px 12px;font-size:var(--fs-xs);color:var(--muted);margin:-4px 0 4px}      /* Show customized axes below the font column. */
 .ct-ax b{font-family:var(--mono);font-weight:500;color:var(--accent)}
 .ax-row .btn-text:disabled{visibility:hidden}
-/* details 本身不一定能用 grid，内容包在 .ax-body 里排 */
+/* details does not reliably support grid layout; arrange its contents inside .ax-body. */
 .ax-body{display:grid;gap:12px;padding-top:10px}
 .pk-axes>summary,.ax-more>summary{display:flex;gap:10px;align-items:baseline;cursor:pointer;list-style:none;min-width:0}
 .pk-axes>summary::-webkit-details-marker,.ax-more>summary::-webkit-details-marker{display:none}
@@ -846,8 +853,8 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 
 .toast{--toast-bottom:calc(20px + env(safe-area-inset-bottom,0px));position:fixed;left:50%;bottom:var(--toast-bottom);transform:translateX(-50%);width:max-content;max-width:calc(100vw - 2 * var(--sp-4));background:var(--ink);color:var(--sheet);padding:9px 16px;border-radius:var(--r-pill);font-size:var(--fs-m);opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.on{opacity:1;animation:toast-in .28s cubic-bezier(.2,.8,.2,1)}
-/* 从屏幕底部滑到提示的位置；长提示和手机底部页签也使用同一套位移。 */
+/* Slide notices in from the viewport bottom; long messages and mobile tabs use the same displacement. */
 @keyframes toast-in{from{opacity:0;transform:translate(-50%,calc(100% + var(--toast-bottom)))}to{opacity:1;transform:translate(-50%,0)}}
-/* 窄屏的长结果说明可换行，留出底部页签的位置；不用胶囊弧边挤压文字。 */
+/* Wrap long results on narrow screens and leave room for bottom tabs; avoid pill corners crowding the text. */
 @media (max-width:1000px){.toast{--toast-bottom:calc(48px + var(--sp-3) + env(safe-area-inset-bottom,0px));border-radius:var(--r)}}
 @media (prefers-reduced-motion:reduce){.toast{transition:none}.toast.on{animation:none}}

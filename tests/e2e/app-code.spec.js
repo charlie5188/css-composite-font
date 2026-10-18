@@ -1,14 +1,14 @@
-// App 代码导出：生成的范围表和网页的类别判断一致；装了对应工具链时，再编译生成的代码、实际切一次文字，和网页的切分比较
-//   Swift：macOS 上的 swiftc（AppKit 那一支）
-//   Kotlin：kotlinc + Android API 的 jar（Robolectric 的 android-all，见 AGENTS.md），在 JVM 上跑 classOf
+// App code export: compare generated range tables with web classification. When a toolchain is installed, compile the output and compare an actual text split with the web result.
+// Swift: swiftc on macOS (the AppKit branch).
+// Kotlin: kotlinc plus an Android API jar (Robolectric android-all, see AGENTS.md); run classOf on the JVM.
 //   Dart：flutter（flutter analyze + flutter test）
-// 没装的就跳过那一种，CI 上只跑范围表的检查
+// Skip unavailable toolchains; CI checks only the range table.
 const { test, expect } = require('@playwright/test');
 const { execFileSync } = require('child_process');
 const fs = require('fs'), os = require('os'), path = require('path');
 const { open, pick } = require('./helpers');
 
-// 各类别的字、例外字符、中日韩扩展区、emoji
+// Characters from every category, exceptions, CJK extensions, and emoji.
 const SAMPLE = '永国字體あアㄅ，。「」《》①※→“‘—…·AaGg01é 한😀𠀀';
 const has = (cmd, args) => { try { execFileSync(cmd, args, { stdio: 'pipe' }); return true; } catch (e) { return false; } };
 const hasSwift = process.platform === 'darwin' && has('swiftc', ['--version']);
@@ -27,7 +27,7 @@ for (const id of ['serif-sc', 'gothic-jp', 'antigochi', 'mac']) {
     await open(page);
     await pick(page, id);
     await page.waitForTimeout(300);
-    // 加一个例外字符和一个基线偏移，覆盖「例外盖在类别上」和 shift
+    // Add an exception and a baseline offset to cover exception precedence and shifts.
     const r = await page.evaluate(async sample => {
       const core = await import('./assets/js/core.js'), app = await import('./assets/js/appcode.js');
       core.state.custom.push({ chars: '·A', follow: 'han', font: null, size: 90, shift: 5 });
@@ -40,7 +40,7 @@ for (const id of ['serif-sc', 'gothic-jp', 'antigochi', 'mac']) {
     expect(r.got).toEqual(r.want);
     expect(r.shift[r.shift.length - 1]).toBeCloseTo(0.05);
 
-    // 网页的切分：相邻同类别的字合成一段，写成「类别:字数,…」
+    // Web splitting: merge adjacent characters in the same category and serialize as category:characterCount,...
     const runs = [];
     for (const c of r.got) { const i = c === 'han' ? 0 : c[0] === '#' ? r.classes.length - 1 : r.classes.indexOf(c); const l = runs[runs.length - 1]; if (l && l[0] === i) l[1]++; else runs.push([i, 1]); }
     const want = runs.map(([i, n]) => `${i}:${n}`).join(',');
@@ -60,7 +60,7 @@ print(${r.name}.attributed(s, size: 20, weight: 700).length > 0)
     }
 
     if (hasKotlin) {
-      // 对着 Android API 编译（警告也算错），classOf 是纯计算，可以直接在 JVM 上跑
+      // Compile against Android APIs with warnings treated as errors. classOf is pure computation and can run directly on the JVM.
       const dir = tmp('kotlin');
       fs.writeFileSync(path.join(dir, 'sample.txt'), SAMPLE);
       fs.writeFileSync(path.join(dir, 'Composite.kt'), r.kotlin);
@@ -86,7 +86,7 @@ fun main(args: Array<String>) {
     }
 
     if (hasFlutter) {
-      // 一个最小的 Flutter 包：analyze 不能有任何提示，test 里切一次文字、建一次 TextSpan
+      // Minimal Flutter package: analyze must report nothing; the test splits text and creates a TextSpan.
       const dir = tmp('flutter');
       fs.mkdirSync(path.join(dir, 'lib')); fs.mkdirSync(path.join(dir, 'test'));
       fs.writeFileSync(path.join(dir, 'pubspec.yaml'), `name: cf_check

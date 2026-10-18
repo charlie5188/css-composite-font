@@ -1,5 +1,5 @@
-/* 入口：按依赖顺序加载各模块，全部就绪后再启动界面。
-   各模块顶层只做声明和不依赖别的模块的事（绑定事件等），用到别的模块的初始化都在 init() 里 */
+/* Entry point: load modules in dependency order, then start the UI once all are ready.
+   Module top levels only declare values and perform independent work such as event binding; cross-module initialization belongs in init(). */
 import './i18n.js';
 import './unicode.js';
 import './gfmeta.js';

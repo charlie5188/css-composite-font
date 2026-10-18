@@ -1,4 +1,4 @@
-# 每次推送跑两组测试：字体烘焙（Python）和页面（Playwright + Chromium）
+# Run two test suites on every push: font baking (Python) and the page (Playwright + Chromium).
 name: test
 on: [push, pull_request]
 jobs:
@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
-      # 生成字体文件的测试要下载 Pyodide 和源字体（约 1 分钟），只在字体生成相关的文件改了时才跑
+      # The font-file test downloads Pyodide and source fonts (~1 minute); run it only when font-generation files change.
       - name: Decide whether the font-file test is needed
         id: scope
         run: |

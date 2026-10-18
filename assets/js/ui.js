@@ -8,7 +8,7 @@ import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS,
 import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
-/* ================= 交互：字符类别表 ================= */
+/* ================= Interaction: character-class table ================= */
 export function targetOf(row) { return row.dataset.id ? { type: 'class', id: row.dataset.id } : { type: 'custom', i: +row.dataset.ci }; }
 export const keyOf = t => t.type === 'class' ? t.id : '#' + t.i;
 export const objOf = t => t.type === 'class' ? state.classes[t.id] : state.custom[t.i];
@@ -25,8 +25,8 @@ export function changed({ fonts = false, editor = true, fontChange = false } = {
   saveState();
   if (notice) { refresh('toolbar', 'export', 'fxFields'); toast(notice); }
 }
-/* 只在用户提交换字体 / 跟随关系时检查，不放进常规刷新、异步加载或撤销里。
-   因此重新勾回和换成更宽的字族都不会被后台再次改掉，加载时还不知道的范围也保持原状。 */
+/* Check only when the user commits a font/follow change, never during ordinary refresh, background loading or undo.
+   Manually rechecked weights and wider families therefore stay selected; unknown loading-time ranges remain untouched. */
 function trimExportWeights() {
   if (state.wmode === 'cont') return '';
   const notices = [], empty = [];
@@ -48,10 +48,10 @@ export function markCustomPreset() {
   else renderCurrentPreset();
 }
 export const LIMITS = { size: [20, 300], shift: [-60, 60] };
-/* 写入一格：空 = 恢复继承；commit 为 false 时（还在输入）忽略超出范围的中间值 */
+/* Write a cell: empty restores inheritance. While commit is false during typing, ignore temporary out-of-range values. */
 export function setNum(inp, commit) {
   const t = targetOf(inp.closest('.ct-row')), key = keyOf(t), field = inp.dataset.field, W = BASE_W;
-  /* 输入负号、小数点等未完成的数字时，浏览器的 value 也可能是空；不能误当成清空继承。 */
+  /* Browsers may expose an empty value while typing an incomplete sign or decimal point; do not mistake it for clearing the field. */
   if (inp.validity.badInput) { if (commit) inp.value = (field === 'size' ? ownSize(key, W) : objOf(t).shift) ?? ''; return; }
   const raw = inp.value.trim();
   let v = raw === '' ? null : parseFloat(raw);
@@ -90,12 +90,12 @@ $('#editor').addEventListener('input', e => {
   if (inp.classList.contains('num')) setNum(inp, false);
 });
 $('#editor').addEventListener('focusout', e => { if (e.target.matches('input.num,input.mnum,input.mw')) refreshInherited(); });
-/* 鼠标与键盘共用步进：从继承值起步；保留手输的任意数值，不吸附到步长的倍数。 */
+/* Share stepping between mouse and keyboard. Start from inherited values and preserve arbitrary typed numbers rather than snapping to step multiples. */
 function stepCell(inp, up, large) {
   const current = +(inp.value || inp.placeholder);
   let next;
   if (inp.matches('select')) {
-    // 静态字重按 100 档移动；缺档时跳到下一个真实可用的字重。
+    // Move static weights by 100; skip missing steps to the next actual available weight.
     const weights = [...inp.options].map(o => +o.value);
     next = up ? weights.find(w => w >= current + 100) : weights.reverse().find(w => w <= current - 100);
   } else {
@@ -106,7 +106,7 @@ function stepCell(inp, up, large) {
   inp.value = next;
   return true;
 }
-/* 点箭头时保留输入焦点，避免失焦提交重建别的格子；不把占位值提前写成单独设定。 */
+/* Keep input focus when clicking arrows so blur commits do not rebuild other cells; do not prematurely store placeholders as explicit values. */
 $('#editor').addEventListener('pointerdown', e => { if (e.target.closest('[data-step]')) e.preventDefault(); });
 $('#editor').addEventListener('click', e => {
   const b = e.target.closest('[data-step]'); if (!b) return;
@@ -123,20 +123,20 @@ $('#editor').addEventListener('keydown', e => {
   e.preventDefault();
   if (stepCell(inp, e.key === 'ArrowUp', e.shiftKey)) setNum(inp, true);
 });
-/* ================= 交互：各字重 ================= */
+/* ================= Interaction: weights ================= */
 export const keyTarget = k => k[0] === '#' ? { type: 'custom', i: +k.slice(1) } : { type: 'class', id: k };
-export const stepOf = w => Math.min(900, Math.max(100, Math.round((w - 1) / 100) * 100));      // 连续模式里这个粗细归哪一档（和 stepSpan 一致）
-/* 清掉空了的单独调整，免得「预设已修改」误判 */
+export const stepOf = w => Math.min(900, Math.max(100, Math.round((w - 1) / 100) * 100));      // Map a continuous value to its step, consistently with stepSpan.
+/* Prune empty overrides to avoid false preset-modified indicators. */
 export function pruneOv(W, k) {
   if (state.wOver[W]?.[k] && !Object.keys(state.wOver[W][k]).length) delete state.wOver[W][k];
   if (state.wOver[W] && !Object.keys(state.wOver[W]).length) delete state.wOver[W];
 }
-/* 某个字重的粗细：可变字体是任意值，静态的 Google Fonts 是一档。400 改的是字体本身；单独换过字体时改的是那个字体 */
+/* Set per-step weight: arbitrary for variable fonts, a fixed Google step for static fonts. At 400 edit the base font; for replacements edit that font. */
 export function setWeightAt(k, W, el) {
   const o = objByKey(k), withW = (f, v) => f.kind === 'google' ? G(f.family, v) : { ...f, weight: v };
   const raw = el.value.trim();
   let v = el.dataset.act === 'wnum' ? (raw === '' ? null : Math.min(+el.max, Math.max(+el.min, Math.round(+raw)))) : +el.value || null;
-  if (el.dataset.auto && v === +el.dataset.auto) v = null;      // 选回「推算」的那一档：不再单独设定
+  if (el.dataset.auto && v === +el.dataset.auto) v = null;      // Choosing the derived step clears the explicit override.
   if (W === BASE_W) { if (v != null) o.font = withW(o.font, v); }
   else {
     const ov = ((state.wOver[W] ||= {})[k] ||= {});
@@ -144,7 +144,7 @@ export function setWeightAt(k, W, el) {
     else if (v == null) delete ov.weight; else ov.weight = v;
     pruneOv(W, k);
   }
-  renderClassRows();      // 「随汉字 · …」里写的粗细可能变了；各字重就地更新，不重建（保持焦点，↑↓ 可以连续调）
+  renderClassRows();      // The followed-font label's weight may change. Update matrix cells in place, preserving focus for repeated arrow adjustments.
   changed({ fonts: true, editor: false });
 }
 export function setMatrixSize(inp, commit) {
@@ -158,12 +158,12 @@ export function setMatrixSize(inp, commit) {
   inp.classList.toggle('own', v !== null && W === BASE_W); inp.classList.toggle('set', v !== null && W !== BASE_W);
   changed({ fonts: true, editor: false });
 }
-/* 在某一行里编辑时，校样跟着换到这个字重：只换高亮，不重画表格（保持输入焦点） */
+/* Editing a row follows its preview weight; update highlighting only, preserving the table and focus. */
 export function previewSoft(W) {
   if (state.wmode === 'cont' && stepOf(state.view.wcont) === W) return;
   setPreviewW(W, { soft: true });
 }
-/* 输入中保留尚未打完的文字；拖动、滑杆和键盘调整则始终同步数字，哪怕输入框仍有焦点。 */
+/* Preserve incomplete field text while typing. Dragging, sliders and keyboard changes always sync the number, even if its field remains focused. */
 export function setPreviewW(x, { soft = false, preserveInput = false } = {}) {
   if (!Number.isFinite(x)) return;
   const v = state.view, cont = state.wmode === 'cont', w = previewWeight(x);
@@ -179,7 +179,7 @@ export function setPreviewW(x, { soft = false, preserveInput = false } = {}) {
   syncPreviewWeight({ preserveInput });
   if (changed) saveState();
 }
-/* 导出哪些字重（分档）：各字重里的勾选和导出对话框里的按钮是同一个设定 */
+/* Stepped export weights: matrix checkboxes and export-dialog buttons edit the same setting. */
 export function setWeights(ws) {
   const selected = WEIGHTS.filter(W => ws.includes(W));
   if (!selected.length) return;
@@ -187,7 +187,7 @@ export function setWeights(ws) {
   const changed = constrainPreviewWeight();
   refresh('toolbar', 'editor', 'export', ...(changed ? ['fonts'] : []));
 }
-/* 连续模式的导出范围：表格旁的滑杆和导出对话框共用设置，校样也只走这个范围。 */
+/* Continuous export range: the table slider and export dialog share settings; preview stays within the same range. */
 export function setWRange(lo, hi) {
   if (!Number.isFinite(lo) || !Number.isFinite(hi)) { renderExport(); return; }
   if (lo > hi) [lo, hi] = [hi, lo];
@@ -197,7 +197,7 @@ export function setWRange(lo, hi) {
   constrainPreviewWeight();
   refresh('toolbar', 'editor', 'fonts', 'export');
 }
-/* 两个端点沿字重行移动；拖动期间只更新控件与选中行，提交后才裁剪预览、重建字体并保存。 */
+/* Move endpoints along weight rows. During dragging update only controls and selection; clamp preview, rebuild fonts and save after commit. */
 {
   const range = $('#wRange');
   let drag = null;
@@ -205,7 +205,7 @@ export function setWRange(lo, hi) {
     if (!drag || e.pointerId !== drag.id) return;
     const rect = range.getBoundingClientRect(), values = [...drag.initial];
     const value = Math.round((100 + (e.clientY - rect.top) / rect.height * 800) / 100) * 100;
-    // 不能越过另一个端点；另一个端点可能来自导出对话框中的精确输入。
+    // Do not cross the other endpoint, which may contain a precise value entered in Export.
     values[drag.end] = drag.end ? Math.max(Math.ceil((values[0] + 1) / 100) * 100, Math.min(900, value)) : Math.min(Math.floor((values[1] - 1) / 100) * 100, Math.max(100, value));
     drag.values = values;
     range.dataset.draft = JSON.stringify(values);
@@ -232,7 +232,7 @@ export function setWRange(lo, hi) {
     range.setPointerCapture(e.pointerId);
     range.classList.add('dragging');
     range.dataset.draft = JSON.stringify(drag.values);
-    // 点滑轨即移动最近端点；点滑块只开始拖动，精确输入的值不会在按下时跳动。
+    // Clicking the rail moves the nearest endpoint. Pressing a thumb starts dragging without snapping a precisely entered value.
     if (!e.target.closest('[data-end]')) move(e);
   });
   range.addEventListener('pointermove', move);
@@ -254,7 +254,7 @@ export function setWRange(lo, hi) {
   });
 }
 $('#wMatrix').addEventListener('click', e => {
-  /* 行的空白、列间距也能预览；控件继续处理自己的点击，不把导出勾选或菜单点击当成选行。 */
+  /* Preview from row whitespace and gaps, while leaving control clicks alone; export checkboxes and menus must not select a preview row. */
   const row = e.target.closest('[data-row]');
   if (row && !e.target.closest('button,input,select,textarea,label,a')) {
     const W = +row.dataset.row;
@@ -265,10 +265,10 @@ $('#wMatrix').addEventListener('click', e => {
   if (b.dataset.wreset) {
     const key = b.dataset.wreset, o = objByKey(key), weight = defaultFontWeight(o.font);
     recordHistory();
-    // 400 也是表格的一行；一并恢复基础值，才能单独重置自动调整过的类别。
+    // 400 is also a table row. Reset base values too so an auto-fitted class can be fully reset on its own.
     o.size = null; o.shift = null;
     if (!o.follow && weight != null) o.font = { ...o.font, weight };
-    // 字体来源、其他可变轴和跨类别共享的本机字体名映射继续保留。
+    // Keep font sources, other variation axes and local-font name mappings shared across classes.
     for (const [W, row] of Object.entries(state.wOver)) if (+W !== BASE_W) {
       delete row[key];
       if (!Object.keys(row).length) delete state.wOver[W];
@@ -279,7 +279,7 @@ $('#wMatrix').addEventListener('click', e => {
   }
   if (b.dataset.pw) { const W = +b.dataset.pw; if (state.wmode === 'cont') setPreviewW(W); else setPreviewWeight(W); return; }
   const W = +b.dataset.w;
-  if (b.dataset.act === 'wclear') {      // 清除这个字重的单独调整：大小、粗细、换的字体、本机字体名
+  if (b.dataset.act === 'wclear') {      // Clear this step's size, weight, replacement font and local-name overrides.
     delete state.wOver[W];
     for (const k of Object.keys(state.weightNames)) if (k.endsWith('|' + W)) delete state.weightNames[k];
     changed({ fonts: true });
@@ -299,11 +299,11 @@ $('#wMatrix').addEventListener('change', e => {
   if (el.dataset.act === 'wnum' || el.dataset.act === 'wsel') setWeightAt(el.dataset.k, +el.dataset.w, el);
 });
 $('#wMatrix').addEventListener('input', e => { if (e.target.classList.contains('mnum')) setMatrixSize(e.target, false); });
-/* ↑↓：大小每次 0.5（Shift 5），VF 粗细每次 10（Shift 100），静态字体按可用的 100 档调整。 */
+/* Arrow keys: size changes by 0.5 (Shift: 5), VF weight by 10 (Shift: 100); static fonts follow available 100-step weights. */
 $('#wMatrix').addEventListener('keydown', e => {
   const inp = e.target, up = e.key === 'ArrowUp';
   if (!up && e.key !== 'ArrowDown') return;
-  if (inp.matches('.msel') && (e.altKey || e.ctrlKey || e.metaKey)) return; // 保留下拉框打开菜单等原有快捷键。
+  if (inp.matches('.msel') && (e.altKey || e.ctrlKey || e.metaKey)) return; // Preserve native select shortcuts, including opening the menu.
   if (inp.classList?.contains('mnum')) {
     e.preventDefault();
     if (stepCell(inp, up, e.shiftKey)) setMatrixSize(inp, true);
@@ -312,8 +312,8 @@ $('#wMatrix').addEventListener('keydown', e => {
     if (stepCell(inp, up, e.shiftKey)) setWeightAt(inp.dataset.k, +inp.dataset.w, inp);
   }
 });
-/* 危险操作点两次才执行：第一次点击时按钮换成确认文字（.armed，原来的内容先藏起来），3 秒内再点才执行，过时恢复原样。
-   按钮原来的文字要包在元素里（纯文字节点藏不起来） */
+/* Destructive actions require two clicks: arm the confirmation label (.armed) on first click and execute on a second click within 3 seconds, otherwise reset.
+   Wrap the original label in an element so it can be hidden; a bare text node cannot be hidden independently. */
 function disarmConfirm(btn) {
   clearTimeout(btn.armT); btn.classList.remove('armed'); btn.querySelector(':scope > .arm-lab')?.remove();
 }
@@ -324,8 +324,8 @@ export function armConfirm(btn, text, run) {
   btn.append(lab); btn.classList.add('armed');
   btn.armT = setTimeout(disarm, 3000);
 }
-/* 清除所有字重的单独调整 */
-/* 「各字重」每行末尾的菜单：给这个字重换字体、恢复这个字重的设定 */
+/* Clear per-weight overrides for all weights. */
+/* Each weight row's trailing menu can replace its font or reset its settings. */
 let wMenuW = 0, wMenuBtn = null;
 $('#wMatrix').addEventListener('click', e => {
   const b = e.target.closest('[data-wmenu]'); if (!b) return;
@@ -336,7 +336,7 @@ $('#wMatrix').addEventListener('click', e => {
 }, true);
 $('#wRowMenu').addEventListener('toggle', e => {
   if (e.newState !== 'open' || !wMenuBtn) return;
-  const m = $('#wRowMenu'), r = wMenuBtn.getBoundingClientRect();      // 右边和按钮对齐
+  const m = $('#wRowMenu'), r = wMenuBtn.getBoundingClientRect();      // Align the right edge with the button.
   m.style.left = Math.max(8, r.right - m.offsetWidth) + 'px';
   m.style.top = (r.bottom + 4 + m.offsetHeight > innerHeight ? Math.max(8, r.top - m.offsetHeight - 4) : r.bottom + 4) + 'px';
 });
@@ -356,8 +356,8 @@ $('#wReset').addEventListener('click', e => armConfirm(e.currentTarget, T('wRese
   changed({ fonts: true });
   toast(T('tWReset'));
 }));
-/* ================= 撤销 / 重做 =================
-   按钮在左窗格页签那一排的右端；快捷键 ⌘Z / ⇧⌘Z（Windows：Ctrl+Z / Ctrl+Y）。在输入框里时交给输入框自己撤销 */
+/* ================= Undo / redo =================
+   Buttons sit at the right of the left-pane tabs. Shortcuts: Command-Z / Shift-Command-Z, or Ctrl-Z / Ctrl-Y on Windows. Inputs retain native text undo. */
 export const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 export function syncHistory() {
   renderCurrentPreset();
@@ -381,14 +381,14 @@ export function initHistory() {
     if (k !== 'z' && !redo) return;
     const el = e.target;
     if (el.isContentEditable || el.matches?.('textarea, input:not([type=checkbox]):not([type=radio]):not([type=range]), select')) return;
-    if (document.querySelector('dialog[open]')) return;      // 对话框里不撤销背后的设定
+    if (document.querySelector('dialog[open]')) return;      // Do not undo settings behind an open dialog.
     e.preventDefault(); goHistory(redo ? 1 : -1);
   });
 }
-/* ================= 悬停提示 =================
-   有 title（或 data-tip）的元素：鼠标停 0.35 秒、或用键盘聚焦时，在下面显示黑底白字的提示，代替浏览器自己那个要等一秒多的提示。
-   第一次悬停时把 title 挪到 data-tip，免得两个提示一起出现；代码之后再写 title 也照样接管。
-   刚收起一个提示后马上指到别的元素，新提示立刻出现（在一排按钮上扫过去时不用每个都等） */
+/* ================= Hover tooltips =================
+   Replace native title tooltips with black/white app tooltips after a 0.35-second hover or keyboard focus; native tooltips take over a second.
+   Move title into data-tip on first hover to avoid duplicates, and also adopt titles assigned later.
+   Show subsequent tooltips immediately when moving directly between nearby controls. */
 export function initTips() {
   const tip = document.createElement('div');
   tip.className = 'tip'; tip.id = 'tip'; tip.setAttribute('popover', 'manual'); tip.setAttribute('role', 'tooltip');
@@ -404,7 +404,7 @@ export function initTips() {
   };
   const find = t => t?.closest?.('[title], [data-tip]') || null;
   const open = () => tip.matches(':popover-open');
-  // 加载状态可在悬停时变化；只在提示待显示或已显示期间观察，避免保留旧状态。
+  // Loading status can change while hovered. Observe only while a tooltip is pending or visible, avoiding stale status.
   const watch = new MutationObserver(() => {
     if (!cur) return;
     if (!cur.isConnected || !cur.getClientRects().length) { hide(); return; }
@@ -413,7 +413,7 @@ export function initTips() {
   const show = el => {
     const text = take(el); if (!text || !el.isConnected || el !== cur) return;
     if (el.dataset.tipUnlessOpen && document.getElementById(el.dataset.tipUnlessOpen)?.matches(':popover-open')) return;
-    const host = el.closest('dialog[open]') || document.body;      // 模态对话框打开时，放进对话框里
+    const host = el.closest('dialog[open]') || document.body;      // Move the tooltip inside an open modal dialog.
     if (tip.parentNode !== host) { if (open()) tip.hidePopover(); host.append(tip); }
     tip.textContent = text;
     if (!open()) tip.showPopover();
@@ -445,8 +445,8 @@ export function initTips() {
   document.addEventListener('focusin', e => { const el = find(e.target); if (el && e.target.matches(':focus-visible')) arm(el, 350); });
   document.addEventListener('focusout', hide);
 }
-/* ================= 左右两栏的分界 =================
-   拖动（或聚焦后按 ←→）调整编辑栏的宽度，双击恢复默认。窄屏一次只显示一栏，没有分界 */
+/* ================= Divider between editor and proof =================
+   Drag, or focus and press Left/Right, to resize the editor; double-click to restore its default width. Narrow screens show one pane without a divider. */
 export const LEFT_MIN = 400, RIGHT_MIN = 420;
 export function applySplit() {
   const bench = $('.bench'), sp = $('#split'), w = state.view.leftW;
@@ -479,7 +479,7 @@ export function initSplit() {
   addEventListener('resize', debounce(applySplit, 100));
   applySplit();
 }
-/* 参考图的高度：拖动它上边的分界线（或聚焦后按 ↑↓），双击恢复按字号自动定的高度。校样至少留 160px */
+/* Resize the specimen using its top divider or focused Up/Down keys. Double-click restores font-size-derived height; reserve at least 160px for proof text. */
 export function initSpecSplit() {
   const sp = $('#specSplit'), maxH = () => Math.max(120, $('.tester').clientHeight - 160);
   const set = h => { state.view.specH = Math.round(Math.min(maxH(), Math.max(110, h))); drawSpecimen(); };
@@ -497,7 +497,7 @@ export function initSpecSplit() {
   });
 }
 $('#wMatrix').addEventListener('focusin', e => { const el = e.target; if (el.matches('input[data-w], select[data-w]')) previewSoft(+el.dataset.w); });
-/* (i) 说明：所有说明文字共用一个弹层，打开时按 data-info 填入内容 */
+/* All info buttons share one popover, populated from data-info when opened. */
 export const INFO = {
   classInfo: () => `<p>${esc(T('inheritHint'))}</p><dl>${CLASSES.map(c => `<dt>${esc(tr(c.name))}</dt><dd>${esc(tr(c.desc))}</dd>`).join('')}</dl>`,
   customInfo: () => T('customIntro'),
@@ -525,7 +525,7 @@ export let infoBtn = null;
 document.addEventListener('click', e => {
   const b = e.target.closest('.info'); if (!b) return;
   infoBtn = b; $('#infoPop').dataset.key = b.dataset.info;
-  /* 模态对话框打开时，对话框外面的元素都点不到（inert）：说明弹层要放进按钮所在的对话框里 */
+  /* Elements outside an open modal dialog are inert. Move the info popover into the triggering button's dialog. */
   const host = b.closest('dialog') || document.body, pop = $('#infoPop');
   if (pop.parentNode !== host) host.append(pop);
 }, true);
@@ -535,7 +535,7 @@ $('#infoPop').addEventListener('toggle', e => {
   pop.innerHTML = infoHtml(pop.dataset.key || '');
   placePop(pop, infoBtn);
 });
-/* (i)：鼠标停一会儿直接打开说明（不再先出「说明」小提示），移开就关；悬停打开后再点一下，就固定打开 */
+/* Hover opens info directly instead of showing an intermediate tooltip; leaving closes it. Clicking a hover-opened popup pins it open. */
 let hovT = 0, hovOpen = null;
 const infoOpen = () => $('#infoPop').matches(':popover-open');
 document.addEventListener('pointerover', e => {
@@ -546,7 +546,7 @@ document.addEventListener('pointerover', e => {
     if (infoOpen() && infoBtn === b) return;
     hovT = setTimeout(() => {
       if (!b.matches(':hover')) return;
-      if (infoOpen()) { if (!hovOpen) return; $('#infoPop').hidePopover(); }      // 点开的说明不被悬停顶掉
+      if (infoOpen()) { if (!hovOpen) return; $('#infoPop').hidePopover(); }      // Hover must not replace click-pinned info.
       b.click(); hovOpen = b;
     }, 350);
   } else if (e.target.closest?.('#infoPop')) clearTimeout(hovT);
@@ -554,20 +554,20 @@ document.addEventListener('pointerover', e => {
 document.addEventListener('pointerout', e => {
   if (e.pointerType !== 'mouse') return;
   const to = e.relatedTarget;
-  if (e.target.closest?.('.info') && !hovOpen) { if (!to?.closest?.('.info')) clearTimeout(hovT); return; }      // 还没打开就移开了
+  if (e.target.closest?.('.info') && !hovOpen) { if (!to?.closest?.('.info')) clearTimeout(hovT); return; }      // The pointer left before the popup opened.
   if (!hovOpen || to?.closest?.('#infoPop') || to?.closest?.('.info') === hovOpen) return;
   clearTimeout(hovT);
   hovT = setTimeout(() => { if (hovOpen && !$('#infoPop').matches(':hover') && !hovOpen.matches(':hover')) $('#infoPop').hidePopover(); }, 250);
 });
 document.addEventListener('click', e => {
   const b = e.target.closest('.info'); if (!b) return;
-  clearTimeout(hovT);      // 点了就以点击为准，不再等悬停
-  if (b === hovOpen && infoOpen()) { e.preventDefault(); hovOpen = null; }      // 悬停打开的：取消 popovertarget 的切换，留着不关
+  clearTimeout(hovT);      // Clicking takes precedence over a pending hover timer.
+  if (b === hovOpen && infoOpen()) { e.preventDefault(); hovOpen = null; }      // If hover opened it, prevent the native popovertarget toggle from closing it.
 }, true);
 export let gearBtn = null;
 $('#editor').addEventListener('click', e => {
   const g = e.target.closest('[data-act="groups"]');
-  if (g) { gearBtn = g; $('#grpPop').dataset.cls = g.dataset.cls; }      // popovertarget 会接着打开弹层
+  if (g) { gearBtn = g; $('#grpPop').dataset.cls = g.dataset.cls; }      // popovertarget will open the popover next.
 }, true);
 $('#grpPop').addEventListener('toggle', e => {
   if (e.newState !== 'open') return;
@@ -593,7 +593,7 @@ $('#grpPop').addEventListener('click', e => {
 });
 export function setPreviewWeight(W) { setPreviewW(W); }
 
-/* ================= 交互：校样、度量、导出 ================= */
+/* ================= Interaction: proof, metrics and export ================= */
 export const SUPPORT = { sizeAdjust: typeof FontFace !== 'undefined' && 'sizeAdjust' in FontFace.prototype };
 export function initToolbar() {
   $('#gfWeight').innerHTML = WEIGHTS.map(w => `<option value="${w}">${w}</option>`).join('');
@@ -602,13 +602,13 @@ export function initToolbar() {
   $('#sizeAdjustWarn').hidden = SUPPORT.sizeAdjust;
 
   const v = () => state.view;
-  /* 示例页签。自定义页签可以有好几组：最右边的「+」从当前的文字开始建一组，换到别的页签也一直保留，点 × 才删掉 */
+  /* Multiple custom sample tabs persist independently. The trailing add button starts one from the current text; switching tabs preserves it, and only delete removes it. */
   const customAt = k => { const m = /^c(\d+)$/.exec(k); return m ? v().customs[+m[1]] : null; };
   const showSample = k => {
     const c = customAt(k);
     if (c) { v().sample = k; v().text = c.text; if (c.lang) state.typo.lang = c.lang; }
     else { v().sample = k; v().text = SAMPLES[k].text; state.typo.lang = SAMPLES[k].lang; }
-    refresh('toolbar', 'editor', 'preview', 'export', 'fonts');      // 语言变了：注音那一行、地区检查跟着变
+    refresh('toolbar', 'editor', 'preview', 'export', 'fonts');      // Language changes also update the Zhuyin row and regional checks.
   };
   $('#sampleTabs').addEventListener('click', e => {
     if (e.target.closest('[data-act="addcustom"]')) {
@@ -620,7 +620,7 @@ export function initToolbar() {
     if (del) {
       const i = +del.dataset.i, cur = /^c(\d+)$/.exec(v().sample), ci = cur ? +cur[1] : -1;
       v().customs.splice(i, 1);
-      if (ci === i) showSample(v().customs.length ? 'c' + Math.min(i, v().customs.length - 1) : orderedSamples()[0]);      // 删的是正在看的：换到旁边一组，没有了就回到示例
+      if (ci === i) showSample(v().customs.length ? 'c' + Math.min(i, v().customs.length - 1) : orderedSamples()[0]);      // If deleting the active tab, select a neighbor or return to the built-in sample when none remain.
       else { if (ci > i) v().sample = 'c' + (ci - 1); renderSampleTabs(); saveState(); }
       return;
     }
@@ -633,13 +633,13 @@ export function initToolbar() {
     v().ltab = b.dataset.ltab; renderCurrentPreset(); syncLeftTab(); $('#editor').scrollTop = 0; saveState();
   });
   $('#sampleTabs').addEventListener('scroll', tabFade, { passive: true });
-  $('#sampleTabs').addEventListener('wheel', e => {      // 没有触控板时：竖向滚轮也能横向滚页签
+  $('#sampleTabs').addEventListener('wheel', e => {      // Allow vertical mouse wheels to scroll tabs horizontally for users without a trackpad.
     const t = e.currentTarget;
     if (t.scrollWidth <= t.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
     t.scrollLeft += e.deltaY; e.preventDefault();
   }, { passive: false });
   new ResizeObserver(tabFade).observe($('#sampleTabs'));
-  /* 字号、行高的数字框：输入中途（比如打到一半的「1」）不在范围内就先不管，离开或回车时再收进范围 */
+  /* Ignore temporarily out-of-range size/line-height input while typing; clamp on blur or Enter. */
   const NUM = { size: { el: '#vSize', min: 12, max: 160, dp: 0, px: 0.5 }, lh: { el: '#vLh', min: 1, max: 2.6, dp: 2, px: 0.01 } };
   const setNum = (k, x) => {
     const n = NUM[k], r = Math.min(n.max, Math.max(n.min, +(+x).toFixed(n.dp)));
@@ -652,8 +652,8 @@ export function initToolbar() {
     el.addEventListener('change', () => { const x = parseFloat(el.value); if (isFinite(x)) setNum(k, x); el.value = k === 'lh' ? (+v().lh).toFixed(2) : v().size; });
     el.addEventListener('keydown', e => { if (e.key === 'Enter') el.blur(); });
   }
-  /* 左右拖动图标调整：字号每 2px 变 1，行高每 1px 变 0.01 */
-  const SCRUB = { ...NUM, w: { el: '#vWn', px: 1, get: () => state.wmode === 'cont' ? v().wcont : v().weight, set: setPreviewW } };      // 字重每 1px 变 1（分档时落到最接近的一档）
+  /* Scrub icons horizontally: font size changes by 1 per 2px; line height by 0.01 per 1px. */
+  const SCRUB = { ...NUM, w: { el: '#vWn', px: 1, get: () => state.wmode === 'cont' ? v().wcont : v().weight, set: setPreviewW } };      // Weight changes by 1 per pixel, snapping to the nearest selected step in stepped mode.
   document.querySelectorAll('[data-scrub]').forEach(ic => {
     let suppressClick = false;
     ic.addEventListener('pointerdown', e => {
@@ -678,12 +678,12 @@ export function initToolbar() {
     });
     if (ic.dataset.scrub === 'w') ic.addEventListener('click', e => {
       e.preventDefault();
-      // 在 click 阶段展开，避开原生 popover 在指针抬起时的关闭；拖回原点也不算点击。
+      // Open during click to avoid native popover dismissal on pointer release. A drag returning to its origin is still not a click.
       if (suppressClick && e.detail !== 0) { suppressClick = false; return; }
       showWeightSlider();
     });
   });
-  const positionViewMenu = () => {      // 优先贴在按钮下方；矮屏滚动菜单，调整窗口时也收进视口。
+  const positionViewMenu = () => {      // Prefer below the button; allow scrolling on short screens and keep the popup inside the viewport after resize.
     const pop = $('#viewPop'); if (!pop.matches(':popover-open')) return;
     const r = $('#viewBtn').getBoundingClientRect();
     if (!r.width) { pop.hidePopover(); return; }
@@ -695,7 +695,7 @@ export function initToolbar() {
     if (e.newState === 'open') { e.currentTarget.scrollTop = 0; positionViewMenu(); }
   });
   window.addEventListener('resize', positionViewMenu);
-  /* 度量参考图的工具条：西文、数字、假名、注音的参考线分别开关（图例兼开关） */
+  /* Metric toolbar legend buttons independently toggle Western, digit, kana and Zhuyin guides. */
   $('#specBar').addEventListener('click', e => {
     const b = e.target.closest('[data-sg]'); if (!b) return;
     const k = b.dataset.sg;
@@ -705,7 +705,7 @@ export function initToolbar() {
   for (const [id, key] of [['vVertical', 'vertical'], ['vColor', 'colorize'], ['vRules', 'rules'], ['vMiss', 'miss'], ['vItalic', 'italic']])
     $('#' + id).addEventListener('click', () => { v()[key] = !v()[key]; refresh('toolbar', 'preview', 'export'); });
   $('#viewTypo').addEventListener('change', e => { const k = e.target.dataset.vtypo; if (k) { state.typo[k] = e.target.value; syncViewTypo(); refresh('preview'); } });
-  /* 滑杆按已导出字重的索引等距布点；连续模式直接使用实际数值。 */
+  /* Space exported stepped weights evenly by index; continuous mode uses actual numeric values. */
   const wn = $('#vWn'), slider = $('#vWSlider'), pop = $('#vWPop');
   let returningFocus = false;
   const positionWeightSlider = () => {
@@ -758,13 +758,13 @@ export function initToolbar() {
   const reloadForText = debounce(() => rebuild(), 600);
   $('#proofText').addEventListener('pointermove', e => missTipAt(e.clientX, e.clientY));
   $('#proofText').addEventListener('pointerleave', () => { $('#missTip').hidden = true; });
-  document.addEventListener('scroll', () => { $('#missTip').hidden = true; }, { passive: true, capture: true });      // 窗格里面滚动也要收起（scroll 不冒泡）
+  document.addEventListener('scroll', () => { $('#missTip').hidden = true; }, { passive: true, capture: true });      // Also dismiss when a pane scrolls; scroll events do not bubble.
   $('#sample').addEventListener('input', e => {
     v().text = e.target.value;
     const m = /^c(\d+)$/.exec(v().sample); if (m && v().customs[+m[1]]) v().customs[+m[1]].text = e.target.value;
     refresh('preview'); reloadForText();
   });
-  for (const box of ['#typoRows', '#featRows']) {      // 排版页签、字体页签里的字体特性：同一套卡片和下拉
+  for (const box of ['#typoRows', '#featRows']) {      // Text layout settings and font features share the same cards and selects.
   $(box).addEventListener('click', e => {
     const lm = e.target.closest('[data-lm]');
     if (lm) { state.lineMetrics = lm.dataset.lm; refresh('typoStatus', 'fonts', 'export'); return; }
@@ -789,7 +789,7 @@ export function initToolbar() {
     setWeights([...set]);
   });
   $('#exWHint').addEventListener('click', e => { if (e.target.closest('[data-act="wadd"]')) setWeights([...state.weights, 400, 700]); });
-  /* 字重模式：分档 / 连续（可变字体）。切换不会删掉任何设定 */
+  /* Weight mode: stepped / continuous (variable fonts). Switching preserves all settings. */
   $('#vWMode').addEventListener('click', e => {
     const b = e.target.closest('[data-m]'); if (!b || b.dataset.m === state.wmode) return;
     state.wmode = b.dataset.m;
@@ -800,10 +800,10 @@ export function initToolbar() {
   $('#exWPresets').addEventListener('click', e => { const b = e.target.closest('[data-r]'); if (b) setWRange(...b.dataset.r.split(',').map(Number)); });
   for (const id of ['exWLo', 'exWHi']) $('#' + id).addEventListener('change', () => setWRange(parseFloat($('#exWLo').value), parseFloat($('#exWHi').value)));
   $('#exBase').addEventListener('change', e => { state.baseMode = e.target.value; refresh('export'); });
-  /* 斜体：导出时另写一组 font-style: italic 的规则；校样的「斜体」开关用来看效果 */
+  /* Italic export creates separate font-style: italic rules; the proof's Italic switch previews them. */
   $('#exItalic').addEventListener('change', e => { state.italic = e.target.value === '1'; refresh('editor', 'fonts', 'export'); });
   $('#exGeneric').addEventListener('change', e => { state.generic = e.target.value; refresh('preview', 'export'); });
-  /* 选了语言时校样也按这个语言排（字形地区差异、禁则），不限语言时校样沿用示例文字的语言 */
+  /* A language scope also controls proof glyph forms and line breaking; with no scope, keep the sample's language. */
   $('#exLang').addEventListener('change', e => {
     state.scope = e.target.value;
     if (state.scope) state.typo.lang = state.scope;
@@ -814,7 +814,7 @@ export function initToolbar() {
   $('#exToggle').addEventListener('click', showExport);
   $('#exClose').addEventListener('click', () => $('#exDlg').close());
   $('#mTabs').addEventListener('click', e => { const b = e.target.closest('[data-mv]'); if (b) { v().mview = b.dataset.mv; syncPanes(); saveState(); } });
-  /* 独立网页里可以直接下载；在 artifact 等嵌入框架里浏览器会拦截下载，所以只显示「复制」 */
+  /* Standalone pages can download directly. Embedded artifact frames block downloads, so offer Copy only. */
   const canDownload = window.top === window.self;
   $('#dlBtn').hidden = !canDownload;
   $('#dlBtn').addEventListener('click', () => {
@@ -838,7 +838,7 @@ export function initToolbar() {
 export function renderTypoRows() {
   const row = t => {
     const opts = t.values.map(([v, d]) => `<option value="${esc(v)}">${esc(v)}${d ? ' · ' + esc(tr(d)) : ''}${typoSupported(t, v) ? '' : esc(T('unsupported'))}</option>`).join('');
-    /* 数字样式这类：一排字样卡片，每张用当前的数字字体排出这个样式 */
+    /* For settings such as numeric style, render a row of specimen cards using the current digit font. */
     const ctl = t.tiles ? `<div class="typo-tiles" role="radiogroup" aria-labelledby="tyl-${t.key}"${t.tileW ? ` style="--tile-w:${t.tileW}px${t.tileFs ? `;--tile-fs:${t.tileFs}px` : ''}"` : ''}>${t.values.map(([v, d, tip]) =>
       `<button type="button" role="radio" data-typo="${t.key}" data-v="${esc(v)}" aria-checked="${state.typo[t.key] === v}"${!tip && t.tileCode && d ? '' : ` title="${esc(v)}"`}>${t.tileHtml ? t.tileHtml(v) : `<span class="tt-s" style="${t.prop}:${esc(v)}" aria-hidden="true">${esc(t.tiles)}</span>`}<span class="tt-l">${esc(d ? tr(d) : v)}${tip ? `<small>${esc(tr(tip))}</small>` : t.tileCode && d ? `<code>${esc(v)}</code>` : ''}</span></button>`).join('')}</div>`
       : `<select id="ty-${t.key}">${opts}</select>`;
@@ -855,26 +855,26 @@ export function renderTypoRows() {
   renderViewTypo();
   renderTypoStatus();
 }
-/* 「显示」菜单里的对齐、对齐方式、段落换行：只改校样，不导出 */
+/* View alignment, justification and wrapping affect only the proof and are not exported. */
 export function renderViewTypo() {
   const lab = (t, v, d) => d ? tr(d) : v === t.def ? T('vtDefault', { v }) : v;
   $('#viewTypo').innerHTML = ['align', 'justify', 'wrap'].map(k => TYPO.find(t => t.key === k)).map(t => `<label class="vt-row"><span>${esc(tr(t.label))}</span><select data-vtypo="${t.key}">${
     t.values.map(([v, d]) => `<option value="${esc(v)}"${state.typo[t.key] === v ? ' selected' : ''}>${esc(lab(t, v, d))}</option>`).join('')}</select></label>`).join('');
   syncViewTypo();
 }
-/* 对齐方式只在两端对齐时有用 */
+/* Justification method applies only with justified alignment. */
 export function syncViewTypo() {
   document.querySelectorAll('#viewTypo [data-vtypo]').forEach(s => { s.value = state.typo[s.dataset.vtypo]; });
   const j = $('#viewTypo [data-vtypo="justify"]'); if (j) j.disabled = state.typo.align !== 'justify';
 }
-/* 行高度量：写在 @font-face 的 ascent-override 等描述符里，几乎都用推荐值，所以放在高级排版属性的最后 */
+/* Line metrics use @font-face ascent-override and related descriptors. Most users keep the recommendation, so place them last among advanced text properties. */
 export const LM_SUP = { chrome: '87', firefox: '89', safari: '—' };
 export const lmSupported = () => typeof FontFace !== 'undefined' && 'ascentOverride' in FontFace.prototype;
-/* 行高度量的图：三行字，第二行只有西文；虚线是行框。
-   对齐汉字字体：三行一样高，汉字在行里居中。不调整：行框按西文字体算，只有西文的那行变矮，汉字偏下 */
+/* Line-metric illustration: three lines, with Western-only text on the second; dashed lines mark line boxes.
+   Han-aligned metrics give equal heights and centered Han glyphs. Unadjusted Western metrics shorten the Western-only line and lower Han glyphs. */
 const lmPic = (edges, rows) => tSvg(rows.map(([kind, x, y, w]) => kind === 'h' ? `<rect x="${x}" y="${y}" width="5" height="5" rx=".5"/>` : `<rect x="${x}" y="${y}" width="${w}" height="3" rx=".6"/>`).join('') +
   edges.map(y => `<path d="M2 ${y}H46" class="tt-edge"/>`).join(''));
-export const LM_PIC = {      // 只是数据：图在渲染时才画（模块顶层不能调用别的模块的函数）
+export const LM_PIC = {      // Data only: render illustrations later, since module top levels must not call other modules' functions.
   han: [[1.5, 10.5, 19.5, 28.5], [['h', 4, 3.5], ['h', 10, 3.5], ['l', 16, 5, 10], ['h', 28, 3.5], ['h', 34, 3.5], ['l', 4, 14, 14], ['l', 20, 14, 12], ['h', 4, 21.5], ['h', 10, 21.5], ['h', 16, 21.5], ['l', 22, 23, 9]]],
   off: [[1.5, 10.5, 16, 25], [['h', 4, 4.7], ['h', 10, 4.7], ['l', 16, 6.2, 10], ['h', 28, 4.7], ['h', 34, 4.7], ['l', 4, 11.75, 14], ['l', 20, 11.75, 12], ['h', 4, 19.2], ['h', 10, 19.2], ['h', 16, 19.2], ['l', 22, 20.7, 9]]],
 };
@@ -886,12 +886,12 @@ export function lmRow() {
       ${lmSupported() ? '' : `<p class="typo-unsup">${esc(T('supNo'))}</p>`}
     </div>`;
 }
-/* (i) 按钮：悬停时也有提示 */
+/* Info buttons also provide hover tooltips. */
 export const infoButton = key => `<button type="button" class="info" data-info="${esc(key)}" popovertarget="infoPop" aria-label="${esc(T('infoAria'))}"><svg class="ic" aria-hidden="true"><use href="#i-info-circle"/></svg></button>`;
-/* (i) 里的技术细节：CSS 属性名，以及各浏览器从哪个版本开始支持（标出当前浏览器，和它支不支持所选的值） */
+/* Info technical details: CSS property and first supported browser versions, highlighting the current browser and selected-value support. */
 export function techHtml(prop, sup, ok) {
   const names = { chrome: 'Chrome', firefox: 'Firefox', safari: 'Safari' };
-  // 浏览器名一行、版本一行，排成三列；当前浏览器那一列加粗
+  // Show browser names and versions on separate rows in three columns; emphasize the current browser.
   const grid = sup ? `<div class="ip-sup">${Object.keys(names).map(b => `<span class="ip-b${b === ENGINE.id ? ' cur' : ''}${sup[b] === '—' ? ' none' : ''}"><small>${names[b]}</small>${esc(sup[b])}</span>`).join('')}</div>` : `<p class="ip-all">${esc(T('allBrowsers'))}</p>`;
   const now = ENGINE.name ? `<p class="ip-now ${ok ? 'ok' : 'no'}">${esc(T(ok ? 'supNowOk' : 'supNowNo', { b: `${ENGINE.name} ${ENGINE.v}` }))}</p>` : '';
   return `<div class="ip-tech"><p class="ip-head"><code>${esc(prop)}</code><span>${esc(T('supSince'))}</span></p>${grid}${now}</div>`;
@@ -903,14 +903,14 @@ export function renderTypoStatus() {
   const changed = TYPO.filter(t => !t.attr && !isViewTypo(t) && state.typo[t.key] !== typoDef(t));
   const n = changed.filter(t => !isFontTypo(t)).length, nf = changed.filter(isFontTypo).length + (state.lineMetrics === 'off' ? 1 : 0);
   $('#typoChanged').textContent = n ? T('typoChanged', { n }) : '';
-  $('#typoCount').textContent = n || '';      // 页签上的小红点：改了几项
+  $('#typoCount').textContent = n || '';      // The tab badge counts modified settings.
   $('#typoReset').hidden = !n;
   $('#featChanged').textContent = nf ? T('typoChanged', { n: nf }) : '';
   $('#featReset').hidden = !nf;
   for (const t of TYPO) { const el = document.querySelector(`.typo-unsup[data-key="${t.key}"]`); if (el) el.hidden = typoSupported(t, state.typo[t.key]); }
 }
 
-/* ================= 预设卡片：每张卡片用它自己的字体排「永」「あ／字」「Ag」 ================= */
+/* ================= Preset cards: render each sample in its own fonts ================= */
 export function presetFonts(cls) {
   const han = cls.han.font, lat = cls.latin.follow ? han : cls.latin.font;
   const kana = cls.kana.follow === 'latin' ? lat : cls.kana.follow ? han : cls.kana.font;
@@ -921,7 +921,7 @@ export function famOf(f) {
   const s = source(f);
   return s.status === 'ok' ? `'${s.family}', var(--ui)` : 'var(--ui)';
 }
-/* 缩略字样「永 ? Ag」：中间那个字按文字写法换——简体「体」、繁体「體」、日文「あ」，一眼看出是哪种中文 */
+/* Use a regional middle glyph in the Han/Western thumbnail: Simplified or Traditional Han forms, or Japanese kana, make the writing system recognizable. */
 export const SCRIPT_CHAR = { sc: '体', tc: '體', jp: 'あ' };
 export const scriptOfLang = lang => /^ja/.test(lang || '') ? 'jp' : /^zh-Hant/.test(lang || '') ? 'tc' : 'sc';
 export function presetCard({ id, name, tag, cls, script, user, active }) {
@@ -934,20 +934,20 @@ export function presetCard({ id, name, tag, cls, script, user, active }) {
       ${miss ? `<span class="pmiss">${esc(T('presetMissing'))}</span>` : ''}
     </button>${user ? `<button type="button" class="btn-icon sm danger pdel" data-del="${esc(id.slice(5))}" aria-label="${esc(T('presetDelete'))} ${esc(name)}" title="${esc(T('presetDelete'))}"><svg class="ic" aria-hidden="true"><use href="#i-trash"/></svg></button>` : ''}</div>`;
 }
-/* 内置预设按界面语言排：这个语言的预设在前，其他语言的排在后面 */
+/* Put built-in presets matching the UI language first, followed by other languages. */
 export const PRESET_ORDER = {
   zh: ['serif-sc', 'sans-sc', 'mincho-jp', 'gothic-jp', 'ming-tw', 'hei-tw', 'antigochi', 'hei-hk', 'mac', 'mac-tw', 'mac-jp'],
   tw: ['ming-tw', 'hei-tw', 'hei-hk', 'mac-tw', 'serif-sc', 'sans-sc', 'mincho-jp', 'gothic-jp', 'antigochi', 'mac', 'mac-jp'],
   ja: ['mincho-jp', 'gothic-jp', 'antigochi', 'mac-jp', 'serif-sc', 'sans-sc', 'ming-tw', 'hei-tw', 'hei-hk', 'mac', 'mac-tw'],
 };
 export const orderedPresets = () => { const o = PRESET_ORDER[UI] || PRESET_ORDER.zh, at = id => (i => i < 0 ? 99 : i)(o.indexOf(id)); return [...PRESETS].sort((a, b) => at(a.id) - at(b.id)); };
-/* ================= 预设筛选 =================
-   三组：地区、风格（宋体 / 明朝 还是 黑体 / ゴシック，看汉字字体的名字）、来源（Google Fonts 还是本机字体）。
-   组内任选一个就算符合，组间要同时符合；一组都没选 = 不限。筛选条件放在视图状态里，不进撤销记录 */
+/* ================= Preset filters =================
+   Three groups: region, style (serif or sans from the Han font name), and source (Google Fonts or local).
+   Match any selected option within a group and every active group; an empty group is unrestricted. Store filters in view state, outside undo history. */
 export const PF_GROUPS = [['region', [['sc', 'pfSc'], ['tc', 'pfTc'], ['jp', 'pfJp']]], ['style', [['serif', 'pfSerif'], ['sans', 'pfSans'], ['other', 'pfOther']]], ['src', [['google', 'pfGoogle'], ['local', 'pfLocal']]]];
-/* 从设定推算预设的属性（保存对话框里的默认值；旧的「我的预设」没存属性时也用它）：
-   地区：导出的「适用语言」→ 汉字字体名里的地区（SC / TC / HK / JP）→ 校样的语言；风格：看汉字字体（styleOfFont）；
-   来源：所有类别都用 Google Fonts 才算 Google，有本机字体或字体文件就算本机（换一台电脑要有同样的字体） */
+/* Infer preset metadata for save-dialog defaults and older user presets without metadata.
+   Region: export language, then Han family suffix (SC / TC / HK / JP), then proof language. Style: styleOfFont for the Han font.
+   Source: Google only when every class uses Google Fonts; local fonts or uploads require the same files on another machine. */
 const REGION_GROUP = { sc: 'sc', tw: 'tc', hk: 'tc', jp: 'jp' };
 export function inferMeta(st) {
   const han = st.classes?.han?.font;
@@ -957,7 +957,7 @@ export function inferMeta(st) {
 }
 export function renderPresetFilter(shown, total) {
   const pf = state.view.pfilter || {}, n = PF_GROUPS.reduce((k, [g]) => k + (pf[g]?.length || 0), 0);
-  $('#pfCount').textContent = n || '';      // 按钮上：选了几项
+  $('#pfCount').textContent = n || '';      // Show the selected filter count on the button.
   $('#pfMenu').innerHTML = PF_GROUPS.map(([g, opts]) => `<p class="mm-lab">${esc(T({ region: 'pfRegion', style: 'pfStyle', src: 'pfSource' }[g]))}</p>` + opts.map(([v, k]) =>
     `<button type="button" class="mm-item mm-check" data-pf="${g}:${v}" aria-pressed="${!!pf[g]?.includes(v)}"${T(k + 'Tip') !== k + 'Tip' ? ` title="${esc(T(k + 'Tip'))}"` : ''}>${esc(T(k))}</button>`).join('')).join('<hr>') +
     (n ? `<hr><div class="pf-end"><button type="button" class="mm-item" data-pf="clear">${esc(T('pfClear'))}</button><span class="mono">${shown} / ${total}</span></div>` : '');
@@ -966,7 +966,7 @@ const ownPresetName = () => {
   const name = state.preset?.startsWith('user:') ? state.preset.slice(5) : null;
   return name != null && Object.hasOwn(userPresets, name) && userPresets[name]?.classes?.han ? name : null;
 };
-/* 首张卡片不参与筛选，也不套用配置；字体直接使用实时合成结果，避免预览与当前内容脱节。 */
+/* The first card is neither filtered nor applied as a configuration; render its font from the live composite so it always matches current work. */
 export function renderCurrentPreset() {
   const own = ownPresetName(), name = own ?? (state.preset ? presetTitle(state.preset) : suggestedPresetName());
   $('#currentPresetName').textContent = name;
@@ -979,11 +979,11 @@ export function renderCurrentPreset() {
   const create = $('#savePresetBtn');
   create.classList.toggle('btn-text', own != null); create.classList.toggle('btn', own == null);
 }
-/* 当前配置固定在首位；筛选计数只包含可套用的自存与内置预设。 */
+/* Keep the current configuration first; filter counts include only applicable built-in and user presets. */
 export function renderPresetCards() {
   const all = [], pf = state.view.pfilter || {};
   for (const [n, snap] of Object.entries(userPresets)) if (snap?.classes?.han) {
-    const meta = { ...inferMeta(snap), ...(snap.meta || {}), src: inferMeta(snap).src };      // 地区、风格用保存时确认的；来源总是按字体算
+    const meta = { ...inferMeta(snap), ...(snap.meta || {}), src: inferMeta(snap).src };      // Use region and style confirmed at save time; always derive source from the fonts.
     all.push([meta, { id: 'user:' + n, name: n, tag: T('presetMine'), cls: snap.classes, script: scriptOfLang(snap.typo?.lang), user: true, active: state.preset === 'user:' + n }]);
   }
   for (const p of orderedPresets()) {
@@ -995,10 +995,10 @@ export function renderPresetCards() {
   $('#presetList').innerHTML = cards.join('') || `<p class="pf-none">${esc(T('pfNone'))} <button type="button" class="btn-text" data-pf="clear">${esc(T('pfClear'))}</button></p>`;
   renderPresetFilter(cards.length, all.length); renderCurrentPreset();
 }
-/* 点筛选按钮：组内加上 / 去掉这一项；「清除筛选」在筛选条和空结果里都有 */
+/* Filter buttons toggle options within groups; Clear filters is available in both the filter bar and empty state. */
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-pf]'); if (!b || !b.closest('#panePresets')) return;
-  const focus = b.dataset.pf;      // 菜单重画以后，焦点放回刚点的那一项
+  const focus = b.dataset.pf;      // Restore focus to the clicked item after rebuilding the menu.
   const v = state.view;
   if (b.dataset.pf === 'clear') delete v.pfilter;
   else {
@@ -1010,7 +1010,7 @@ document.addEventListener('click', e => {
   renderPresetCards(); saveState();
   $(`#pfMenu [data-pf="${focus}"]`)?.focus();
 });
-/* 筛选菜单：挂在按钮下面，右边对齐 */
+/* Position the filter menu below its button with right edges aligned. */
 $('#pfMenu').addEventListener('toggle', e => {
   if (e.newState !== 'open') return;
   const r = $('#pfBtn').getBoundingClientRect(), pop = e.currentTarget;
@@ -1020,7 +1020,7 @@ export const renderPresetCardsSoon = debounce(renderPresetCards, 120);
 export const hasFileFont = () => [...CLASSES.map(c => state.classes[c.id].font), ...state.custom.map(c => c.font)].some(f => f && f.kind === 'file');
 export function applyPreset(id) {
   if (id.startsWith('user:')) {
-    const { meta, ...saved } = userPresets[id.slice(5)] || {}; if (!saved.classes) return;      // meta：保存时确认的地区、风格，只用于筛选
+    const { meta, ...saved } = userPresets[id.slice(5)] || {}; if (!saved.classes) return;      // meta contains region and style confirmed at save time, used only for filtering.
     setState({ ...JSON.parse(JSON.stringify(saved)), view: state.view, preset: id });
   } else {
     const p = PRESETS.find(x => x.id === id); if (!p) return;
@@ -1033,9 +1033,9 @@ export function applyPreset(id) {
   state.presetBase = presetSnap();
   refresh('ranges', 'toolbar', 'editor', 'preview', 'presets', 'fonts');
 }
-/* 按依赖顺序测量，先西文再数字，最后例外；所有类别算完才一次写入。
-   基线目前是类别的基础设定，不按字重单独存；连续模式仍只调大小、基线。
-   跟随项继续继承，用户单独覆盖的大小/基线保持原值。 */
+/* Measure dependencies in order: Western before digits, custom groups last. Apply only after all classes finish.
+   Baseline is currently a class-wide base setting, not per-weight; continuous mode still fits only size and baseline.
+   Followed classes keep inheriting, and explicit size/baseline overrides remain unchanged. */
 export const SHIFT_MIN = 2;
 const fitShift = v => Math.abs(v) < SHIFT_MIN ? 0 : Math.min(30, Math.max(-30, v));
 const sameFitFont = (a, b) => sameFontAs(a, b) || (a?.kind === 'file' && b?.kind === 'file' && a.fileId && a.fileId === b.fileId);
@@ -1048,7 +1048,7 @@ function autoTargets() {
   state.custom.forEach((o, i) => {
     if (o.follow || !o.font || !parseChars(o.chars).length) return;
     const ranges = parseChars(o.chars), count = ranges.reduce((n, [a, b]) => n + b - a + 1, 0);
-    // 单组例外共用一个大小/基线；混合类别或过大的范围没有可靠的单一参照。
+    // Each custom group shares one size/baseline; mixed classes or oversized groups have no reliable single reference.
     const chars = count <= 64 ? ranges.flatMap(([a, b]) => Array.from({ length: b - a + 1 }, (_, j) => String.fromCodePoint(a + j))) : [];
     const kinds = new Set(chars.map(ch => classOf(ch.codePointAt(0))));
     const ref = kinds.size === 1 && !kinds.has(null) ? [...kinds][0] : null;
@@ -1092,7 +1092,7 @@ export async function autoAdjust() {
         if (histSnap() !== snapshot) return toast(T('autoCancelled'));
       }
       if (!rows.length) continue;
-      // 某档缺少同类参照时保留整类，避免基础设置的改动间接改掉没有测成的档位。
+      // If any step lacks a same-class reference, preserve the whole class so a base-setting change cannot indirectly alter unmeasured steps.
       if (rows.some(r => !r.candidates.length)) { skipped.add(target.key); continue; }
       const fits = chooseFits(rows);
       if (fits.size) planned.set(target.key, { fits });
@@ -1135,11 +1135,11 @@ export async function autoAdjust() {
     if (!btn.classList.contains('done')) lab.textContent = T('autoAdj');
   }
 }
-/* 把现在的设定存成自己的预设；meta 是对话框里确认的地区和风格 */
+/* Save current settings as a user preset; meta contains the dialog-confirmed region and style. */
 export function savePresetAs(n, meta) {
   const snap = JSON.parse(JSON.stringify(state)); delete snap.view; delete snap.presetBase;
   const saved = { ...snap, meta };
-  // 先确保写入成功再替换内存和当前身份；空间不足时保留编辑内容与已有预设。
+  // Confirm storage succeeds before replacing memory and preset identity; preserve work and saved presets when storage is full.
   try { localStorage.setItem(LS_PRESETS, JSON.stringify({ ...userPresets, [n]: saved })); }
   catch (error) { toast(T('presetSaveFailed')); return false; }
   Object.defineProperty(userPresets, n, { value: saved, writable: true, configurable: true, enumerable: true });
@@ -1148,13 +1148,13 @@ export function savePresetAs(n, meta) {
   toast(T('tSaved', { n }) + (hasFileFont() ? T('tSavedFile') : ''));
   return true;
 }
-/* ================= 保存预设的对话框 =================
-   「存为预设」和「改过设定后换预设」都用它；后者多一句会丢失什么，和「不保存」。
-   地区、风格先按字体推算好（inferMeta），不对可以改；来源只显示，按字体算 */
+/* ================= Save preset dialog =================
+   Used both for saving and for switching presets with unsaved edits; the latter adds a loss warning and a Discard action.
+   Infer region and style with inferMeta, allowing corrections. Source is read-only and derived from fonts. */
 export let saveThen = null, saveMeta = null;
 const presetTitle = id => id.startsWith('user:') ? id.slice(5) : tr(PRESETS.find(p => p.id === id)?.name || { zh: id, ja: id, tw: id, en: id });
 function suggestedPresetName() {
-  // 未命名的当前配置与新建对话框共用建议名称；只在打开时填入输入框，保留框内的手工修改。
+  // Unnamed current configurations and new-preset dialogs share a suggested name. Fill the field only on opening, preserving manual edits while it remains open.
   const fonts = ['han', 'latin', 'kana'].map(id => shortName(resolveCls(id, BASE_W, true).font).trim()).filter(Boolean);
   const base = [...new Set(fonts)].join(' × ') || T('presetUnnamed');
   let name = base, i = 2;
@@ -1169,7 +1169,7 @@ export function openSave(leaveTo = null, { create = false } = {}) {
   $('#saveMsg').hidden = !leaveTo; if (leaveTo) $('#saveMsg').textContent = T('leaveMsg', { name: presetTitle(leaveTo) });
   $('#saveDiscard').hidden = !leaveTo;
   $('#saveOk').querySelector('span').textContent = T(leaveTo ? 'leaveSave' : 'presetCreate');
-  $('#saveName').value = !create && ownPresetName() != null ? ownPresetName() : !create && state.name.trim() && state.name !== 'My Composite' ? state.name : suggestedPresetName();      // 改的是自己的预设：默认存回去；新建则建议未占用的名称
+  $('#saveName').value = !create && ownPresetName() != null ? ownPresetName() : !create && state.name.trim() && state.name !== 'My Composite' ? state.name : suggestedPresetName();      // Default to updating the current user preset; for a new preset, suggest an unused name.
   $('#saveSrc').textContent = T(m.src === 'google' ? 'saveSrcGoogle' : 'saveSrcLocal');
   $('#saveFile').hidden = !hasFileFont();
   syncSave();
@@ -1220,7 +1220,7 @@ export function initPresets() {
   $('#saveOk').addEventListener('click', doSave);
   $('#saveName').addEventListener('keydown', e => {
     if (e.key !== 'Enter' || e.isComposing) return;
-    // 保存后焦点会回到入口按钮，阻止同一次回车再次触发它并重新打开对话框。
+    // Saving returns focus to the entry button; prevent the same Enter key from activating it again and reopening the dialog.
     e.preventDefault(); doSave();
   });
   $('#saveName').addEventListener('input', syncSave);
@@ -1228,11 +1228,11 @@ export function initPresets() {
   $('#saveDiscard').addEventListener('click', () => { $('#saveDlg').close(); if (saveThen) applyPreset(saveThen); });
   for (const [id, g] of [['#saveRegion', 'region'], ['#saveStyle', 'style']])
     $(id).addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) { saveMeta[g] = b.dataset.v; syncSave(); } });
-  $('#saveDlg').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });      // 点背景关闭
+  $('#saveDlg').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });      // Close on backdrop click.
 }
-/* ================= 字体选择对话框 ================= */
+/* ================= Font picker dialog ================= */
 export let pickTarget = null, pickCand = null, pickTab = 'google';
-export let pickW = null;   // 400 以外的字重、且这一行有自己的字体时：只为这个字重指定用哪个粗细 / 字体名 / 文件
+export let pickW = null;   // When editing a non-400 row with its own font, choose a weight, font name or file only for that step.
 export const picker = $('#picker');
 export function setPickTab(tab) {
   pickTab = tab;
@@ -1249,17 +1249,17 @@ export function candFromFields() {
   if (pickTab === 'local') {
     const n = $('#lfName').value.trim() || (base ? $('#lfName').placeholder : ''); if (!n) return null;
     const ps = localAlt.get(n), f = L(n, ps && ps !== n ? [ps] : []), fa = localAxesOf(n);
-    if (fa) { setFontAxes(f, fa, pickW || 400); if (f.axis) $('#lfVar').checked = true; }      // 列出过本机字体时，直接读字体里的轴
+    if (fa) { setFontAxes(f, fa, pickW || 400); if (f.axis) $('#lfVar').checked = true; }      // If local fonts were enumerated, read axes directly from their files.
     if (localStyle.get(n)) f.cls = localStyle.get(n);
-    else if ($('#lfVar').checked) { f.axis = [100, 900]; f.weight = pickW || 400; }      // 自己声明的可变字体，范围交给字体本身去夹
+    else if ($('#lfVar').checked) { f.axis = [100, 900]; f.weight = pickW || 400; }      // For manually declared variable fonts, let the font clamp to its own range.
     return f;
   }
   if (pickCand?.kind === 'file' && pickCand !== base) return pickCand;
-  if (pickW && base.kind === 'file') return base;      // 字体文件：没上传新文件时，校样仍用原来的文件，这里只定导出时的文件名
+  if (pickW && base.kind === 'file') return base;      // Without a new upload, keep the original file for preview and edit only the export filename here.
   return null;
 }
-/* 本机字体的轴：「列出本机字体」授权后，能读到字体文件本身 */
-export const localData = new Map(), localAxes = new Map(), localStyle = new Map();      // 字体全名 → FontData；→ 读到的轴（undefined = 读取中）；→ OS/2 里的风格
+/* Read local-font axes after permission to enumerate local fonts grants access to their files. */
+export const localData = new Map(), localAxes = new Map(), localStyle = new Map();      // Full font name -> FontData; -> detected axes (undefined = reading); -> OS/2 style.
 export function localAxesOf(name) {
   if (localAxes.has(name)) return localAxes.get(name);
   const fd = localData.get(name);
@@ -1271,7 +1271,7 @@ export function localAxesOf(name) {
   }, () => localAxes.set(name, null));
   return undefined;
 }
-/* ================= 可变轴（粗细、斜体以外）：对这个类别的所有字重生效 ================= */
+/* ================= Other variation axes, excluding weight/italics: apply to every weight of this class ================= */
 export let pickVary = {};
 export const axStep = (lo, hi) => hi - lo <= 2 ? 0.01 : hi - lo <= 30 ? 0.1 : 1;
 export function renderAxes() {
@@ -1281,7 +1281,7 @@ export function renderAxes() {
   let body = `<p class="hint">${esc(T('axUnknown'))}</p>`;
   if (ax.length) {
     const g = f.kind === 'google';
-    /* 常用的轴在前（宽度、光学尺寸、笔画粗细、倾斜），其他（多是参数轴）收进「更多」，有设定时展开 */
+    /* Show common axes first (width, optical size, grade, slant); collapse the mostly parametric axes under More, expanding when customized. */
     const MAIN = ['wdth', 'opsz', 'GRAD', 'slnt'], rank = t => MAIN.includes(t) ? MAIN.indexOf(t) : 9;
     const sorted = [...ax].sort((x, y) => rank(x[0]) - rank(y[0]) || (x[0] < y[0] ? -1 : 1));
     const main = sorted.filter(a => MAIN.includes(a[0])), more = sorted.filter(a => !MAIN.includes(a[0]));
@@ -1289,7 +1289,7 @@ export function renderAxes() {
       const v = pickVary[t], st = axStep(lo, hi), lab = esc(axisLabel(t));
       const name = `<span class="ax-name">${lab}<small>${esc(t)} · ${lo}–${hi}</small></span>`;
       const ctl = val => `<input type="range" data-ax="${t}" min="${lo}" max="${hi}" step="${st}" value="${val}" aria-label="${lab}"><input type="number" data-ax="${t}" min="${lo}" max="${hi}" step="${st}" value="${val}" aria-label="${lab}">`;
-      if (t === 'opsz') {      // 光学尺寸：Google 默认固定在默认值；可以改成跟随字号（文件里保留这个轴），或固定一个值
+      if (t === 'opsz') {      // Google optical size is fixed at its default unless set to follow font size (retain the axis in the file) or to a fixed value.
         const mode = typeof v === 'number' ? 'fix' : v === 'auto' || !g ? 'auto' : 'def';
         const opts = [...(g ? [['def', T('axOpszOff', { d: def })]] : []), ['auto', T('axOpszAuto')], ['fix', T('axFix')]];
         return `<div class="ax-row mode${mode === 'fix' ? ' fix' : ''}">${name}<select class="ax-mode" data-axmode="${t}" aria-label="${lab}">${opts.map(([k, l]) => `<option value="${k}"${k === mode ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>${mode === 'fix' ? ctl(v) : ''}</div>`;
@@ -1304,13 +1304,13 @@ export function renderAxes() {
   updateAxSum();
   applySampleAxes();
 }
-/* 收起时也看得到调了什么：「光学尺寸 跟随字号 · 宽度 80」，没调时写「4 个轴，都是默认值」 */
+/* Collapsed summaries still show adjusted axes, such as optical size following size and width 80; otherwise show the axis count and default status. */
 export function updateAxSum() {
   const el = $('#pkAxes .ax-sum'), f = pickCand; if (!el || !f) return;
   const n = extraAxes(f).length, list = Object.entries(pickVary).filter(([t]) => axisOf(f, t)).map(([t, v]) => `${axisLabel(t)} ${v === 'auto' ? T('axOpszAuto') : v}`);
   el.textContent = list.length ? list.join(' · ') : n ? T('axNone', { n }) : '';
 }
-/* 对话框里的预览：Google Fonts 加载的是保留了所有轴的文件，这里用 font-variation-settings 直接显示调过的值 */
+/* The picker preview loads Google files retaining every axis and applies edits directly through font-variation-settings. */
 export function applySampleAxes() {
   const f = pickCand, parts = [];
   for (const [t, , , def] of f ? extraAxes(f) : []) {
@@ -1322,7 +1322,7 @@ export function applySampleAxes() {
 }
 export const previewFont = f => f?.kind === 'google' && extraAxes(f).length ? { ...f, xa: extraAxes(f).map(a => a[0]).sort() } : f;
 export const cleanVary = f => { const o = Object.fromEntries(Object.entries(pickVary).filter(([t]) => axisOf(f, t))); return Object.keys(o).length ? o : undefined; };
-/* 导出斜体时：这个字体斜体用什么 */
+/* Which font to use for this face's italic export. */
 export function renderItal() {
   const el = $('#pkItal'), f = pickCand;
   el.hidden = !state.italic || !f;
@@ -1332,22 +1332,22 @@ export function renderItal() {
   el.textContent = !it ? T('pkItalNo') : it.slant ? T('pkItalSlant', { t: it.slant, v: it.slant === 'slnt' ? axisOf(f, 'slnt')[1] : 1 })
     : T('pkItalYes', { name: it.kind === 'google' ? `${it.family} Italic` : it.kind === 'local' ? it.name : it.fileName || it.path });
 }
-/* ================= 字符覆盖：这个字体有哪些字 ================= */
-/* 每个字符集抽查一组有代表性的字（简体、繁体、日本汉字各取彼此不同的字形） */
+/* ================= Character coverage ================= */
+/* Sample representative characters per set, including distinct Simplified, Traditional and Japanese Han forms. */
 export const COV_SETS = [
   ['covLatin', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'],
-  ['covPinyin', 'āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü'],      // 汉语拼音：西文字体缺这些时，拼音会一个字母一个字母地混用后面的字体
+  ['covPinyin', 'āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü'],      // If a Western font lacks Pinyin letters, individual letters fall back to later fonts.
   ['covDigit', '0123456789'],
   ['covKana', 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンー'],
   ['covSC', '这们说时对过学发会经实现进动应头书长马门问间东车见风让认识语读谁调谈网样个钱'],
   ['covTC', '這們說時對過學發會經實現進動應頭書長馬門問間東車見風讓認識語讀誰調談網樣個錢'],
   ['covJP', '円気駅図県様広応戦鉄売読楽薬弁両帰稲鉱塩'],
-  ['covHK', '嘅咗嚟啲冇佢喺嘢噉咁哋睇攞乜嗰𠝹𨋢'],      // 粤语用字，最后两个在扩展 B 区（HKSCS）
+  ['covHK', '嘅咗嚟啲冇佢喺嘢噉咁哋睇攞乜嗰𠝹𨋢'],      // Cantonese characters; the last two are in Extension B (HKSCS).
   ['covKR', '가나다라마바사아자차카타파하한글'],
   ['covSym', '①②③※→℃○■△◎★〒'],
 ];
-/* 缺哪些字。Google Fonts 直接看各分片的 unicode-range。本机字体和字体文件：后面接一个「空白字体」
-   （616 字节，所有字符都映射到宽度为 0 的空字形），这个字体没有的字会落到空白字体上，宽度量出来就是 0 */
+/* Find missing characters. Google Fonts uses subset unicode-range coverage. For local/uploaded fonts, append a 616-byte blank font
+   mapping all characters to zero-width empty glyphs; unsupported source characters then measure as zero width. */
 export const BLANK_FONT = 'data:font/ttf;base64,AAEAAAAKAIAAAwAgT1MvMlQEUR0AAACsAAAAYGNtYXAAIrhhAAABDAAAADRnbHlmAAAAAAAAAUAAAAAMaGVhZF8eQOUAAAFMAAAANmhoZWEDIf87AAABhAAAACRobXR4AAAAAAAAAagAAAAIbG9jYQAGAAYAAAGwAAAABm1heHAAAwACAAABuAAAACBuYW1lBcMVaQAAAdgAAABucG9zdP+fADIAAAJIAAAAIAAEAAABkAAFAAAAAAAAAAAAAAAAAAAAAAAAADIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABOT05FAEAAIP//AyD/OAAAAyAAyAAAAAEAAAAAAAAAAAAAACAAAAAAAAEAAwAKAAAADAANAAAAAAAoAAAAAAAAAAIAAAAgAADX/wAAAAEAAOAAABD//wAAAAEAAAAAAAAAAAAAAAAAAQAAAAEAAC3z3ftfDzz1AAsD6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAgAAAAAAAAABAAADIP84AAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAABgAGAAAAAQAAAAIAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAQANgADAAEECQABAA4AAAADAAEECQACAA4ADgADAAEECQAEAA4AHAADAAEECQAGAA4AKgBDAEYAQgBsAGEAbgBrAFIAZQBnAHUAbABhAHIAQwBGAEIAbABhAG4AawBDAEYAQgBsAGEAbgBrAAAAAwAAAAAAAP+cADIAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
 export let blankReady = null;
 export function loadBlank() {
@@ -1361,7 +1361,7 @@ export async function missingIn(s, chars) {
     return new Set(chars.filter(c => !inRanges(merged, c.codePointAt(0))));
   }
   if (!(await loadBlank())) return new Set();
-  try { await document.fonts.load(`32px "${s.family}"`, chars.join('')); } catch (e) { /* 照常检测 */ }
+  try { await document.fonts.load(`32px "${s.family}"`, chars.join('')); } catch (e) { /* Check normally. */ }
   const ctx = document.createElement('canvas').getContext('2d');
   ctx.font = `32px "${s.family}", "__cf_blank"`;
   return new Set(chars.filter(c => ctx.measureText(c).width === 0));
@@ -1381,7 +1381,7 @@ export async function renderCoverage(s, f) {
   }).join('') + (sampleChars.some(c => miss.has(c)) ? `<span class="cov-note"><i></i>${esc(T('covMiss'))}</span>` : '');
   sample.innerHTML = [...text].map(c => miss.has(c) ? `<span class="miss">${esc(c)}</span>` : esc(c)).join('');
 }
-/* 选字体时也告诉用户：这个字体的标点是居中（台湾、香港）还是靠左下（大陆、日本）；和当前语言不一致时标黄 */
+/* Also show whether picker punctuation is centered (Taiwan/Hong Kong) or lower-left (Mainland/Japan); warn when it differs from the current language. */
 export function renderPunct(s, f) {
   const el = $('#pkPunct'), lang = state.typo.lang, want = REGION_OF_LANG[lang], pos = punctPos(s, lang);
   if (pos === undefined) { el.hidden = true; setTimeout(() => { if (pickCand === f) renderPunct(s, f); }, 300); return; }
@@ -1406,7 +1406,7 @@ export function updateCand() {
   $('#ffName').textContent = f?.kind === 'file' ? f.fileName : T('ffHint');
   $('#ffItalName').textContent = f?.italic?.fileName || '';
   const ok = $('#pkOk'), st = $('#pkStatus'), sample = $('#pkSample');
-  /* 预览只在字体真正可用时显示：没选字体、检测中、加载失败时，界面字体画出来的完整文字会让人误以为这个字体都有 */
+  /* Show specimens only when the font is available. Rendering complete UI-font text before selection, during checks or after failure would imply false coverage. */
   st.classList.remove('caution'); sample.hidden = true; showVfTag(null); resetCoverage();
   if (!f) { ok.disabled = true; st.textContent = T('pkEmpty'); sample.style.fontFamily = 'var(--ui)'; return; }
   const s = source(previewFont(f), { retry: true });
@@ -1431,16 +1431,16 @@ export function updateCand() {
   });
 }
 export const updateCandSoon = debounce(updateCand, 700);
-/* 本机字体名去掉粗细部分（W3、Bold 等），用来判断是不是同一个字体 */
+/* Strip weight suffixes, such as W3 or Bold, from local names when checking family identity. */
 export const localStem = n => n.replace(/\bW\d$/, '').replace(WORD_RE, '').trim().toLowerCase();
-/* 选的是不是这一行原来那个字体（同一字体的其他粗细 / 名称 / 文件） */
+/* Check whether this is the row's original font, possibly at another weight, name or file. */
 export const sameFontAs = (c, base) => !!c && !!base && c.kind === base.kind && (c.kind === 'google' ? c.family === base.family : c.kind === 'local' ? localStem(c.name) === localStem(base.name) : c === base);
 export function updateScope() {
   const show = !!pickW && !!pickCand && !sameFontAs(pickCand, objOf(pickTarget).font);
   $('#pkScope').hidden = !show;
 }
-/* Google Fonts 的字重：可变字体换成能填任意值的数字框（范围是它的 wght 轴），其他字体用 100–900 的菜单 */
-/* 可变字体的标签：「VF 400–800」，悬停看说明 */
+/* Google weight controls: numeric fields over the wght range for variable fonts; a 100-900 menu for others. */
+/* Variable-font badge, for example 'VF 400-800', with a hover explanation. */
 export function showVfTag(axis) {
   const tag = $('#pkVfTag');
   tag.hidden = !axis;
@@ -1450,7 +1450,7 @@ export function syncGfWeight() {
   const fam = $('#gfFamily').value.trim(), sel = $('#gfWeight'), num = $('#gfWeightNum');
   const axis = fam && fam in vfCache ? vfCache[fam] || null : null;
   if (fam && !(fam in vfCache)) vfAxis(fam).then(() => { if ($('#gfFamily').value.trim() === fam) syncGfWeight(); });
-  if (axis && num.hidden) num.value = +sel.value ? sel.value : num.value;                       // 切到数字框时带上当前值
+  if (axis && num.hidden) num.value = +sel.value ? sel.value : num.value;                       // Carry the current value into the numeric field when switching controls.
   if (!axis && sel.hidden) { const v = +num.value; sel.value = v ? Math.min(900, Math.max(100, Math.round(v / 100) * 100)) : (sel.querySelector('option[value="0"]') ? 0 : 400); }
   num.hidden = !axis; sel.hidden = !!axis;
   if (axis) { num.min = axis[0]; num.max = axis[1]; num.title = T('vfTitle', { a: axis[0], b: axis[1] }); }
@@ -1458,25 +1458,25 @@ export function syncGfWeight() {
 export function gfWeightVal() {
   const num = $('#gfWeightNum');
   if (num.hidden) return +$('#gfWeight').value;
-  if (num.value.trim() === '') return 0;          // 空着 = 自动（按字重设定时）或 400
+  if (num.value.trim() === '') return 0;          // Empty means automatic in per-weight editing, otherwise 400.
   return Math.min(+num.max || 900, Math.max(+num.min || 100, Math.round(+num.value)));
 }
-export function openPicker(t, W = BASE_W) {      // W：从「各字重」的某一行打开时是那个字重
+export function openPicker(t, W = BASE_W) {      // W is the target weight when opening from a weight row.
   pickTarget = t;
   const o = objOf(t), key = keyOf(t);
   pickVary = { ...(o.vary || {}) };
-  $('#pkAxes').open = Object.keys(pickVary).length > 0;      // 调过轴时展开，否则收起
+  $('#pkAxes').open = Object.keys(pickVary).length > 0;      // Expand axes when customized; otherwise collapse them.
   pickW = W !== BASE_W && !o.follow && o.font ? W : null;
   const name = t.type === 'class' ? tr(CLS[t.id].name) : T('customName', { c: state.custom[t.i].chars || '…' });
   $('#pkFor').textContent = '· ' + name + (pickW ? ' · ' + T('pkForW', { w: W }) : '');
   picker.querySelectorAll('[data-src]').forEach(b => { b.hidden = false; });
   const cur = resolvedOf(t).font, k = pickW ? fontKey(o.font) + '|' + W : '';
-  const ovf = pickW ? state.wOver[W]?.[key]?.font : null;      // 这个字重已经单独换过的字体
+  const ovf = pickW ? state.wOver[W]?.[key]?.font : null;      // This step already has its own replacement font.
   $('#pkScopeW').textContent = T('pkScopeW', { w: W });
-  picker.querySelector(`[name="pkScope"][value="${pickW ? 'w' : 'all'}"]`).checked = true;      // 从某个字重打开：默认只换这个字重
-  /* Google Fonts：平时选具体粗细；按字重指定时第一项是「自动」，字体名固定 */
+  picker.querySelector(`[name="pkScope"][value="${pickW ? 'w' : 'all'}"]`).checked = true;      // When opened from a weight row, default to replacing only that weight.
+  /* Normally choose a Google weight; per-weight editing adds Automatic first and keeps the family fixed. */
   let wOpts = WEIGHTS.map(w => `<option value="${w}">${w}</option>`).join('');
-  if (pickW && o.font.kind === 'google') {      // 推算的那一档用值 0（不单独设定），其他只列这个字体真有的字重
+  if (pickW && o.font.kind === 'google') {      // Use 0 for the derived step (no override); list only actual available weights otherwise.
     const autoF = fontAtWeight(o.font, W), auto = sources.get(fontKey(autoF))?.actualWeight || autoF.weight;
     wOpts = (gfWeights(o.font.family) || WEIGHTS).map(w => w === auto ? `<option value="0">${w} · ${esc(T('wAutoTag'))}</option>` : `<option value="${w}">${w}</option>`).join('');
   }
@@ -1516,10 +1516,10 @@ export function initPicker() {
     const id = 'f' + Date.now().toString(36);
     files.set(id, { name: file.name, buffer: await file.arrayBuffer() });
     pickCand = setFontAxes({ kind: 'file', fileId: id, fileName: file.name }, await fileAxes(files.get(id).buffer), pickW || 400);
-    const cls = await fileStyle(files.get(id).buffer); if (cls) pickCand.cls = cls;      // 字体自己声明的风格（宋体 / 黑体 / 其他），预设筛选用
+    const cls = await fileStyle(files.get(id).buffer); if (cls) pickCand.cls = cls;      // Font-declared serif / sans / other style, used for preset filtering.
     updateCand();
   });
-  /* 斜体文件：记在这个字体文件上，导出斜体时这个类别用它（其他字重按文件名推算） */
+  /* Attach the italic file to this uploaded font; italic export uses it for this class, deriving other weights by filename. */
   $('#ffItal').addEventListener('change', async e => {
     const file = e.target.files[0]; if (!file || pickCand?.kind !== 'file') return;
     const id = 'f' + Date.now().toString(36) + 'i', buffer = await file.arrayBuffer();
@@ -1564,13 +1564,13 @@ export function initPicker() {
   $('#pkCancel').addEventListener('click', () => picker.close());
   $('#pkOk').addEventListener('click', () => {
     if (!pickCand || !pickTarget) return;
-    recordHistory(); // 换字体和自动取消导出合成一步，先记下用户之前尚未保存的编辑。
+    recordHistory(); // Group the font change and automatic unchecking into one undo step; first record any pending edits.
     const o = objOf(pickTarget);
-    /* 400 以外的字重：选的是同一个字体的其他粗细 / 名称 / 文件，就只记在这个字重；换成别的字体，则替换所有字重 */
+    /* For non-400 weights, selecting another weight/name/file in the same family affects only that step; a different family replaces all weights. */
     const base = o.font, c = pickCand, key = keyOf(pickTarget);
     const sameFont = pickW && sameFontAs(c, base);
     const onlyW = pickW && !sameFont && picker.querySelector('[name="pkScope"]:checked')?.value === 'w';
-    if (onlyW) {          // 只为这个字重换成另一个字体；Google Fonts 选「自动」时用这个字重本身
+    if (onlyW) {          // Replace only this step's font; Google Automatic uses the step's own weight.
       const ov = ((state.wOver[pickW] ||= {})[key] ||= {});
       ov.font = c.kind === 'google' ? G(c.family, gfWeightVal() || pickW) : c;
       delete ov.weight;
@@ -1580,7 +1580,7 @@ export function initPicker() {
       return;
     }
     if (pickW) delete state.wOver[pickW]?.[key]?.font;
-    if (sameFont) {       // 只记下这个字重用的粗细 / 字体名 / 文件，和自动推算相同时清掉
+    if (sameFont) {       // Store only this step's weight/name/file; clear the override when it matches the automatic result.
       const k = fontKey(o.font) + '|' + pickW;
       o.vary = cleanVary(o.font);
       if (o.font.kind === 'google') {
@@ -1594,7 +1594,7 @@ export function initPicker() {
       changed({ fonts: true, fontChange: true }); refresh('export');
       return;
     }
-    o.follow = null;     // 选了字体就改为独立字体，大小和基线保留各自的设定
+    o.follow = null;     // Selecting a font makes the class independent while preserving its size and baseline settings.
     o.font = pickW && c.kind === 'google' && !gfWeightVal() ? G(c.family, 400) : c;
     o.vary = cleanVary(c);
     picker.close();
@@ -1602,8 +1602,8 @@ export function initPicker() {
   });
 }
 
-/* ================= 界面语言 ================= */
-/* 「原理与限制」左边的目录：当前语言那一份说明里的小标题 */
+/* ================= UI language ================= */
+/* The About table of contents uses subheadings from the current language's content. */
 export function renderAboutToc() {
   const body = document.querySelector(`.about-body [data-ui="${UI}"]`); if (!body) return;
   $('#aboutToc').innerHTML = [...body.querySelectorAll('h3')].map((h, i) => { h.id ||= `about-${UI}-${i}`; return `<a href="#${h.id}">${esc(h.textContent)}</a>`; }).join('');
@@ -1633,8 +1633,8 @@ $('#uiLanguages').addEventListener('keydown', e => {
   setUI(buttons[next].dataset.uiLang); lsSet(LS_UI, UI); applyUI(); buttons[next].focus();
 });
 
-/* ================= 其他 ================= */
-/* 窄屏：一次只显示一栏（编辑 / 校样），用底部页签切换 */
+/* ================= Other UI ================= */
+/* Narrow screens show one pane at a time (editor / proof), switched with bottom tabs. */
 export function syncPanes() {
   const mv = state.view.mview === 'preview' ? 'preview' : 'edit';
   $('.app').dataset.mview = mv;
@@ -1645,12 +1645,12 @@ export function toast(t) {
   const el = $('#toast');
   clearTimeout(toastT);
   el.classList.remove('on'); el.textContent = t;
-  void el.offsetWidth; // 连续触发时也重新滑入，让新的提示能被注意到。
+  void el.offsetWidth; // Restart slide-in on repeated messages so each new notice attracts attention.
   el.classList.add('on');
   toastT = setTimeout(() => el.classList.remove('on'), 2600);
 }
 
-/* 重置：点一次变成确认，3 秒内再点才执行。「我的预设」不受影响 */
+/* Reset requires a confirming second click within 3 seconds; user presets are unaffected. */
 export function resetAll() {
   setState(stateFromPreset(PRESETS.find(p => p.id === defaultPresetId())));
   normalizeState();
@@ -1679,7 +1679,7 @@ export function init() {
   $('#aboutBtn').addEventListener('click', () => $('#aboutDlg').showModal());
   $('#aboutItem').addEventListener('click', () => { $('#moreMenu').hidePopover(); $('#aboutDlg').showModal(); });
   $('#aboutClose').addEventListener('click', () => $('#aboutDlg').close());
-  /* 「设置」菜单：右边和齿轮按钮对齐，窄屏时收进视口 */
+  /* Align Settings with the gear button's right edge and keep it inside narrow viewports. */
   const positionSettings = () => {
     const pop = $('#moreMenu'); if (!pop.matches(':popover-open')) return;
     const r = $('#moreBtn').getBoundingClientRect();
@@ -1690,12 +1690,12 @@ export function init() {
     if (e.newState === 'open') { e.currentTarget.scrollTop = 0; positionSettings(); }
   });
   window.addEventListener('resize', positionSettings);
-  for (const d of ['#aboutDlg', '#exDlg']) $(d).addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });      // 点对话框外面（背景）关闭
+  for (const d of ['#aboutDlg', '#exDlg']) $(d).addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });      // Close on a click outside the dialog, on its backdrop.
   applyUI();
   initSplit(); initSpecSplit(); initHistory(); initTips(); initShare();
   rebuildNow();
   new ResizeObserver(debounce(drawSpecimen, 100)).observe($('#spec'));
-  document.fonts.addEventListener('loadingdone', debounce(fitGlyphs, 60));      // 字样里的字晚一点才下载时，下载完再量
-  new ResizeObserver(debounce(refreshVAutospace, 100)).observe($('#proofText'));      // 直排校样的高度跟着窗口变
+  document.fonts.addEventListener('loadingdone', debounce(fitGlyphs, 60));      // Remeasure specimens when their glyphs finish downloading later.
+  new ResizeObserver(debounce(refreshVAutospace, 100)).observe($('#proofText'));      // Vertical proof height changes with the viewport.
   new MutationObserver(() => drawSpecimen()).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
 }

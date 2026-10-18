@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-"""合成字体烘焙的核心：在浏览器的 Pyodide 里由 assets/js/bake.js 的 Worker 运行，本地测试和 tools/bake.py 也用它。
+"""Composite font baking core, run in browser Pyodide by the assets/js/bake.js worker and shared with local tests and tools/bake.py.
 
-run_all(jobs_json, opts_json, progress) 按工具导出的规则表生成每个字重 / 正斜体的字体，打包成 zip。
-每条规则的字体只取它负责的字，按 size-adjust 缩放、按基线偏移平移，再合并成一个字体；行高度量用汉字基础字体的。
+run_all(jobs_json, opts_json, progress) builds one font per weight and upright/italic style from the exported rule plan, then packages them in a zip.
+Each rule subsets its source to owned characters, scales by size-adjust, applies baseline translation and merges; line metrics come from the Han base font.
 """
 import os, re, io, json, copy, time, zipfile
 from fontTools.ttLib import TTFont, TTCollection, newTable
@@ -11,8 +11,8 @@ from fontTools.merge import Merger, Options as MergeOptions
 from fontTools.ttLib.scaleUpem import scale_upem
 from fontTools.varLib import instancer
 
-MAX_GLYPHS = 65535      # 一个字体最多这么多字形（glyph ID 是 16 位）；测试里改小
-RARE = ((0x20000, 0x10FFFF), (0xF900, 0xFAFF), (0x2F800, 0x2FA1F))      # 罕用汉字：扩展 B 以后（第 2、3 平面）和兼容汉字
+MAX_GLYPHS = 65535      # Maximum glyph count per font (16-bit glyph IDs); tests use a smaller limit.
+RARE = ((0x20000, 0x10FFFF), (0xF900, 0xFAFF), (0x2F800, 0x2FA1F))      # Rare Han: Extension B onward (planes 2 and 3) and compatibility ideographs.
 
 STYLE = {100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black'}
 
@@ -21,8 +21,8 @@ class BakeError(Exception):
         super().__init__(code); self.code = code; self.name = name
 
 def to_otf(font):
-    """TrueType（二次曲线）转成 CFF（三次曲线）的 OTF：二次曲线能精确写成三次曲线，只有控制点取整的误差（不到 1/1000 em）。
-    竖排原点：TrueType 由上边距和字形顶边算出，CFF 要写进 VORG 表"""
+    """Convert TrueType quadratic outlines to CFF cubic OTF. Quadratics convert exactly apart from control-point rounding, below 1/1000 em.
+    Vertical origins are derived from top sidebearings and glyph tops in TrueType, but stored explicitly in CFF's VORG table."""
     import collections
     from fontTools.pens.t2CharStringPen import T2CharStringPen
     from fontTools.fontBuilder import FontBuilder
@@ -34,11 +34,11 @@ def to_otf(font):
         cs[gn] = pen.getCharString()
         if 'vmtx' in font and glyf[gn].numberOfContours: vorg[gn] = font['vmtx'][gn][1] + glyf[gn].yMax
     n, post = font['name'], font['post']
-    ascii_ = lambda x: x if x and all(ord(c) < 128 for c in x) else n.getDebugName(6)      # CFF 里的名字只能是 ASCII，中日文名字留在 name 表里
+    ascii_ = lambda x: x if x and all(ord(c) < 128 for c in x) else n.getDebugName(6)      # CFF names must be ASCII; keep Chinese/Japanese names in the name table.
     info = {'FullName': ascii_(n.getDebugName(4)), 'FamilyName': ascii_(n.getDebugName(1)), 'Weight': ascii_(n.getDebugName(2)),
             'Notice': ''.join(c for c in (n.getDebugName(0) or '') if ord(c) < 128)[:500],
             'ItalicAngle': post.italicAngle, 'UnderlinePosition': post.underlinePosition, 'UnderlineThickness': post.underlineThickness}
-    fb = FontBuilder(font=font); fb.isTTF = False      # 从 font 推断成了 TrueType，改成 CFF
+    fb = FontBuilder(font=font); fb.isTTF = False      # FontBuilder inferred TrueType from the source; switch to CFF.
     for t in ('glyf', 'loca', 'fpgm', 'prep', 'cvt ', 'gasp'):
         if t in font: del font[t]
     fb.setupCFF(n.getDebugName(6), info, cs, {})
@@ -56,7 +56,7 @@ def is_ttc(path):
     with open(path, 'rb') as fh: return fh.read(4) == b'ttcf'
 
 def open_face(path, ps=None, lazy=False):
-    """字体集合（TTC/OTC）按 PostScript 名取其中一款，没有名字或找不到时取第一款"""
+    """Select a TTC/OTC face by PostScript name; use the first if no name is supplied or found."""
     if not is_ttc(path): return TTFont(path, lazy=lazy)
     for i in range(len(TTCollection(path, lazy=True).fonts)):
         if ps and TTFont(path, fontNumber=i, lazy=True)['name'].getDebugName(6) == ps:
@@ -69,10 +69,10 @@ def check_source(path, name, ps=None):
     except Exception:
         raise BakeError('read', name)
     if not tags & {'glyf', 'CFF ', 'CFF2'}:
-        raise BakeError('outline', name)      # 只有位图（例如 emoji）的字体
+        raise BakeError('outline', name)      # Bitmap-only fonts, such as emoji.
 
 def instance_file(path, weight, fvs, out, ps=None):
-    """可变字体截到这个字重（其他轴取 fvs 里的值，没有的取默认值）；字体集合取出其中一款；普通静态字体原样返回"""
+    """Instantiate a variable font at this weight and fvs axis values, defaulting unspecified axes; select a collection face; return ordinary static fonts unchanged."""
     f = open_face(path, ps)
     if 'fvar' in f:
         loc = {}
@@ -86,8 +86,8 @@ def instance_file(path, weight, fvs, out, ps=None):
     return out
 
 def cff_to_glyf(f):
-    """CFF 轮廓（三次曲线）转成 TrueType（二次曲线），误差不超过 1 个单位。
-    竖排原点：CFF 字体用 VORG 表记，TrueType 由 vmtx 的上边距和字形顶边算出，所以按 VORG 重算上边距"""
+    """Convert CFF cubic outlines to TrueType quadratics with at most one font-unit error.
+    CFF stores vertical origins in VORG; recompute TrueType top sidebearings from VORG and glyph tops."""
     from fontTools.pens.cu2quPen import Cu2QuPen
     from fontTools.pens.ttGlyphPen import TTGlyphPen
     order, gs = f.getGlyphOrder(), f.getGlyphSet()
@@ -105,7 +105,7 @@ def cff_to_glyf(f):
     for gn in order:
         g = glyphs[gn]; g.recalcBounds(glyf)
         hm[gn] = (hm[gn][0], g.xMin if g.numberOfContours else 0)
-    if vorg is not None and 'vmtx' in f:      # 没有 VORG 时，原点本来就由上边距和字形顶边算出，不用改
+    if vorg is not None and 'vmtx' in f:      # Without VORG, origins already come from sidebearings and glyph tops, so no adjustment is needed.
         vm = f['vmtx']
         for gn in order:
             g = glyphs[gn]
@@ -118,9 +118,9 @@ def cff_to_glyf(f):
     f.sfntVersion = '\x00\x01\x00\x00'
 
 def align_scripts(fonts):
-    """合并前让每个部件的 GSUB / GPOS 都有所有部件出现过的书写系统和语言。
-    lang=ja 时数字、标点跟着前后的汉字算 hani；西文字体只在 DFLT / latn 下有字距，合并后有了 hani 就不再退回 DFLT，
-    西文的字距、连字会全部失效。这里按 HarfBuzz 的退回规则预先补齐"""
+    """Give every component's GSUB / GPOS all scripts and languages used across the merge.
+    With lang=ja, digits and punctuation inherit hani from surrounding Han. Western kerning exists only under DFLT/latn; adding hani stops fallback to DFLT,
+    losing kerning and ligatures. Populate missing records according to HarfBuzz fallback rules before merging."""
     from fontTools.ttLib.tables import otTables as ot
     for tag in ('GSUB', 'GPOS'):
         tabs = [f[tag].table for f in fonts if tag in f and f[tag].table.ScriptList]
@@ -149,8 +149,8 @@ def in_ranges(rs, cp):
     return any(a <= cp <= b for a, b in rs)
 
 def keep_langs(f, keep):
-    """只留默认语言和 keep 里的语言（OpenType 语言标签）：其他地区的字形变体（locl）就不会被子集化留下来。
-    返回去掉的语言标签"""
+    """Keep the default language and tags in keep so subsetting drops other regions' locl glyph variants.
+    Return the removed language tags."""
     dropped = set()
     for tag in ('GSUB', 'GPOS'):
         if tag not in f or not f[tag].table.ScriptList: continue
@@ -161,10 +161,10 @@ def keep_langs(f, keep):
     return sorted(t.strip() for t in dropped)
 
 def bake(plan, srcs, family, weight, italic, lic, work, lang=None, trimmed=None):
-    """plan：规则表（第一条是汉字基础字体）；srcs：和 plan 同序、已截到字重的源字体路径；lang：目标语言的 OpenType 标签（例如 'JAN '）。
-    字形超过 MAX_GLYPHS 时从汉字基础字体里删减，删了什么记进 trimmed（dict）。返回 (TTFont, PostScript 名)"""
+    """plan: rules, with the Han base first; srcs: source paths in matching order, already instantiated by weight; lang: target OpenType tag, such as 'JAN '.
+    Trim the Han base if glyph count exceeds MAX_GLYPHS, recording removals in trimmed. Return (TTFont, PostScript name)."""
     cmaps = [TTFont(p, lazy=True).getBestCmap() for p in srcs]
-    U = TTFont(srcs[0], lazy=True)['head'].unitsPerEm      # 以汉字基础字体的 em 为准
+    U = TTFont(srcs[0], lazy=True)['head'].unitsPerEm      # Use the Han base font's em size.
     owners = [o for r in plan for o in r['owners']]
     custom = [o for o in owners if o['o'].startswith('#')][::-1]
     cls = [o for o in owners if not o['o'].startswith('#') and o['o'] != 'han']
@@ -173,7 +173,7 @@ def bake(plan, srcs, family, weight, italic, lic, work, lang=None, trimmed=None)
         for o in custom + cls:
             if o['ranges'] and in_ranges(o['ranges'], cp): return o['shift']
         return han_shift
-    # 每个字符归哪条规则：和 CSS 一样，后面的规则优先；它的字体里没有这个字就往前退，最后退到基础字体
+    # Assign characters as CSS does: later rules win; if their font lacks a character, fall back through earlier rules to the base.
     seg = {}
     for cp in sorted(set().union(*[set(c) for c in cmaps])):
         for i in range(len(plan) - 1, -1, -1):
@@ -181,7 +181,7 @@ def bake(plan, srcs, family, weight, italic, lic, work, lang=None, trimmed=None)
                 seg.setdefault((i, shift_of(cp)), []).append(cp); break
     top = TTFont(srcs[0], lazy=True)['OS/2'].sTypoAscender
     def sub_part(i, cps, level):
-        """子集化。level 0 照原样；1 只留目标语言的字形变体；2 再去掉罕用汉字（只用在汉字基础字体上）"""
+        """Subset at level 0 unchanged; level 1 keeps only target-language variants; level 2 also removes rare Han, only from the Han base."""
         f = TTFont(srcs[i])
         if level >= 1: trimmed_langs.update(keep_langs(f, {lang} if lang else set()))
         if level >= 2:
@@ -191,17 +191,17 @@ def bake(plan, srcs, family, weight, italic, lic, work, lang=None, trimmed=None)
         o.layout_features = ['*']; o.layout_scripts = ['*']
         o.name_IDs = ['*']; o.name_languages = ['*']; o.name_legacy = True
         o.notdef_outline = True; o.glyph_names = True; o.hinting = False; o.legacy_kern = True
-        o.drop_tables += ['STAT', 'DSIG', 'meta', 'MVAR', 'HVAR', 'VVAR', 'BASE', 'JSTF', 'COLR', 'CPAL', 'SVG ', 'sbix', 'CBDT', 'CBLC', 'EBDT', 'EBLC', 'EBSC']      # 彩色、位图字形合并不了，只留轮廓
+        o.drop_tables += ['STAT', 'DSIG', 'meta', 'MVAR', 'HVAR', 'VVAR', 'BASE', 'JSTF', 'COLR', 'CPAL', 'SVG ', 'sbix', 'CBDT', 'CBLC', 'EBDT', 'EBLC', 'EBSC']      # Color and bitmap glyphs cannot merge; retain outlines only.
         sub = subset.Subsetter(o); sub.populate(unicodes=cps); sub.subset(f)
         return f
     def make_part(i, s, f):
-        """子集化以后：转成 TrueType 曲线、按大小缩放、按基线平移、补竖排度量"""
-        if 'glyf' not in f: cff_to_glyf(f)      # 只转这个部件用到的字形：比整个字体转换快得多
+        """After subsetting: convert to TrueType outlines, scale, shift baselines and supply vertical metrics."""
+        if 'glyf' not in f: cff_to_glyf(f)      # Convert only glyphs used by this component, much faster than converting the whole font.
         src_upem = f['head'].unitsPerEm
         k = plan[i]['size'] / 100 * U / src_upem
         if abs(k - 1) > 1e-6:
-            scale_upem(f, round(src_upem * k))      # 坐标 × k
-            f['head'].unitsPerEm = U                # 再把 em 改回来：字形相对 em 放大（缩小）了 k 倍
+            scale_upem(f, round(src_upem * k))      # Multiply coordinates by k.
+            f['head'].unitsPerEm = U                # Restore the original em size so glyphs are enlarged or reduced by k relative to em.
         dy = round(s / 100 * U)
         glyf = f['glyf']
         if dy:
@@ -211,7 +211,7 @@ def bake(plan, srcs, family, weight, italic, lic, work, lang=None, trimmed=None)
             for gn in f.getGlyphOrder():
                 g = glyf[gn]
                 if g.isComposite(): g.recalcBounds(glyf)
-        if 'vmtx' not in f:      # 竖排度量：没有 vmtx 的（西文）补一份，竖排原点放在基础字体的 ascender
+        if 'vmtx' not in f:      # Supply missing vmtx for Western fonts, placing vertical origins at the base font's ascender.
             vm = newTable('vmtx'); vm.metrics = {}
             for gn in f.getGlyphOrder():
                 g = glyf[gn]
@@ -228,7 +228,7 @@ def bake(plan, srcs, family, weight, italic, lic, work, lang=None, trimmed=None)
             for gn, (ah, tsb) in list(vm.metrics.items()):
                 if glyf[gn].numberOfContours: vm.metrics[gn] = (ah, tsb - dy)
         return f
-    # 先做其他字体的部件，再做汉字基础字体的：加起来超过字形上限时，汉字基础字体按 level 逐步删减（重新子集化）
+    # Build other components before the Han base; if the total exceeds the glyph limit, progressively trim and resubset the Han base by level.
     trimmed_langs, trimmed_rare = set(), set()
     built = {k: sub_part(k[0], cps, 0) for k, cps in seg.items() if k[0] != 0}
     other = sum(len(f.getGlyphOrder()) for f in built.values())
@@ -258,7 +258,7 @@ def bake(plan, srcs, family, weight, italic, lic, work, lang=None, trimmed=None)
             for fd in fields: setattr(font[t], fd, round(getattr(base[t], fd) * bk))
     font['OS/2'].fsSelection = (font['OS/2'].fsSelection & ~(1 << 7)) | (base['OS/2'].fsSelection & (1 << 7))
     font['post'].underlinePosition = base['post'].underlinePosition; font['post'].underlineThickness = base['post'].underlineThickness
-    if 'BASE' in base: font['BASE'] = base['BASE']      # 表意字框等基线：取汉字基础字体的
+    if 'BASE' in base: font['BASE'] = base['BASE']      # Use ideographic-box and other baselines from the Han base font.
     W, it = weight, italic
     style = (('' if W == 400 else STYLE[W] + ' ') + 'Italic') if it else STYLE[W]
     font['OS/2'].usWeightClass = W
@@ -266,7 +266,7 @@ def bake(plan, srcs, family, weight, italic, lic, work, lang=None, trimmed=None)
     font['OS/2'].fsSelection = (font['OS/2'].fsSelection & ~0b1100001) | (0b100000 if bold else 0) | (1 if it else 0) | (0b1000000 if not bold and not it else 0)
     font['head'].macStyle = (1 if bold else 0) | (2 if it else 0)
     font['post'].italicAngle = 0
-    if it:      # 斜体角度取西文斜体的（汉字仍是正体）
+    if it:      # Take the italic angle from Western italics; Han remains upright.
         for p in srcs[1:]:
             a = TTFont(p, lazy=True)['post'].italicAngle
             if a: font['post'].italicAngle = a; break
@@ -287,13 +287,13 @@ def bake(plan, srcs, family, weight, italic, lic, work, lang=None, trimmed=None)
         try:
             val.encode('mac_roman'); name.setName(val, nid, 1, 0, 0)
         except UnicodeEncodeError:
-            pass      # 中日文名字只写 Windows 平台的名称记录
+            pass      # Write Chinese/Japanese names only to Windows-platform name records.
     font['name'] = name
     font['head'].fontRevision = 1.0
     return font, ps
 
 def trim_note(trimmed, notes):
-    """删减了什么：按界面语言的模板写成一段说明。notes：{'head': 原因, 'langs': '…{langs}…', 'rare': '…{n}…', 'names': {'KOR': '韩文', …}, 'sep': '、'}"""
+    """Describe trimming with localized templates. notes: {'head': reason, 'langs': '...{langs}...', 'rare': '...{n}...', 'names': {'KOR': 'Korean', ...}, 'sep': separator}."""
     out, names = [], notes.get('names') or {}
     if trimmed.get('langs') and notes.get('langs'):
         out.append(notes['langs'].replace('{langs}', notes.get('sep', ', ').join(names.get(t, t) for t in sorted(trimmed['langs']))))
@@ -303,7 +303,7 @@ def trim_note(trimmed, notes):
 def run_all(jobs_json, opts_json, progress):
     try:
         jobs = json.loads(jobs_json); opts = json.loads(opts_json)
-        SRC, WORK = opts.get('src', '/src/'), opts.get('work', '/w/')      # 本地测试时换成临时目录
+        SRC, WORK = opts.get('src', '/src/'), opts.get('work', '/w/')      # Local tests replace this with a temporary directory.
         for s in {s['file']: s for j in jobs for s in j['srcs'] if s}.values():
             check_source(SRC + s['file'], s['name'], s.get('ps'))
         key = lambda s: (s['file'], s.get('ps'), s.get('weight'), json.dumps(s.get('fvs'), sort_keys=True))
@@ -320,19 +320,19 @@ def run_all(jobs_json, opts_json, progress):
                     inst[k] = instance_file(SRC + s['file'], s.get('weight'), s.get('fvs'), WORK + 'inst%d.ttf' % made, s.get('ps'))
                 srcs.append(inst[k])
             font, ps = bake(job['plan'], srcs, opts['family'], job['weight'], job['italic'], opts['lic'], WORK, opts.get('otLang'), trimmed)
-            if opts.get('ttf', True):      # 合并本来就在 TrueType 曲线上做，不要 TTF 时只是不写进 zip
+            if opts.get('ttf', True):      # Merging always uses TrueType outlines; disabling TTF only omits that file from the zip.
                 b = io.BytesIO(); font.save(b); data = b.getvalue()
                 z.writestr(ps + '.ttf', data); out.append([ps + '.ttf', len(data)])
             if opts.get('woff2'):
                 font.flavor = 'woff2'; b = io.BytesIO(); font.save(b); data = b.getvalue()
                 z.writestr(ps + '.woff2', data); out.append([ps + '.woff2', len(data)])
-            if opts.get('otf'):      # 印刷用：最后转成 CFF 曲线，这个字体对象之后不再用
+            if opts.get('otf'):      # For print output, convert to CFF last; this font object is not used afterward.
                 progress(n + 0.5, job['label'])
                 font.flavor = None; to_otf(font)
                 b = io.BytesIO(); font.save(b); data = b.getvalue()
                 z.writestr(ps + '.otf', data); out.append([ps + '.otf', len(data)])
             del font
-            rest = {key(s) for j in jobs[n + 1:] for s in j['srcs'] if s}      # 后面用不到的截取结果：删掉，省内存
+            rest = {key(s) for j in jobs[n + 1:] for s in j['srcs'] if s}      # Remove unused instantiation results to save memory.
             for k in list(inst):
                 if k not in rest:
                     if inst[k].startswith(WORK): os.remove(inst[k])

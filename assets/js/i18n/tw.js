@@ -1,4 +1,4 @@
-/* 界面文字：繁體中文（台灣）。一个键一行；三种语言的键要一致（tools/check-i18n.mjs 检查） */
+/* UI text: Traditional Chinese (Taiwan). Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
   weightsPrunedWeb: "網頁已取消字重：{weights}。",
   weightsPrunedFiles: "字型檔案已取消字重：{weights}。",

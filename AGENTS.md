@@ -14,7 +14,8 @@ font files (TTF / OTF / WOFF2, baked in the browser with fontTools on Pyodide).
 - **Deploy = push to `main`.** GitHub Pages serves the repo root at https://charlie5188.github.io/css-composite-font/.
   There is no staging; CI runs on the same push.
 - The UI is in four languages (简体中文 `zh`, 繁體中文 `tw`, 日本語 `ja`, English `en`; browsers in any other language get
-  English). Code comments are in Chinese; keep that style.
+  English). Write code comments and docstrings in English, including tests, tooling and CI configuration.
+  Keep localized UI/output strings in their intended languages; literal examples may retain their original text.
 
 ## Setup (once)
 
@@ -174,7 +175,15 @@ for a role that already has one; if something is really missing, add it to that 
   surface) with `.menu` / `.mm-item` / `.mm-radio` / `.mm-check`, `.sec-head` + `.sec-title` + `.sec-acts` (section
   heading), `.callout` (yellow notice), `.dlg-form` + `.dlg-act` (small dialog: title, fields, buttons bottom right), `.badge` (count pill), `.info` (the (i) button that opens `#infoPop`), tooltips through `title`.
 - **Color fields:** `.color-field` pairs a native color well with an editable hex value and a shared focus ring.
-  `.settings-block`, `.settings-row` and `.settings-actions` arrange controls inside settings popovers.
+- **Settings popovers:** use `.pop.settings-pop` for mixed settings, and keep `.menu` for command menus.
+  Put each logical group in `.settings-group`; use a native `<hr>` only between groups. The shell owns 8 px
+  padding, rows own the shared 8 px horizontal inset, and groups own 4 px row gaps. Separators have 8 px on
+  each side. Do not add per-item margins or stack padded wrappers to compensate for alignment.
+  Use `.settings-row` for a label and control, `.settings-fields` for aligned form columns,
+  `.settings-label` / `.settings-note` for headings / help, and `.settings-actions` for trailing actions.
+  Text aligns on the left, controls and selection marks on the right; rows use the standard control height.
+  A width variant may set `--settings-width`; reuse all other spacing rules. When adding settings, review the
+  whole popover in all four languages at desktop and 390 px, including wrapped notes, keyboard focus and scrolling.
 - **Vertical ranges:** `.range-vertical` pairs `.range-rail`, `.range-fill` and two `.range-thumb` controls.
   Give each thumb a slider role, vertical orientation and current bounds. Keep the controls mounted during
   table refreshes; preview the selection while dragging, then commit on release as one undoable change.

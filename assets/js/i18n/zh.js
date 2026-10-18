@@ -1,4 +1,4 @@
-/* 界面文字：简体中文。一个键一行；三种语言的键要一致（tools/check-i18n.mjs 检查） */
+/* UI text: Simplified Chinese. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
   weightsPrunedWeb: "网页已取消字重：{weights}。",
   weightsPrunedFiles: "字体文件已取消字重：{weights}。",

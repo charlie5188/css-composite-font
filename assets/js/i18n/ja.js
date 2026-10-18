@@ -1,4 +1,4 @@
-/* 界面文字：日本語。一个键一行；三种语言的键要一致（tools/check-i18n.mjs 检查） */
+/* UI text: Japanese. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
   weightsPrunedWeb: "Web のウェイト {weights} のチェックを外しました。",
   weightsPrunedFiles: "フォントファイルのウェイト {weights} のチェックを外しました。",

@@ -1,8 +1,8 @@
-"""改了 assets 之后，更新 index.html 里的缓存版本号，避免 GitHub Pages 和浏览器用旧的缓存：
-- 直接引用的文件（style.css、main.js 等）：?v= 换成内容哈希
-- JS 模块：重新生成 import map，每个模块映射到带哈希的地址（模块之间 import 时不带 ?v=）
-用法：python3 tools/rehash.py .          更新
-      python3 tools/rehash.py . --check  只检查：需要更新时退出码为 1（CI 和 npm run check 用）"""
+"""After editing assets, update cache versions in index.html so GitHub Pages and browsers do not serve stale files:
+- Direct references (style.css, main.js, etc.): replace ?v= with a content hash.
+- JS modules: regenerate the import map, mapping each module to its hashed URL (module imports omit ?v=).
+Usage: python3 tools/rehash.py .          Update
+       python3 tools/rehash.py . --check  Check only; exit with 1 if updates are needed (used by CI and npm run check)."""
 import glob, hashlib, json, os, re, sys
 repo = sys.argv[1]
 p = f'{repo}/index.html'; s = old = open(p, encoding='utf-8').read()

@@ -26,7 +26,7 @@ test('连续范围：拖动选行、取消、一次撤销，保留范围外调�
   expect(await limits(page)).toEqual([300, 900]);
   expect(await savedRange(page)).toEqual([100, 900]);
   await expect(page.locator('#wMatrix [data-row="100"]')).toHaveClass(/off/);
-  // 字体加载引起重绘时，拖动的控件与尚未提交的选择不能消失。
+  // Font-loading redraws must preserve the dragged control and its uncommitted selection.
   await page.evaluate(async () => (await import('./assets/js/render.js')).renderEditor());
   expect(await limits(page)).toEqual([300, 900]);
   await page.waitForTimeout(500); await page.mouse.up();
@@ -38,7 +38,7 @@ test('连续范围：拖动选行、取消、一次撤销，保留范围外调�
   await dragTo(page, 1, 600, false);
   await page.keyboard.press('Escape'); await page.mouse.up();
   expect(await limits(page)).toEqual([100, 900]);
-  // 导出中的精确值仍会投射到相同滑轨，端点不会被重画吸附到整百。
+  // Exact export values project onto the same track; redraws must not snap endpoints to multiples of 100.
   await showExport(page); await page.click('#kindCss');
   await page.fill('#exWLo', '350'); await page.locator('#exWLo').press('Tab');
   await page.fill('#exWHi', '650'); await page.locator('#exWHi').press('Tab');

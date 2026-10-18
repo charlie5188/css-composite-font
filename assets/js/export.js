@@ -4,7 +4,7 @@ import { LM, TYPO, WEIGHTS, isViewTypo, buildPlan, buildSegments, customRanges, 
 import { guessGeneric, renderLangWarn } from './render.js';
 import { renderFontFields, renderFontTab } from './bake.js';
 import { appModel, buildDart, buildKotlin, buildSwift, typeName } from './appcode.js';
-/* ================= 导出 ================= */
+/* ================= Export ================= */
 export const ownerName = o => o[0] === '#' ? T('customName', { c: (state.custom[+o.slice(1)]?.chars || '').slice(0, 16) }) : tr(CLS[o].name);
 export const fmtRangeShort = ([a, b]) => a === b ? `U+${a.toString(16).toUpperCase()}` : `U+${a.toString(16).toUpperCase()}-${b.toString(16).toUpperCase()}`;
 export function wrapRanges(list, indent) {
@@ -26,9 +26,9 @@ export function srcFor(x) {
   return x.face.src.replace(/'/g, '"');
 }
 export function cssFamilyName() { return (state.name || '').trim().replace(/["\\]/g, '') || 'My Composite'; }
-/* 汉字基础字体能直接 @import Google 的 CSS：没有细调粗细、没有固定的轴值；导出斜体时它自己也没有斜体（汉字字体一般都没有） */
+/* The Han base may directly @import Google's CSS when weight is not fine-tuned, no axes are fixed, and it has no italics needed by italic export (typical for Han fonts). */
 export const canLinkBase = plan => plan[0].font?.kind === 'google' && plan[0].size === 100 && !(plan[0].font.weight % 100) && !plan[0].fvs && !(state.italic && italOf(plan[0].font));
-/* 导出的分组：分档模式每个字重一组（font-weight: 700）；连续模式每个分段一组（font-weight: 551 650） */
+/* Export groups: one per weight in stepped mode (font-weight: 700), or per interval in continuous mode (font-weight: 551 650). */
 export function exportGroups() {
   if (state.wmode === 'cont') {
     let segs = buildSegments();
@@ -39,24 +39,24 @@ export function exportGroups() {
 }
 export function buildCss() {
   const plan = buildPlan(), groups = exportGroups(), cont = state.wmode === 'cont';
-  if (lmOn()) for (const g of groups) { const f = g.plan[0].font; if (f && !LM.has(lmKey(f))) ensureLineMetrics(f).then(() => renderExportSoon()); }      // 还没测过的汉字字体：测完再刷新
+  if (lmOn()) for (const g of groups) { const f = g.plan[0].font; if (f && !LM.has(lmKey(f))) ensureLineMetrics(f).then(() => renderExportSoon()); }      // Measure previously unseen Han fonts, then refresh.
   const fam = cssFamilyName(), generic = state.generic !== 'auto' ? state.generic : guessGeneric();
   const linkBase = state.baseMode === 'link' && groups.every(g => canLinkBase(g.plan));
   const out = [T(linkBase ? 'cssHLink' : 'cssH', { fam })];
   let stack = `"${fam}"`, count = 0, usedFvs = false, usedAxes = false, usedLm = false;
   const notes = [];
-  if (linkBase) {     // 汉字基础字体直接引用 Google 的 CSS，不复制它的分片规则
+  if (linkBase) {     // Link the Han base directly to Google's CSS instead of copying its subset rules.
     const bf = plan[0].font, axis = cont ? vfAxisNow(bf) : null, [a, b] = state.wrange;
     let ws;
-    if (Array.isArray(axis)) {      // 连续模式下的可变字体：按轴和导出范围的交集引用，范围以外的粗细停在端点
+    if (Array.isArray(axis)) {      // For continuous variable fonts, link the intersection of the axis and export ranges; weights outside it stop at the endpoints.
       const lo = Math.max(axis[0], a), hi = Math.min(axis[1], b);
       ws = [lo < hi ? `${lo}..${hi}` : String(b < axis[0] ? axis[0] : a > axis[1] ? axis[1] : lo)];
     } else ws = [...new Set((cont ? WEIGHTS.filter(stepSpan).map(W => buildPlan(W)[0].font) : groups.map(g => g.plan[0].font)).map(fW => sources.get(fontKey(fW))?.actualWeight || fW.weight))].sort((x, y) => x - y);
-    const specs = ws.map(w => gfSpec(bf, w));      // 带上要保留的轴：「opsz,wght@8..144,400;8..144,700」
+    const specs = ws.map(w => gfSpec(bf, w));      // Include axes that must be retained: 'opsz,wght@8..144,400;8..144,700'.
     out.push(`@import url("https://fonts.googleapis.com/css2?family=${encodeURIComponent(bf.family).replace(/%20/g, '+')}:${specs[0].split('@')[0]}@${specs.map(x => x.split('@')[1]).join(';')}&display=swap");`);
     stack += `, "${bf.family}"`;
   }
-  /* 一组规则：同一个 font-weight；style 为 italic 时是斜体那一组 */
+  /* One group shares a font-weight descriptor; style = italic selects its italic copy. */
   const emit = (g, pl, style) => {
     const W = g.W, rows = expandPlan(linkBase ? pl.slice(1) : pl, false);
     let lastP = null;
@@ -65,7 +65,7 @@ export function buildCss() {
         lastP = x.p;
         const owners = x.p.owners.map(ownerName).join(T('joiner'));
         const n = rows.filter(r => r.p === x.p && !r.missing).length;
-        const ax = (x.p.font.xa || []).filter(t => !(t in (x.p.fvs || {}))).map(t => T('cssAxAuto', { t }));     // 文件里保留、但不固定的轴（opsz 跟随字号）
+        const ax = (x.p.font.xa || []).filter(t => !(t in (x.p.fvs || {}))).map(t => T('cssAxAuto', { t }));     // Axes retained in the file but not fixed, such as opsz following font size.
         const extraNote = (ax.length ? ' · ' + ax.join(T('joiner')) : '') + (style === 'italic' && x.p.up ? T('cssUpright') : '');
         out.push('', `/* ${owners} — ${fontLabel(x.p.font)}（${kindLabel(x.p.font)}${n > 1 ? T('cssSlices', { n }) : ''}）${x.p.size !== 100 ? ` · ${x.p.size}%` : ''}${x.p.range ? '' : T('cssBase')}${extraNote} */`);
         const s = sources.get(fontKey(x.p.font));
@@ -97,7 +97,7 @@ export function buildCss() {
   if (cont) out.splice(1, 0, T('cssCont', { a: state.wrange[0], b: state.wrange[1] }));
   const extra = [];
   for (const t of TYPO) {
-    if (typoMergedAway(t) || isViewTypo(t)) continue;      // 几行合成一条：数字样式 + 斜线零、字形标准 + 宽度；对齐等只用于校样
+    if (typoMergedAway(t) || isViewTypo(t)) continue;      // Combine numeric style + slashed zero, and glyph standard + width; alignment and related settings are preview-only.
     const val = typoValue(t);
     if (t.attr || !val || (!t.always && val === (t.init ?? t.def))) continue;
     const sup = t.sup ? `Chrome ${t.sup.chrome} · Firefox ${t.sup.firefox} · Safari ${t.sup.safari}` : '';
@@ -111,10 +111,10 @@ export function buildCss() {
   out.push('', ...head, scopeSel() + ' {', `  font-family: ${stack}, ${generic};`, ...extra.map(([a, b]) => a.padEnd(w) + b), '}');
   return { css: out.join('\n'), count, files: [...new Set(notes)] };
 }
-/* 选了适用语言时用 :lang() 限定，字体只在这个语言的内容里生效。
-   页面常写 zh-CN、zh-TW、zh-HK，而 :lang(zh-Hans) 匹配不到它们（浏览器不会从地区推出文字），所以把常见写法都列进去。
-   :lang() 里直接写列表 Chrome 还不支持，用 :is() 把几个 :lang() 合起来。
-   台湾版也认不带地区的 zh-Hant；它同样会匹配 zh-Hant-HK，所以排除掉，留给香港版 */
+/* Limit language-scoped fonts with :lang().
+   Pages often use zh-CN, zh-TW and zh-HK, which :lang(zh-Hans) does not match: browsers do not infer scripts from regions. Include common tags explicitly.
+   Chrome does not support a list inside :lang(), so combine selectors with :is().
+   The Taiwan version also accepts bare zh-Hant; exclude zh-Hant-HK, which it would otherwise match, for the Hong Kong version. */
 export const LANG_ALIASES = { 'zh-Hans': ['zh-Hans', 'zh-CN', 'zh-SG'], 'zh-Hant-TW': ['zh-Hant', 'zh-TW'], 'zh-Hant-HK': ['zh-Hant-HK', 'zh-HK', 'zh-Hant-MO', 'zh-MO'] };
 export function scopeSel() {
   const s = state.scope, al = LANG_ALIASES[s];
@@ -128,7 +128,7 @@ export function shiftTable() {
   state.custom.forEach((cu, i) => {
     const rng = customRanges[i]; if (!rng?.length) return;
     const next = [];
-    for (const [a, b, v] of segs) {   // 例外先在类别范围上挖洞
+    for (const [a, b, v] of segs) {   // Remove custom characters from class ranges first.
       let start = a;
       for (const [ra, rb] of rng) { if (rb < start || ra > b) continue; if (ra > start) next.push([start, ra - 1, v]); start = Math.max(start, rb + 1); }
       if (start <= b) next.push([start, b, v]);
@@ -145,7 +145,7 @@ export function shiftTable() {
   }
   return merged;
 }
-/* 导出的 JS：@font-face 没有基线描述符，需要偏移的字符包进 span 相对移动。没有偏移时返回 null */
+/* Exported JS: @font-face has no baseline descriptor, so wrap shifted characters in relatively positioned spans. Return null if nothing shifts. */
 export function buildJs() {
   const segs = shiftTable();
   if (!segs.length) return null;
@@ -203,9 +203,9 @@ export function highlight(code, lang) {
   return h;
 }
 export let exKind = 'css', exTab = 'css', lastExport = '';
-export function setExTab(k) { exTab = k; }      // exKind：网页（CSS）/ 字体文件 / App 代码；exTab：css / js，或 swift / kotlin / dart
+export function setExTab(k) { exTab = k; }      // exKind: web CSS / font files / app code; exTab: css / js, or swift / kotlin / dart.
 export const APP_TABS = ['swift', 'kotlin', 'dart'];
-/* 切换导出的种类：下面的设置和结果整块换成这一种 */
+/* Switch the export kind, replacing the whole settings and results area. */
 export function setExKind(k, render = true) {
   exKind = ['font', 'app'].includes(k) ? k : 'css';
   if (exKind === 'app' && !APP_TABS.includes(exTab)) exTab = 'swift';
@@ -215,7 +215,7 @@ export function setExKind(k, render = true) {
   document.querySelectorAll('.ex-kinds [data-kind]').forEach(b => b.setAttribute('aria-selected', b.dataset.kind === exKind));
   if (render) renderExport();
 }
-/* 导出对话框：从顶栏的「导出」打开。打开时去掉「字体文件做好了」的提示点 */
+/* Open the export dialog from the top bar. Clear the completed-font status dot when opening it. */
 export function showExport() {
   const d = $('#exDlg'); if (!d.open) d.showModal();
   $('#exToggle').classList.remove('ready');
@@ -230,7 +230,7 @@ export async function gzipSize(text) {
   if (typeof CompressionStream === 'undefined') return null;
   try { return (await new Response(new Blob([text]).stream().pipeThrough(new CompressionStream('gzip'))).blob()).size; } catch (e) { return null; }
 }
-/* 连续模式的导出范围：两个数字，加上按用到的可变字体算出的「全部 / 最大 / 共同」 */
+/* Continuous export range: two numbers plus All / Widest / Common presets derived from the used variable fonts. */
 export function renderWRange() {
   const [a, b] = state.wrange;
   for (const [id, x] of [['exWLo', a], ['exWHi', b]]) if (document.activeElement !== $('#' + id)) $('#' + id).value = x;
@@ -241,7 +241,7 @@ export function renderWRange() {
   const opts = [['wrAll', [100, 900]]];
   if (any && !same(any, [100, 900]) && !same(any, common)) opts.push(['wrAny', any]);
   if (common && common[0] < common[1] && !same(common, [100, 900])) opts.push(['wrCommon', common]);
-  $('#exWNote').hidden = b >= 600;      // 范围里没有粗体时，Chrome 会给 700 等描边模拟加粗
+  $('#exWNote').hidden = b >= 600;      // If the range contains no bold weight, Chrome synthesizes bold for 700 and similar values.
   $('#exWPresets').innerHTML = opts.map(([k, r]) => `<button type="button" data-r="${r}" aria-pressed="${same(r, state.wrange)}" title="${esc(T(k + 'Tip', { list }))}">${esc(T(k))} ${r[0]}–${r[1]}</button>`).join('');
 }
 export let gzTok = 0;
@@ -253,7 +253,7 @@ export function renderExport() {
   const { css, count, files: fl } = buildCss();
   const js = buildJs();
   const kb = s => (new Blob([s]).size / 1024).toFixed(1);
-  let stat = null;   // [代码, 前半, 后半]：gzip 大小算好后插在中间
+  let stat = null;   // [code, prefix, suffix]: insert the calculated gzip size between the latter two.
   $('#exBaseField').hidden = !exportGroups().every(g => canLinkBase(g.plan));
   if (state.wmode === 'cont') renderWRange();
   renderLangWarn();
@@ -278,7 +278,7 @@ export function renderExport() {
   $('#copyBtn').disabled = !lastExport;
   $('#exBar').hidden = !$('#exNote').textContent;
 }
-/* App 代码：三种语言共用一份数据，换页签只换生成器 */
+/* App code shares one model across three languages; switching tabs changes only the generator. */
 export function renderAppCode() {
   const m = appModel(), build = { swift: buildSwift, kotlin: buildKotlin, dart: buildDart }[exTab];
   lastExport = build(m);

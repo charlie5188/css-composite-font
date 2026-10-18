@@ -4,8 +4,8 @@ import { SAMPLES, TYPO, WEIGHTS, isViewTypo, normalizeState, recordHistory, setS
 import { refresh } from './refresh.js';
 import { syncPanes, toast } from './ui.js';
 
-/* 链接只带一份当前配置，不带历史、预设库或用户输入的校样正文。
-   新分享链接与旧 #cfg=（嵌入页面转去导出字体）分开，打开分享不会弹出导出面板。 */
+/* Links contain one current configuration, without history, the preset library or custom proof text.
+   New shares are separate from legacy #cfg= links used to export fonts outside embedded pages; importing a share does not open Export. */
 const MAX_BYTES = 262144, MAX_LINK = 32768;
 let ids;
 const classIds = () => ids ||= new Set(CLASSES.map(c => c.id));
@@ -34,7 +34,7 @@ export async function decodeConfig(data, mode = 'd') {
   let stream = new Blob([bytes]).stream();
   if (mode === 'd') stream = stream.pipeThrough(new DecompressionStream('deflate-raw'));
   else ensure(mode === 'j');
-  // 解压过程中限长，而非整份展开以后才检查，损坏或过大的链接不替换当前工作。
+  // Enforce the size limit during decompression, not after full expansion. Invalid or oversized links must not replace current work.
   const reader = stream.getReader(), chunks = []; let length = 0;
   try {
     while (true) {
@@ -78,8 +78,8 @@ function cls(o) {
   }
   return out;
 }
-/* 对链接数据逐项重建，未知字段不进入 state；跟随关系还要检查环。
-   v 是应用的状态版本，链接前缀的 1 是分享格式版本，两者独立。 */
+/* Rebuild link data field by field so unknown fields never enter state; also reject cycles in following relationships.
+   v is the app state version; the link prefix's 1 is the independent share format version. */
 export function cleanConfig(raw) {
   ensure(obj(raw) && raw.v === 11 && obj(raw.classes) && Array.isArray(raw.custom) && raw.custom.length <= 100);
   const out = { v: 11, preset: '', name: str(raw.name), classes: {}, custom: [], weights: weights(raw.weights),
@@ -169,7 +169,7 @@ export function initShare() {
     let link, snapshot;
     try {
       snapshot = shareSnapshot(); link = shareLink(snapshot);
-      // Safari 要求在点击当下调用剪贴板；把压缩结果作为 Blob promise 交给它，保留用户手势。
+      // Safari requires calling the clipboard API during the click. Pass compression as a Blob promise to preserve the user gesture.
       if (navigator.clipboard?.write && window.ClipboardItem) await navigator.clipboard.write([new ClipboardItem({ 'text/plain': link.then(url => new Blob([url], { type: 'text/plain' })) })]);
       else await navigator.clipboard.writeText(await link);
       toast(T(nonWebFonts(snapshot) ? 'shareCopiedFonts' : 'shareCopied'));

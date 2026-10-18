@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const { open, showExport } = require('./helpers');
 
-// 用真实的 OFL 字体在本地测量，匹配测试不依赖 Google Fonts 网络，也不模拟字体的笔画。
+// Measure real local OFL fonts so matching tests neither depend on Google Fonts networking nor simulate font strokes.
 async function fixture(page, { continuous = false, single = false } = {}) {
   await page.route('https://fonts.googleapis.com/**', route => route.abort());
   await open(page);
@@ -83,14 +83,14 @@ test('自动匹配：真实可变字体的字重和大小一起改善，视图�
   await adjust(page);
   const after = await values(page);
   expect(after.weight).toBeGreaterThan(before.weight);
-  expect(after.weight).toBeLessThan(600);      // 参照是正文 Regular，不能把量不到主干的极粗字重当成最佳结果
+  expect(after.weight).toBeLessThan(600);      // The reference is body-text Regular; an extreme weight with no measurable stem must not win.
   expect(after.size).not.toBe(before.size);
   expect(after.rows[1]).toBeGreaterThanOrEqual(after.rows[0]);
   expect(after.weights).toEqual(before.weights);
   expect(after.view).toEqual(before.view);
   expect(await page.evaluate(() => [...document.fonts].filter(f => f.family.startsWith('__cf_fit_')).length)).toBe(0);
   await adjust(page);
-  expect(await values(page)).toEqual(after);      // 再点一次不会继续往同一个方向漂移
+  expect(await values(page)).toEqual(after);      // Repeating the action must not keep drifting in the same direction.
   await expect(page.locator('#undoBtn')).toHaveAttribute('aria-disabled', 'false');
   await page.click('#undoBtn');
   expect(await values(page)).toEqual(before);
@@ -114,7 +114,7 @@ test('不支持可变轴描述的浏览器仍可匹配字重，其他轴无法�
   expect((await values(page)).weight).toBeGreaterThan(100);
   await page.evaluate(async () => {
     const c = await import('./assets/js/core.js'), u = await import('./assets/js/ui.js');
-    // 给类别声明额外轴；不支持描述的浏览器必须整类保留，不能用默认轴代替用户选值。
+    // Declare an extra category axis. Browsers without descriptor support must preserve the whole category rather than substitute default axes for the user's values.
     c.state.classes.latin.font.axes = [['wght', 100, 900, 400], ['wdth', 50, 200, 100]];
     c.state.classes.latin.vary = { wdth: 75 }; c.state.classes.latin.size = 137;
     u.changed({ fonts: true });
@@ -146,7 +146,7 @@ test('缺少汉字参照不应用回退字体的测量结果', async ({ page }) 
     const c = await import('./assets/js/core.js');
     const originalHan = c.state.classes.han.font;
     c.state.classes.han.font = { ...c.state.classes.latin.font };
-    c.state.classes.latin.font = { ...originalHan }; // 两种字体保持不同，确保测试仍进入缺少汉字参照的测量分支。
+    c.state.classes.latin.font = { ...originalHan }; // Keep the two fonts distinct so the test still exercises measurement without a Han reference.
   });
   const before = await values(page);
   await adjust(page);
@@ -159,7 +159,7 @@ test('静态字体缺少目标字重时测量实际档位，不把候选的回�
   const fontUrl = new URL('tests/fixtures/NotoSansJP-Subset.ttf', page.url()).href;
   await page.route('https://fonts.googleapis.com/**', route => {
     const family = new URL(route.request().url()).searchParams.get('family');
-    // 只有 Regular 可用；仍用真实字体轮廓，模拟静态字族在 100、200 等档位回退到 400。
+    // Only Regular is available. Use real outlines while simulating a static family falling back to 400 for requested weights such as 100 and 200.
     if (!family?.endsWith('@400')) return route.fulfill({ status: 400, body: '' });
     return route.fulfill({ contentType: 'text/css', body: `@font-face { font-family: 'Shippori Mincho'; src: url('${fontUrl}'); }` });
   });
@@ -253,7 +253,7 @@ test('假名、标点与单一类别例外按同类字符匹配；混合例外�
     return { classes: state.classes, custom: state.custom };
   });
   for (const key of ['kana', 'punct']) {
-    expect(after.classes[key].size).toBeNull(); // 与基础字型同样大小，恢复默认 100%。
+    expect(after.classes[key].size).toBeNull(); // Match the base glyph size by restoring the default 100%.
     expect(after.classes[key].shift).toBeNull();
   }
   expect(after.custom[0].size).toBeNull(); expect(after.custom[0].shift).toBeNull();

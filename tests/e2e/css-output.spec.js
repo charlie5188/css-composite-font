@@ -1,10 +1,10 @@
-// 每个预设导出的 CSS 和 JS 跟快照比较。Google Fonts 的文件地址会变，比较前换成占位符。
-// 预设或导出逻辑有意改动时，用 npx playwright test --update-snapshots 更新快照
+// Compare each preset's exported CSS and JS with snapshots. Google Fonts URLs may change, so replace them with placeholders first.
+// For intentional preset or export changes, update snapshots with npx playwright test --update-snapshots.
 const { test, expect } = require('@playwright/test');
 const { open, pick, showExport } = require('./helpers');
 
 const norm = s => s.replace(/url\([^)]*\)/g, 'url(…)');
-/* 字体和行高度量是陆续加载、测量的，输出会更新几次：等它连续 1.5 秒不变再比较 */
+/* Fonts and line metrics load and measure incrementally, updating output several times. Wait for 1.5 seconds of stable output before comparing. */
 async function settled(page) {
   let prev = '', same = 0;
   for (let i = 0; i < 60 && same < 3; i++) {
@@ -19,7 +19,7 @@ async function settled(page) {
 test('每个预设的 CSS / JS 输出不变', async ({ page }) => {
   test.setTimeout(240_000);
   await open(page);
-  const ids = await page.evaluate(() => [...document.querySelectorAll('.pcard[data-preset]')].map(b => b.dataset.preset).filter(id => !id.startsWith('mac') && !id.startsWith('user:')));      // macOS 预设依赖本机字体，CI 上没有
+  const ids = await page.evaluate(() => [...document.querySelectorAll('.pcard[data-preset]')].map(b => b.dataset.preset).filter(id => !id.startsWith('mac') && !id.startsWith('user:')));      // macOS presets depend on local fonts unavailable in CI.
   expect(ids.length).toBeGreaterThan(5);
   await showExport(page);
   for (const id of ids) {

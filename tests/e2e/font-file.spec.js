@@ -1,4 +1,4 @@
-// 字体文件导出的完整流程：下载 Pyodide、源字体，在 Worker 里生成，下载 zip。要联网，大约一分钟
+// Full font-file export flow: download Pyodide and source fonts, generate in a Worker, then download a zip. Requires networking and takes about a minute.
 const { test, expect } = require('@playwright/test');
 const { execFileSync } = require('child_process');
 const { open, pick, showExport } = require('./helpers');
@@ -9,7 +9,7 @@ test('生成 ゴシック × Jost 400 的 TTF 和 OTF @net', async ({ page }, in
   await pick(page, 'gothic-jp');
   await showExport(page);
   await page.click('#kindFont');
-  // 只留 400，不要斜体，加上 OTF
+  // Keep only 400, disable italics, and include OTF.
   for (const w of [700]) await page.click(`#fxWeights [data-w="${w}"]`);
   await page.uncheck('#fxItalic'); await page.check('#fxOtf');
   await expect(page.locator('#fxGo')).toBeEnabled();

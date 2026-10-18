@@ -3,14 +3,14 @@ import { fmtRanges, inRanges } from './unicode.js';
 import { round } from './i18n.js';
 import { loadBlank } from './ui.js';
 
-/* 自动匹配只测量，不改 state；所有结果算完再由 ui 一次写入，避免预览闪动和撤销记下中间状态。
-   字重以汉字字体自带的 H、h 为参照，在最终大小下比较主干；不是按汉字的黑色面积猜粗细。
-   这是视觉匹配的起点，衬线反差、字形风格等仍需在正文里判断。 */
+/* Auto-fit only measures; it never changes state. The UI applies all results together to avoid preview flicker and intermediate undo entries.
+   Compare stems at the final size against H and h in the Han font; do not infer weight from the ink area of Han glyphs.
+   This is a starting point for visual matching. Serif contrast and glyph style still need review in body text. */
 const FS = 256, SAMPLE = 'Hhx', median = a => a.sort((a, b) => a - b)[Math.floor(a.length / 2)];
 let seq = 0;
 
-/* 同类字符逐字比较，不能把句号、声调号等小字形放大到汉字高度。
-   全角标点/符号按字身宽度匹配大小，再用对应字形的位置匹配基线。 */
+/* Compare corresponding characters individually; small punctuation and tone marks must not be enlarged to Han height.
+   Match full-width punctuation and symbols by body width, then align baselines using the corresponding glyph positions. */
 export const FIT_SAMPLES = {
   digit: '0123456789', kana: 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんアイウエオカナ',
   punct: '「」『』（）［］《》〈〉、。，．！？：；', shared: '“”‘’—…·',
@@ -40,8 +40,8 @@ export function fitSize(ref, latin, hanSize = 100) {
   return Math.min(200, Math.max(50, round(scale * hanSize)));
 }
 
-/* 横切 H 的上下部和 h 的下部，绕开横画、拱肩和衬线；每条竖干取抗锯齿覆盖宽度。
-   在 256px 测量而非校样字号，避免屏幕像素取整让相邻候选字重的结果抖动。 */
+/* Sample horizontal slices through the upper/lower H and lower h, avoiding crossbars, shoulders and serifs; measure each stem's antialiased coverage.
+   Measure at 256px rather than the proof size to keep pixel rounding from destabilizing adjacent weight candidates. */
 function stems(ctx, ch, height) {
   ctx.clearRect(0, 0, 512, 512); ctx.fillText(ch, 48, 384);
   const pixels = ctx.getImageData(0, 0, 512, 512).data, widths = [];
@@ -63,27 +63,27 @@ export function createFitter() {
   async function measure(r, weight, han = false, chars = '') {
     const { font, fvs } = finalFont(r.font, r.vary);
     if (!font) return null;
-    // 旧浏览器忽略 FontFace 的可变轴描述；其他轴无法可靠测量时保留该类别，不能按默认轮廓误调。
+    // Older browsers ignore FontFace variation descriptors. Keep a class unchanged if its other axes cannot be measured reliably, rather than fitting default outlines.
     if (!variations && fvs && Object.keys(fvs).length) return null;
     const axis = vfAxisNow(font), w = weight ?? font.weight ?? 400;
     const key = JSON.stringify([fontKey(font), fvs, w, han, chars]);
     if (cache.has(key)) return cache.get(key);
     const pending = (async () => {
-      /* Google 可变字体只下载一次完整轴；每个候选借同一文件建立固定轴值的临时 face。 */
+      /* Download each Google variable font's full axis once; candidates create temporary faces at fixed axis values from the same file. */
       const s = source(font.kind === 'google' && Array.isArray(axis) ? { ...font, vf: true } : font);
       await s.promise;
       if (s.status !== 'ok') return null;
       if (font.kind === 'google' && Array.isArray(axis) && !s.axis) return null;
-      // 当前字体和汉字参照可以使用实际取到的相邻档位；候选必须确实存在，不能把回退当成新字重。
+      // The current font and Han reference may use the adjacent weight actually returned; candidates must exist, so fallback is not mistaken for a new weight.
       if (font.kind === 'google' && !axis && weight != null && s.actualWeight !== w) return null;
       const family = `__cf_fit_${++seq}`, vars = { ...fvs };
       if (Array.isArray(axis)) vars.wght = w;
       const settings = Object.entries(vars).map(([k, v]) => `"${k}" ${v}`).join(', ');
       const sample = chars || SAMPLE + (han ? '国' : '');
-      // wght 同时走标准 font-weight：旧版 Chromium 不支持 variationSettings，会把所有候选画成默认字重。
+      // Also set wght through standard font-weight: older Chromium ignores variationSettings and would render every candidate at the default weight.
       const cssWeight = Array.isArray(axis) ? w : 400, fontSpec = `${cssWeight} ${FS}px "${family}"`;
       for (const fc of s.faces) {
-        // CJK 网页字体可能有上百分片；每个候选只注册样字用到的分片，避免多类别测量堆积临时 face。
+        // CJK web fonts can have hundreds of subsets. Register only sample-relevant subsets per candidate to limit temporary faces during multi-class fitting.
         if (fc.range && ![...sample].some(ch => inRanges(fc.range, ch.codePointAt(0)))) continue;
         const d = { weight: String(cssWeight), ...(fc.range ? { unicodeRange: fmtRanges(fc.range) } : {}), ...(settings ? { variationSettings: settings } : {}) };
         const face = new FontFace(family, fc.buffer || fc.src, d);
@@ -95,7 +95,7 @@ export function createFitter() {
       } catch (e) { return null; } finally { clearTimeout(timer); }
       const ctx = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
       ctx.canvas.width = ctx.canvas.height = 512;
-      /* 用项目已有的零宽空白字体接管缺字，不能把系统的 CJK 回退误当成源字体。 */
+      /* Use the existing zero-width blank font for missing glyphs; do not mistake system CJK fallback for the source font. */
       if (!(await loadBlank())) return null;
       ctx.font = `${fontSpec}, "__cf_blank"`;
       const owns = ch => ctx.measureText(ch).width > 0;
@@ -156,14 +156,14 @@ export function createFitter() {
       weights = Array.from({ length: 11 }, (_, i) => best.weight - 100 + i * 20).filter(w => w >= axis[0] && w <= axis[1]);
       await add(weights);
     }
-    /* 少于约 4% 的测量改善不改字重；轻微惩罚大幅换档，优先保留设计师当前的选择。 */
+    /* Keep the weight unless measured error improves by about 4%; mildly penalize large jumps to favor the designer's current choice. */
     for (const c of candidates) c.cost = c === original ? c.error : c.error + 0.04 + Math.abs(c.weight - original.weight) / 100 * 0.005;
     return { ...row, candidates, original };
   }
   return { fit, dispose() { faces.forEach(f => document.fonts.delete(f)); } };
 }
 
-/* 同一字体的各档一起选：最低误差也不能让粗体比正文更细。手动换过字体的行分开处理。 */
+/* Choose a font's weights together: even the lowest-error solution must not make bold lighter than body text. Handle manually replaced fonts separately. */
 export function chooseFits(rows) {
   const groups = new Map(), out = new Map();
   for (const row of rows) {

@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""在本地用命令行生成字体文件，和网页里的「字体文件」用同一份代码（assets/py/bake_core.py）。
+"""Generate font files locally from the command line using the same code as the web app's font-file export (assets/py/bake_core.py).
 
-  python3 tools/bake.py job.json 源字体目录 输出.zip
+  python3 tools/bake.py job.json source-font-dir output.zip
 
-job.json 是 {"jobs": [...], "opts": {...}}，格式和网页交给 Worker 的一样（见 assets/js/bake.js 的 fxRun）。
-需要 fonttools==4.60.2（WOFF2 另需 brotli）：pip install -r tests/requirements.txt
+job.json contains {"jobs": [...], "opts": {...}}, matching the payload sent to the Worker (see fxRun in assets/js/bake.js).
+Requires fonttools==4.60.2 (and brotli for WOFF2): pip install -r tests/requirements.txt
 """
 import json, os, shutil, sys, tempfile
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'assets', 'py'))

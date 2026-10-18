@@ -1,20 +1,20 @@
-/* ================= App 代码导出（实验性） =================
-   iOS / Android / Flutter 没有复合字体。生成的代码按字符把文字切成片段，每段分别设字体、大小和基线偏移，
-   规则和网页导出一样：字符属于哪个类别看 EFF（例外字符盖在类别上面），字体和大小按字重解析。
-   三种语言共用一份数据（appModel），只是 API 不同。字体在 App 里的名字（PostScript 名、文件名、family）只能推测，
-   代码里写明了要核对。生成的注释用英文：读的人是开发者 */
+/* ================= App code export (experimental) =================
+   iOS, Android and Flutter have no composite fonts. Generated code splits text into character runs and assigns each a font, size and baseline shift.
+   It follows the web export: EFF determines character ownership, custom characters override classes, and fonts and sizes resolve by weight.
+   All three languages share appModel; only their APIs differ. App font names (PostScript names, file names and families) are guesses,
+   so the generated code asks developers to verify them. Generated comments are in English for developers. */
 import { CLASSES, EFF } from './unicode.js';
 import { WEIGHTS, customRanges, localAlt, resolveCls, resolveCustom, state, stepSpan, vfAxisNow } from './core.js';
 
 const W_WORD = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
 const hex = n => '0x' + n.toString(16).toUpperCase().padStart(4, '0');
 const num = x => String(+(+x).toFixed(4));
-/* 类型名：「My Composite」→ MyComposite；写不成标识符时用 CompositeFont */
+/* Type name: 'My Composite' becomes MyComposite; use CompositeFont if the result is not a valid identifier. */
 export function typeName() {
   const s = (state.name || '').replace(/[^A-Za-z0-9]+(.)?/g, (m, c) => c ? c.toUpperCase() : '').replace(/^./, c => c.toUpperCase());
   return /^[A-Za-z]\w*$/.test(s) ? s : 'CompositeFont';
 }
-/* 例外字符盖在已有的范围上：先在原来的范围上挖洞，再加上例外的范围 */
+/* Custom characters override existing ranges: remove their code points from those ranges, then add the custom ranges. */
 function paint(list, rng, idx) {
   const out = [];
   for (const [a, b, i] of list) {
@@ -24,11 +24,11 @@ function paint(list, rng, idx) {
   }
   return out.concat(rng.map(([a, b]) => [a, b, idx]));
 }
-/* 一个字体在各平台上的名字（推测）：iOS 用 PostScript 名，Android 用 assets 里的文件，Flutter 用 pubspec 里的 family */
+/* Guess platform font names: PostScript name on iOS, an assets file on Android, and a pubspec family in Flutter. */
 function fontEntry(f) {
   const w = f.weight || 400, vf = Array.isArray(vfAxisNow(f)), step = Math.min(900, Math.max(100, Math.round(w / 100) * 100));
-  const ax = Array.isArray(vfAxisNow(f)) ? vfAxisNow(f) : f.axis, wght = ax ? Math.min(ax[1], Math.max(ax[0], w)) : null;      // 可变字体：粗细限制在轴的范围里（网页上浏览器也是这样夹的）
-  const step2 = ax ? 400 : step;      // 可变字体只登记一个文件，粗细靠 wght；分档的字重记成 400，相同的字体才能合并
+  const ax = Array.isArray(vfAxisNow(f)) ? vfAxisNow(f) : f.axis, wght = ax ? Math.min(ax[1], Math.max(ax[0], w)) : null;      // Clamp variable font weights to their axis range, as browsers do for CSS.
+  const step2 = ax ? 400 : step;      // Register one file per variable font and use wght for weight; normalize the stepped weight to 400 so identical fonts can merge.
   if (f.kind === 'google') {
     const stem = f.family.replace(/\s+/g, '');
     return { note: `Google Fonts: ${f.family}${vf ? ' (variable)' : ''}`, ps: `${stem}-${vf ? 'Regular' : W_WORD[step]}`, file: vf ? `${stem}[wght].ttf` : `${stem}-${W_WORD[step]}.ttf`, family: f.family, weight: step2, wght };
@@ -66,7 +66,7 @@ export function appModel() {
   const shift = classes.map(c => (resolve(c, 400).shift || 0) / 100);
   return { name: typeName(), classes: classes.map(c => c.label || c.id), ranges: merged, weights, fonts, styles, shift };
 }
-/* 按生成的范围表查类别（和各语言代码里的二分查找一样），测试用 */
+/* Look up a class in the generated range table, using the same binary search as the platform code. Used by tests. */
 export function classOfModel(m, cp) {
   let lo = 0, hi = m.ranges.length - 1;
   while (lo <= hi) { const k = (lo + hi) >> 1, r = m.ranges[k]; if (cp < r[0]) hi = k - 1; else if (cp > r[1]) lo = k + 1; else return r[2]; }
@@ -79,7 +79,7 @@ ${c} class and gives each run its own font, size and baseline offset, using the 
 ${c} Font names below are guesses: check them against the font files you bundle.
 ${c} Classes: ${m.classes.join(', ')}. Characters not in \`ranges\` use class 0 (han, the base font).`;
 
-/* ---------------- Swift：UIKit / AppKit 的 NSAttributedString ---------------- */
+/* ---------------- Swift: UIKit / AppKit NSAttributedString ---------------- */
 export function buildSwift(m = appModel()) {
   return `${head(m, '//')}
 //
@@ -170,7 +170,7 @@ ${rows(m.ranges.map(([a, b, i]) => `(${hex(a)}, ${hex(b)}, ${i})`), 4, '        
 `;
 }
 
-/* ---------------- Kotlin：Android 的 SpannableString ---------------- */
+/* ---------------- Kotlin: Android SpannableString ---------------- */
 export function buildKotlin(m = appModel()) {
   return `${head(m, '//')}
 //
@@ -270,7 +270,7 @@ ${rows(m.ranges.map(([a, b, i]) => `${hex(a)}, ${hex(b)}, ${i}`), 4, '        ')
 `;
 }
 
-/* ---------------- Dart：Flutter 的 TextSpan ---------------- */
+/* ---------------- Dart: Flutter TextSpan ---------------- */
 export function buildDart(m = appModel()) {
   return `${head(m, '//')}
 //

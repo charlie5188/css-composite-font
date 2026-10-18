@@ -1,6 +1,6 @@
 import { $, lsGet, lsSet, root } from './i18n.js';
 
-/* 外观是本机偏好，独立于字体配置；不进入预设、分享、导出或撤销记录。 */
+/* Appearance is a browser-local preference, separate from font configuration, presets, sharing, exports and undo history. */
 const LS_APPEARANCE = 'composite-font:appearance:v1';
 const DEFAULT = { theme: 'system', background: null, text: null };
 let appearance = { ...DEFAULT }, repaint = () => {};
@@ -42,7 +42,7 @@ export function initAppearance(onChange) {
   for (const hex of document.querySelectorAll('[data-appearance-hex]')) {
     hex.addEventListener('input', () => { const value = color(hex.value); if (value) update({ [hex.dataset.appearanceHex]: value }); });
     hex.addEventListener('blur', () => {
-      // 和其他数字框一样，输入中不干扰；离开时将无效草稿恢复成最后一次有效值。
+      // As with numeric fields, leave typing alone; restore an invalid draft to the last valid value on blur.
       const swatch = $(`[data-appearance-color="${hex.dataset.appearanceHex}"]`);
       hex.value = swatch.value.toUpperCase();
     });

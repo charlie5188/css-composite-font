@@ -8,38 +8,38 @@ import { G, WEIGHTS, axisOf, buildPlan, customRanges, files, fontKey, fontLabel,
 import { wTag, wTip } from './render.js';
 import { cssFamilyName, exKind, ownerName, setExKind, showExport } from './export.js';
 import { toast } from './ui.js';
-/* ================= 导出 · 字体文件 =================
-   把合成字体做成真正的字体文件（TTF，可选 WOFF2）：每个字重、正斜体各一个，打包成 zip。
-   做法和导出的 CSS 一一对应：同一张规则表（buildPlan），每条规则的字体只取它负责的字，按 size-adjust 缩放、
-   按基线偏移上下平移，再合并成一个字体；行高度量用汉字基础字体的。
-   在 Web Worker 里跑 Pyodide（浏览器里的 Python）+ fontTools，源字体由页面下载后交给 Worker：
-   - Google Fonts：google/fonts 仓库里的完整文件（网页接口给的切片去掉了大部分 OpenType 特性）
-   - 上传的字体：直接用文件内容
-   artifact 等嵌入页面不能下载外部文件，改为打开 GitHub Pages 版，并在链接里带上当前设置 */
+/* ================= Export: font files =================
+   Bake the composite into real fonts (TTF, optionally WOFF2): one per weight and upright/italic style, packaged in a zip.
+   Follow the exported CSS exactly: use the same buildPlan rules, subset each source to its assigned characters, scale by size-adjust,
+   shift by the baseline offset, then merge. Copy line metrics from the Han base font.
+   A Web Worker runs Pyodide (Python in the browser) and fontTools; the page downloads sources and passes them to the worker:
+   - Google Fonts: full files from google/fonts; the web subsets omit most OpenType features.
+   - Uploaded fonts: use their file contents directly.
+   Embedded artifact pages cannot download external files; open GitHub Pages instead and carry the configuration in the link. */
 export const BK = {
   pyodide: 'https://cdn.jsdelivr.net/npm/pyodide@0.27.7/',
   brotli: 'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/brotli-1.1.0-cp312-cp312-pyodide_2024_0_wasm32.whl',
-  wheel: 'assets/py/fonttools-4.60.2-py3-none-any.whl',      // PyPI 不允许网页跨域下载，放在仓库里由 GitHub Pages 提供
-  core: 'assets/py/bake_core.py',      // 烘焙的 Python 代码
+  wheel: 'assets/py/fonttools-4.60.2-py3-none-any.whl',      // PyPI disallows cross-origin browser downloads; bundle the wheel and serve it through GitHub Pages.
+  core: 'assets/py/bake_core.py',      // Python font-baking implementation.
   pages: 'https://charlie5188.github.io/css-composite-font/',
   raw: 'https://raw.githubusercontent.com/google/fonts/main/',
   api: 'https://api.github.com/repos/google/fonts/contents/',
-  runtimeMB: 15,      // Pyodide + fontTools，第一次要下载的大小
+  runtimeMB: 15,      // Initial download size for Pyodide and fontTools.
 };
-export const CAN_BAKE = window.top === window.self;      // 和「下载文件」按钮同一个判断：嵌入的框架里浏览器会拦截下载
+export const CAN_BAKE = window.top === window.self;      // Use the same check as the download button: browsers block downloads inside the embedded frame.
 export const STY = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
 export const styleName = (W, ital) => ital ? (W === 400 ? 'Italic' : `${STY[W]} Italic`) : STY[W];
 export const LIC_NAME = { ofl: 'OFL', apache: 'Apache 2.0', ufl: 'UFL' };
-/* 写进字体和 zip 的许可说明用英文：字体的元数据、许可文件一般都是英文 */
+/* Write font and zip license notices in English, matching typical font metadata and license files. */
 export const LIC_OFL = ['This Font Software is licensed under the SIL Open Font License, Version 1.1.', 'https://openfontlicense.org'];
 export const LIC_PRIVATE = ['Contains fonts used under their own licenses. Private use only; do not redistribute.', ''];
 export const LIC_HEAD_OPEN = 'This font combines the fonts listed below. All of them are under the SIL Open Font License 1.1 or a compatible open license, and this font is licensed under the SIL Open Font License 1.1. Their copyright notices and license texts follow.';
 export const LIC_HEAD_PRIVATE = 'This font combines the fonts listed below. Some of them are not under an open license; whoever made this font confirmed they have the right to modify and combine them. Do not redistribute this font.';
 
-/* ---------- Google Fonts 的源文件：google/fonts 仓库里的完整文件 ----------
-   先按仓库的命名规则直接猜文件名（可变字体：字体族去空格[轴,…].ttf，轴名按 ASCII 排序；静态字体：字体族去空格-Regular.ttf 等），
-   用 HEAD 请求确认存在；猜不到才用 GitHub API 列目录。API 每个 IP 每小时只能用 60 次，公司网络里很多人共用一个出口，很快会用完 */
-export const gfDirs = new Map();      // 字体族 -> { st: 'loading' | 'ok' | 'err', lic, slug, names: [[文件名, 大小]], text, rfn }
+/* ---------- Google Fonts sources: full files from google/fonts ----------
+   First guess repository filenames: FamilyWithoutSpaces[axes,...].ttf for variable fonts (ASCII-sorted axes), or FamilyWithoutSpaces-Regular.ttf for static fonts.
+   Confirm guesses with HEAD requests; use the GitHub directory API only as a fallback. Its 60 requests/hour/IP limit is easily exhausted behind a shared office gateway. */
+export const gfDirs = new Map();      // Family -> { st: 'loading' | 'ok' | 'err', lic, slug, names: [[filename, size]], text, rfn }
 export const gfUrl = (lic, slug, name) => BK.raw + lic + '/' + slug + '/' + encodeURIComponent(name);
 export async function gfGuess(family, slug) {
   let lic = null, text = '';
@@ -75,13 +75,13 @@ export function gfInfo(family) {
     let d = lsGet(ck);
     if (!d || Date.now() - d.t > 7 * 864e5) {
       d = { t: Date.now(), ...((await gfGuess(family, slug)) || (await gfList(slug))) };
-      try { localStorage.setItem(ck, JSON.stringify(d)); } catch (e) { /* 存不了就下次再查 */ }
+      try { localStorage.setItem(ck, JSON.stringify(d)); } catch (e) { /* If caching fails, look it up again next time. */ }
     }
     Object.assign(g, { st: 'ok', lic: d.lic, slug, names: d.names, text: d.text, rfn: rfnOf(d.text) });
   })().catch(e => Object.assign(g, { st: 'err', err: e.code || 'net' })).finally(() => { if (exKind === 'font') renderFontTab(); });
   return g;
 }
-/* 选文件：可变字体优先（正体 / Italic 各一个）；静态字体取最接近的一档，和 CSS 的字重匹配一样 400 以上往粗找 */
+/* Prefer variable files (one each for upright and Italic); otherwise choose the nearest static weight, searching upward above 400 as CSS does. */
 export function gfPick(names, weight, ital) {
   const fonts = names.filter(([n]) => /\.(ttf|otf)$/i.test(n));
   const vf = fonts.find(([n]) => n.includes('[') && n.includes('Italic') === ital);
@@ -96,7 +96,7 @@ export function gfPick(names, weight, ital) {
   have.sort((a, b) => Math.abs(a[0] - weight) - Math.abs(b[0] - weight) || (weight >= 400 ? b[0] - a[0] : a[0] - b[0]));
   return { name: have[0][1][0], size: have[0][1][1], vf: false };
 }
-/* OFL 的保留名称（Reserved Font Name）：新字体的名字里不能有 */
+/* OFL Reserved Font Names must not appear in the new font's name. */
 export function rfnOf(text) {
   const out = new Set();
   for (const m of (text || '').matchAll(/Reserved Font Names?\s*((?:[“"'‘][^“”"'‘’\n]+[”"'’][\s,&]*(?:and\s*)?)+)/gi))
@@ -104,21 +104,21 @@ export function rfnOf(text) {
   return [...out];
 }
 
-/* ---------- 上传的字体、本机字体：读 name / OS/2 表，判断许可和轮廓 ---------- */
-export const fileMetas = new Map();      // fileId -> 结果；读取中为 null
+/* ---------- Uploaded and local fonts: read name / OS/2 tables for licensing and outlines ---------- */
+export const fileMetas = new Map();      // fileId -> result; null while reading.
 export function fileMeta(id, fl) {
   if (fileMetas.has(id)) return fileMetas.get(id);
   fileMetas.set(id, null);
   readFontMeta(fl.buffer).then(m => { fileMetas.set(id, m); if (exKind === 'font') renderFontTab(); });
   return null;
 }
-/* ps：字体集合（TTC）里要用的那一款的 PostScript 名；不给就看第一款 */
+/* ps selects a face in a TTC by PostScript name; otherwise inspect the first face. */
 export async function readFontMeta(buf, ps) {
   const m = { lic: 'unknown', rfn: [], size: buf.byteLength };
   try {
     const v = new DataView(buf), tag = x => String.fromCharCode(x >>> 24, (x >> 16) & 255, (x >> 8) & 255, x & 255);
     const sig = v.getUint32(0);
-    if (sig === 0x774F4632) { m.woff2 = true; return m; }      // brotli 压缩，读不了表：许可不明，轮廓到生成时再检查
+    if (sig === 0x774F4632) { m.woff2 = true; return m; }      // Brotli-compressed tables cannot be read here: mark the license unknown and inspect outlines during generation.
     const read = async base => {
       const tabs = {}, tags = new Set();
       if (v.getUint32(base) === 0x774F4646) {
@@ -149,12 +149,12 @@ export async function readFontMeta(buf, ps) {
     if (os2 && os2.byteLength >= 62) m.vendor = String.fromCharCode(...[58, 59, 60, 61].map(k => os2.getUint8(k))).trim();
     m.copyright = face.names[0] || ''; m.license = face.names[13] || ''; m.licenseUrl = face.names[14] || '';
     const all = [m.license, m.licenseUrl, m.copyright].join(' ');
-    /* 只认得出开源许可；其他一律算许可不明，不按厂商区别对待（系统字体、商用字体的许可大多都不允许修改），由用户确认 */
+    /* Recognize only open licenses; treat all others as unknown, regardless of vendor. Most system/commercial licenses prohibit modification; require user confirmation. */
     m.lic = /open font licen[cs]e|\bOFL\b|scripts\.sil\.org\/OFL|openfontlicense/i.test(all) ? 'ofl'
       : /apache licen[cs]e|apache\.org\/licenses/i.test(all) ? 'apache'
       : /ubuntu font licen[cs]e/i.test(all) ? 'ufl' : 'unknown';
     m.rfn = rfnOf(m.copyright + '\n' + m.license);
-  } catch (e) { /* 读不懂：许可不明 */ }
+  } catch (e) { /* Unrecognized data: license unknown. */ }
   return m;
 }
 export function nameRecs(d) {
@@ -171,8 +171,8 @@ export function nameRecs(d) {
   }
   return Object.fromEntries(Object.entries(got).map(([k, x]) => [k, x.s]));
 }
-/* 本机安装的字体：用浏览器的本机字体接口（Chrome / Edge）读文件内容。第一次要用户点按钮授权 */
-export const fxLocal = { st: 'idle', map: new Map(), metas: new Map() };      // st：idle 没查过 / check 查权限中 / need 要用户授权 / asking / ok / denied
+/* Read installed font bytes through the browser's Local Font Access API (Chrome / Edge). The first request needs a user-initiated permission prompt. */
+export const fxLocal = { st: 'idle', map: new Map(), metas: new Map() };      // st: idle = not checked; check = checking permission; need = authorization required; asking / ok / denied.
 export async function fxLocalLoad(ask) {
   if (!('queryLocalFonts' in window)) return;
   if (!ask) {
@@ -182,7 +182,7 @@ export async function fxLocalLoad(ask) {
   }
   fxLocal.st = 'asking';
   try {
-    const list = window.queryLocalFonts();      // 点按钮时同步调用：浏览器要求在用户操作里请求权限
+    const list = window.queryLocalFonts();      // Call synchronously from the button handler: the browser requires a user gesture for permission requests.
     if (ask) renderFontTab();
     for (const fd of await list) { fxLocal.map.set(fd.fullName, fd); fxLocal.map.set(fd.postscriptName, fd); }
     fxLocal.st = 'ok';
@@ -198,7 +198,7 @@ export function localMeta(fd) {
   return null;
 }
 
-/* ---------- 要生成哪些文件，各用哪些源字体 ---------- */
+/* ---------- Output files and their source fonts ---------- */
 export function fxPlan() {
   const fam = cssFamilyName(), out = { fam, jobs: [], srcs: new Map(), block: new Set(), loading: false, unknown: false, needLocal: false, rfn: null };
   const use = (p, W) => {
@@ -252,7 +252,7 @@ export function fxPlan() {
     const up = buildPlan(W, true, false);
     for (const ital of state.fx.italic ? [false, true] : [false]) {
       const plan = ital ? buildPlan(W, true, true) : up;
-      if (ital && keys(plan) === keys(up)) continue;      // 没有一个类别有斜体：斜体和正体一样，不生成
+      if (ital && keys(plan) === keys(up)) continue;      // If no class has italics, italic output would match upright output; omit it.
       out.jobs.push({ W, italic: ital, plan, srcs: plan.map(p => use(p, W)), label: `${fam} ${styleName(W, ital)}` });
     }
   }
@@ -265,18 +265,18 @@ export function fxPlan() {
   out.italSkipped = state.fx.italic && !out.jobs.some(j => j.italic) && out.jobs.length > 0;
   return out;
 }
-/* 预计用时：实测 Pyodide 里每 MB 源字体约 2 秒（Noto Sans JP 9.6 MB 一个字重约 20 秒）；CFF 轮廓要转换，按两倍算 */
+/* Estimate duration from measured Pyodide performance: ~2 seconds/MB of source fonts (Noto Sans JP, 9.6 MB, takes ~20 seconds per weight). Double this for CFF conversion. */
 export function fxEstimate(pl) {
   let sec = 0, mb = 0;
   for (const j of pl.jobs) {
     const mb = j.srcs.reduce((a, s) => { const x = s && pl.srcs.get(s.key); return a + (x ? (x.size || 0) / 1e6 : 0); }, 0);
     sec += 3 + j.srcs.reduce((a, s) => { const x = s && pl.srcs.get(s.key); return a + (x ? (x.size || 0) / 1e6 * (x.cff ? 4 : 2) : 0); }, 0) + (state.fx.otf ? mb * 2 : 0);
   }
-  for (const s of pl.srcs.values()) if (s.kind === 'google' && !fx.sent.has(s.file)) mb += (s.size || 0) / 1e6;      // 已经交给 Worker 的不用再下载
+  for (const s of pl.srcs.values()) if (s.kind === 'google' && !fx.sent.has(s.file)) mb += (s.size || 0) / 1e6;      // Sources already transferred to the worker do not need downloading again.
   return { n: pl.jobs.length * (state.fx.ttf + state.fx.woff2 + state.fx.otf), min: Math.max(1, Math.round(sec / 60)), mb: Math.round(mb + (fx.worker ? 0 : BK.runtimeMB)) };
 }
 
-/* ---------- 字体文件：左边的设置、右边的面板 ---------- */
+/* ---------- Font files: left-side settings and right-side panel ---------- */
 export const fx = { worker: null, sent: new Set(), running: false, agree: false, stage: '', pct: 0, t0: 0, tick: null, result: null, err: '', sig: '' };
 export const fxSig = pl => JSON.stringify([pl.fam, state.fx.ttf, state.fx.woff2, state.fx.otf, pl.jobs.map(j => [j.W, j.italic, j.srcs.map(s => s && [s.key, s.weight, s.fvs]), j.plan.map(p => [p.size, p.range && p.range.length])]), state.classes, state.custom]);
 export const fmtMB = n => (n / 1e6).toFixed(n < 1e7 ? 1 : 0);
@@ -296,7 +296,7 @@ export function renderFontTab() {
     return;
   }
   const pl = fxPlan(), est = fxEstimate(pl), rows = [];
-  if (pl.needLocal && fxLocal.st === 'idle') fxLocalLoad(false);      // 已经授权过的话不用再点按钮
+  if (pl.needLocal && fxLocal.st === 'idle') fxLocalLoad(false);      // Previously granted permission does not need another button click.
   for (const s of pl.srcs.values()) {
     const kind = T(s.kind === 'google' ? 'fxKindGoogle' : s.kind === 'file' ? 'fxKindFile' : 'fxKindLocal');
     const lic = s.err ? `<span class="fx-lic no">${esc(T('fxLicNo'))}</span>`
@@ -309,7 +309,7 @@ export function renderFontTab() {
     const notes = [];
     if (s.err) notes.push([T('fxErr_' + s.err, { name: s.name }), 'no']);
     else if (!s.needLocal) {
-      if (s.lic === 'unknown') {      // 有许可说明就摘许可说明，没有就摘版权声明
+      if (s.lic === 'unknown') {      // Prefer license text; fall back to the copyright notice.
         const cut = x => { x = (x || '').replace(/\s+/g, ' ').trim(); return x.length > 160 ? x.slice(0, 160) + '…' : x; };
         const lt = cut(s.meta?.license), ct = cut(s.meta?.copyright);
         notes.push([lt ? T('fxLicText', { t: lt }) : ct ? T('fxLicCopy', { t: ct }) : T('fxLicNone'), 'lic']);
@@ -319,10 +319,10 @@ export function renderFontTab() {
     }
     rows.push(`<div class="fx-row"><span class="fx-name">${esc(s.name)}</span>${lic}<span class="fx-meta">${esc(meta)}</span>${notes.map(([t, c]) => `<span class="fx-note ${c}">${esc(t)}</span>`).join('')}</div>`);
   }
-  /* 本机字体的授权、系统字体的许可提醒：各说一次，不在每一行重复 */
+  /* Show local-font permission and system-font license notices once each, rather than repeating them in every row. */
   const localAsk = pl.needLocal ? `<div class="fx-local"><p>${esc(T('fxLocalNeed'))}</p>${fxLocal.st === 'asking' || fxLocal.st === 'check' ? '' : `<button type="button" class="btn" id="fxLocalAsk">${esc(T('fxLocalAsk'))}</button>`}</div>` : '';
   const localWarn = [...pl.srcs.values()].some(s => s.kind === 'local' && s.lic === 'unknown') ? `<p class="fx-note">${esc(T('fxLocalNote'))}</p>` : '';
-  const block = pl.block.size ? [T('fxBlockSrc')] : [];      // 各字体的原因写在上面那一行里，这里只说一句
+  const block = pl.block.size ? [T('fxBlockSrc')] : [];      // Individual reasons are shown in the font rows above; keep this summary to one sentence.
   if (!pl.jobs.length) block.push(T('fxNoWeights'));
   if (pl.rfn) block.push(T('fxRfn', pl.rfn));
   const sig = fxSig(pl), res = fx.result, stale = res && fx.sig !== sig;
@@ -339,13 +339,13 @@ export function renderFontTab() {
     ${fxLimits()}`;
   renderFxRun(stale);
 }
-/* 字形超过上限、删减了字形变体或罕用汉字时的说明（和 README 里写的一样） */
+/* Explain glyph-limit trimming of variants or rare Han characters, consistently with README. */
 export function fxTrimText(t) {
   const names = OT_LANG_NAMES();
   return T('fxTrimHead') + (t.langs?.length ? T('fxTrimLangs', { langs: t.langs.map(x => names[x] || x).join(T('joiner')) }) : '') + (t.rare ? T('fxTrimRare', { n: t.rare }) : '');
 }
 export function renderFxRun(stale) {
-  const tb = $('#exToggle');      // 对话框关着也看得到：顶栏「导出」按钮的底边是进度条
+  const tb = $('#exToggle');      // Show progress even when the dialog is closed, along the bottom edge of the top-bar Export button.
   tb.classList.toggle('running', fx.running); tb.style.setProperty('--pct', (fx.pct * 100).toFixed(1) + '%');
   const el = $('#fxRun'); if (!el) return;
   const s = fx.t0 ? Math.round(((fx.running ? performance.now() : fx.t1) - fx.t0) / 1000) : 0;
@@ -360,7 +360,7 @@ export function renderFxRun(stale) {
   }
 }
 
-/* ---------- 生成 ---------- */
+/* ---------- Generation ---------- */
 export async function fxFetch(url, onProgress) {
   let cache = null;
   try { cache = await caches.open('composite-font-src-v1'); const hit = await cache.match(url); if (hit) return await hit.arrayBuffer(); } catch (e) { cache = null; }
@@ -370,16 +370,16 @@ export async function fxFetch(url, onProgress) {
   let got = 0;
   for (;;) { const { done, value } = await reader.read(); if (done) break; chunks.push(value); got += value.length; onProgress(got, Math.max(total, got)); }
   const buf = await new Blob(chunks).arrayBuffer();
-  try { if (cache) await cache.put(url, new Response(buf.slice(0))); } catch (e) { /* 缓存满了：下次重新下载 */ }
+  try { if (cache) await cache.put(url, new Response(buf.slice(0))); } catch (e) { /* Cache full: download again next time. */ }
   return buf;
 }
 export function fxStop(err) {
   if (fx.worker) { fx.worker.terminate(); fx.worker = null; fx.sent.clear(); }
-  fx.abort?.(); fx.abort = null;      // 正在等 Worker 的 fxRun 结束掉
+  fx.abort?.(); fx.abort = null;      // Reject any pending fxRun waiting for the worker.
   fx.running = false; fx.t1 = performance.now(); clearInterval(fx.tick);
   fx.err = err || ''; renderFontTab();
 }
-/* 语言 → OpenType 语言标签（字体里各地区字形变体按它切换） */
+/* Language -> OpenType language tag, used to select regional glyph variants. */
 export const otLang = l => /^ja/.test(l) ? 'JAN ' : /^ko/.test(l) ? 'KOR ' : /^zh-(Hant-)?(HK|MO)/.test(l) ? 'ZHH ' : /^zh-(Hant|TW)/.test(l) ? 'ZHT ' : /^zh/.test(l) ? 'ZHS ' : null;
 export const OT_LANG_NAMES = () => Object.fromEntries(T('fxLangNames').split(',').map(x => x.split('=')));
 export async function fxRun() {
@@ -390,7 +390,7 @@ export async function fxRun() {
   renderFontTab();
   const say = (stage, pct) => { fx.stage = stage; if (pct != null) fx.pct = pct; renderFxRun(); };
   try {
-    /* 源字体：Google 的从 GitHub 下载，上传的复制一份（交给 Worker 的会被转移走） */
+    /* Sources: download Google fonts from GitHub; copy uploads because transferring them to the worker detaches their buffers. */
     const send = {}, transfer = [], need = [...pl.srcs.values()].filter(s => s.file && !fx.sent.has(s.file));
     for (const [i, s] of need.entries()) {
       let buf;
@@ -401,7 +401,7 @@ export async function fxRun() {
       send[s.file] = buf; transfer.push(buf);
     }
     const jobs = pl.jobs.map(j => {
-      const keep = j.plan.map((p, i) => i).filter(i => j.srcs[i]);      // 没有字体的规则（不会出现在 CSS 里）跳过
+      const keep = j.plan.map((p, i) => i).filter(i => j.srcs[i]);      // Skip rules with no font, which are also omitted from the CSS.
       return {
       weight: j.W, italic: j.italic, label: j.label,
       srcs: keep.map(i => j.srcs[i]).map(s => ({ file: s.file, name: s.name, weight: s.weight, fvs: s.fvs, ps: s.ps })),
@@ -412,7 +412,7 @@ export async function fxRun() {
     const open = [...pl.srcs.values()].every(s => ['ofl', 'apache', 'ufl'].includes(s.lic));
     const opts = { family: pl.fam, ttf: state.fx.ttf, woff2: state.fx.woff2, otf: state.fx.otf, lic: open ? LIC_OFL : LIC_PRIVATE,
       extra: [[open ? 'OFL.txt' : 'LICENSES.txt', fxLicenseText(pl, open)], ['README.txt', fxReadme(pl)]],
-      otLang: otLang(state.scope || state.typo.lang),      // 字形超过上限时只留这个语言的字形变体
+      otLang: otLang(state.scope || state.typo.lang),      // If the glyph limit is exceeded, retain only this language's glyph variants.
       notes: { head: T('fxTrimHead'), langs: T('fxTrimLangs'), rare: T('fxTrimRare'), names: OT_LANG_NAMES(), sep: T('joiner') } };
     if (!fx.worker) {
       const url = URL.createObjectURL(new Blob(['(' + bakeWorker.toString() + ')()'], { type: 'text/javascript' }));
@@ -437,10 +437,10 @@ export async function fxRun() {
     need.forEach(s => fx.sent.add(s.file));
     fx.result = { files: done.files, trimmed: done.trimmed, zip: new Blob([done.zip], { type: 'application/zip' }), name: (pl.fam.replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '') || 'composite-font') + '.zip', ms: performance.now() - t0 };
     fx.running = false; fx.t1 = performance.now(); clearInterval(fx.tick);
-    if (!$('#exDlg').open) $('#exToggle').classList.add('ready');      // 做好的时候对话框关着：按钮上亮一个点
+    if (!$('#exDlg').open) $('#exToggle').classList.add('ready');      // If generation finishes with the dialog closed, light up the button's status dot.
     renderFontTab();
   } catch (e) {
-    if (!fx.running) return;      // 用户停止了
+    if (!fx.running) return;      // Stopped by the user.
     const msg = e.code === 'cff' || e.code === 'outline' || e.code === 'read' || e.code === 'glyphs' ? T('fxErr_' + e.code, { name: e.name || '' })
       : e.code === 'ghLimit' ? T('fxErr_ghLimit') : e.code === 'net' ? T('fxErr_net') : T('fxErrRun', { msg: String(e.message || e).slice(-300) });
     fxStop(msg);
@@ -453,7 +453,7 @@ export function fxSave() {
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 5000);
 }
-/* zip 里的许可文件：全是开源字体时是 OFL.txt（附上各来源的许可全文），有许可不明的字体时是 LICENSES.txt */
+/* Zip license file: OFL.txt with full source licenses when all fonts are open; LICENSES.txt when any license is unknown. */
 export function fxLicenseText(pl, open) {
   const parts = [open ? LIC_HEAD_OPEN : LIC_HEAD_PRIVATE, ''];
   for (const s of pl.srcs.values()) {
@@ -475,7 +475,7 @@ export function fxReadme(pl) {
   return lines.join('\n');
 }
 
-/* ---------- 从 artifact 带设置到 GitHub Pages：设置压缩后放在链接的 #cfg= 里 ---------- */
+/* ---------- Carry artifact settings to GitHub Pages, compressed into the link's #cfg= fragment ---------- */
 export async function cfgLink() {
   try {
     const { mode, data } = await encodeConfig({ ...state, view: { ...state.view, text: state.view.text.slice(0, 2500) } });
@@ -493,7 +493,7 @@ export async function importCfg() {
     normalizeState(); refresh('ranges', 'toolbar', 'editor', 'preview', 'presets', 'fonts');
     toast(T('fxImported'));
     setExKind('font'); showExport();
-  } catch (e) { /* 链接坏了：照常打开 */ }
+  } catch (e) { /* Invalid link: open normally. */ }
 }
 export function initFontTab() {
   $('#fxWeights').addEventListener('click', e => {
@@ -503,7 +503,7 @@ export function initFontTab() {
     refresh('fxFields', 'fx');
   });
   $('#fxItalic').addEventListener('change', e => { state.fx.italic = e.target.checked; refresh('fx'); });
-  // 三种格式各自独立，但至少要留一种：取消最后一个时不让取消
+  // The three formats are independent, but at least one must remain selected; reject unchecking the last one.
   for (const [id, k] of [['#fxTtf', 'ttf'], ['#fxWoff2', 'woff2'], ['#fxOtf', 'otf']]) $(id).addEventListener('change', e => {
     if (!e.target.checked && ['ttf', 'woff2', 'otf'].every(x => x === k || !state.fx[x])) { e.target.checked = true; return; }
     state.fx[k] = e.target.checked; refresh('fx');
@@ -518,7 +518,7 @@ export function initFontTab() {
   importCfg();
 }
 
-/* ---------- Worker：Pyodide + fontTools。整个函数转成字符串在 Worker 里运行，不能用外面的变量 ---------- */
+/* ---------- Worker: Pyodide + fontTools. This whole function runs from its string representation; it cannot use outer variables. ---------- */
 export function bakeWorker() {
   let py = null, brotli = false;
   onmessage = async ({ data: m }) => {
@@ -528,13 +528,13 @@ export function bakeWorker() {
         importScripts(m.cfg.pyodide + 'pyodide.js');
         py = await loadPyodide({ indexURL: m.cfg.pyodide });
         let whl = null;
-        for (const u of m.cfg.wheels) { try { const r = await fetch(u); if (r.ok) { whl = await r.arrayBuffer(); break; } } catch (e) { /* 试下一个地址 */ } }
+        for (const u of m.cfg.wheels) { try { const r = await fetch(u); if (r.ok) { whl = await r.arrayBuffer(); break; } } catch (e) { /* Try the next URL. */ } }
         if (!whl) throw Object.assign(new Error('fontTools'), { code: 'net' });
         py.FS.writeFile('/tmp/ft.whl', new Uint8Array(whl));
         py.runPython("import zipfile; zipfile.ZipFile('/tmp/ft.whl').extractall('/lib/python3.12/site-packages')");
         py.FS.mkdirTree('/src'); py.FS.mkdirTree('/w');
-        let code = null;      // 每次都向服务器确认有没有新版本（no-cache 仍会用缓存，只是先验证）
-        for (const u of m.cfg.core) { try { const r = await fetch(u, { cache: 'no-cache' }); if (r.ok) { code = await r.text(); break; } } catch (e) { /* 试下一个地址 */ } }
+        let code = null;      // Revalidate with the server on every request; no-cache still uses cached responses after validation.
+        for (const u of m.cfg.core) { try { const r = await fetch(u, { cache: 'no-cache' }); if (r.ok) { code = await r.text(); break; } } catch (e) { /* Try the next URL. */ } }
         if (!code) throw Object.assign(new Error('bake_core.py'), { code: 'net' });
         py.runPython(code);
       }

@@ -88,10 +88,18 @@ test('外观：四种语言、键盘和窄屏设置，损坏或不可用的存�
     await expect(page.locator('#appearanceTheme option')).toHaveCount(3);
     await expect(page.locator('#moreMenu [data-appearance-hex]')).toHaveCount(0);
     await expect(page.locator('#appearanceTheme')).toHaveAccessibleName(/外觀|外観|Appearance|外观/);
+    // Mixed forms, options and notes must share a text inset so new content does not introduce additional indentation.
+    const starts = await page.locator('#moreMenu').evaluate(el => [...el.querySelectorAll('.settings-row>[data-t],.settings-row>label,.settings-label,.mm-item,.settings-note')].filter(label => label.getClientRects().length).map(label => {
+      const range = document.createRange(); range.selectNodeContents(label);
+      return range.getClientRects()[0].left;
+    }));
+    expect(Math.max(...starts) - Math.min(...starts)).toBeLessThan(1);
     await colors(page);
     await expect(page.locator('#viewPop [data-appearance-hex]')).toHaveCount(2);
     await expect(page.locator('#proofBgHex')).toHaveValue(/#[\dA-F]{6}/);
     await expect(page.locator('#viewBtn')).toHaveAttribute('aria-expanded', 'true');
+    const ends = await page.locator('#viewPop .settings-fields select,#viewPop .color-field').evaluateAll(els => els.map(el => el.getBoundingClientRect().right));
+    expect(Math.max(...ends) - Math.min(...ends)).toBeLessThan(1);
     await page.keyboard.press('Escape');
     await expect(page.locator('#viewBtn')).toHaveAttribute('aria-expanded', 'false');
   }

@@ -48,7 +48,7 @@ export function inRanges(list, cp) {
 }
 export const fmtRange = ([a, b]) => a === b ? `U+${hex(a)}` : `U+${hex(a)}-${hex(b)}`;
 export const fmtRanges = list => list.map(fmtRange).join(', ');
-/* 字符输入：既可以直接写字符，也可以写 U+2018-201D */
+/* Character input accepts literal characters or ranges such as U+2018-201D. */
 export function parseChars(input) {
   const out = [];
   const rest = String(input).replace(/U\+[0-9A-F?]{1,6}(?:-(?:U\+)?[0-9A-F]{1,6})?/gi, m => { out.push(...parseRanges(m)); return ' '; });
@@ -56,7 +56,7 @@ export function parseChars(input) {
   return norm(out);
 }
 
-/* ================= 字符类别（对应 InDesign 复合字体的行） ================= */
+/* ================= Character classes (InDesign composite-font rows) ================= */
 export const CLASSES = [
   { id: 'han', name: { zh: '汉字', ja: '漢字', tw: '漢字', en: 'Han' }, desc: { zh: '基础字体。负责 CJK 统一汉字及扩展区，也兜底所有未归类的字符（如谚文、emoji）。', ja: 'ベースフォント。CJK 統合漢字と拡張領域を受け持ち、分類外の文字（ハングル、絵文字など）もここで表示します。', tw: '基礎字型。負責 CJK 統一漢字及擴充區，也接手所有未歸類的字元（如韓文字母、emoji）。', en: 'Base font. Covers CJK Unified Ideographs and their extensions, and is the fallback for every unclassified character (such as Hangul and emoji).' }, sample: '永国字體',
     ranges: '2E80-2FDF, 2FF0-2FFF, 3005-3007, 3021-3029, 3038-303B, 31C0-31EF, 3400-4DBF, 4E00-9FFF, F900-FAFF, 20000-2FA1F, 30000-323AF' },
@@ -65,7 +65,7 @@ export const CLASSES = [
   { id: 'digit', name: { zh: '半角数字', ja: '半角数字', tw: '半形數字', en: 'Digits' }, desc: { zh: '只含半角 0–9；全角数字 ０–９ 属于全角符号。', ja: '半角の 0–9 のみ。全角数字 ０–９ は全角記号に含まれます。', tw: '只含半形 0–9；全形數字 ０–９ 屬於全形符號。', en: 'Half-width 0–9 only; full-width digits ０–９ belong to Full-width symbols.' }, sample: '0123', follow: 'latin', ranges: '0030-0039' },
   { id: 'kana', name: { zh: '假名', ja: 'かな', tw: '假名', en: 'Kana' }, desc: { zh: '平假名、片假名，含半角片假名。', ja: 'ひらがな・カタカナ。半角カナを含みます。', tw: '平假名、片假名，含半形片假名。', en: 'Hiragana and katakana, including half-width katakana.' }, sample: 'あいアイ', follow: 'han',
     ranges: '3040-309F, 30A0-30FA, 30FC-30FF, 31F0-31FF, FF66-FF9F, 1AFF0-1AFFF, 1B000-1B16F' },
-  /* 注音：台湾的注音符号和声调号 ˊ ˇ ˋ ˙（声调号原本在半角西文的区段里，归到这里才不会用西文字体显示；齿轮里可以改回西文） */
+  /* Taiwan Zhuyin and tone marks (acute, caron, grave, dot). Tone marks originally lie in Western ranges; assign them here to use the Zhuyin font, with a gear option to restore Western ownership. */
   { id: 'bopo', name: { zh: '注音符号', ja: '注音符号', tw: '注音符號', en: 'Zhuyin' }, desc: { zh: '注音符号ㄅㄆㄇ和声调符号 ˊ ˇ ˋ ˙。', ja: '注音符号ㄅㄆㄇと声調記号 ˊ ˇ ˋ ˙。', tw: '注音符號ㄅㄆㄇ和聲調號 ˊ ˇ ˋ ˙。', en: 'Zhuyin ㄅㄆㄇ and tone marks ˊ ˇ ˋ ˙.' }, sample: 'ㄅㄆㄇ', follow: 'han',
     ranges: '02C7, 02CA-02CB, 02D9, 3100-312F, 31A0-31BF' },
   { id: 'punct', name: { zh: '全角标点', ja: '全角約物', tw: '全形標點', en: 'Full-width punctuation' }, desc: { zh: '句读、括号等全角标点，如 、。「」《》（）。', ja: '句読点や括弧などの全角約物。例：、。「」（）', tw: '句讀、括號等全形標點，如 、。「」《》（）。', en: 'Full-width punctuation such as commas, periods and brackets: 、。「」《》（）.' }, sample: '，。「」《》', follow: 'han',
@@ -76,7 +76,7 @@ export const CLASSES = [
     ranges: '00B7, 2014-2015, 2018-2019, 201C-201D, 2025-2026, 2E3A-2E3B' },
 ].map(c => ({ ...c, r: parseRanges(c.ranges) }));
 export const CLS = Object.fromEntries(CLASSES.map(c => [c.id, c]));
-/* 可以单独改由半角西文显示的字符组（类别行旁的齿轮）。西文字体通常没有的字形（全角英数、※ 等）不列入 */
+/* Gear-menu groups can be delegated to Western text. Omit glyphs Western fonts usually lack, such as full-width alphanumerics and reference marks. */
 export const GROUPS = {
   symbol: [
     { id: 'arrows', name: { zh: '箭头', ja: '矢印', tw: '箭頭', en: 'Arrows' }, sample: '→⇒↑', ranges: '2190-21FF' },
@@ -86,7 +86,7 @@ export const GROUPS = {
     { id: 'geometric', name: { zh: '制表符与几何图形', ja: '罫線・幾何学図形', tw: '製表符與幾何圖形', en: 'Box drawing and geometric shapes' }, sample: '─■○', ranges: '2500-25FF' },
     { id: 'misc', name: { zh: '杂项符号与装饰符号', ja: 'その他の記号・装飾記号', tw: '雜項符號與裝飾符號', en: 'Misc. symbols and dingbats' }, sample: '★♪✓', ranges: '2600-27BF' },
   ],
-  /* 声调号 ˊ ˇ ˋ ˙ 默认归注音；关掉就交给半角西文。法语等的重音字母（é、à）是别的码位，不受影响 */
+  /* Tone marks default to Zhuyin; turning this off delegates them to Western text. Accented letters such as French e-acute and a-grave use other code points and are unaffected. */
   bopo: [
     { id: 'tones', name: { zh: '声调号', ja: '声調記号', tw: '聲調號', en: 'Tone marks' }, sample: 'ˊˇˋ˙', ranges: '02C7, 02CA-02CB, 02D9' },
   ],
@@ -99,7 +99,7 @@ export const GROUPS = {
 };
 for (const gs of Object.values(GROUPS)) for (const g of gs) g.r = parseRanges(g.ranges);
 export const isMoved = (cls, g) => !!state.moved?.[cls + '.' + g.id];
-/* 各类别实际负责的范围：默认范围减去被移走的组，移走的组并入半角西文 */
+/* Effective ranges: subtract reassigned groups from each class and merge them into Western text. */
 export const EFF = {};
 export let CLASS_TABLE = [];
 export function rebuildClassRanges() {

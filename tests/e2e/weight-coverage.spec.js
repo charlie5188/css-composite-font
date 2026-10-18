@@ -1,7 +1,7 @@
 const { test, expect } = require('@playwright/test');
 const { open, showExport } = require('./helpers');
 
-// 用本地 OFL 文件供选择器预览；字重元数据受控，重现用户举的 200–500 与 300–600 组合。
+// Use local OFL files for picker previews with controlled weight metadata to reproduce the user's 200-500 and 300-600 pairing.
 async function fixture(page) {
   await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: `@font-face { font-family: 'CoverageFixture'; src: url('http://127.0.0.1:8765/tests/fixtures/Jost%5Bwght%5D.ttf'); }` }));
   await open(page);
@@ -63,18 +63,18 @@ test('有效单独映射、按行换字体与跟随关系保留，判断不使�
     return { weights: c.state.weights, over: c.state.wOver };
   });
   expect(result.weights).toEqual([100, 300, 400, 500, 600]);
-  expect(result.over[700].latin).toEqual({ size: 120, weight: 400 }); // 取消导出不删除用户的调整
+  expect(result.over[700].latin).toEqual({ size: 120, weight: 400 }); // Excluding a weight from export preserves the user's adjustments.
 });
 
 test('静态字体范围内缺档不取消；修改基础粗细后按实际偏移判断', async ({ page }) => {
   await fixture(page);
   const result = await page.evaluate(async () => {
     const c = await import('./assets/js/core.js'), u = await import('./assets/js/ui.js');
-    c.state.classes.latin.font = c.G('Klee One'); // 400、600，保留范围内的 500
+    c.state.classes.latin.font = c.G('Klee One'); // 400 and 600, retaining 500 within the range.
     u.changed({ fonts: true, fontChange: true });
     const staticWeights = [...c.state.weights];
     c.state.weights = [...c.WEIGHTS];
-    c.state.classes.latin.font = c.G('Inter', 300); // 导出 400 对应实际 300，范围转成 400–700
+    c.state.classes.latin.font = c.G('Inter', 300); // Exported 400 maps to actual 300; the range becomes 400-700.
     u.changed({ fonts: true, fontChange: true });
     return { staticWeights, shifted: c.state.weights };
   });
@@ -128,6 +128,6 @@ test('用户可重新勾选；后台加载及普通编辑不再取消，换成�
   });
   expect((await selections(page)).web).toEqual([100, 300, 400, 500]);
   await choose(page, 'Jost');
-  expect((await selections(page)).web).toEqual([300, 400, 500]); // Inter 仍不支持 100，不会新增 600
+  expect((await selections(page)).web).toEqual([300, 400, 500]); // Inter still does not support 100; do not add 600.
   expect((await selections(page)).files).toEqual([300, 400, 500]);
 });

@@ -9,18 +9,18 @@ export const sleep = ms => new Promise(r => setTimeout(r, ms));
 export const round = (v, step = 0.5) => Math.round(v / step) * step;
 export const root = document.documentElement;
 export const lsGet = k => { try { return JSON.parse(localStorage.getItem(k)); } catch (e) { return null; } };
-export const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* 存储不可用时忽略 */ } };
+export const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* Ignore unavailable storage. */ } };
 
-/* ================= 界面文字 =================
-   各语言的文字在 i18n/zh.js、i18n/ja.js、i18n/tw.js、i18n/en.js */
+/* ================= UI text =================
+   Translations live in i18n/zh.js, i18n/ja.js, i18n/tw.js and i18n/en.js. */
 export const I18N = { zh, ja, tw, en };
 
 export const LS_UI = 'composite-font:ui';
 export const NAV_LANG = navigator.language || '';
-export const NAV_UI = /^ja/i.test(NAV_LANG) ? 'ja' : /^zh-(TW|HK|MO|Hant)/i.test(NAV_LANG) ? 'tw' : /^zh/i.test(NAV_LANG) ? 'zh' : 'en';      // 浏览器的语言对应的界面语言：中日以外都用英文
-export let UI = lsGet(LS_UI) || NAV_UI;      // 没选过就跟随浏览器
+export const NAV_UI = /^ja/i.test(NAV_LANG) ? 'ja' : /^zh-(TW|HK|MO|Hant)/i.test(NAV_LANG) ? 'tw' : /^zh/i.test(NAV_LANG) ? 'zh' : 'en';      // Map browser language to the UI language; use English outside Chinese and Japanese.
+export let UI = lsGet(LS_UI) || NAV_UI;      // Follow the browser until the user chooses a language.
 if (!['zh', 'ja', 'tw', 'en'].includes(UI)) UI = 'en';
-export function setUI(u) { UI = u; }      // 各语言的文字这时还没加载，按名字判断
+export function setUI(u) { UI = u; }      // Translations are not loaded yet; infer the language from its name.
 export const T = (k, p) => {
   let s = I18N[UI][k] ?? I18N.zh[k] ?? k;
   if (p) s = s.replace(/\{(\w+)\}/g, (_, n) => p[n] ?? '');

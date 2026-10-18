@@ -4,7 +4,7 @@ const { open, pick, showExport, setLang } = require('./helpers');
 test('页面加载、切换预设、切语言都没有脚本错误', async ({ page }) => {
   const errors = [];
   page.on('pageerror', e => errors.push(e.message));
-  // 网络请求失败（试探 Google 上不存在的字重等）不算脚本错误
+  // Failed network probes (such as unavailable Google Fonts weights) are not script errors.
   page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource|net::|CORS policy/.test(m.text())) errors.push(m.text()); });
   await open(page);
   for (const id of ['gothic-jp', 'antigochi', 'serif-sc']) { await pick(page, id); await page.waitForTimeout(300); }
@@ -26,7 +26,7 @@ test('导出：切换网页 / 字体文件，左栏的设置跟着换', async ({
   await expect(page.locator('#fxWeightsField')).toBeVisible();
   await expect(page.locator('#exBaseField')).toBeHidden();
   await expect(page.locator('#fxGo')).toBeVisible();
-  // 点 OTF 的 (i) 只打开说明，不会勾选
+  // Clicking OTF's info button opens help without selecting OTF.
   await page.click('.fx-opt .info');
   await expect(page.locator('#infoPop')).toContainText('CFF');
   await expect(page.locator('#fxOtf')).not.toBeChecked();
@@ -53,7 +53,7 @@ test('整页固定一屏：页面本身不滚动，各栏自己滚动', async ({
   });
   expect(m.doc).toBeLessThanOrEqual(m.win);
   expect(m.panes).toEqual(['auto', 'auto']);
-  expect(Math.abs(m.specGap)).toBeLessThan(1);      // 参考图贴在校样栏底部
+  expect(Math.abs(m.specGap)).toBeLessThan(1);      // The specimen stays at the bottom of the proof pane.
 });
 
 test('导出对话框：打开、关闭、点背景关闭', async ({ page }) => {
@@ -63,7 +63,7 @@ test('导出对话框：打开、关闭、点背景关闭', async ({ page }) => 
   await page.click('#exClose');
   await expect(page.locator('#exDlg')).toBeHidden();
   await page.click('#exToggle');
-  await page.mouse.click(5, 5);      // 对话框外面
+  await page.mouse.click(5, 5);      // Outside the dialog.
   await expect(page.locator('#exDlg')).toBeHidden();
 });
 
@@ -112,7 +112,7 @@ test('对齐、段落换行只改校样，不写进导出的 CSS', async ({ page
   const css = await page.textContent('#codeOut');
   expect(css).not.toContain('text-align');
   expect(css).not.toContain('text-wrap');
-  expect(css).toContain('line-break: strict');      // 排版页签里的照常导出
+  expect(css).toContain('line-break: strict');      // Layout-tab settings are still exported.
 });
 
 test('各字重：改某个字重的大小只写进那个字重，勾选和导出对话框同步', async ({ page }) => {
@@ -120,22 +120,22 @@ test('各字重：改某个字重的大小只写进那个字重，勾选和导�
   await page.click('#ltabFonts');
   const cell = page.locator('#wMatrix .mnum[data-k="latin"][data-w="700"]');
   await cell.fill('121'); await cell.press('Tab');
-  await expect(page.locator('#wMatrix [data-row="700"]')).toHaveClass(/cur/);      // 编辑哪一行，校样就预览哪个字重
+  await expect(page.locator('#wMatrix [data-row="700"]')).toHaveClass(/cur/);      // Editing a row previews that row's weight.
   await expect(page.locator('#vWn')).toHaveValue('700');
-  expect(await page.inputValue('#classRows .ct-row[data-id="latin"] .num[data-field="size"]')).not.toBe('121');      // 上面的表格是 400，不受影响
+  expect(await page.inputValue('#classRows .ct-row[data-id="latin"] .num[data-field="size"]')).not.toBe('121');      // The base table above remains at 400.
   await page.click('#wMatrix input[data-wx="300"]');
   await showExport(page);
   await expect(page.locator('#exWeights [data-w="300"]')).toHaveAttribute('aria-pressed', 'false');
-  await expect(page.locator('#codeOut')).toContainText('size-adjust: 121%');      // 导出区是防抖更新的：等它刷新
+  await expect(page.locator('#codeOut')).toContainText('size-adjust: 121%');      // Export updates are debounced; wait for the refresh.
   expect(await page.textContent('#codeOut')).not.toMatch(/font-weight: 300;/);
 });
 
 test('各字重：点击行间距或空白预览，保留导出勾选和输入、菜单操作', async ({ page }) => {
   await open(page);
   await page.click('#ltabFonts');
-  // 第一列和字重列之间的间距直接命中行本身，不能只给子元素绑定点击。
+  // The gap between the first and weight columns hits the row itself, so click handling must not be limited to children.
   const row = page.locator('#wMatrix [data-row="700"]');
-  // 字体加载会重画表格：在同一次读取中计算行内位置，再由 locator 等待并点击当前行。
+  // Font loading rebuilds the matrix. Read the row position in one evaluation, then let the locator wait for and click the current row.
   const gap = await row.evaluate(el => {
     const cell = el.querySelector('.wm-x').getBoundingClientRect(), bounds = el.getBoundingClientRect();
     return { x: cell.right - bounds.left + 3, y: bounds.height / 2 };
@@ -144,7 +144,7 @@ test('各字重：点击行间距或空白预览，保留导出勾选和输入�
   await expect(row).toHaveAttribute('aria-current', 'true');
   await expect(page.locator('#vWn')).toHaveValue('700');
   await expect(page.locator('#wMatrix input[data-wx="700"]')).toBeChecked();
-  // 点击导出勾选和行末菜单不会顺带切换到它们所在行。
+  // Export checkboxes and row-end menus must not also select their row for preview.
   await page.click('#wMatrix input[data-wx="300"]');
   await expect(page.locator('#vWn')).toHaveValue('700');
   await page.locator('#wMatrix [data-row="500"]').hover();
@@ -152,7 +152,7 @@ test('各字重：点击行间距或空白预览，保留导出勾选和输入�
   await expect(page.locator('#wRowMenu')).toBeVisible();
   await expect(page.locator('#vWn')).toHaveValue('700');
   await page.keyboard.press('Escape');
-  // 未导出的行不可预览；重载后继续预览已勾选的字重。
+  // Excluded rows cannot be previewed; after reload, preview a selected export weight.
   await page.locator('#wMatrix [data-row="300"]').click({ position: { x: 2, y: 2 } });
   await expect(page.locator('#wMatrix [data-row="300"]')).not.toHaveAttribute('aria-current', 'true');
   await expect(page.locator('#wMatrix [data-pw="300"]')).toBeDisabled();
@@ -161,7 +161,7 @@ test('各字重：点击行间距或空白预览，保留导出勾选和输入�
   await page.reload(); await page.click('#ltabFonts');
   await expect(page.locator('#wMatrix [data-row="700"]')).toHaveAttribute('aria-current', 'true');
   await expect(page.locator('#wMatrix input[data-wx="300"]')).not.toBeChecked();
-  // 重新勾选后可用键盘预览，编辑数值仍可直接输入并预览。
+  // After reselecting, keyboard preview works; numeric fields still support direct entry and preview.
   await page.click('#wMatrix input[data-wx="300"]');
   await page.locator('#wMatrix [data-pw="300"]').focus();
   await page.keyboard.press('Enter');
@@ -288,7 +288,7 @@ test('预览字重：连续模式的 400 / 700 刻度可跳转，并保留无级
   await setRange(399, 701);
   await expect(ticks).toHaveText('400700');
   await expect(slider).toHaveAttribute('min', '399'); await expect(slider).toHaveAttribute('max', '701');
-  // 过近的端点省略文字，保留常用刻度的真实位置，不改变可预览的范围。
+  // Hide endpoint labels when crowded, preserving common ticks at their true positions and leaving the preview range unchanged.
   const layout = await page.locator('#vWPop').evaluate(el => {
     return [...el.querySelectorAll('button[data-weight]')].map(b => ({ pos: parseFloat(b.style.getPropertyValue('--tick')), rect: b.getBoundingClientRect().toJSON() }));
   });
@@ -331,7 +331,7 @@ test('预览字重：连续滑杆、输入与聚焦后拖动 B 实时同步', as
   await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
   await page.mouse.down();
   await page.mouse.move(box.x + box.width / 2 + 45, box.y + box.height / 2, { steps: 5 });
-  // 鼠标还没放开，且数字框仍聚焦，也必须看到当前值。
+  // The current value must be visible before pointer release, even while the numeric field retains focus.
   await expect(field).toBeFocused();
   await expect(field).toHaveValue('545');
   await expect(slider).toHaveValue('545');
@@ -365,12 +365,12 @@ test('撤销 / 重做：按钮和快捷键，输入框里的 ⌘Z 不抢', async
   const before = await size.inputValue();
   await expect(page.locator('#undoBtn')).toHaveAttribute('aria-disabled', 'true');
   await size.fill('131'); await size.press('Tab');
-  await expect(page.locator('#undoBtn')).toHaveAttribute('aria-disabled', 'false');      // 保存有 400ms 防抖，记下以后才能撤销
+  await expect(page.locator('#undoBtn')).toHaveAttribute('aria-disabled', 'false');      // Saving is debounced by 400 ms; wait for the history entry before undoing.
   await page.click('#undoBtn');
   await expect(size).toHaveValue(before);
   await page.click('#redoBtn');
   await expect(size).toHaveValue('131');
-  await page.click('#proofText');      // 焦点不在输入框里：⌘Z 撤销设定
+  await page.click('#proofText');      // With focus outside an input, Cmd+Z undoes settings.
   await page.keyboard.press(process.platform === 'darwin' ? 'Meta+z' : 'Control+z');
   await expect(size).toHaveValue(before);
 });
@@ -379,14 +379,14 @@ test('预设筛选：组内任选、组间同时满足，没有结果时可以�
   await open(page);
   const cards = page.locator('#presetList .pcard');
   const all = await cards.count();
-  await page.click('#pfBtn');      // 筛选在菜单里
+  await page.click('#pfBtn');      // Filters are in the menu.
   await page.click('[data-pf="style:serif"]');
   await page.click('[data-pf="region:jp"]');
-  await expect(cards).toHaveCount(1);      // 明朝 × Cormorant
+  await expect(cards).toHaveCount(1);      // Mincho x Cormorant.
   await page.click('[data-pf="region:tc"]');
-  await expect(cards).toHaveCount(2);      // 再加上 明體 × Garamond
+  await expect(cards).toHaveCount(2);      // Also include Ming x Garamond.
   await page.click('[data-pf="src:local"]');
-  await expect(cards).toHaveCount(0);      // macOS 预设都是黑体
+  await expect(cards).toHaveCount(0);      // All macOS presets use sans-serif Han fonts.
   await page.click('#presetCards [data-pf="clear"]');
   await expect(cards).toHaveCount(all);
 });
@@ -395,7 +395,7 @@ test('保存预设用对话框：地区和风格预先推算好、可以改，�
   await open(page);
   await page.click('#savePresetBtn');
   await expect(page.locator('#saveDlg')).toBeVisible();
-  await expect(page.locator('#saveRegion [aria-checked="true"]')).toHaveAttribute('data-v', 'sc');      // 默认预设：宋体 × Garamond
+  await expect(page.locator('#saveRegion [aria-checked="true"]')).toHaveAttribute('data-v', 'sc');      // Default preset: Song x Garamond.
   await expect(page.locator('#saveStyle [aria-checked="true"]')).toHaveAttribute('data-v', 'serif');
   await page.fill('#saveName', '测试');
   await page.click('#saveStyle [data-v="other"]');
@@ -412,7 +412,7 @@ test('(i)：鼠标停一会儿就打开说明，移开关掉；悬停后再点�
   const pop = page.locator('#infoPop'), info = page.locator('.ct-head .info').first();
   await info.hover();
   await expect(pop).toBeVisible();
-  await expect(page.locator('#tip')).toBeHidden();      // 不再先出「说明」小提示
+  await expect(page.locator('#tip')).toBeHidden();      // Do not show an intermediate help prompt.
   await page.mouse.move(5, 5);
   await expect(pop).toBeHidden();
   await info.hover();
@@ -425,11 +425,11 @@ test('(i)：鼠标停一会儿就打开说明，移开关掉；悬停后再点�
 
 test('各字重：静态字体只列有的字重，行末菜单能换字体、恢复这一行', async ({ page }) => {
   await open(page);
-  await pick(page, 'mincho-jp');      // Shippori Mincho：只有 400–800
+  await pick(page, 'mincho-jp');      // Shippori Mincho supports only 400-800.
   await page.click('#ltabFonts');
   const sel = () => page.locator('#wMatrix [data-row="200"] select.msel').first();
   await expect.poll(async () => sel().evaluate(s => [...s.options].map(o => o.value).join())).toBe('400,500,600,700,800');
-  await sel().focus();      // 和实际操作一致：先聚焦再选择，后台字体加载不会替换正在编辑的控件。
+  await sel().focus();      // Follow real interaction: focus before selecting so background font loading cannot replace the active control.
   await sel().selectOption('700');
   await expect(sel()).toHaveClass(/\bset\b/);
   await page.locator('#wMatrix [data-row="200"]').hover();
@@ -440,7 +440,7 @@ test('各字重：静态字体只列有的字重，行末菜单能换字体、�
 });
 
 test('字体状态点：首次加载已有提示，悬停时状态变化会同步原因，完成后隐藏', async ({ page }) => {
-  // 固定在首次加载，检查提示不依赖任意字体先完成下载；随后只模拟来源状态的变化。
+  // Freeze the initial load so tooltip checks do not depend on which font downloads first; then simulate only source-status changes.
   await page.route('https://fonts.googleapis.com/**', route => {
     if (route.request().resourceType() === 'stylesheet') return route.fulfill({ contentType: 'text/css', body: '' });
   });
@@ -464,7 +464,7 @@ test('字体状态点：首次加载已有提示，悬停时状态变化会同�
   await expect(page.locator('#tip')).toHaveText('正在加载字体，请稍候');
   await changeStatus('ok');
   await expect(dot).toBeHidden();
-  // 状态点消失后，字体菜单可能移到鼠标下并显示名称，但不能残留旧的加载提示。
+  // When the status dot disappears, the font menu may move under the pointer and show its name, but the old loading tooltip must not remain.
   await expect(page.locator('#tip')).not.toHaveText('正在加载字体，请稍候');
   await expect(page.locator('#classRows [data-id="digit"] .status')).toBeHidden();
 });
@@ -516,7 +516,7 @@ test('连续字重表：纯大小表头合并，静态字体保留粗细列，�
   expect(saved['700'].latin.size).toBe(118);
   await page.click('#vWMode [data-m="cont"]');
   await expect(size).toHaveValue('118');
-  // 这些预设使用静态字体；连续导出仍允许为每段选择其实际档位。
+  // These presets use static fonts; continuous export still allows each segment to select an available weight.
   await page.click('#ltabPresets'); await pick(page, 'antigochi');
   await page.click('#saveDiscard');
   await page.click('#ltabFonts'); await page.click('#vWMode [data-m="cont"]');
@@ -535,7 +535,7 @@ test('字体状态点：连续模式重载和中间字重使用实际可变来�
   await page.click('#vWMode [data-m="cont"]');
   await page.fill('#vWn', '600'); await page.locator('#vWn').press('Enter');
   await expect.poll(() => page.evaluate(async () => (await import('./assets/js/core.js')).sources.get('g:Noto Serif SC@vf')?.status)).toBe('ok');
-  // 冷启动时不会请求单独的 600；状态必须读取已加载的 @vf，而不是将不存在的记录当作加载中。
+  // A cold start does not request a separate 600. Status must read the loaded @vf record rather than treat an absent record as loading.
   await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('composite-font:state:v1') || '{}').view?.weight)).toBe(600);
   await page.reload();
   const dot = page.locator('#classRows [data-id="han"] .status');

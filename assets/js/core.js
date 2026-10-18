@@ -4,10 +4,10 @@ import { AXIS_NAMES, GF_AXES, GF_ITALIC, GF_STYLE, GF_WEIGHTS } from './gfmeta.j
 import { checkMissSoon, drawSpecimen, fitGlyphs, refreshVAutospace, renderChipsStatus, renderEditor } from './render.js';
 import { renderExport, renderExportSoon } from './export.js';
 import { renderPresetCardsSoon } from './ui.js';
-/* ================= 字体来源 ================= */
+/* ================= Font sources ================= */
 export const G = (family, weight = 400) => ({ kind: 'google', family, weight });
 export const L = (name, alt = []) => ({ kind: 'local', name, alt });
-/* Google Fonts 的字体对象：ital = 斜体文件，xa = 文件里要保留的其他轴（粗细以外，例如 opsz、wdth），vf = 整个粗细轴 */
+/* Google Fonts object: ital = italic file; xa = other axes to retain (for example opsz, wdth); vf = full weight axis. */
 export function fontKey(f) {
   if (!f) return 'none';
   if (f.kind === 'google') return `g:${f.family}@${f.vf ? 'vf' : f.weight}${f.ital ? 'i' : ''}${f.xa?.length ? '+' + f.xa.join(',') : ''}`;
@@ -61,17 +61,17 @@ export async function loadSource(s) {
     if (!f) throw new SrcError('errUnset');
     if (f.kind === 'google') {
       let css = null;
-      if (f.vf) {               // 连续字重模式：整个可变字体文件，粗细交给元素的 font-weight
+      if (f.vf) {               // Continuous weight mode: load the full variable file and let the element's font-weight control weight.
         const axis = await vfAxis(f.family);
-        if (axis) { try { css = await fetchGoogleCss(f.family, gfSpec(f, `${axis[0]}..${axis[1]}`)); s.axis = axis; } catch (e) { /* 退回静态 */ } }
-      } else if (f.weight % 100) {     // 非整百的粗细只有可变字体能做到：按轴的范围请求，拿到完整的可变字体文件
+        if (axis) { try { css = await fetchGoogleCss(f.family, gfSpec(f, `${axis[0]}..${axis[1]}`)); s.axis = axis; } catch (e) { /* Fall back to static. */ } }
+      } else if (f.weight % 100) {     // Only variable fonts support non-hundred weights; request the axis range to obtain the complete variable file.
         const axis = await vfAxis(f.family);
         if (axis) {
-          try { css = await fetchGoogleCss(f.family, gfSpec(f, `${axis[0]}..${axis[1]}`)); s.wght = clampW(f.weight, axis); s.actualWeight = s.wght; s.axis = axis; } catch (e) { /* 退回静态字重 */ }
+          try { css = await fetchGoogleCss(f.family, gfSpec(f, `${axis[0]}..${axis[1]}`)); s.wght = clampW(f.weight, axis); s.actualWeight = s.wght; s.axis = axis; } catch (e) { /* Fall back to a static weight. */ }
         }
       }
-      if (!css) for (const w of weightChain(Math.round(f.weight / 100) * 100)) {    // 没有这个字重时，向 400 方向找最接近的
-        try { css = await fetchGoogleCss(f.family, gfSpec(f, w)); s.actualWeight = w; break; } catch (e) { /* 试下一个字重 */ }
+      if (!css) for (const w of weightChain(Math.round(f.weight / 100) * 100)) {    // If this weight is unavailable, search toward 400 for the nearest one.
+        try { css = await fetchGoogleCss(f.family, gfSpec(f, w)); s.actualWeight = w; break; } catch (e) { /* Try the next weight. */ }
       }
       if (!css) throw new SrcError('errGoogle', { family: f.family + (f.ital ? ' Italic' : ''), weight: f.weight });
       s.faces = parseFontFaceCss(css);
@@ -99,8 +99,8 @@ export async function loadSource(s) {
   onSourcesChanged();
 }
 export const srcError = s => T(s.errKey || 'errLoad', s.errParams);
-/* css2 的轴写法，例如「ital,opsz,wght@1,8..144,400」：小写的注册轴在前、大写的自定义轴在后，各自按字母排序。
-   没写进来的轴，Google 会固定在默认值并从文件里去掉 */
+/* CSS2 axis syntax, for example 'ital,opsz,wght@1,8..144,400': lowercase registered axes precede uppercase custom axes; sort each group alphabetically.
+   Google pins omitted axes to their defaults and removes them from the file. */
 export function gfSpec(f, wght) {
   const parts = [['wght', String(wght)]];
   if (f.ital) parts.push(['ital', '1']);
@@ -115,18 +115,18 @@ export async function fetchGoogleCss(family, spec) {
   if (sp === 'wght@400') urls.push(`https://fonts.googleapis.com/css2?family=${fam}&display=swap`);
   for (const url of urls) {
     try { const r = await fetch(url); if (r.ok) return await r.text(); continue; }
-    catch (e) { /* fetch 可能被 CSP 拦截，改用 <link> 读取 */ }
-    try { return await cssViaLink(url); } catch (e) { /* 下一个 url */ }
+    catch (e) { /* CSP may block fetch; try reading through a <link> instead. */ }
+    try { return await cssViaLink(url); } catch (e) { /* Next URL. */ }
   }
   throw new SrcError('errGoogle', { family, weight });
 }
-/* ================= 可变字体 ================= */
+/* ================= Variable fonts ================= */
 export const clampW = (w, axis) => Math.min(axis[1], Math.max(axis[0], Math.round(w)));
-/* Google Fonts 只在请求的范围落在字体的 wght 轴内时才返回 200：先试 100..900，不行再逐点试出上下界。结果存在浏览器里 */
+/* Google Fonts returns 200 only for ranges within the font's wght axis. Try 100..900 first, then probe individual values for the bounds. Cache results in the browser. */
 export const LS_VF = 'composite-font:vf';
 export const vfCache = lsGet(LS_VF) || {}, vfPending = new Map();
 export const gfOk = (family, spec) => fetchGoogleCss(family, spec).then(() => true, () => false);
-/* 内置元数据里有的字体族直接用它的 wght 轴，不用在线检测 */
+/* Use bundled metadata's wght range for known families, without network probing. */
 export const seedVf = family => { const a = axisOf({ kind: 'google', family }, 'wght'); vfCache[family] = a ? [a[1], a[2]] : 0; };
 export function vfAxis(family) {
   if (!(family in vfCache) && GF_AXES[family]) seedVf(family);
@@ -150,7 +150,7 @@ export function vfAxis(family) {
   })());
   return vfPending.get(family);
 }
-/* 同步查询：已知时返回 [min, max] 或 null；未知时返回 undefined 并在后台检测 */
+/* Synchronous lookup: return [min, max] or null when known; otherwise return undefined and probe in the background. */
 export function vfAxisNow(f) {
   if (!f) return null;
   if (f.kind !== 'google') return f.axis || null;
@@ -159,9 +159,9 @@ export function vfAxisNow(f) {
   vfAxis(f.family);
   return undefined;
 }
-/* 规则里的 font-weight 永远是这一档（保持一致，复合字体才不会出错）；实际粗细不同时，用 font-variation-settings 细调 */
-/* ================= 其他可变轴、斜体 ================= */
-/* 字体的可变轴：[[标签, 最小, 最大, 默认], …]。Google Fonts 查内置的元数据，字体文件和本机字体读 fvar 表 */
+/* The rule's font-weight always stays at the target step so the composite remains consistent; use font-variation-settings to fine-tune actual weight. */
+/* ================= Other variation axes and italics ================= */
+/* Variation axes: [[tag, minimum, maximum, default], ...]. Use bundled metadata for Google Fonts and read fvar for uploaded/local fonts. */
 export const gfAxesMemo = new Map();
 export function axesOf(f) {
   if (!f) return [];
@@ -170,11 +170,11 @@ export function axesOf(f) {
   return gfAxesMemo.get(f.family);
 }
 export const axisOf = (f, tag) => axesOf(f).find(a => a[0] === tag);
-export const extraAxes = f => axesOf(f).filter(a => !(a[0] === 'wght' && a[2] > 10) && a[0] !== 'ital');     // 粗细和斜体另有专门的设定
+export const extraAxes = f => axesOf(f).filter(a => !(a[0] === 'wght' && a[2] > 10) && a[0] !== 'ital');     // Weight and italics have dedicated settings.
 export const AX_LABEL = { wdth: { zh: '宽度', ja: '幅', tw: '寬度', en: 'Width' }, opsz: { zh: '光学尺寸', ja: 'オプティカルサイズ', tw: '光學尺寸', en: 'Optical size' }, slnt: { zh: '倾斜', ja: '傾き', tw: '傾斜', en: 'Slant' }, GRAD: { zh: '笔画粗细', ja: 'グレード', tw: '筆畫粗細', en: 'Grade' } };
 export const axisLabel = t => AX_LABEL[t] ? tr(AX_LABEL[t]) : AXIS_NAMES[t] || t;
-/* 斜体时用的字体。Google Fonts 和上传的斜体文件用真正的斜体；有 slnt / ital 轴的可变字体倾斜过去；
-   本机字体按名称找「… Italic」。都没有时返回 null：这个类别在斜体里保持正体 */
+/* Resolve the italic font: use true Google/uploaded italics, or the slnt / ital axis in variable fonts.
+   Probe local fonts for a corresponding Italic name. Return null when unavailable, keeping this class upright in italic text. */
 export function italOf(f) {
   if (!f) return null;
   if (f.kind === 'google' && f.ital) return f;
@@ -187,7 +187,7 @@ export function italOf(f) {
   if (it && it[2] >= 1) return { ...f, slant: 'ital' };
   return null;
 }
-export const italNames = new Map();       // 本机字体名 → 斜体的名称；null = 没有，undefined = 检测中
+export const italNames = new Map();       // Local font name -> italic name; null = unavailable, undefined = checking.
 export function italicLocal(f) {
   if (italNames.has(f.name)) return italNames.get(f.name);
   italNames.set(f.name, undefined);
@@ -203,8 +203,8 @@ export function italicLocal(f) {
   })();
   return undefined;
 }
-/* 字体 + 这个类别的轴设定 → 实际写进规则的字体、固定的轴值（font-variation-settings）。
-   vary：{ 标签: 数值 | 'auto' }，'auto' 只用于 opsz（跟随字号） */
+/* Font + class axis settings -> the font used in rules and fixed font-variation-settings values.
+   vary: { tag: number | 'auto' }; 'auto' is only for opsz (follow font size). */
 export function finalFont(f, vary, ital = false) {
   if (!f) return { font: f, fvs: null, up: false };
   let up = false;
@@ -221,10 +221,10 @@ export function finalFont(f, vary, ital = false) {
   if (f.kind === 'google' && xa.size) f = { ...f, xa: [...xa].sort() };
   return { font: f, fvs: Object.keys(fvs).length ? fvs : null, up };
 }
-/* 实际加载的字体（带上要保留的轴）：查加载状态时用它，不用类别上原始的字体 */
+/* The actual loaded font, including retained axes: use this for loading status rather than the class's original font. */
 export const usedFont = r => finalFont(r.font, r.vary).font;
 export const fvsKey = fvs => fvs ? Object.entries(fvs).sort().map(([t, v]) => `${t}=${v}`).join(',') : '';
-/* 规则里的 font-variation-settings：细调的粗细（连续字重时不写）+ 固定的轴值 */
+/* Rule font-variation-settings: fine-tuned weight (omitted in continuous mode) plus fixed axis values. */
 export function fvsOf(p, W, cont) {
   const parts = [], wv = cont ? null : wghtFor(p.font, W);
   if (wv) parts.push(`"wght" ${wv}`);
@@ -236,8 +236,8 @@ export function wghtFor(f, W) {
   const w = f.kind === 'google' ? sources.get(fontKey(f))?.wght : f.axis ? (f.weight || 400) : null;
   return w && w !== W ? w : null;
 }
-/* 上传的字体里的可变轴（fvar 表）：[[标签, 最小, 最大, 默认], …]。ttf / otf 直接读；woff 的表用 zlib 压缩，解压后读；
-   woff2 用 brotli 压缩，浏览器解不开，只能看到有没有 fvar：这时按 wght 100–900 处理，其他轴读不出来（unknown） */
+/* Uploaded font fvar axes: [[tag, minimum, maximum, default], ...]. Read TTF/OTF directly; decompress WOFF tables with zlib.
+   Browsers cannot decode WOFF2's Brotli data here. Detect fvar presence only, assume wght 100-900 and mark other axes unknown. */
 export function readFvar(v, off) {
   const axesOff = v.getUint16(off + 4), count = v.getUint16(off + 8), size = v.getUint16(off + 10), out = [];
   for (let a = 0; a < count; a++) {
@@ -250,7 +250,7 @@ export async function fileAxes(buf) {
   try {
     const v = new DataView(buf);
     let sig = v.getUint32(0), base = 0;
-    if (sig === 0x74746366) { base = v.getUint32(12); sig = v.getUint32(base); }      // 'ttcf' 字体集：读第一个字体
+    if (sig === 0x74746366) { base = v.getUint32(12); sig = v.getUint32(base); }      // 'ttcf' collection: read the first font.
     if (sig === 0x774F4632) {           // wOF2
       const n = v.getUint16(12);
       let p = 48;
@@ -283,10 +283,10 @@ export async function fileAxes(buf) {
       const r = base + 12 + i * 16;
       if (v.getUint32(r) === 0x66766172) return { axes: readFvar(v, v.getUint32(r + 8)) };     // 'fvar'
     }
-  } catch (e) { /* 读不懂就当作普通字体 */ }
+  } catch (e) { /* Treat unreadable data as a regular font. */ }
   return null;
 }
-/* 字体文件里的一张表（DataView）：ttf / otf / ttc（第一个字体）直接读，woff 解压后读；woff2 是 brotli，浏览器解不开，返回 null */
+/* Read one font table as a DataView: TTF/OTF/TTC (first face) directly, WOFF after decompression. Return null for WOFF2's unsupported Brotli data. */
 export async function sfntTable(buf, want) {
   const v = new DataView(buf);
   let sig = v.getUint32(0), base = 0;
@@ -308,20 +308,20 @@ export async function sfntTable(buf, want) {
   }
   return null;
 }
-/* 字体自己声明的风格（OS/2 表）：先看 IBM 字族分类（sFamilyClass），没写再看 PANOSE。
-   serif = 宋体 / 明朝一类，sans = 黑体 / ゴシック，other = 装饰、手写、符号；没有声明时 null（很多中日文字体不写） */
+/* Font-declared style (OS/2): prefer IBM sFamilyClass, then PANOSE.
+   serif = Song/Ming-style, sans = Hei/Gothic-style, other = decorative, handwriting or symbols. Return null if undeclared, as in many CJK fonts. */
 export function os2Style(t) {
   if (!t || t.byteLength < 42) return null;
   const cls = t.getInt16(30) >> 8, fam = t.getUint8(32), ser = t.getUint8(33);
   if ([1, 2, 3, 4, 5, 7].includes(cls)) return 'serif';
   if (cls === 8) return 'sans';
   if ([9, 10, 12].includes(cls)) return 'other';
-  if (fam === 3 || fam === 4 || fam === 5) return 'other';      // PANOSE：手写、装饰、符号
-  if (fam === 2) return ser >= 11 && ser <= 15 ? 'sans' : ser >= 2 ? 'serif' : null;      // 拉丁正文：11–15 是各种无衬线
+  if (fam === 3 || fam === 4 || fam === 5) return 'other';      // PANOSE: handwriting, decorative or symbol fonts.
+  if (fam === 2) return ser >= 11 && ser <= 15 ? 'sans' : ser >= 2 ? 'serif' : null;      // Latin text faces: values 11-15 are sans-serif styles.
   return null;
 }
 export async function fileStyle(buf) { try { return os2Style(await sfntTable(buf, 0x4F532F32)); } catch (e) { return null; } }      // 'OS/2'
-/* 一个字体是宋体（明朝）、黑体（ゴシック）还是其他：字体文件 / 本机字体读到的 OS/2 分类 → Google Fonts 的元数据 → 字体名 */
+/* Classify serif, sans or other from uploaded/local OS/2 data, then Google Fonts metadata, then the font name. */
 const SERIF_RE = /Serif|Mincho|Ming|Song|Batang|Myeongjo|明|宋/i, SANS_RE = /Sans|Gothic|Hei|Kaku|PingFang|YaHei|Meiryo|Dotum|Gulim|Maru|Yuan|Rounded|M PLUS|黑|圆|圓|ゴシック/i;
 let gfStyleMap = null;
 export function styleOfFont(f) {
@@ -334,12 +334,12 @@ export function styleOfFont(f) {
   const n = f.family || f.name || f.fileName || '';
   return SERIF_RE.test(n) ? 'serif' : SANS_RE.test(n) ? 'sans' : 'other';
 }
-/* 把读到的轴记到字体对象上：wght 轴另外记成 axis（粗细的范围） */
+/* Store detected axes on the font object; keep wght separately as axis (the weight range). */
 export function setFontAxes(f, fa, W) {
   delete f.axis; delete f.axes; delete f.axesUnknown;
   if (!fa) return f;
   f.axes = fa.axes; if (fa.unknown) f.axesUnknown = true;
-  const w = fa.axes.find(a => a[0] === 'wght' && a[2] > 10);      // Skia 之类不按 CSS 刻度（0.48–3.2）的 wght 轴当作普通的轴
+  const w = fa.axes.find(a => a[0] === 'wght' && a[2] > 10);      // Treat non-CSS wght scales, such as Skia's 0.48-3.2, as ordinary variation axes.
   if (w) { f.axis = [w[1], w[2]]; f.weight = clampW(W || f.weight || 400, f.axis); }
   return f;
 }
@@ -363,11 +363,10 @@ export function parseFontFaceCss(css) {
   return faces;
 }
 
-/* ================= 示例、属性、预设 ================= */
+/* ================= Samples, properties and presets ================= */
 export const SAMPLES = {
-  /* 正文示例按真实的中日文写：西文是日常文章里自然会出现的品牌、产品、缩写和单位（iPhone、5G、UI、km）。
-     特意放进几种挤在一起的写法：「2026年，增长了12.5%（GMV…）」「人工智能（AI）」「她说：“……”」，
-     日文对应「前年比12.5%増（…約1,200店）」「人工知能（AI）」「「……（予想の1.5倍）……」と話す」 */
+  /* Use natural Chinese and Japanese body copy, with brands, products, abbreviations and units that occur in everyday text (iPhone, 5G, UI, km).
+   Include tight combinations of dates, percentages, parentheses, abbreviations and nested quotation marks to exercise mixed-script spacing and line breaks. */
   zh: { label: { zh: '简体', ja: '簡体', tw: '簡體', en: 'Simplified' }, lang: 'zh-Hans', text:
 `清晨6点半，第一班地铁驶出西直门站。车厢里人还不多，有人戴着AirPods听播客，有人用iPhone回复微信消息。这条线路全长27.6公里，共有19座车站，工作日客流量超过80万人次。
 
@@ -380,7 +379,7 @@ export const SAMPLES = {
 2026年、都内の個人経営カフェは前年比12.5%増（新規開業は約1,200店）。人工知能（AI）で発注やシフトを組む店も増えている。駅前のこの店のメニューは3つだけで、ドリップコーヒーが450円、カフェラテが520円、オーツミルクへの変更は＋50円。営業時間は平日7:30〜19:00、Wi-Fiのパスワードはレジの横に貼ってある。
 
 店主の林さんは以前、SaaS企業でUIデザイナーをしていた。「開店から1か月で4,000杯以上（予想の1.5倍）が売れました。来てくれるのは、ほとんど常連さんです」と話す。` },
-  /* 台湾、香港：同样的内容按各自的用语写。台湾用「」作引号、「人工智慧」「營收年增」；香港夹着粤语字（嘅、咗、嚟、啲、冇），价格写 $ */
+  /* Taiwan and Hong Kong versions use regional wording: corner-bracket quotes and Taiwan AI/revenue terms, versus Cantonese characters and $ prices in Hong Kong. */
   tw: { label: { zh: '繁体TW', ja: '繁体TW', tw: '繁體TW', en: 'Traditional (TW)' }, lang: 'zh-Hant-TW', text:
 `早上6點半，第一班捷運從終點站開出。車廂裡人還不多，有人戴著AirPods聽Podcast，有人用iPhone回LINE訊息。這條路線全長27.6公里，共有19個車站，平日運量超過80萬人次。
 
@@ -393,7 +392,7 @@ export const SAMPLES = {
 2026年，本港獨立咖啡店數目增加了12.5%（營業額按年升約20%），不少店舖開始用人工智能（AI）編更和訂貨。車站旁新開的這間只賣三款：Americano $38、Latte $42，轉燕麥奶加$5，亦可以用App預先落單。營業時間寫在門口的小黑板上——平日7:30開門，週末遲半小時；Wi-Fi密碼貼在收銀處旁邊。
 
 店主林曉以前在一間SaaS公司做UI設計。佢話：「開業頭一個月賣咗4,000幾杯（比預期多咗一半），嚟嘅大多係熟客……慢啲都冇所謂。」` },
-  /* 吹き出しのように括弧なし・句点なしで短く改行し、空行で吹き出しを分ける */
+  /* Use short lines without enclosing quotes or full stops, like manga balloons; separate balloons with blank lines. */
   manga: { label: { zh: '漫画对白', ja: 'マンガ', tw: '漫畫對白', en: 'Manga' }, lang: 'ja', text:
 `なんだって！？
 そんな馬鹿な
@@ -419,16 +418,16 @@ Aa Bb Gg Qq Rr & @ # % ( ) [ ]
 Hànyǔ Pīnyīn · nǚ lǜ lüè · Běijīng` },
 };
 
-/* CSS 原生排版属性。sup：各浏览器开始支持的版本（MDN browser-compat-data，2026-10） */
-/* 高级排版属性的示意图卡片：段落用横条、汉字用小方块画，虚线是版心边缘。选中时跟着变成黑色 */
+/* Native CSS text properties. sup lists each browser's first supported version (MDN browser-compat-data, 2026-10). */
+/* Advanced layout illustrations: bars for paragraphs, squares for Han characters, dashed lines for text-area edges. Selected illustrations turn black. */
 export const tSvg = body => `<svg class="tt-svg" viewBox="0 0 48 30" aria-hidden="true">${body}</svg>`;
 export const tBars = rows => rows.map(([x, w, y]) => `<rect x="${x}" y="${y}" width="${w}" height="3" rx=".6"/>`).join('');
 export const tEdge = (...xs) => xs.map(x => `<path d="M${x} 1v28" class="tt-edge"/>`).join('');
-/* text-justify：一行「汉字 汉字 word 汉字 汉字」，多出来的 8 个单位分给哪些空隙 */
+/* text-justify: distribute eight extra units among gaps in a line of Han pairs and a Western word. */
 export const tJust = gaps => {
   const w = [4, 4, 10, 4, 4]; let x = 4, out = '';
   w.forEach((ww, i) => { out += ww === 10 ? `<rect x="${x}" y="9.5" width="10" height="2.5" rx=".6"/>` : `<rect x="${x}" y="8" width="4" height="4" rx=".4"/>`; x += ww + (gaps[i] ?? 0); });
-  return out + `<rect x="4" y="18" width="4" height="4" rx=".4"/><rect x="9" y="18" width="4" height="4" rx=".4"/>` + tEdge(3, 45);      // 左右两条都是版心边缘
+  return out + `<rect x="4" y="18" width="4" height="4" rx=".4"/><rect x="9" y="18" width="4" height="4" rx=".4"/>` + tEdge(3, 45);      // Both outer lines mark text-area edges.
 };
 export const TILE_SVG = {
   wrap: { wrap: tBars([[4, 40, 4], [4, 40, 11], [4, 40, 18], [4, 5, 25]]), pretty: tBars([[4, 40, 4], [4, 40, 11], [4, 31, 18], [4, 14, 25]]), balance: tBars([[4, 34, 4], [4, 34, 11], [4, 34, 18], [4, 31, 25]]) },
@@ -441,7 +440,7 @@ export const TILE_SVG = {
 };
 TILE_SVG.justify = { auto: tJust([3, 4, 4, 3]), 'inter-character': tJust([3, 4, 4, 3]), 'inter-word': tJust([1, 6, 6, 1]), none: tJust([1, 2, 2, 1]) };
 export const tSvgTile = key => v => `<span class="tt-s tt-pic" aria-hidden="true">${tSvg(TILE_SVG[key][v])}</span>`;
-/* 换行、标点挤压：用当前的合成字体，在窄框里真的排一段，左边的线是版心边缘 */
+/* Line breaking and punctuation compression: render real text with the current composite in a narrow box; the left line marks the text-area edge. */
 export const tBox = (prop, text, lang, cls = '') => v => `<span class="tt-s tt-box${cls}"${lang ? ` lang="${lang}"` : ''} style="${prop}:${v}" aria-hidden="true">${text}</span>`;
 export const TYPO = [
   { key: 'lang', label: { zh: '语言', ja: '言語', tw: '語言', en: 'Language' }, prop: 'lang', attr: true, def: 'zh-Hans',
@@ -459,11 +458,11 @@ export const TYPO = [
     sup: { chrome: '119', firefox: '—', safari: '—' },
     values: [['normal', { zh: '逐字', ja: '1 文字ずつ', tw: '逐字', en: 'Per character' }], ['auto-phrase', { zh: '按词组', ja: '文節単位', tw: '按詞組', en: 'By phrase' }]],
     note: { zh: 'auto-phrase 只对 lang="ja" 和 lang="ko" 生效，适合标题和短文。', ja: 'auto-phrase は lang="ja" と lang="ko" でのみ有効で、見出しや短い文に向いています。', tw: 'auto-phrase 只對 lang="ja" 和 lang="ko" 生效，適合標題和短文。', en: 'auto-phrase only works with lang="ja" and lang="ko"; good for headings and short text.' } },
-  { key: 'lineBreak', label: { zh: '禁则', ja: '禁則', tw: '禁則', en: 'Line breaking rules' }, prop: 'line-break', def: 'strict', init: 'auto', tiles: true, tileHtml: tBox('line-break', 'まあ時々、ちょっと', 'ja', ' tt-lb'), tileW: 88, tileCode: true,      /* 这句在 4 字宽里，5 个值各断在不同的地方（auto 在 Chrome 里和 normal 一样） */
+  { key: 'lineBreak', label: { zh: '禁则', ja: '禁則', tw: '禁則', en: 'Line breaking rules' }, prop: 'line-break', def: 'strict', init: 'auto', tiles: true, tileHtml: tBox('line-break', 'まあ時々、ちょっと', 'ja', ' tt-lb'), tileW: 88, tileCode: true,      /* This sentence wraps differently for all five values in a four-character-wide box (auto matches normal in Chrome). */
     sup: { chrome: '58', firefox: '69', safari: '11' },
     values: [['auto', { zh: '由浏览器决定', ja: 'ブラウザに任せる', tw: '由瀏覽器決定', en: 'Browser decides' }], ['loose', { zh: '宽松', ja: 'ゆるい', tw: '寬鬆', en: 'Loose' }], ['normal', { zh: '标准', ja: '標準', tw: '標準', en: 'Normal' }], ['strict', { zh: '严格', ja: '厳しい', tw: '嚴格', en: 'Strict' }], ['anywhere', { zh: '任意处断行', ja: 'どこでも改行', tw: '任意處斷行', en: 'Break anywhere' }]],
     note: { zh: '哪些字不能放在行首或行尾，例如句号、逗号不放在行首。auto 由浏览器按语言决定；strict 更严格，小写假名（っ、ゃ）和长音「ー」也不放行首，日文正文常用；loose 更宽松，适合窄栏；anywhere 在任何地方都可以断行。', ja: '行頭・行末に置けない文字の規則です（句読点を行頭に置かないなど）。auto はブラウザが言語に応じて決めます。strict はより厳しく、小書きのかな（っ・ゃ）や長音記号「ー」も行頭に置きません（日本語の本文でよく使います）。loose はゆるく、狭い段組み向けです。anywhere はどこでも改行します。', tw: '哪些字不能放在行首或行尾，例如句號、逗號不放在行首。auto 由瀏覽器按語言決定；strict 更嚴格，小寫假名（っ、ゃ）和長音「ー」也不放行首，日文內文常用；loose 更寬鬆，適合窄欄；anywhere 在任何地方都可以斷行。', en: 'Which characters may not start or end a line, e.g. periods and commas never start a line. auto lets the browser decide by language; strict also keeps small kana (っ, ゃ) and the prolonged sound mark 「ー」 off the line head, common in Japanese body text; loose is more relaxed, suited to narrow columns; anywhere can break at any point.' } },
-  /* 段落换行、对齐、对齐方式（grp: 'view'）是页面版式，不属于字体：只用来看校样，不写进导出的 CSS，放在校样工具条的「显示」菜单里 */
+  /* Wrapping, alignment and justification (grp: 'view') are preview-only page layout, not font settings. Keep them in View and out of exported CSS. */
   { key: 'wrap', grp: 'view', label: { zh: '段落换行', ja: '段落の折り返し', tw: '段落換行', en: 'Paragraph wrap' }, prop: 'text-wrap', def: 'wrap', init: 'wrap', tiles: true, tileHtml: tSvgTile('wrap'), tileW: 96, tileCode: true,
     sup: { chrome: 'balance 114 · pretty 117', firefox: 'balance 121', safari: 'balance 17.5 · pretty 26' },
     values: [['wrap', null], ['pretty', { zh: '避免末行孤字', ja: '最終行の孤立を避ける', tw: '避免末行孤字', en: 'Avoid orphans' }], ['balance', { zh: '各行等长（标题）', ja: '行長をそろえる（見出し）', tw: '各行等長（標題）', en: 'Even lines (headings)' }]],
@@ -482,8 +481,8 @@ export const TYPO = [
     sup: { chrome: '48', firefox: '34', safari: '9.1' },
     values: [['normal', null], ['"palt"', { zh: '假名标点比例宽', ja: 'かなと約物をプロポーショナルに', tw: '假名標點比例寬', en: 'Proportional kana and punctuation' }], ['"halt"', { zh: '标点半角', ja: '約物を半角に', tw: '標點半形', en: 'Half-width punctuation' }]],
     note: { zh: '日文排版常用的 OpenType 特性。palt 让假名和标点按字形本身的宽度排，字距更紧，适合标题；halt 只把标点压成半宽。正文一般保持 normal。字体没有这些特性时不起作用；思源 / Noto CJK 等字体的标点也支持。', ja: '和文組版でよく使う OpenType 機能です。palt はかなや約物を字形そのものの幅で組み、字間が詰まるので見出し向きです。halt は約物だけを半角にします。本文はふつう normal のままです。フォントにこれらの機能がなければ効きません。源ノ / Noto CJK などのフォントは約物も対応しています。', tw: '日文排版常用的 OpenType 特性。palt 讓假名和標點按字形本身的寬度排，字距更緊，適合標題；halt 只把標點壓成半寬。內文一般保持 normal。字型沒有這些特性時不起作用；思源 / Noto CJK 等字型的標點也支援。', en: 'OpenType features common in Japanese typesetting. palt sets kana and punctuation at their own glyph widths for tighter spacing, good for headings; halt only narrows punctuation to half width. Body text usually stays normal. No effect if the font lacks these features; punctuation in Source Han / Noto CJK fonts supports them too.' } },
-  /* 数字样式：和 InDesign 的「数字样式」一样的五种。斜线零单独一行，导出时两行合成一条 font-variant-numeric。
-     tiles：用字样卡片选（每张卡片用当前的数字字体排出这个样式），第三项是用途提示 */
+  /* Numeric styles: the same five choices as InDesign. Slashed zero has its own row; export both as one font-variant-numeric declaration.
+   tiles uses specimen cards rendered in the current digit font; the third item supplies a usage hint. */
   { key: 'num', grp: 'font', label: { zh: '数字样式', ja: '数字のスタイル', tw: '數字樣式', en: 'Figure style' }, prop: 'font-variant-numeric', def: 'normal', tiles: '11,980', hint: 'numHint',
     sup: { chrome: '52', firefox: '34', safari: '9.1' },
     values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設', en: 'Font default' }],
@@ -495,27 +494,27 @@ export const TYPO = [
   { key: 'zero', grp: 'font', label: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零', en: 'Slashed zero' }, prop: 'font-variant-numeric', def: 'normal', tiles: '100',
     sup: { chrome: '52', firefox: '34', safari: '9.1' },
     values: [['normal', { zh: '不用', ja: '使わない', tw: '不用', en: 'Off' }], ['slashed-zero', { zh: '斜线零', ja: 'スラッシュ付き', tw: '斜線零', en: 'Slashed zero' }, { zh: '和字母 O 区分', ja: 'O と区別', tw: '和字母 O 區分', en: 'Distinct from letter O' }]] },
-  /* 东亚字形：字形标准（JIS 各版、旧字形 / 简化字形）和假名标点的宽度，两行合成一条 font-variant-east-asian */
+  /* East Asian forms: combine glyph standards (JIS versions, traditional/simplified forms) and kana/punctuation width into one font-variant-east-asian declaration. */
   { key: 'eaVar', grp: 'font', label: { zh: '字形标准', ja: '字形の規格', tw: '字形標準', en: 'Glyph standard' }, prop: 'font-variant-east-asian', def: 'normal', tiles: '辻葛飴鴎国', tileW: 128, hint: 'eaHint',
     sup: { chrome: '63', firefox: '34', safari: '9.1' },
     values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設', en: 'Font default' }], ['jis04', { zh: 'JIS2004', ja: 'JIS2004', tw: 'JIS2004', en: 'JIS2004' }, { zh: '现行标准', ja: '現行の規格', tw: '現行標準', en: 'Current standard' }], ['jis90', { zh: 'JIS90', ja: 'JIS90', tw: 'JIS90', en: 'JIS90' }, { zh: '2004 年以前', ja: '2004 年より前', tw: '2004 年以前', en: 'Before 2004' }], ['jis83', { zh: 'JIS83', ja: 'JIS83', tw: 'JIS83', en: 'JIS83' }], ['jis78', { zh: 'JIS78', ja: 'JIS78', tw: 'JIS78', en: 'JIS78' }], ['traditional', { zh: '旧字形', ja: '旧字体', tw: '舊字形', en: 'Traditional forms' }], ['simplified', { zh: '简化字形', ja: '簡略字形', tw: '簡化字形', en: 'Simplified forms' }]],
     note: { zh: '日文汉字有几版字形标准：JIS2004 是现行标准，例如「辻」的走之是两点、「飴」的食字旁是新写法；JIS90 是 2004 年以前 Windows XP 等使用的写法，JIS83、JIS78 更早。旧字形把字换成传统写法（例如国 → 國），简化字形相反。需要字体本身带有这些字形：冬青黑体（Hiragino）、游明朝等本机字体通常有，Google Fonts 的网页字体把这些特性删掉了。和校样的语言无关，中文字体如果带有这些特性也会生效。', ja: '日本語の漢字には字形の規格がいくつかあります。JIS2004 は現行の規格で、たとえば「辻」のしんにょうは 2 点、「飴」の食偏は新しい形です。JIS90 は 2004 年より前（Windows XP など）の形で、JIS83・JIS78 はさらに古い形です。旧字体は字を伝統的な形に（国 → 國）、簡略字形はその逆にします。フォント自体がこれらの字形を持っている必要があり、ヒラギノや游明朝などのローカルフォントにはたいていありますが、Google Fonts の Web フォントではこれらの機能が削られています。校正刷りの言語とは関係なく、中国語フォントでも機能があれば効きます。', tw: '日文漢字有幾版字形標準：JIS2004 是現行標準，例如「辻」的辶是兩點、「飴」的食字旁是新寫法；JIS90 是 2004 年以前 Windows XP 等使用的寫法，JIS83、JIS78 更早。舊字形把字換成傳統寫法（例如国 → 國），簡化字形相反。需要字型本身帶有這些字形：冬青黑體（Hiragino）、游明朝等本機字型通常有，Google Fonts 的網頁字型把這些特性刪掉了。和校樣的語言無關，中文字型如果帶有這些特性也會生效。', en: 'Japanese kanji have several glyph standards: JIS2004 is the current one, e.g. the 辶 radical in 「辻」 has two dots and the 食 radical in 「飴」 uses the new form; JIS90 is the form used before 2004 by Windows XP and others; JIS83 and JIS78 are older still. Traditional forms switch characters to their traditional shapes (e.g. 国 → 國); simplified forms do the opposite. The font itself must contain these glyphs: installed fonts such as Hiragino and Yu Mincho usually do, while Google Fonts web fonts drop these features. This doesn\'t depend on the proof language; Chinese fonts with these features are affected too.' } },
-  { key: 'eaWidth', grp: 'font', label: { zh: '假名与标点宽度', ja: 'かなと約物の幅', tw: '假名與標點寬度', en: 'Kana and punctuation width' }, prop: 'font-variant-east-asian', def: 'normal', tiles: 'イリ「ア」ﾃｽ', tileW: 150, tileFs: 18, hint: 'eaWHint',      /* 「」：比例宽也会收窄括号；ﾃｽ：全角会把半角片假名变成全角 */
+  { key: 'eaWidth', grp: 'font', label: { zh: '假名与标点宽度', ja: 'かなと約物の幅', tw: '假名與標點寬度', en: 'Kana and punctuation width' }, prop: 'font-variant-east-asian', def: 'normal', tiles: 'イリ「ア」ﾃｽ', tileW: 150, tileFs: 18, hint: 'eaWHint',      /* Proportional width also narrows corner brackets; full-width mode converts half-width katakana to full-width forms. */
     sup: { chrome: '63', firefox: '34', safari: '9.1' },
     values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設', en: 'Font default' }], ['proportional-width', { zh: '比例宽', ja: 'プロポーショナル', tw: '比例寬', en: 'Proportional' }, { zh: '按字形本身的宽度', ja: '字形そのものの幅', tw: '按字形本身的寬度', en: 'Each glyph\'s own width' }], ['full-width', { zh: '全角', ja: '全角', tw: '全形', en: 'Full-width' }, { zh: '半角假名也变全角', ja: '半角カナも全角に', tw: '半形假名也變全形', en: 'Half-width kana become full-width too' }]] },
 ];
-/* 几行合成一条 CSS 属性：数字样式 + 斜线零 → font-variant-numeric；字形标准 + 宽度 → font-variant-east-asian */
-/* grp: 'font' 的几行是字体的事（用哪个字形），放在「字体」页签；其余是排版的事，放在「排版」页签 */
+/* Combine related rows into one CSS property: numeric style + slashed zero -> font-variant-numeric; glyph standard + width -> font-variant-east-asian. */
+/* grp: 'font' controls glyph selection and belongs in Fonts; the remaining settings belong in Text layout. */
 export const isFontTypo = t => t.grp === 'font';
 export const isViewTypo = t => t.grp === 'view';
-export const VIEW_TYPO = new Set(['wrap', 'align', 'justify']);      // 和 TYPO 里 grp: 'view' 的一致（presetSnap 在 TYPO 之前用不到它，所以直接列出）
+export const VIEW_TYPO = new Set(['wrap', 'align', 'justify']);      // Matches TYPO's grp: 'view' entries; list them here because presetSnap may run before TYPO is available.
 export const TYPO_MERGE = { 'font-variant-numeric': ['num', 'zero'], 'font-variant-east-asian': ['eaVar', 'eaWidth'] };
 export const typoValue = t => TYPO_MERGE[t.prop] ? TYPO_MERGE[t.prop].map(k => state.typo[k]).filter(v => v && v !== 'normal').join(' ') || 'normal' : state.typo[t.key];
-export const typoMergedAway = t => TYPO_MERGE[t.prop] && TYPO_MERGE[t.prop][0] !== t.key;      // 合并到前一行，导出时不单独写
-/* 东亚字形的值和 OpenType 特性的对应：检查字体有没有这些字形时用 */
+export const typoMergedAway = t => TYPO_MERGE[t.prop] && TYPO_MERGE[t.prop][0] !== t.key;      // Merged into the preceding row; do not export separately.
+/* Map East Asian form values to OpenType features when checking whether the font contains the requested glyph forms. */
 export const EA_FEAT = { jis78: 'jp78', jis83: 'jp83', jis90: 'jp90', jis04: 'jp04', simplified: 'smpl', traditional: 'trad', 'full-width': 'fwid', 'proportional-width': 'pwid' };
-/* 工具的默认值以正文为前提：两端对齐、禁则 strict、标点悬挂。段落换行不用 pretty：Safari 的 pretty 会把每行排短，还会让标点悬挂失效。
-   def 是工具的默认值，init 是 CSS 的初始值：导出时只省略等于 init 的值 */
+/* Defaults target body text: justified alignment, strict line breaking and hanging punctuation. Avoid pretty: Safari shortens lines and disables hanging punctuation.
+   def is the tool default; init is the CSS initial value. Omit only values equal to init from exports. */
 export const typoDef = (t, lang = state?.typo?.lang) => t.defJa && /^ja/.test(lang || '') ? t.defJa : t.def;
 export const typoDefaults = lang => Object.fromEntries(TYPO.map(t => [t.key, typoDef(t, lang)]));
 export const TYPO_DEFAULTS = typoDefaults('zh-Hans');
@@ -527,8 +526,8 @@ export const ENGINE = (() => {
   return { id: '', name: '', v: '' };
 })();
 export const typoSupported = (t, v) => t.attr || CSS.supports(t.prop, v);
-/* 数字样式（高级排版属性里的「数字样式」「斜线零」，合成一条 font-variant-numeric）。
-   下面是各个值对应的 OpenType 特性：检查显示数字的字体有没有这些特性时用 */
+/* Numeric styles: combine numeric style and slashed zero into font-variant-numeric.
+   Map each value to OpenType features to check support in the font used for digits. */
 export const NUM_FEAT = { 'lining-nums': 'lnum', 'oldstyle-nums': 'onum', 'proportional-nums': 'pnum', 'tabular-nums': 'tnum', 'slashed-zero': 'zero' };
 export const NUM_TAGS = Object.values(NUM_FEAT);
 export const NUM_LABEL = { lnum: { zh: '等高数字', ja: 'ライニング数字', tw: '等高數字', en: 'Lining figures' }, onum: { zh: '旧式数字', ja: 'オールドスタイル数字', tw: '舊式數字', en: 'Oldstyle figures' }, pnum: { zh: '比例数字', ja: 'プロポーショナル数字', tw: '比例數字', en: 'Proportional figures' }, tnum: { zh: '等宽数字', ja: '等幅数字', tw: '等寬數字', en: 'Tabular figures' }, zero: { zh: '斜线零', ja: 'スラッシュ付きゼロ', tw: '斜線零', en: 'Slashed zero' } };
@@ -536,31 +535,31 @@ export const numValue = () => typoValue(TYPO.find(t => t.key === 'num'));
 export const numTags = () => numValue().split(' ').map(v => NUM_FEAT[v]).filter(Boolean);
 export const numLabel = t => tr(NUM_LABEL[t]);
 
-/* 预设的西文大小、粗细和基线均由 Auto-fit Western 在 100–900 各字重实测（2026-10-17，Chrome 155、macOS）：
-   latin 是 400 的字体和粗细，latinSize 是 400 的大小；latinW 保存各字重自己的 { size, weight }。
-   大小和 400 相差不到 0.5 时沿用基础值；字重只在需要覆盖推算值时记录。
-   latinShift 是基线，差在 2% em 以内时为 0。本机静态字体只匹配大小和基线，字重仍按字体名称推算。 */
-/* style：汉字字体是宋体 / 明朝（serif）还是黑体 / ゴシック（sans），用于预设筛选 */
+/* Preset Western sizes, weights and baselines were measured by Auto-fit Western at weights 100-900 (2026-10-17, Chrome 155, macOS).
+   latin stores the font and weight at 400; latinSize is its size. latinW stores per-weight { size, weight } values.
+   Sizes differing from 400 by less than 0.5 inherit the base value; store weights only when overriding the derived value.
+   latinShift is the baseline, with offsets within 2% em set to 0. Local static fonts fit size and baseline only; weights remain name-derived. */
+/* style: serif (Song/Ming) or sans (Hei/Gothic) Han font, used for preset filtering. */
 export const PRESETS = [
   { id: 'serif-sc', style: 'serif', region: 'sc', name: { zh: '宋体 × Garamond', ja: '宋体 × Garamond', tw: '宋體 × Garamond', en: 'Song × Garamond' }, tag: { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文', en: 'Simplified' }, han: G('Noto Serif SC'), latin: G('EB Garamond'), latinSize: 115, latinW: { 100: { size: 114, weight: 400 }, 200: { size: 114, weight: 400 }, 300: { size: 114.5, weight: 400 }, 500: { size: 115.5, weight: 460 }, 600: { size: 116, weight: 500 }, 700: { size: 116.5, weight: 620 }, 800: { size: 117, weight: 660 }, 900: { size: 117.5, weight: 740 } }, sample: 'zh' },
   { id: 'sans-sc', style: 'sans', region: 'sc', name: { zh: '黑体 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter', en: 'Hei × Inter' }, tag: { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文', en: 'Simplified' }, han: G('Noto Sans SC'), latin: G('Inter'), latinSize: 100, latinW: { 100: { size: 98, weight: 160 }, 200: { size: 98.5, weight: 220 }, 300: { size: 99, weight: 260 }, 500: { size: 101 }, 600: { size: 101.5 }, 700: { size: 102 }, 800: { size: 102.5, weight: 740 }, 900: { size: 103.5, weight: 800 } }, sample: 'zh' },
   { id: 'mincho-jp', style: 'serif', region: 'jp', name: { zh: '明朝 × Cormorant', ja: '明朝 × Cormorant', tw: '明朝 × Cormorant', en: 'Mincho × Cormorant' }, tag: { zh: '日文', ja: '日本語', tw: '日文', en: 'Japanese' }, han: G('Shippori Mincho'), latin: G('Cormorant Garamond', 420), latinSize: 120, latinW: { 100: { weight: 400 }, 200: { weight: 400 }, 300: { weight: 400 }, 500: { size: 120.5 }, 600: { size: 121, weight: 600 }, 700: { size: 121.5, weight: 700 }, 800: { size: 122, weight: 700 }, 900: { size: 122, weight: 700 } }, sample: 'ja' },
   { id: 'gothic-jp', style: 'sans', region: 'jp', name: { zh: 'ゴシック × Jost', ja: 'ゴシック × Jost', tw: 'ゴシック × Jost', en: 'Gothic × Jost' }, tag: { zh: '日文', ja: '日本語', tw: '日文', en: 'Japanese' }, han: G('Noto Sans JP'), latin: G('Jost'), latinSize: 108, latinW: { 100: { size: 107, weight: 220 }, 200: { size: 107, weight: 260 }, 300: { size: 107.5 }, 500: { size: 108.5 }, 600: { size: 108.5, weight: 520 }, 700: { size: 109, weight: 620 }, 800: { size: 109.5, weight: 680 }, 900: { size: 109.5, weight: 740 } }, latinShift: -2, sample: 'ja' },
-  /* アンチゴチ：漢字はゴシック体、かなはアンチック体。欧文と約物はゴシックに従う。Zen Antique のかなは太いので、漢字は 500 で釣り合う */
+  /* Antigochi: Gothic Han glyphs with Antique kana; Western text and punctuation follow Gothic. Zen Antique's heavy kana balance with Han at 500. */
   { id: 'antigochi', style: 'sans', region: 'jp', name: { zh: 'アンチゴチ', ja: 'アンチゴチ', tw: 'アンチゴチ', en: 'Antigochi' }, tag: { zh: '漫画对白', ja: 'マンガの台詞', tw: '漫畫對白', en: 'Manga dialogue' }, han: G('Zen Kaku Gothic New', 500), latin: null, latinShift: 3, classes: { kana: { font: G('Zen Antique') } }, sample: 'manga', vertical: true },
-  /* macOS：SF Pro 不能用 local() 引用（系统界面字体对网页隐藏），西文用每台 Mac 都自带的 Avenir Next */
+  /* macOS: SF Pro is hidden from local() on the web; use Avenir Next, which ships on every Mac, for Western text. */
   { id: 'mac', style: 'sans', region: 'sc', name: { zh: '苹方 × Avenir Next', ja: 'PingFang × Avenir Next', tw: '蘋方-簡 × Avenir Next', en: 'PingFang SC × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 简体中文', ja: 'macOS 標準・簡体字', tw: 'macOS 系統字型 · 簡體中文', en: 'macOS · Simplified' }, han: L('PingFang SC Regular', ['PingFangSC-Regular']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 104, latinW: { 700: { size: 102.5 }, 800: { size: 99.5 }, 900: { size: 99.5 } }, latinShift: -3,
-    classes: { kana: { font: L('Hiragino Sans W3', ['HiraginoSans-W3']) } }, sample: 'zh' },   /* 苹方也有假名，但日文里用冬青黑体为日文设计的假名 */
+    classes: { kana: { font: L('Hiragino Sans W3', ['HiraginoSans-W3']) } }, sample: 'zh' },   /* PingFang has kana, but use Hiragino's Japanese-designed kana for Japanese text. */
   { id: 'mac-jp', style: 'sans', region: 'jp', name: { zh: 'ヒラギノ角ゴ × Avenir Next', ja: 'ヒラギノ角ゴ × Avenir Next', tw: 'ヒラギノ角ゴ × Avenir Next', en: 'Hiragino Sans × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 日文', ja: 'macOS 標準・日本語', tw: 'macOS 系統字型 · 日文', en: 'macOS · Japanese' }, han: L('Hiragino Sans W3', ['HiraginoSans-W3']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 111.5, latinW: { 100: { size: 108.5 }, 200: { size: 110.5 }, 300: { size: 111 }, 500: { size: 112 }, 600: { size: 112.5 }, 700: { size: 112 }, 800: { size: 110 } }, latinShift: -3.5, sample: 'ja' },
-  /* 台湾、香港：分别实测对应地区的 Noto 字体；内建西文相同，所以匹配结果与简中一致。 */
+  /* Measure the regional Noto fonts separately for Taiwan and Hong Kong. Their built-in Western glyphs are identical, yielding the same fit as Simplified Chinese. */
   { id: 'ming-tw', style: 'serif', region: 'tc', name: { zh: '明體 × Garamond', ja: '明体 × Garamond', tw: '明體 × Garamond', en: 'Ming × Garamond' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）', en: 'Traditional (TW)' }, han: G('Noto Serif TC'), latin: G('EB Garamond'), latinSize: 115, latinW: { 100: { size: 114, weight: 400 }, 200: { size: 114, weight: 400 }, 300: { size: 114.5, weight: 400 }, 500: { size: 115.5, weight: 460 }, 600: { size: 116, weight: 500 }, 700: { size: 116.5, weight: 620 }, 800: { size: 117, weight: 660 }, 900: { size: 117.5, weight: 740 } }, sample: 'tw' },
   { id: 'hei-tw', style: 'sans', region: 'tc', name: { zh: '黑体 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter', en: 'Hei × Inter' }, tag: { zh: '繁体中文（台湾）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）', en: 'Traditional (TW)' }, han: G('Noto Sans TC'), latin: G('Inter'), latinSize: 100, latinW: { 100: { size: 98, weight: 160 }, 200: { size: 98.5, weight: 220 }, 300: { size: 99, weight: 260 }, 500: { size: 101 }, 600: { size: 101.5 }, 700: { size: 102 }, 800: { size: 102.5, weight: 740 }, 900: { size: 103.5, weight: 800 } }, sample: 'tw' },
   { id: 'hei-hk', style: 'sans', region: 'hk', name: { zh: '黑体 × Inter', ja: '黒体 × Inter', tw: '黑體 × Inter', en: 'Hei × Inter' }, tag: { zh: '繁体中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）', en: 'Traditional (HK)' }, han: G('Noto Sans HK'), latin: G('Inter'), latinSize: 100, latinW: { 100: { size: 98, weight: 160 }, 200: { size: 98.5, weight: 220 }, 300: { size: 99, weight: 260 }, 500: { size: 101 }, 600: { size: 101.5 }, 700: { size: 102 }, 800: { size: 102.5, weight: 740 }, 900: { size: 103.5, weight: 800 } }, sample: 'hk' },
   { id: 'mac-tw', style: 'sans', region: 'tc', name: { zh: '蘋方-繁 × Avenir Next', ja: 'PingFang TC × Avenir Next', tw: '蘋方-繁 × Avenir Next', en: 'PingFang TC × Avenir Next' }, tag: { zh: 'macOS 系统字体 · 繁体中文', ja: 'macOS 標準・繁体字', tw: 'macOS 系統字型 · 繁體中文', en: 'macOS · Traditional' }, han: L('PingFang TC Regular', ['PingFangTC-Regular']), latin: L('Avenir Next Regular', ['AvenirNext-Regular']), latinSize: 104, latinW: { 700: { size: 102.5 }, 800: { size: 99.5 }, 900: { size: 99.5 } }, latinShift: -3, sample: 'tw' },
 ];
 
-/* ================= 状态 ================= */
-/* size / shift 为 null 表示继承：跟随别的类别时继承它的值，独立字体时为 100% / 0 */
+/* ================= State ================= */
+/* null size / shift means inherit: from the followed class when following, otherwise 100% / 0 for independent fonts. */
 export function freshClasses(p) {
   const c = {};
   for (const k of CLASSES) c[k.id] = { follow: k.follow || null, font: null, size: null, shift: null };
@@ -579,44 +578,44 @@ export function stateFromPreset(p, prev) {
     baseMode: prev?.baseMode || 'link',
     weightNames: prev?.weightNames || {},
     moved: prev?.moved ? { ...prev.moved } : {},
-    wOver: Object.fromEntries(Object.entries(p.latinW || {}).map(([W, settings]) => [W, { latin: { ...settings } }])),      // 复制，避免编辑设置时改到自带预设
+    wOver: Object.fromEntries(Object.entries(p.latinW || {}).map(([W, settings]) => [W, { latin: { ...settings } }])),      // Clone settings so edits cannot mutate built-in presets.
     generic: prev?.generic || 'auto',
     scope: prev?.scope ?? '',
     wmode: prev?.wmode || 'steps',
     wrange: prev?.wrange || [100, 900],
     italic: prev ? !!prev.italic : true,
-    lineMetrics: prev?.lineMetrics || 'han',      // 默认导出斜体：西文用真斜体，汉字保持正体
+    lineMetrics: prev?.lineMetrics || 'han',      // Export italics by default: real Western italics, upright Han.
     classes: freshClasses(p),
     custom: [],
     view: prev?.view ? { ...prev.view } : { sample: p.sample, text: SAMPLES[p.sample].text, size: 24, lh: 1.85, vertical: !!p.vertical, colorize: false, miss: true, cmp: 'plain', weight: 400 },
     typo: prev?.typo ? { ...prev.typo } : { ...typoDefaults(SAMPLES[p.sample].lang), lang: SAMPLES[p.sample].lang },
-    fx: prev?.fx ? { ...prev.fx, weights: [...prev.fx.weights] } : undefined,      // 字体文件的设置：换预设时保留
+    fx: prev?.fx ? { ...prev.fx, weights: [...prev.fx.weights] } : undefined,      // Font-file settings persist when switching presets.
   };
 }
 
 export const LS_STATE = 'composite-font:state:v1', LS_PRESETS = 'composite-font:presets:v1';
 export let userPresets = lsGet(LS_PRESETS) || {};
-/* 新增的类别（例如注音）在 normalizeState 里补上，这里只检查原有的几个 */
+/* normalizeState adds newer classes such as Zhuyin; validate only the original classes here. */
 export function validState(s) {
   return s && s.classes && ['han', 'latin', 'kana', 'punct'].every(id => s.classes[id] && 'size' in s.classes[id]) && s.classes.han.font && Array.isArray(s.custom) && s.view;
 }
-/* 第一次打开时按界面语言选预设：日文 → 明朝 × Cormorant，繁中 → 明體 × Garamond，简中 → 宋体 × Garamond */
+/* Choose the initial preset by UI language: Mincho x Cormorant for Japanese, Ming x Garamond for Traditional Chinese, Song x Garamond for Simplified Chinese. */
 export const defaultPresetId = () => UI === 'ja' ? 'mincho-jp' : UI === 'tw' ? 'ming-tw' : 'serif-sc';
-/* 当前的全部设定。别的文件不能直接给 state 赋值（模块导入的变量只读），整个换掉时用 setState */
+/* All current settings. Imported bindings cannot be reassigned from other modules; use setState to replace the object. */
 export let state = null;
 export function setState(s) { state = s; }
-/* 预设有没有被改过：和套用（或保存）预设那一刻的设定比较。校样的文字、字号等（view）不算 */
+/* Compare settings with the snapshot from applying or saving the preset. Proof text, size and other view state do not count as preset edits. */
 export const PRESET_SKIP = new Set(['view', 'preset', 'presetBase', 'v', 'fx']);
-/* 只看校样用的排版设定（对齐等）不算改了预设 */
+/* Preview-only layout settings, such as alignment, do not count as preset edits. */
 export function presetSnap(st = state) { return JSON.stringify(st, function (k, v) { return this === st && (PRESET_SKIP.has(k) || k === 'meta') || this === st.typo && VIEW_TYPO.has(k) ? undefined : v; }); }
 export const presetDirty = () => {
   const name = state.preset?.startsWith('user:') ? state.preset.slice(5) : null;
   const saved = name != null && Object.hasOwn(userPresets, name) ? userPresets[name] : null;
-  // 更新自存预设后再撤销编辑，要与现在保存的版本比较，不能沿用历史中的旧基准。
+  // After updating a user preset, compare undone edits with the currently saved version, rather than the old baseline in history.
   const baseline = saved?.v === state.v ? presetSnap(saved) : state.presetBase;
   return baseline ? presetSnap() !== baseline : state.preset === '';
 };
-/* 所有预览入口共用导出域；恢复旧数据、撤销或分享导入时也不能停在未导出的字重。 */
+/* All preview entry points use the export domain; restoring data, undoing or importing shares must not leave an unexported weight selected. */
 export function previewWeight(x) {
   x = Number.isFinite(x) ? x : 400;
   if (state.wmode === 'cont') return Math.min(state.wrange[1], Math.max(state.wrange[0], Math.round(x)));
@@ -631,110 +630,110 @@ export function constrainPreviewWeight() {
   return before !== v.weight;
 }
 export function normalizeState() {
-  if (!(state.v >= 2)) {    // 旧版本里「跟随」连大小、基线一起跟随，迁移为继承
+  if (!(state.v >= 2)) {    // Older follow behavior also followed size and baseline; migrate these values to inheritance.
     for (const o of [...Object.values(state.classes), ...state.custom]) if (o.follow) { o.size = null; o.shift = null; }
     state.v = 2;
   }
-  if (state.v === 2) {      // v2 默认只导出 400；v3 起默认导出全部字重，让每个字重都能单独调整
+  if (state.v === 2) {      // v2 exported only 400 by default; v3 exports all weights so each can be adjusted separately.
     if (Array.isArray(state.weights) && state.weights.length === 1 && state.weights[0] === 400) state.weights = [100, 200, 300, 400, 500, 600, 700, 800, 900];
     state.v = 3;
   }
-  for (const c of CLASSES) state.classes[c.id] ||= { follow: c.follow || null, font: null, size: null, shift: null };     // 后来新增的类别
-  /* 导出字体文件：自己的字重（默认 400、700，生成慢，不跟网页导出的字重绑在一起）、是否生成斜体、是否另存 WOFF2 */
+  for (const c of CLASSES) state.classes[c.id] ||= { follow: c.follow || null, font: null, size: null, shift: null };     // Classes added later.
+  /* Font-file export has separate weights (400 and 700 by default because baking is slow), italic output and optional WOFF2. */
   state.fx = { weights: [400, 700], italic: true, ttf: true, woff2: false, otf: false, ...(state.fx || {}) };
   if (!Array.isArray(state.fx.weights)) state.fx.weights = [400, 700];
-  if (state.typo?.lang === 'zh-Hant') state.typo.lang = 'zh-Hant-TW';       // 「繁體中文」拆成台湾、香港
+  if (state.typo?.lang === 'zh-Hant') state.typo.lang = 'zh-Hant-TW';       // Split Traditional Chinese into Taiwan and Hong Kong.
   if (state.scope === 'zh-Hant') state.scope = 'zh-Hant-TW';
-  if (state.typo) delete state.typo.tcy;                                   // 纵中横已删除
-  if (state.typo) delete state.typo.emoji;                                 // emoji 显示已删除
+  if (state.typo) delete state.typo.tcy;                                   // Text combine upright was removed.
+  if (state.typo) delete state.typo.emoji;                                 // Emoji display was removed.
   state.typo = { ...typoDefaults(state.typo?.lang), ...(state.typo || {}) };
-  for (const t of TYPO) if (!t.values.some(([v]) => v === state.typo[t.key])) state.typo[t.key] = typoDef(t);      // 删掉了的选项（例如中西间距的 ideograph-alpha）回到默认值
-  if (state.v === 3) {      // v4 起正文默认：text-wrap: pretty；日文 line-break: strict。仍是旧默认值的改成新默认值
+  for (const t of TYPO) if (!t.values.some(([v]) => v === state.typo[t.key])) state.typo[t.key] = typoDef(t);      // Reset removed options, such as ideograph-alpha autospace, to defaults.
+  if (state.v === 3) {      // v4 defaults: text-wrap: pretty and Japanese line-break: strict. Migrate values that still match the old defaults.
     if (state.typo.wrap === 'wrap') state.typo.wrap = 'pretty';
     if (/^ja/.test(state.typo.lang) && state.typo.lineBreak === 'auto') state.typo.lineBreak = 'strict';
     state.v = 4;
   }
-  if (state.v === 4) {      // v5 起默认导出斜体（以前默认不导出，em、i 里的西文也被模拟倾斜）
+  if (state.v === 4) {      // v5 exports italics by default; previously even Western text inside em and i was synthetically slanted.
     state.italic = true;
     state.v = 5;
   }
-  if (state.v === 5) {      // v6 起所有语言的禁则默认 strict（以前只有日文）。仍是旧默认值 auto 的改成 strict
+  if (state.v === 5) {      // v6 uses strict line breaking for every language, previously Japanese only. Migrate the old auto default to strict.
     if (state.typo.lineBreak === 'auto') state.typo.lineBreak = 'strict';
     state.v = 6;
   }
-  if (state.v === 6) {      // v7 起标点挤压默认 space-first：折行后的行首括号也收成半角，左边缘对齐。仍是旧默认值 normal 的改成 space-first
+  if (state.v === 6) {      // v7 defaults punctuation spacing to space-first: narrow opening brackets on wrapped lines to align the left edge. Migrate the old normal default.
     if (state.typo.trim === 'normal') state.typo.trim = 'space-first';
     state.v = 7;
   }
-  if (state.v === 7) {      // v8 起标点悬挂默认 allow-end（目前只有 Safari 生效）。仍是旧默认值 none 的改成 allow-end
+  if (state.v === 7) {      // v8 defaults hanging punctuation to allow-end (currently effective only in Safari). Migrate the old none default.
     if (state.typo.hang === 'none') state.typo.hang = 'allow-end';
     state.v = 8;
   }
-  if (state.v === 8) {      // v9 起标点挤压默认 trim-start：段首行的开括号也收成半角。仍是上一个默认值 space-first 的改成 trim-start
+  if (state.v === 8) {      // v9 defaults punctuation spacing to trim-start, also narrowing opening brackets on a paragraph's first line. Migrate the previous space-first default.
     if (state.typo.trim === 'space-first') state.typo.trim = 'trim-start';
     state.v = 9;
   }
-  if (state.v === 9) {      // v10 起段落换行默认 wrap：Safari 的 pretty 会把每行排短，还会让标点悬挂失效。仍是旧默认值 pretty 的改回 wrap
+  if (state.v === 9) {      // v10 restores wrap as the paragraph default: Safari's pretty shortens lines and disables hanging punctuation. Migrate the previous pretty default.
     if (state.typo.wrap === 'pretty') state.typo.wrap = 'wrap';
     state.v = 10;
   }
-  if (state.v === 10) {      // v11 起对齐、对齐方式、段落换行只用于校样，不算预设的一部分：从记下的预设快照里去掉，免得显示成「改过」
-    if (state.presetBase) try { const b = JSON.parse(state.presetBase); if (b.typo) for (const k of VIEW_TYPO) delete b.typo[k]; state.presetBase = JSON.stringify(b); } catch (e) { /* 坏了就不管 */ }
+  if (state.v === 10) {      // v11 makes alignment, justification and wrapping preview-only. Remove them from stored preset snapshots to avoid false modified indicators.
+    if (state.presetBase) try { const b = JSON.parse(state.presetBase); if (b.typo) for (const k of VIEW_TYPO) delete b.typo[k]; state.presetBase = JSON.stringify(b); } catch (e) { /* Ignore malformed data. */ }
     state.v = 11;
   }
-  delete state.view.compare; delete state.view.cmp;      // 「对照其他做法」已删除
-  delete state.view.presetsOpen;                                   // 预设移进左栏的页签以后，不再收起成一排
-  if (state.view.miss === undefined) state.view.miss = true;         // 「标出缺字」默认打开
-  delete state.metric;                                              // 度量对齐的「按 … 对齐到 …%」已删除
+  delete state.view.compare; delete state.view.cmp;      // The comparison view was removed.
+  delete state.view.presetsOpen;                                   // Presets no longer collapse into a row after moving into a left-pane tab.
+  if (state.view.miss === undefined) state.view.miss = true;         // Highlight missing glyphs by default.
+  delete state.metric;                                              // The metric alignment percentage controls were removed.
   state.weights = Array.isArray(state.weights) && state.weights.length ? [...new Set(state.weights)].sort((a, b) => a - b) : [state.weight || 400];
   delete state.weight;
   state.baseMode = state.baseMode || 'link';
   state.weightNames = state.weightNames || {};
   state.scope = state.scope || '';
-  state.wmode = state.wmode === 'cont' ? 'cont' : 'steps';        // 字重：分档 / 连续（可变字体）
-  state.italic = !!state.italic;                                   // 导出斜体
-  state.lineMetrics = state.lineMetrics === 'off' ? 'off' : 'han';  // 行高度量对齐汉字字体（默认打开）
-  if (state.num) {        // 数字样式原来在半角数字的齿轮里（按 OpenType 特性分开存），移到高级排版属性
+  state.wmode = state.wmode === 'cont' ? 'cont' : 'steps';        // Weights: stepped / continuous (variable fonts).
+  state.italic = !!state.italic;                                   // Export italics.
+  state.lineMetrics = state.lineMetrics === 'off' ? 'off' : 'han';  // Align line metrics to the Han font by default.
+  if (state.num) {        // Numeric styles moved from the digit gear menu, where they were stored by OpenType feature, to advanced text properties.
     const n = state.num;
     if (n.fig || n.spc) state.typo.num = `${n.fig === 'onum' ? 'oldstyle' : 'lining'}-nums ${n.spc === 'tnum' ? 'tabular' : 'proportional'}-nums`;
     if (n.zero) state.typo.zero = 'slashed-zero';
     delete state.num;
   }
-  delete state.stretch; delete state.view.wstretch;                // 「字宽跟随页面」已删除
+  delete state.stretch; delete state.view.wstretch;                // The follow-page-width option was removed.
   const wr = Array.isArray(state.wrange) ? state.wrange.map(Math.round) : [];
-  state.wrange = wr[0] >= 100 && wr[1] <= 900 && wr[0] < wr[1] ? wr : [100, 900];      // 连续模式导出的粗细范围
+  state.wrange = wr[0] >= 100 && wr[1] <= 900 && wr[0] < wr[1] ? wr : [100, 900];      // Exported weight range in continuous mode.
   if (!Number.isFinite(state.view.wcont)) state.view.wcont = state.view.weight || 400;
   state.view.wcont = Math.min(state.wrange[1], Math.max(state.wrange[0], state.view.wcont));
   state.wOver = state.wOver || {};
   state.moved = state.moved || {};
-  if (state.view.sample === 'title') {   // 「标题」示例已删除，回到正文
+  if (state.view.sample === 'title') {   // The heading sample was removed; return to body text.
     const k = state.typo.lang?.startsWith('ja') ? 'ja' : 'zh';
     Object.assign(state.view, { sample: k, text: SAMPLES[k].text, size: 24, lh: 1.85 });
   }
-  /* 自定义页签：可以有好几组，每组记着文字和语言（view.customs）；选中的是 'c0'、'c1'… */
+  /* Multiple custom tabs each store text and language in view.customs; selection is 'c0', 'c1', etc. */
   const vw = state.view;
-  if (vw.sample === 'en') { vw.sample = 'zh'; vw.text = SAMPLES.zh.text; }      // 「西文为主」示例已删除
+  if (vw.sample === 'en') { vw.sample = 'zh'; vw.text = SAMPLES.zh.text; }      // The Western-dominant sample was removed.
   if (!Array.isArray(vw.customs)) vw.customs = [];
-  if (vw.customText != null) { vw.customs.push({ text: vw.customText, lang: vw.customLang || state.typo.lang }); if (vw.sample === 'custom') vw.sample = 'c' + (vw.customs.length - 1); }      // 只有一组时的旧数据
+  if (vw.customText != null) { vw.customs.push({ text: vw.customText, lang: vw.customLang || state.typo.lang }); if (vw.sample === 'custom') vw.sample = 'c' + (vw.customs.length - 1); }      // Legacy data with a single custom sample.
   delete vw.customText; delete vw.customLang;
-  if (!(vw.sample in SAMPLES) && !/^c\d+$/.test(vw.sample)) { vw.customs.push({ text: vw.text || '', lang: state.typo.lang }); vw.sample = 'c' + (vw.customs.length - 1); }      // 更早的「改过的文字」
+  if (!(vw.sample in SAMPLES) && !/^c\d+$/.test(vw.sample)) { vw.customs.push({ text: vw.text || '', lang: state.typo.lang }); vw.sample = 'c' + (vw.customs.length - 1); }      // An earlier edited-text format.
   const ci = /^c(\d+)$/.exec(vw.sample);
   if (ci && !vw.customs[+ci[1]]) vw.sample = 'zh';
   if (ci && vw.customs[+ci[1]]) vw.text = vw.customs[+ci[1]].text;
-  else if (vw.sample in SAMPLES) vw.text = SAMPLES[vw.sample].text;     // 选的是示例时跟着示例更新
+  else if (vw.sample in SAMPLES) vw.text = SAMPLES[vw.sample].text;     // Refresh built-in sample text when that sample is selected.
   constrainPreviewWeight();
-  if (state.presetBase === undefined && state.preset) state.presetBase = presetSnap();      // 旧的保存数据：以现在为准
+  if (state.presetBase === undefined && state.preset) state.presetBase = presetSnap();      // For legacy stored data, use the current settings as the baseline.
   rebuildClassRanges();
 }
-/* 读出上次的设定（没有就用默认预设）。用到别的模块（字符类别等），所以不在加载时执行，由 main.js 在所有模块就绪后调用 */
+/* Load saved settings, or the default preset. This depends on other modules, so main.js calls it after all modules initialize rather than at module load. */
 export function initState() {
   state = validState(lsGet(LS_STATE)) ? lsGet(LS_STATE) : stateFromPreset(PRESETS.find(p => p.id === defaultPresetId()));
   normalizeState();
 }
 export const saveState = debounce(() => { lsSet(LS_STATE, state); recordHistory(); }, 400);
-/* ================= 撤销 / 重做 =================
-   每次保存时记下设定的快照：不含校样的视图状态（预览的字重、示例文字、只改校样的对齐等）。
-   保存本来就有 400ms 的防抖，连续输入、拖动合成一步 */
+/* ================= Undo / redo =================
+   Save settings snapshots without proof view state: preview weight, sample text and preview-only alignment.
+   The existing 400ms save debounce groups continuous typing and dragging into one step. */
 export const HIST_MAX = 100, hist = { list: [], i: -1, onChange: null };
 export const histSnap = () => JSON.stringify(state, function (k, v) { return this === state && k === 'view' || this === state.typo && VIEW_TYPO.has(k) ? undefined : v; });
 export function recordHistory() {
@@ -746,9 +745,9 @@ export function recordHistory() {
   hist.onChange?.();
 }
 export const canUndo = () => hist.i > 0, canRedo = () => hist.i < hist.list.length - 1;
-/* 走一步：换成那一步的设定，视图状态保留现在的。规范化以后的样子替换那一步，免得保存时又记成新的一步 */
+/* Restore one history step while preserving the current view. Replace its snapshot after normalization so saving does not create a new step. */
 export function stepHistory(d) {
-  recordHistory();      // 防抖里还没记下的改动先记下
+  recordHistory();      // Record changes still pending in the save debounce first.
   const j = hist.i + d; if (j < 0 || j >= hist.list.length) return false;
   hist.i = j;
   const s = JSON.parse(hist.list[j]), keep = Object.fromEntries([...VIEW_TYPO].map(k => [k, state.typo[k]]));
@@ -759,13 +758,13 @@ export function stepHistory(d) {
   return true;
 }
 
-/* ================= 字重：工具里设定的字体对应 400，其他字重自动换算 ================= */
+/* ================= Weights: tool settings map to 400; derive other weights automatically ================= */
 export const BASE_W = 400;
 export const WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
 export const WEIGHT_WORDS = { 100: ['Thin', 'UltraLight', 'Hairline'], 200: ['ExtraLight', 'UltraLight'], 300: ['Light'], 400: ['Regular'], 500: ['Medium'], 600: ['Semibold', 'SemiBold', 'DemiBold'], 700: ['Bold'], 800: ['ExtraBold', 'Heavy'], 900: ['Black', 'Heavy'] };
 export const ALL_WORDS = [...new Set(Object.values(WEIGHT_WORDS).flat())].sort((a, b) => b.length - a.length);
 export const WORD_RE = new RegExp(`([ _-])(${ALL_WORDS.join('|')})$`, 'i');
-export function weightOrder(W) {          // 先目标字重，再按距离向两侧找，靠近 400 的一侧优先
+export function weightOrder(W) {          // Try the target first, then search outward by distance, favoring the side toward 400.
   const out = [W], dir = W > BASE_W ? -1 : 1;
   for (let d = 100; d <= 800; d += 100) for (const x of [W + dir * d, W - dir * d]) if (x >= 100 && x <= 900 && x !== BASE_W && !out.includes(x)) out.push(x);
   return out;
@@ -783,7 +782,7 @@ export function localExists(name) {
   if (!existsCache.has(name)) existsCache.set(name, new FontFace('__cf_probe', `local("${name.replace(/["\\]/g, '\\$&')}")`).load().then(() => true, () => false));
   return existsCache.get(name);
 }
-export const autoNames = new Map();       // 「字体|字重」→ {name, status}
+export const autoNames = new Map();       // 'font|weight' -> {name, status}
 export function autoLocal(f, W) {
   const k = fontKey(f) + '|' + W;
   let a = autoNames.get(k);
@@ -804,18 +803,18 @@ export function guessPath(file, W) {
   const mm = stem.match(WORD_RE);
   return (mm ? stem.slice(0, -mm[0].length) + mm[1] : stem + '-') + WEIGHT_WORDS[W][0] + ext;
 }
-/* Google 静态字体实际有的字重（元数据里没有的字体族返回 null，当作 100–900 都可能有） */
+/* Actual static Google Fonts weights. Return null for unknown families, treating any 100-900 step as potentially available. */
 export const gfWeights = fam => GF_WEIGHTS[fam] ? [...GF_WEIGHTS[fam]].map(d => d * 100) : null;
 export function fontAtWeight(f, W, live = false) {
   if (!f || W === BASE_W) return f;
   if (f.kind === 'google') return G(f.family, Math.min(900, Math.max(100, f.weight + (W - BASE_W))));
-  if (f.axis) return { ...f, weight: clampW((f.weight || 400) + (W - BASE_W), f.axis) };     // 可变的本机字体 / 文件：同一个字体，换粗细
+  if (f.axis) return { ...f, weight: clampW((f.weight || 400) + (W - BASE_W), f.axis) };     // Variable local/uploaded font: use the same face at a different weight.
   const manual = state.weightNames[fontKey(f) + '|' + W];
   if (f.kind === 'local') return L(manual || autoLocal(f, W).name);
   if (f.kind === 'file') return live ? f : { kind: 'path', path: manual || guessPath(f.fileName, W), ...(f.italic ? { italPath: guessPath(f.italic.fileName, W) } : {}) };
   return f;
 }
-/* 列重置保留字体来源与其他轴，只把可调粗细恢复到最接近常规 400 的实际档位。 */
+/* Column reset keeps the source and other axes, restoring only adjustable weight to the actual step nearest regular 400. */
 export function defaultFontWeight(f) {
   if (!f) return null;
   const axis = vfAxisNow(f);
@@ -826,17 +825,17 @@ export function defaultFontWeight(f) {
 }
 export const weightNamesChanged = debounce(() => { renderEditor(); renderExport(); if (state.view.weight !== BASE_W) rebuild(); }, 60);
 
-/* ================= 解析：类别 → 实际字体/大小/基线 ================= */
+/* ================= Resolve classes to actual font / size / baseline ================= */
 export function rootOf(id, depth = 0) { const c = state.classes[id]; return c.follow && depth < 4 ? rootOf(c.follow, depth + 1) : id; }
-/* 某个字重下的实际设定。「跟随」只跟随字体；大小、基线没有单独设定时继承所跟随的类别。
-   400 用类别本身的设定；其他字重的字体按差值换算，再叠加该字重的单独调整（wOver） */
+/* Resolve settings at a weight. Following shares the font; size and baseline inherit only when not explicitly set.
+   Use class settings at 400; derive other font weights by the same offset, then apply per-weight wOver values. */
 export function ownFontAt(o, ov, W, live) {
   let font = o.font;
-  if (font && W !== BASE_W && ov?.font) return ov.font;      // 这个字重单独换成了另一个字体
+  if (font && W !== BASE_W && ov?.font) return ov.font;      // This weight explicitly uses a different font.
   if (font && W !== BASE_W) font = ov?.weight && (font.kind === 'google' || font.axis) ? (font.kind === 'google' ? G(font.family, ov.weight) : { ...font, weight: ov.weight }) : fontAtWeight(font, W, live);
   return font;
 }
-/* 只信字体元数据：手动声明的本机 VF 默认范围、未知字族、未读到轴的文件，都不能据此取消导出。 */
+/* Trust only font metadata: manually declared local VF defaults, unknown families and unread axes cannot justify unchecking exports. */
 export function knownWeightRange(f) {
   if (!f || f.axesUnknown || (f.kind === 'local' && f.axis && !f.axes?.some(a => a[0] === 'wght'))) return null;
   const axis = vfAxisNow(f);
@@ -844,8 +843,8 @@ export function knownWeightRange(f) {
   const weights = f.kind === 'google' && gfWeights(f.family);
   return weights?.length ? [weights[0], weights.at(-1)] : null;
 }
-/* 检查期望的实际粗细，不能用已经夹到轴端点的 resolveCls 结果；单独映射 / 换字体则按该行的值。
-   静态字体只排除整个范围之外的档位，中间缺档仍允许按原有规则找最近字重。 */
+/* Check the requested actual weight, not resolveCls results already clamped to an axis endpoint. Explicit mappings/replacements use their row values.
+   For static fonts, exclude only weights outside the full range; gaps inside it still use the existing nearest-weight rules. */
 export function uncoveredWeights(weights) {
   const owners = [...CLASSES.filter(c => c.id === 'han' || EFF[c.id]?.length).map(c => [c.id, state.classes[c.id]]),
     ...state.custom.flatMap((o, i) => parseChars(o.chars).length ? [['#' + i, o]] : [])];
@@ -862,14 +861,14 @@ export function resolveObj(key, o, W = BASE_W, live = false, depth = 0) {
   const ov = W !== BASE_W ? state.wOver[W]?.[key] : null;
   if (o.follow && depth < 4) {
     const p = resolveCls(o.follow, W, live, depth + 1);
-    return { font: p.font, size: ov?.size ?? o.size ?? p.size, shift: o.shift ?? p.shift, vary: p.vary };      // 跟随别的类别时，可变轴也跟随
+    return { font: p.font, size: ov?.size ?? o.size ?? p.size, shift: o.shift ?? p.shift, vary: p.vary };      // Following another class also follows its variation axes.
   }
   return { font: ownFontAt(o, ov, W, live), size: ov?.size ?? o.size ?? 100, shift: o.shift ?? 0, vary: o.vary || null };
 }
 export function resolveCls(id, W = BASE_W, live = false, depth = 0) { return resolveObj(id, state.classes[id], W, live, depth); }
 export const resolveCustom = (cu, W = BASE_W, live = false) => resolveObj('#' + state.custom.indexOf(cu), cu, W, live);
 export const objByKey = key => key[0] === '#' ? state.custom[+key.slice(1)] : state.classes[key];
-/* 表格里灰色显示的继承值 */
+/* Inherited values shown in grey in the table. */
 export function inheritedSize(key, W) {
   const o = objByKey(key);
   if (W !== BASE_W && o.size != null) return o.size;
@@ -880,7 +879,7 @@ export const ownSize = (key, W) => W === BASE_W ? objByKey(key).size : state.wOv
 export function setSizeAt(key, W, v) {
   if (W === BASE_W) { objByKey(key).size = v; return; }
   if (v != null) { ((state.wOver[W] ||= {})[key] ||= {}).size = v; return; }
-  const ov = state.wOver[W]?.[key]; if (!ov) return;      // 恢复继承：顺手删掉空的条目
+  const ov = state.wOver[W]?.[key]; if (!ov) return;      // Restore inheritance and remove empty override entries.
   delete ov.size;
   if (!Object.keys(ov).length) delete state.wOver[W][key];
   if (!Object.keys(state.wOver[W]).length) delete state.wOver[W];
@@ -899,8 +898,8 @@ export function settingOf(owner) {
 }
 export const anyShift = () => CLASSES.some(c => resolveCls(c.id).shift) || state.custom.some(cu => resolveCustom(cu).shift);
 
-/* 生成规则表：基础字体在最前（不限范围），类别按 (字体, 大小, 轴值) 合并，例外在最后。
-   ital：斜体那一组的规则（有斜体的类别换成斜体字体，没有的用正体，up = 保持正体） */
+/* Build the rule plan: unrestricted base font first, classes merged by (font, size, axes), then custom characters.
+   ital builds the italic plan: use italics where available, otherwise upright; up means keep upright. */
 export function buildPlan(W = BASE_W, live = false, ital = false) {
   const fin = r => ({ ...finalFont(r.font, r.vary, ital), size: r.size });
   const base = fin(resolveCls('han', W, live));
@@ -925,26 +924,26 @@ export function buildPlan(W = BASE_W, live = false, ital = false) {
   });
   return plan;
 }
-/* ================= 连续字重：按档位分段 =================
-   所有类别共用同一套分段，每段的 font-weight 都是同一个范围（描述不一致时 Chrome 的复合字体会失效）。
-   可变字体每段都用同一个可变字体文件，段内可以任意粗细；静态字体每段用最接近的那一档。
-   相邻两段所有类别都一样时合并：全是可变字体、大小也不随字重变化时，最后只剩一段。
-   只导出 state.wrange 里的粗细：页面用到范围以外的值时，浏览器按最接近的一段显示 */
+/* ================= Continuous weights: segments by step =================
+   All classes share identical font-weight ranges; inconsistent descriptors break composite fonts in Chrome.
+   Variable fonts reuse the same file in every segment and vary smoothly within it; static fonts use the nearest step per segment.
+   Merge adjacent segments when every class matches. All-variable fonts with weight-independent sizes therefore yield one segment.
+   Export only state.wrange; browsers resolve page weights outside it to the nearest segment. */
 export function contFont(f) {
   if (!f) return f;
   if (f.kind === 'google') {
     if (Array.isArray(vfAxisNow(f))) return { ...f, weight: 400, vf: true };
-    const aw = sources.get(fontKey(f))?.actualWeight;      // 没有这一档时实际取到的字重：相同的就能合并成一段
+    const aw = sources.get(fontKey(f))?.actualWeight;      // The weight actually returned when the requested step is unavailable; matching results can merge into one segment.
     return aw && aw !== f.weight ? { ...f, weight: aw } : f;
   }
   return f.axis ? { ...f, weight: undefined, cont: true } : f;
 }
-/* 这一档在连续模式里负责的粗细（和导出范围取交集）；不在范围里时为 null */
+/* This step's continuous weight interval, intersected with the export range; null when outside it. */
 export function stepSpan(W) {
   const [a, b] = state.wrange, lo = Math.max(a, W === 100 ? 100 : W - 49), hi = Math.min(b, W === 900 ? 900 : W + 50);
   return lo <= hi ? [lo, hi] : null;
 }
-export function buildSegments(live = false, skipBase = false) {      // skipBase：汉字基础字体用 @import 引用时，不参与分段
+export function buildSegments(live = false, skipBase = false) {      // skipBase excludes the Han base from segmentation when linked through @import.
   const segs = [];
   for (const W of WEIGHTS) {
     const span = stepSpan(W);
@@ -958,7 +957,7 @@ export function buildSegments(live = false, skipBase = false) {      // skipBase
   }
   return segs;
 }
-/* 用到的可变字体和各自的粗细范围：导出范围的「最大 / 共同」按钮由这些算出 */
+/* Used variable fonts and their weight ranges, which determine the export range's Widest / Common buttons. */
 export function vfAxes() {
   const m = new Map();
   for (const W of WEIGHTS) for (const p of buildPlan(W)) {
@@ -986,14 +985,14 @@ export function expandPlan(plan, live) {
   return out;
 }
 
-/* ================= 实时预览用的字体 ================= */
+/* ================= Live preview fonts ================= */
 export let gen = 0, liveFaces = [], liveFamily = '';
 export function loadText() {
   return (state.view.text.slice(0, 2500) + '国Hxg' + CLASSES.map(c => c.sample).join('') + state.custom.map(c => c.chars).join(''));
 }
 export async function rebuildNow() {
   const my = ++gen, W = state.view.weight, cont = state.wmode === 'cont';
-  /* 分档：只建当前这一档的规则；连续：建所有分段的规则，校样的粗细由滑块决定 */
+  /* Stepped mode builds only the current step; continuous mode builds every segment and lets the preview slider choose the weight. */
   const segs = cont ? buildSegments(true) : [{ lo: W, hi: W, plan: buildPlan(W, true), iplan: state.italic ? buildPlan(W, true, true) : null }];
   setBusy(T('loading'));
   await Promise.all(segs.flatMap(sg => [...sg.plan, ...(sg.iplan || [])].map(p => source(p.font).promise)));
@@ -1005,7 +1004,7 @@ export async function rebuildNow() {
     if (!pl) continue;
     for (const x of expandPlan(italFallback(pl), true)) {
       if (x.missing) continue;
-      /* 规则带上当前字重，校样也用这个字重：这样落到系统字体的字（比如日文字体里没有的简体字）也会跟着变粗细 */
+      /* Declare and preview the current weight so system fallback glyphs, such as Simplified Chinese missing from a Japanese font, follow the same weight. */
       const d = { display: 'swap', weight: sg.lo === sg.hi ? String(W) : `${sg.lo} ${sg.hi}`, style };
       const fvs = fvsOf(x.p, W, cont);
       if (fvs) d.variationSettings = fvs;
@@ -1013,32 +1012,32 @@ export async function rebuildNow() {
       if (x.p.size !== 100) d.sizeAdjust = `${x.p.size}%`;
       const ov = x.p !== pl[0] && overridesFor(x.p, sg.plan[0]);
       if (ov) Object.assign(d, { ascentOverride: ov.ascent, descentOverride: ov.descent, lineGapOverride: ov.lineGap });
-      try { faces.push(new FontFace(fam, x.face.buffer || x.face.src, d)); } catch (e) { /* 忽略无效的规则 */ }
+      try { faces.push(new FontFace(fam, x.face.buffer || x.face.src, d)); } catch (e) { /* Ignore invalid rules. */ }
     }
   }
   faces.forEach(f => document.fonts.add(f));
   const hanSrc = sources.get(fontKey(usedFont(resolveCls('han', state.view.weight, true))));
   const loads = [document.fonts.load(`32px "${fam}"`, loadText())];
   if (hanSrc?.status === 'ok') loads.push(document.fonts.load(`32px "${hanSrc.family}"`, '国Hx'));
-  try { await Promise.race([Promise.allSettled(loads), sleep(6000)]); } catch (e) { /* 部分字体加载失败时照常显示 */ }
+  try { await Promise.race([Promise.allSettled(loads), sleep(6000)]); } catch (e) { /* Keep displaying the preview when some fonts fail to load. */ }
   if (my !== gen) { faces.forEach(f => document.fonts.delete(f)); return; }
   const old = liveFaces;
   liveFaces = faces; liveFamily = fam;
   root.style.setProperty('--cf', `"${fam}"`);
-  requestAnimationFrame(fitGlyphs);      // 换了字体，类别表左边字样的宽度也变了
+  requestAnimationFrame(fitGlyphs);      // Changing fonts can change the class-table sample widths.
   root.style.setProperty('--fw', cont ? state.view.wcont : W);
   old.forEach(f => document.fonts.delete(f));
-  refreshVAutospace();      // 换了字体，换列的位置可能变了
+  refreshVAutospace();      // Changing fonts can change vertical column breaks.
   setBusy('');
   drawSpecimen();
   renderExport();
   checkMissSoon();
 }
 export const rebuild = debounce(rebuildNow, 70);
-/* ================= 行高度量 =================
-   合成字体的行高（line-height: normal）和基线在行框里的位置，取自负责空格的那条规则，也就是半角西文，而且是 size-adjust 放大之后的。
-   给基础字体以外的规则写上汉字基础字体的 ascent / descent / line gap，合成字体排起来就和汉字字体一样。
-   覆盖值还会再乘以 size-adjust，所以要先除掉。同一个 Google 字族各字重的度量相同，按字族记一次 */
+/* ================= Line metrics =================
+   A composite font's normal line height and baseline position come from the rule owning spaces: Western text, after size-adjust scaling.
+   Give non-base rules the Han base font's ascent, descent and line gap so the composite uses Han line metrics.
+   Overrides are multiplied by size-adjust, so divide them first. Google families share metrics across weights; cache once per family. */
 export const LM = new Map();
 export const lmKey = f => f.kind === 'google' ? 'g:' + f.family : fontKey(f);
 export const lmOn = () => state.lineMetrics !== 'off';
@@ -1049,11 +1048,11 @@ export async function ensureLineMetrics(f) {
   const s = source(f);
   await s.promise;
   if (s.status !== 'ok' || LM.has(key)) return LM.get(key) || null;
-  try { await document.fonts.load(`100px "${s.family}"`, '国'); } catch (e) { /* 照常测量 */ }
+  try { await document.fonts.load(`100px "${s.family}"`, '国'); } catch (e) { /* Measure normally. */ }
   const c = document.createElement('canvas').getContext('2d');
   c.font = `100px "${s.family}"`;
   const m = c.measureText('国'), a = m.fontBoundingBoxAscent / 100, d = m.fontBoundingBoxDescent / 100;
-  const el = document.createElement('div');      // 行距（line gap）：line-height: normal 的行高减去 ascent + descent
+  const el = document.createElement('div');      // Line gap: line-height: normal minus ascent + descent.
   el.style.cssText = `position:absolute;visibility:hidden;left:-9999px;white-space:nowrap;font:100px/normal "${s.family}"`;
   el.textContent = '国';
   document.body.append(el);
@@ -1063,14 +1062,14 @@ export async function ensureLineMetrics(f) {
   LM.set(key, lm);
   return lm;
 }
-/* 一条非基础规则要写的覆盖值；base 是这一组的汉字基础字体规则（它自己的大小也算进去） */
+/* Metric overrides for a non-base rule; base is this group's Han base rule, including its own size adjustment. */
 export function overridesFor(p, base) {
   const lm = lmOn() && p.range && base?.font && LM.get(lmKey(base.font));
   if (!lm) return null;
   const k = (base.size || 100) / p.size, f = x => `${+(x * 100 * k).toFixed(2)}%`;
   return { ascent: f(lm.a), descent: f(lm.d), lineGap: f(lm.g) };
 }
-/* 斜体文件加载失败（例如 Google 上这个粗细没有斜体）时，这一条改用正体 */
+/* If an italic file fails to load, for example an unavailable Google weight, use upright for that rule. */
 export function italFallback(pl) {
   return pl.map(p => p.font?.kind === 'google' && p.font.ital && sources.get(fontKey(p.font))?.status === 'error'
     ? { ...p, font: (({ ital, ...rest }) => rest)(p.font), up: true } : p);

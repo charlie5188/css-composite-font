@@ -77,7 +77,7 @@ test('没有压缩 API 时仍可还原；文件只分享元数据，导入后明
     return (await import('./assets/js/share.js')).shareSnapshot();
   });
   const link = await createLink(page); expect(link).toContain('#share=1j.');
-  await page.reload(); // 接收方没有发送者内存中的字体二进制。
+  await page.reload(); // The recipient does not have the sender's in-memory font binaries.
   await page.goto(link);
   await expect(page.locator('#toast')).toContainText('缺失字体');
   expect(await config(page)).toEqual(before);

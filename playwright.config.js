@@ -1,10 +1,10 @@
-// 浏览器测试：在本地起一个静态服务器（和 GitHub Pages 一样，没有构建步骤），用 Chromium 打开 index.html。
-// 默认和 CI 使用同一个 Chromium，避免本机新版 Chrome 的功能掩盖兼容问题；PW_CHANNEL=chrome 可额外验证本机浏览器。
+// Browser tests: start a local static server (like GitHub Pages, with no build step) and open index.html in Chromium.
+// Use the same Chromium locally and in CI so newer Chrome features do not hide compatibility issues; PW_CHANNEL=chrome enables an additional local-browser check.
 const { defineConfig } = require('@playwright/test');
 module.exports = defineConfig({
   testDir: 'tests/e2e',
   timeout: 60_000,
-  workers: 1,      // 字体导出会占满 CPU，并行时别的页面会加载超时
+  workers: 1,      // Font export saturates the CPU; parallel pages may time out while loading.
   expect: { timeout: 20_000 },
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? 'github' : 'list',

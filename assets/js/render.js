@@ -2,19 +2,19 @@ import { $, T, UI, debounce, esc, root, tr } from './i18n.js';
 import { CLASSES, CLS, GROUPS, classOf, fmtRanges, inRanges, isMoved } from './unicode.js';
 import { BASE_W, EA_FEAT, autoNames, clampW, defaultFontWeight, contFont, stepSpan, NUM_FEAT, NUM_TAGS, SAMPLES, TYPO, WEIGHTS, anyShift, axesOf, axisLabel, axisOf, finalFont, fontAtWeight, fontKey, gfWeights, weightChain, fontLabel, inheritedShift, inheritedSize, liveFamily, numLabel, numTags, objByKey, ownFontAt, ownSize, ownerOf, resolveCls, resolveCustom, settingOf, sources, srcError, state, typoValue, usedFont, vfAxisNow } from './core.js';
 import { LIMITS, loadBlank, missingIn, renderTypoStatus, renderCurrentPreset, syncViewTypo } from './ui.js';
-/* ================= 渲染：字符类别表（对应 InDesign 的复合字体对话框） ================= */
+/* ================= Render: character-class table (InDesign composite-font dialog) ================= */
 export const GLYPH = { han: '永', latin: 'Ag', digit: '01', kana: 'あ', bopo: 'ㄅ', punct: '」、', symbol: '※', shared: '“…' };
-/* 表格的显示顺序：基础字体，然后是西文一侧（西文、数字、中西共用标点），再是汉字一侧（假名、全角标点、全角符号、注音），
-   每一侧按常调整的程度排。只是显示顺序：导出的规则仍按 CLASSES 的顺序 */
+/* Display the base font first, then Western-side classes (Western, digits, shared punctuation), then Han-side classes (kana, full-width punctuation/symbols, Zhuyin).
+   Order each side by likely adjustment frequency. This is display order only; exported rules still follow CLASSES. */
 export const CLASS_ORDER = ['han', 'latin', 'digit', 'shared', 'kana', 'punct', 'symbol', 'bopo'];
 const clsRank = id => { const i = CLASS_ORDER.indexOf(id); return i < 0 ? CLASS_ORDER.length : i; };
 export const visibleClasses = () => [...CLASSES].sort((a, b) => clsRank(a.id) - clsRank(b.id));
 export const shortName = f => !f ? '' : f.kind === 'google' ? f.family : f.kind === 'local' ? f.name : f.kind === 'path' ? f.path : f.fileName;
 export const keyName = key => key[0] === '#' ? T('customName', { c: state.custom[+key.slice(1)]?.chars || '…' }) : tr(CLS[key].name);
-/* 这里显示字体可用的粗细，不是当前预览值或导出范围。只使用已知数据，不把缺失信息当成 100–900。 */
+/* Show the font's available weights, not the preview value or export range. Use known data only; missing metadata does not imply 100-900. */
 function fontWeightInfo(f) {
   if (!f) return null;
-  /* 本机字体手动勾选 VF 时的 100–900 只是编辑默认范围，不当作从文件读取的真实范围。 */
+  /* The 100-900 range from manually enabling local VF mode is an editing default, not a range read from the font file. */
   if (f.axesUnknown || (f.kind === 'local' && f.axis && !f.axes?.some(a => a[0] === 'wght'))) return { label: T('fontWeightUnknownLabel'), tip: T('fontWeightUnknown') };
   const axis = vfAxisNow(f), variable = Array.isArray(axis) || axesOf(f).length > 0;
   if (Array.isArray(axis)) return { label: T('fontWeightContinuous'), range: `${axis[0]}–${axis[1]}`, tip: T('fontWeightContinuousHint', { a: axis[0], b: axis[1] }) };
@@ -25,11 +25,11 @@ function fontWeightInfo(f) {
   }
   return variable ? { label: T('fontWeightUnknownLabel'), tip: T('fontWeightUnknown') } : null;
 }
-/* 范围作为一组换行，窄屏不能把「400–800」拆成两半。 */
+/* Keep each range together when wrapping; narrow layouts must not split '400-800'. */
 const fontMetaLabel = info => `<span>${esc(info.label)}</span>${info.range ? ` <span class="ct-font-range">${esc(info.range)}</span>` : ''}`;
 const fontMetaId = key => `fontMeta-${key[0] === '#' ? 'custom-' + key.slice(1) : key}`;
 const fontStatusText = s => s?.status === 'error' ? T('stError', { reason: srcError(s) }) : T(s?.status === 'ok' ? 'stOk' : 'stLoading');
-/* 连续模式实际加载整条可变字重轴，不能等待未请求的单一字重。轴信息刚到时，沿用已在用的来源。 */
+/* Continuous mode loads the full variable weight axis; do not wait for an individual weight that was never requested. Reuse the active source while axis metadata arrives. */
 function classFontSource(key, o) {
   if (!o?.font || o.follow) return { key: '', s: null };
   const W = state.view.weight;
@@ -39,8 +39,8 @@ function classFontSource(key, o) {
   const sourceKey = sources.has(currentKey) || !sources.has(previousKey) ? currentKey : previousKey;
   return { key: sourceKey, s: sources.get(sourceKey) };
 }
-/* 表格里是基础设定：400 用的字体，其他字重从它推算。按字重的粗细、单独换的字体在「各字重」里。
-   状态点看校样正在用的那个字体（当前预览的字重） */
+/* The table edits base settings at 400, from which other weights are derived. Per-weight adjustments and replacements live in Weights.
+   Status dots reflect the font actually used at the current preview weight. */
 export function fontCell(key, o, isHan, allowLatin) {
   const opts = [];
   if (!isHan) {
@@ -57,7 +57,7 @@ export function fontCell(key, o, isHan, allowLatin) {
     opts.map(([v, l]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${esc(l)}</option>`).join('') + '</select></span>' +
     `<small class="ct-font-meta hint" id="${metaId}"${info ? ` title="${esc(info.tip)}" aria-label="${esc(info.tip)}"` : ' hidden'}>${info ? fontMetaLabel(info) : ''}</small>`;
 }
-/* 轴检测可能在输入框聚焦时完成；只更新说明，避免重建下拉框、打断用户操作。 */
+/* Axis detection may finish while the field is focused. Update only the description, preserving the select and the user's interaction. */
 function syncFontMeta() {
   document.querySelectorAll('#editor .ct-row[data-id], #editor .ct-row[data-ci]').forEach(row => {
     const key = row.dataset.id || '#' + row.dataset.ci, o = objByKey(key);
@@ -72,7 +72,7 @@ function syncFontMeta() {
     } else sel.removeAttribute('aria-describedby');
   });
 }
-/* 箭头独占固定宽度，显示与隐藏都不挤动数字；键盘仍在输入框内用 ↑↓，避免表格增加大量 Tab 停靠点。 */
+/* Reserve a fixed arrow gutter so showing controls does not shift numbers. Keep keyboard arrows in the field to avoid excessive table tab stops. */
 function stepperCell(control, label) {
   return `<span class="cell-step">${control}<span class="cell-step-actions">${['up', 'down'].map(dir => {
     const text = esc(T(dir === 'up' ? 'stepIncrease' : 'stepDecrease', { field: label }));
@@ -88,7 +88,7 @@ export function numCell(field, key) {
   const label = T(field === 'size' ? 'sizeAria' : 'shiftAria', { c: keyName(key) });
   return stepperCell(`<input class="num cell-in cell-num${cls}" type="number" min="${lo}" max="${hi}" step="0.5" inputmode="decimal" autocomplete="off" data-field="${field}" value="${own ?? ''}" placeholder="${inh}" aria-label="${esc(label)}">`, label);
 }
-/* 调过的可变轴：写在这一行下面，例如「宽度 80 · 光学尺寸 跟随字号」 */
+/* Show adjusted axes below the row, for example width 80 and optical size following font size. */
 export function axRow(key, o) {
   if (o.follow || !o.vary) return '';
   const f = ownFontAt(o, null, BASE_W, true);
@@ -100,14 +100,14 @@ export function errRow(key, o) {
   const W = state.view.weight, f = ownFontAt(o, W !== BASE_W ? state.wOver[W]?.[key] : null, W, true);
   const { s } = classFontSource(key, o);
   if (s?.status === 'error') return `<span class="ct-err">${esc(srcError(s))}</span>`;
-  /* CJK 字体（Google 上切成上百个分片）用了非整百的粗细，就会加载可变版本：每个分片约为静态的 1.9 倍 */
+  /* CJK Google fonts have hundreds of subsets. Non-hundred weights load the variable version, with each subset about 1.9 times the static size. */
   if (f.kind === 'google' && f.weight % 100 && s?.status === 'ok' && s.faces.length > 30) return `<span class="callout ct-note">${esc(T('vfCjkCost'))}</span>`;
   return '';
 }
-/* ================= 地区检查：字形和标点位置是不是当前语言的写法 ================= */
+/* ================= Regional checks: glyph forms and punctuation position for the current language ================= */
 export const REGION_OF_LANG = { 'zh-Hans': 'sc', 'zh-Hant-TW': 'tw', 'zh-Hant-HK': 'hk', ja: 'jp', ko: 'kr' };
-export const PUNCT_CENTER = { sc: false, jp: false, tw: true, hk: true };      // 大陆、日本的标点靠左下，台湾、香港居中
-/* 字形的地区只能看字族名：Google 的 SC / TC / HK / JP / KR 后缀和常见系统字体的名字 */
+export const PUNCT_CENTER = { sc: false, jp: false, tw: true, hk: true };      // Mainland Chinese and Japanese punctuation sits at the lower left; Taiwan and Hong Kong punctuation is centered.
+/* Infer glyph region from family names: Google SC / TC / HK / JP / KR suffixes and common system font names. */
 export function formsOf(f) {
   const n = f?.family || f?.name || '';
   if (/\b(SC|GB)\b|YaHei|PingFang SC|Songti SC|STSong|SimSun|STHeiti/.test(n)) return 'sc';
@@ -117,8 +117,8 @@ export function formsOf(f) {
   if (/\bKR\b|Apple SD Gothic|Malgun/.test(n)) return 'kr';
   return null;
 }
-/* 标点位置要量：「，」的墨迹重心在字身里的位置。一个文件含多个地区字形的字体（思源、Noto CJK）会按 lang 切换，所以带上语言量 */
-export const punctMemo = new Map();      // 「字体|语言」→ 'center' | 'corner' | null；undefined = 测量中
+/* Measure the full-width comma's ink centroid within its body. Fonts containing multiple regional forms (Source Han, Noto CJK) switch by lang, so measure with the language set. */
+export const punctMemo = new Map();      // 'font|language' -> 'center' | 'corner' | null; undefined = measuring.
 export const regionChanged = debounce(() => { renderEditor(); renderLangWarn(); }, 80);
 export function punctPos(s, lang) {
   const k = s.family + '|' + lang;
@@ -128,7 +128,7 @@ export function punctPos(s, lang) {
     const c = document.createElement('canvas'); c.width = 140; c.height = 150;
     const x = c.getContext('2d');
     if ('lang' in x) x.lang = lang;
-    x.font = `100px "${s.family}", "__cf_blank"`;      // 字体里没有「，」时落到空白字体上，量不到墨迹
+    x.font = `100px "${s.family}", "__cf_blank"`;      // A missing full-width comma falls back to the blank font and yields no ink.
     const fm = x.measureText('，'), top = 110 - fm.fontBoundingBoxAscent, h = fm.fontBoundingBoxAscent + fm.fontBoundingBoxDescent;
     x.fillText('，', 10, 110);
     const d = x.getImageData(0, 0, 140, 150).data; let sx = 0, sy = 0, n = 0;
@@ -138,7 +138,7 @@ export function punctPos(s, lang) {
   }, () => punctMemo.set(k, null));
   return undefined;
 }
-/* 某个语言下，汉字字体的字形、全角标点字体的标点位置对不对 */
+/* Check the Han glyph region and full-width punctuation position for a language. */
 export const langName = lang => tr(TYPO.find(t => t.key === 'lang').values.find(([v]) => v === lang)?.[1]) || lang;
 export function regionCheck(lang) {
   const want = REGION_OF_LANG[lang], out = {};
@@ -152,7 +152,7 @@ export function regionCheck(lang) {
   }
   return out;
 }
-/* 类别表：按校样的语言检查（汉字那一行看字形，全角标点那一行看标点位置） */
+/* Check class rows against the proof language: glyph forms in the Han row, punctuation position in the punctuation row. */
 export function regionRow(key) {
   if (key !== 'han' && key !== 'punct') return '';
   const lang = state.typo.lang, c = regionCheck(lang);
@@ -160,7 +160,7 @@ export function regionRow(key) {
   if (key === 'punct' && c.punct) return `<span class="callout ct-note">${esc(T(c.punct.pos === 'center' ? 'regPunctCenter' : 'regPunctCorner', { lang: langName(lang) }))}</span>`;
   return '';
 }
-/* 导出区：按适用语言检查，写在「适用语言」下面 */
+/* Check export against its language scope; show the result below the language field. */
 export function renderLangWarn() {
   const el = $('#exLangWarn'), lang = state.scope, c = lang ? regionCheck(lang) : {}, list = [];
   if (c.forms) list.push(T('exRegForms', { font: shortName(c.forms.font), got: T('reg_' + c.forms.got) }));
@@ -169,12 +169,12 @@ export function renderLangWarn() {
   if (list.length) el.textContent = T('exRegWarn', { lang: langName(lang), list: list.join(T('joiner')) });
 }
 export function renderEditor() { renderClassRows(); renderWeights(); }
-/* 类别表左边的字样：两个全角标点、放大后的西文可能比格子宽。先用 halt 把标点挤成半角（见 CSS，字体有这个特性时），
-   还放不下就只缩小这一格的字号（等比，不压扁）；左右各可以伸出 4px（左边是窗格留白，右边是格间距的一半） */
+/* Class samples may exceed their cells, especially two full-width marks or enlarged Western text. Use halt to narrow punctuation where supported (see CSS).
+   If still too wide, reduce only this sample's font size proportionally, without distortion. Allow 4px overflow on each side: pane padding on the left, half the gap on the right. */
 export function fitGlyphs() {
   for (const el of document.querySelectorAll('#classRows .ct-glyph')) {
     el.style.fontSize = '';
-    if (!el.clientWidth) continue;      // 页签没打开、窄屏隐藏：显示时再量
+    if (!el.clientWidth) continue;      // Tab closed or pane hidden on narrow screens: measure when shown.
     const r = document.createRange(); r.selectNodeContents(el);
     const w = r.getBoundingClientRect().width, room = el.clientWidth + 8;
     if (w > room) el.style.fontSize = Math.max(14, Math.floor(parseFloat(getComputedStyle(el).fontSize) * room / w)) + 'px';
@@ -196,7 +196,7 @@ export function renderClassRows() {
       ${numCell('size', c.id)}${numCell('shift', c.id)}<span></span>${axRow(c.id, o)}${errRow(c.id, o)}${regionRow(c.id)}
     </div>`;
   }).join('');
-  renderNumHint(); renderEaMarks();      // 字体加载完以后重新检查数字、东亚字形的特性
+  renderNumHint(); renderEaMarks();      // Recheck numeric and East Asian features after fonts load.
   $('#customRows').innerHTML = state.custom.length ? state.custom.map((cu, i) => `<div class="ct-row" data-ci="${i}">
       <input class="chars" type="text" value="${esc(cu.chars)}" placeholder="${esc(T('customPh'))}" aria-label="${esc(T('custom'))}" spellcheck="false">
       <span class="ct-font">${fontCell('#' + i, cu, false, true)}</span>
@@ -206,14 +206,14 @@ export function renderClassRows() {
     : '';
   fitGlyphs();
 }
-/* ================= 各字重：每个字重的粗细和大小 =================
-   行是字重（分档：勾选导出；连续：滑杆选范围，范围外的行仍显示），列是有自己字体的类别。
-   400 这一行就是上面表格的基础设定；其他字重灰色的是按 400 推算或沿用的值，自己填的是蓝色。点已勾选行的空白或字重可预览，不改变导出选择。 */
+/* ================= Weights: size and weight per step =================
+   Rows are weights: check exports in stepped mode, select a range with the slider in continuous mode, retaining inactive rows. Columns are classes with their own fonts.
+   The 400 row edits base settings. Grey values are derived or inherited; blue values are explicit. Click a selected row's blank space or weight to preview without changing exports. */
 export function wKeys() {
   const own = o => o && !o.follow && o.font, keys = ['han'];
   for (const c of visibleClasses()) if (c.id !== 'han' && own(state.classes[c.id])) keys.push(c.id);
   state.custom.forEach((cu, i) => { if (own(cu)) keys.push('#' + i); });
-  /* 跟随别的类别、但在某个字重单独调过大小的，也列出来，免得设定看不到 */
+  /* Also show followed classes with per-weight size overrides so those settings remain visible. */
   for (const W of WEIGHTS) for (const [k, ov] of Object.entries(state.wOver[W] || {})) if (!keys.includes(k) && ov.size != null && objByKey(k)) keys.push(k);
   return keys;
 }
@@ -223,13 +223,13 @@ export const wColumnAdjusted = key => {
   return o.size != null || o.shift != null || (!o.follow && weight != null && (o.font.weight || BASE_W) !== weight) ||
     Object.entries(state.wOver).some(([W, row]) => +W !== BASE_W && Object.keys(row[key] || {}).length);
 };
-/* 名称只写和 400 不同的那一段：「Hiragino Mincho ProN W6」→「…W6」 */
+/* Show only the name suffix that differs from 400: 'Hiragino Mincho ProN W6' becomes '...W6'. */
 export function nameTail(base, name) {
   const bw = base.split(/(?=[ _-])/), nw = name.split(/(?=[ _-])/);
   let i = 0; while (i < nw.length - 1 && bw[i] === nw[i]) i++;
   return i ? '…' + nw.slice(i).join('').replace(/^[ _-]/, '') : name;
 }
-/* 某一格的粗细：kind = vf（任意值）/ gsel（Google 静态字体选一档）/ name（本机字体、文件的名称）；val 是自己设定的值，auto 是推算的值 */
+/* Weight cell kind: vf = arbitrary value, gsel = static Google step, name = local/uploaded font name. val is explicit; auto is derived. */
 export function wInfo(k, o, W) {
   const base = W === BASE_W, ov = base ? null : state.wOver[W]?.[k], eff = ov?.font || o.font, axis = vfAxisNow(eff);
   if (Array.isArray(axis)) {
@@ -239,14 +239,14 @@ export function wInfo(k, o, W) {
   if (eff.kind === 'google') {
     const autoF = fontAtWeight(o.font, W), val = base ? eff.weight : ov?.font ? ov.font.weight : (ov?.weight || 0);
     const avail = gfWeights(eff.family);
-    /* 推算值：字体加载完以后用实际取到的字重；还没加载时按加载的规则（向 400 方向找最近的、这个字体有的字重）先算出来 */
+    /* After loading, derive from the actual returned weight; beforehand, use the loading rule's nearest available weight toward 400. */
     const auto = sources.get(fontKey(autoF))?.actualWeight || (avail && weightChain(Math.round(autoF.weight / 100) * 100).find(w => avail.includes(w))) || autoF.weight;
     return { kind: 'gsel', ov, val, set: !base && !!val, auto, noAuto: base || !!ov?.font, avail: avail || WEIGHTS };
   }
   const f = base ? o.font : ov?.font || fontAtWeight(o.font, W), set = !base && (!!ov?.font || (fontKey(o.font) + '|' + W) in state.weightNames);
   return { kind: 'name', ov, name: shortName(f), set, guess: !base && !set && o.font.kind === 'local' && autoNames.get(fontKey(o.font) + '|' + W)?.status === 'guess' };
 }
-/* Google 静态字体的粗细：只列这个字体真有的字重。和「大小」一样，灰色是推算的值，蓝色是单独设定的；选回推算的那一档就是不单独设定 */
+/* Static Google weights list only actual steps. As with size, grey is derived and blue is explicit; choosing the derived step clears the override. */
 function wOptions(i) {
   const cur = i.val || i.auto, list = [...new Set([...i.avail, cur])].sort((a, b) => a - b);
   return list.map(w => `<option value="${w}"${w === cur ? ' selected' : ''}>${w}</option>`).join('');
@@ -271,13 +271,13 @@ export function renderWeights() {
   const cont = state.wmode === 'cont', PW = state.view.weight, box = $('#wMatrix');
   const cols = wKeys().map(k => { const o = objByKey(k), own = !o.follow && !!o.font, vf = own && Array.isArray(vfAxisNow(o.font)); return { k, o, vf, w: own && !(cont && vf) }; });
   const rows = WEIGHTS;
-  const sizeOnly = cont && cols.every(c => !c.w);      // 静态字体在连续模式下仍可逐档调整粗细，保留两级表头。
-  const n = cols.reduce((a, c) => a + (c.w ? 2 : 1), 0), lead = 2;      // 导出选择 + 字重；连续模式用纵向范围滑杆。
-  /* 给数字和步进按钮分别留位置；小数不能被箭头挤掉。最后一列是行菜单。 */
+  const sizeOnly = cont && cols.every(c => !c.w);      // Static fonts still allow per-step weight adjustment in continuous mode; keep the two header levels.
+  const n = cols.reduce((a, c) => a + (c.w ? 2 : 1), 0), lead = 2;      // Export selection + weight; continuous mode uses a vertical range slider.
+  /* Reserve separate space for numbers and steppers so arrows cannot crowd decimals. The final column holds row actions. */
   const tracks = cols.map(c => `${c.w ? 'minmax(64px, 1fr) ' : ''}minmax(72px, 1fr)`).join(' ');
   box.classList.toggle('wm-cont', cont);
   box.style.setProperty('--wm-cols', `${cont ? '40px' : 'max-content'} 70px ${tracks} 28px`);
-  /* 重画以后把焦点放回原来那一格（勾选导出、字体加载完重画时） */
+  /* Restore the focused cell after redraws caused by export checks or font loading. */
   const act = $('#wRows').contains(document.activeElement) ? document.activeElement : null;
   const keep = act && (act.classList[0] ? '.' + CSS.escape(act.classList[0]) : act.tagName.toLowerCase()) + ['k', 'w', 'wx', 'pw', 'wreset'].filter(a => act.dataset[a] != null).map(a => `[data-${a}="${CSS.escape(act.dataset[a])}"]`).join('');
   const clsHead = `<div class="wm-row wm-cls${sizeOnly ? ' wm-single' : ''}">${sizeOnly ? `<span class="wm-wh">${esc(T('wColExport'))}</span><span class="wm-wh">${esc(T('wColWeight'))}</span>` : '<span></span>'.repeat(lead)}${cols.map(c => `<span style="grid-column:span ${c.w ? 2 : 1};--c:var(--c-${c.k[0] === '#' ? 'custom' : c.k})"><i class="dot"></i><span class="wm-clabel" title="${esc(sizeOnly ? T('wClassSize', { c: keyName(c.k) }) : keyName(c.k))}">${esc(sizeOnly ? T('wClassSize', { c: keyName(c.k) }) : keyName(c.k))}</span><button type="button" class="btn-icon sm" data-wreset="${esc(c.k)}"${wColumnAdjusted(c.k) ? '' : ' disabled'} title="${esc(T('wColumnReset', { c: keyName(c.k) }))}" aria-label="${esc(T('wColumnReset', { c: keyName(c.k) }))}"><svg class="ic" aria-hidden="true"><use href="#i-restore"/></svg></button></span>`).join('')}<span></span></div>`;
@@ -297,12 +297,12 @@ export function renderWeights() {
   const range = $('#wRange');
   range.hidden = !cont;
   range.style.gridRow = `${bodyStart} / span ${rows.length}`;
-  // 范围控件不随表格重建，字体异步加载时也不会中断指针捕获。
+  // Keep the range control mounted across table rebuilds so asynchronous font loading cannot interrupt pointer capture.
   if (cont) syncWeightRange(range.dataset.draft ? JSON.parse(range.dataset.draft) : state.wrange);
   if (keep) box.querySelector(keep)?.focus({ preventScroll: true });
   $('#wReset').hidden = !wAnyAdjusted();
 }
-/* 拖动只预览选择范围，松手才提交设置：一次拖动可以一次撤销，不改动范围外已保存的调整。 */
+/* Dragging previews the selected range; release commits it as one undoable change, preserving saved adjustments outside the range. */
 export function syncWeightRange([lo, hi] = state.wrange) {
   const range = $('#wRange');
   range.style.setProperty('--range-start', `${(lo - 100) / 8}%`);
@@ -322,7 +322,7 @@ export function syncWeightRange([lo, hi] = state.wrange) {
     if (cur) row.setAttribute('aria-current', 'true'); else row.removeAttribute('aria-current');
   });
 }
-/* 改了数值以后就地更新各格（不重建表格，保持输入焦点和键盘连续调整） */
+/* Update cells in place after value changes, preserving input focus and repeated keyboard adjustments. */
 export function syncMatrix() {
   const act = document.activeElement;
   document.querySelectorAll('#wMatrix [data-k][data-w]').forEach(el => {
@@ -340,7 +340,7 @@ export function syncMatrix() {
       el.placeholder = i.auto; if (el !== act) el.value = i.val ?? '';
       el.classList.toggle('set', i.set);
     } else if (el.classList.contains('msel') && i.kind === 'gsel') {
-      el.innerHTML = wOptions(i);      // 推算的那一档可能变了（字体加载完才知道实际字重）
+      el.innerHTML = wOptions(i);      // The derived step may change once the actual font weight is known.
       if (i.noAuto) { delete el.dataset.auto; delete el.dataset.tip; } else { el.dataset.auto = i.auto; el.dataset.tip = wSelTip(i); }
       el.classList.toggle('set', i.set);
     }
@@ -348,42 +348,42 @@ export function syncMatrix() {
   $('#wReset').hidden = !wAnyAdjusted();
   document.querySelectorAll('#wMatrix [data-wreset]').forEach(b => { b.disabled = !wColumnAdjusted(b.dataset.wreset); });
 }
-/* 只换高亮的那一行（编辑某一行时预览跟过去，不重画表格，保持输入焦点） */
+/* Only change row highlighting when editing follows a weight; do not rebuild the table or lose field focus. */
 export function markPreviewRow() {
   const PW = state.view.weight;
   document.querySelectorAll('#wMatrix [data-row]').forEach(r => { const c = +r.dataset.row === PW; r.classList.toggle('cur', c); if (c) r.setAttribute('aria-current', 'true'); else r.removeAttribute('aria-current'); });
 }
-/* 直排 + 中西间距：Chrome 在元素边界上加 1/8 em 时，会把边界后面的字画到前面去（叠字）。
-   所以直排时 span 自己不加间距，边界上该加的 1/8 em 改用 margin 补上（汉字假名和字母数字之间才加）。
-   和浏览器自己的中西间距一样，换列的地方（列首、列尾）不加：排好以后量一下边界两边的字在不在同一列。
-   去掉一处 margin 可能让后面换列的位置变了，所以再量一遍；去掉过的不再加回，免得来回跳 */
+/* Vertical text with mixed-script spacing: Chrome's 1/8-em spacing at element boundaries can place the following glyph over the preceding one.
+   Disable spacing inside spans in vertical mode and supply boundary margins only between Han/kana and letters/digits.
+   Like native autospace, omit spacing at column breaks: measure after layout to check whether neighboring glyphs share a column.
+   Removing a margin can move later breaks, so measure again; never restore a removed margin within this pass, avoiding oscillation. */
 export const IDEO_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Bopomofo}]/u, ALNUM_RE = /[\p{L}\p{N}]/u;
 export function vAutospace(pt) {
   const kind = ch => !ch ? 0 : IDEO_RE.test(ch) ? 1 : ALNUM_RE.test(ch) ? 2 : 0;
   const gap = (a, b) => !!(kind(a) && kind(b) && kind(a) !== kind(b));
   const nodes = [...pt.childNodes], first = n => [...(n?.textContent || '')][0], last = n => [...(n?.textContent || '')].pop();
-  const edges = [];      // [span, 'marginInlineStart' | 'marginInlineEnd', 边界前的节点, 边界后的节点]
+  const edges = [];      // [span, 'marginInlineStart' | 'marginInlineEnd', preceding node, following node]
   nodes.forEach((n, i) => {
     if (n.nodeType !== 1) return;
     n.style.textAutospace = 'no-autospace';
     n.style.marginInlineStart = n.style.marginInlineEnd = '';
-    if (nodes[i - 1]?.nodeType === 3 && gap(last(nodes[i - 1]), first(n))) edges.push([n, 'marginInlineStart', nodes[i - 1], n]);      // 前面是 span 时由它的 margin-inline-end 负责，不重复加
+    if (nodes[i - 1]?.nodeType === 3 && gap(last(nodes[i - 1]), first(n))) edges.push([n, 'marginInlineStart', nodes[i - 1], n]);      // A preceding span owns margin-inline-end; do not add the same gap twice.
     if (gap(last(n), first(nodes[i + 1]))) edges.push([n, 'marginInlineEnd', n, nodes[i + 1]]);
   });
   if (!edges.length) return;
-  const charRect = (node, atEnd) => {      // 节点里第一个（或最后一个）字的位置
+  const charRect = (node, atEnd) => {      // Position of the node's first or last character.
     const t = node.nodeType === 3 ? node : node.firstChild, s = t.data, c = atEnd ? [...s].pop() : [...s][0], r = document.createRange();
     r.setStart(t, atEnd ? s.length - c.length : 0); r.setEnd(t, atEnd ? s.length : c.length);
     return r.getBoundingClientRect();
   };
   const sameCol = (a, b) => {
     const ra = charRect(a, true), rb = charRect(b, false);
-    if (!ra.width || !rb.width) return true;      // 还没排版（校样不可见）：照常加
+    if (!ra.width || !rb.width) return true;      // No layout yet because the proof is hidden: add spacing normally.
     return Math.abs(ra.left + ra.width / 2 - rb.left - rb.width / 2) < ra.width / 2;
   };
   const dropped = new Set();
   for (let k = 0; k < 4; k++) {
-    const want = edges.map((e, j) => !dropped.has(j) && sameCol(e[2], e[3]));      // 先全部量完再改，只排一次版
+    const want = edges.map((e, j) => !dropped.has(j) && sameCol(e[2], e[3]));      // Measure everything before changing margins, requiring only one layout.
     let changed = false;
     edges.forEach(([el, side], j) => {
       if (!want[j] && el.style[side]) dropped.add(j);
@@ -393,12 +393,12 @@ export function vAutospace(pt) {
     if (!changed) break;
   }
 }
-/* 换列的位置会随字体加载、校样高度变化：重新量一遍 */
+/* Font loading and proof height can move column breaks; measure again. */
 export function refreshVAutospace() {
   const pt = $('#proofText');
   if (state.view.vertical && state.typo.autospace !== 'no-autospace' && pt.firstElementChild) vAutospace(pt);
 }
-/* 齿轮弹出的分组开关：打开 = 留在本类别，关闭 = 改由半角西文显示 */
+/* Gear-menu group toggles: on keeps the characters in this class; off delegates them to Western text. */
 export function renderGroups() {
   const pop = $('#grpPop'), id = pop.dataset.cls; if (!id || !GROUPS[id]) return;
   const name = tr(CLS[id].name);
@@ -408,9 +408,9 @@ export function renderGroups() {
       <button type="button" class="sw" role="switch" data-g="${id}.${g.id}" aria-checked="${!isMoved(id, g)}" aria-label="${esc(tr(g.name))}"></button></div>`).join('') +
     (GROUPS[id].some(g => isMoved(id, g)) ? `<div class="gp-foot"><button type="button" class="btn-text" data-act="gpreset">${esc(T('gpReset'))}</button></div>` : '');
 }
-/* ================= 数字样式 =================
-   在这个字体里有没有效果：每个特性单独加上画一遍 0–9，和不加时逐像素比较。一样 = 字体没有这个特性，或者本来就是这样
-   （例如默认就是等高数字时，选「等高」不会有变化）。Google Fonts 的网页字体删掉了大部分特性，onum、zero 都没有 */
+/* ================= Numeric styles =================
+   Test each feature by drawing 0-9 with and without it and comparing pixels. Identical output means unsupported or already the default,
+   such as selecting lining figures in a font with lining defaults. Google web fonts remove most features, including onum and zero. */
 export let numSeq = 0;
 export function digitFx() {
   const f = usedFont(resolveCls('digit', state.view.weight, true)), s = f && sources.get(fontKey(f));
@@ -418,8 +418,8 @@ export function digitFx() {
   const fx = numFx(f);
   return { f, fx, checking: !fx && featCache.get(fontKey(f) + '|0123456789') === 'pending' };
 }
-/* 字体有没有某些 OpenType 特性：每个特性单独加上把 text 画一遍，和不加时逐像素比较（一样 = 没有效果）。
-   extra(ctx, 基准字族名) 可以顺便量别的东西。结果按「字体 + 文字」缓存，测完调用 done */
+/* Detect OpenType effects by drawing text with each feature separately and comparing against the default pixel by pixel. Identical output means no effect.
+   extra(ctx, baseFamily) can collect other measurements. Cache by font + text and call done after measurement. */
 export const featCache = new Map();
 export function featFx(f, text, tags, done, extra) {
   const s = f && sources.get(fontKey(f));
@@ -435,13 +435,13 @@ export function featFx(f, text, tags, done, extra) {
         try {
           const d = { ...(fc.range ? { unicodeRange: fmtRanges(fc.range) } : {}), ...(tag ? { featureSettings: `"${tag}"` } : {}) };
           const ff = new FontFace(id + tag, fc.buffer || fc.src, d); document.fonts.add(ff); all.push(ff);
-        } catch (e) { /* 忽略 */ }
+        } catch (e) { /* Ignore. */ }
       }
       return id + tag;
     };
     const names = ['', ...tags].map(fam);
     await Promise.allSettled(all.map(ff => ff.load()));
-    let out = { unknown: true };      // 加载失败：不标注
+    let out = { unknown: true };      // Loading failed: omit the annotation.
     if (all.length && all.every(ff => ff.status === 'loaded')) {
       const cv = document.createElement('canvas'); cv.width = 720; cv.height = 80;
       const ctx = cv.getContext('2d', { willReadFrequently: true });
@@ -456,21 +456,21 @@ export function featFx(f, text, tags, done, extra) {
   })();
   return null;
 }
-/* 数字：默认的数字也量出来——0 的高度更接近 x 高 = 旧式；1 和 0 一样宽 = 等宽 */
+/* Measure default digits too: a zero near x-height suggests oldstyle figures; equal widths for 1 and 0 suggest tabular figures. */
 export function numFx(f) {
   return featFx(f, '0123456789', NUM_TAGS, renderNumHint, ctx => {
     const m = ch => ctx.measureText(ch), a0 = m('0').actualBoundingBoxAscent;
     return { def: { fig: a0 < (m('x').actualBoundingBoxAscent + m('H').actualBoundingBoxAscent) / 2 ? 'onum' : 'lnum', spc: Math.abs(m('1').width - m('0').width) < 0.5 ? 'tnum' : 'pnum' } };
   });
 }
-/* 没有变化的原因：默认就是这样（'default'），或者字体里没有（'none'） */
+/* No change means either already the default ('default') or unsupported by the font ('none'). */
 export const numWhy = (fx, t) => fx[t] ? '' : t === fx.def.fig || t === fx.def.spc ? 'default' : 'none';
-/* 高级排版属性「数字样式」下面：显示数字的字体默认是哪种数字，选了的样式在这个字体里有没有 */
+/* Below Numeric style, show the digit font's default style and whether the selected style has an effect. */
 export function renderNumHint() {
   const el = $('#numHint'); if (!el) return;
   const { f, fx } = digitFx();
   el.hidden = !fx;
-  /* 卡片：这个字体没有的样式淡一些（排出来和默认一样），鼠标停留时说明 */
+  /* Dim styles unsupported by the font, which render like the default; explain on hover. */
   document.querySelectorAll('#featRows [data-typo="num"], #featRows [data-typo="zero"]').forEach(b => {
     const lack = fx ? b.dataset.v.split(' ').map(v => NUM_FEAT[v]).filter(t => t && numWhy(fx, t) === 'none') : [];
     markLack(b, !!lack.length);
@@ -481,12 +481,12 @@ export function renderNumHint() {
   el.textContent = T('numDefIs', { font, list: [fx.def.fig, fx.def.spc].map(numLabel).join(T('joiner')) }) +
     (none.length ? T('numLacks', { font, list: none.map(numLabel).join(T('joiner')) }) + (f.kind === 'google' ? T('numGoogleShort') : '') : '');
 }
-/* 特性卡片：当前字体里没有这个特性时不显示字样（排出来和默认一样，反而误导），只写「字体里没有」，描边改成点线；仍然可以选，选中时描边是警告色 */
+/* Do not show misleading identical specimens for unsupported feature cards. Show the unavailable label and a dotted border; allow selection with a warning border. */
 function markLack(b, on) {
   b.classList.toggle('lack', on);
   const s = b.querySelector('.tt-s'); if (s) s.dataset.lack = on ? T('lackTile') : '';
 }
-/* 字形标准、假名标点宽度的卡片：这个字体里没有效果的选项淡一些；字形标准一个都没有时在下面说明 */
+/* Dim ineffective glyph-standard and kana/punctuation-width cards; explain below if the font has no supported glyph standards. */
 export const EA_SAMPLE = { eaVar: '辻葛飴鴎国', eaWidth: 'イリ「ア」ﾃｽ' };
 export function renderEaMarks() {
   const W = state.view.weight, fonts = { eaVar: usedFont(resolveCls('han', W, true)), eaWidth: usedFont(resolveCls('kana', W, true)) };
@@ -494,7 +494,7 @@ export function renderEaMarks() {
   for (const k of ['eaVar', 'eaWidth']) {
     const t = TYPO.find(x => x.key === k), tags = t.values.map(v => EA_FEAT[v[0]]).filter(Boolean);
     fx[k] = featFx(fonts[k], EA_SAMPLE[k], tags, renderEaMarks);
-    /* JIS 各版里只有一版没变化、其他几版有变化：字体默认就是那一版（例如 ProN 字体默认就是 JIS2004），不算没有 */
+    /* If only one JIS option is unchanged while the others differ, it is the default standard (for example JIS2004 in ProN), not an unsupported feature. */
     const jisAny = fx[k] && ['jp78', 'jp83', 'jp90', 'jp04'].some(t => fx[k][t]);
     document.querySelectorAll(`#featRows [data-typo="${k}"]`).forEach(b => {
       const tag = EA_FEAT[b.dataset.v], none = !!(tag && fx[k] && !fx[k][tag]), isDef = none && /^jp/.test(tag) && jisAny;
@@ -502,7 +502,7 @@ export function renderEaMarks() {
       b.title = b.dataset.v + (none ? ' — ' + T(isDef ? 'eaDefault' : 'eaLack', { font: shortName(fonts[k]) }) : '');
     });
   }
-  /* 宽度：比例宽、全角都没有时，在卡片下面说一句（卡片看起来都一样，不是没生效） */
+  /* When both proportional and full-width options have no effect, explain below the cards why their specimens look identical. */
   const wh = $('#eaWHint');
   if (wh) {
     const noneW = fx.eaWidth && !['pwid', 'fwid'].some(t => fx.eaWidth[t]);
@@ -514,7 +514,7 @@ export function renderEaMarks() {
   el.hidden = !none;
   if (none) el.textContent = T('eaNone', { font: shortName(fonts.eaVar) }) + (fonts.eaVar.kind === 'google' ? T('eaGoogle') : '');
 }
-/* 改了某一格后，只更新其他格的继承值，不重绘表格（保持输入焦点） */
+/* After editing a cell, update other inherited values without rebuilding the table or losing focus. */
 export function refreshInherited() {
   const act = document.activeElement;
   document.querySelectorAll('#editor .ct-row[data-id], #editor .ct-row[data-ci]').forEach(row => {
@@ -522,7 +522,7 @@ export function refreshInherited() {
     row.querySelectorAll('.num').forEach(inp => {
       const size = inp.dataset.field === 'size';
       inp.placeholder = size ? inheritedSize(key, BASE_W) : inheritedShift(key);
-      if (inp !== act) { const own = size ? ownSize(key, BASE_W) : objByKey(key).shift; inp.value = own ?? ''; inp.classList.toggle('own', own != null); }      // 同步基础大小，以及只聚焦、未修改的基线推算值
+      if (inp !== act) { const own = size ? ownSize(key, BASE_W) : objByKey(key).shift; inp.value = own ?? ''; inp.classList.toggle('own', own != null); }      // Sync base sizes and derived baselines that were focused but not edited.
     });
   });
   syncMatrix();
@@ -539,7 +539,7 @@ export function renderChipsStatus() {
   syncFontMeta();
 }
 
-/* ================= 渲染：校样 ================= */
+/* ================= Render: proof ================= */
 export function renderPreview() {
   const v = state.view, pt = $('#proofText');
   $('#sheet').classList.toggle('vertical', v.vertical);
@@ -552,15 +552,14 @@ export function renderPreview() {
     if (t.attr) pt.lang = state.typo[t.key];
     else pt.style.setProperty(t.prop, typoValue(t));
   }
-  /* 类别着色优先用 CSS Highlight API：不拆 DOM，排版和不着色时完全一样（拆成 span 会让竖排里的西文和后面的字重叠）。
-     只有基线偏移必须包 span；浏览器不支持 Highlight API 时才退回用 span 着色 */
+  /* Prefer the CSS Highlight API for class colors: keep DOM and layout unchanged. Splitting spans can overlap Western and following glyphs in vertical text.
+   Only baseline shifts require spans; fall back to span coloring when Highlight API is unavailable. */
   const hl = HL_OK && v.colorize, spanColor = v.colorize && !HL_OK;
   pt.classList.toggle('colorize', spanColor);
   if (!(spanColor || anyShift())) pt.textContent = v.text;
   else {
-    /* 不需要 span 的文字合成一个文本节点：直排时，西文、数字和汉字分在相邻的文本节点里，Chrome 会把后面的字叠上去 */
-    /* 用 span 着色时按类别分 span；否则只有基线偏移需要 span，按偏移量分：
-       偏移相同的数字和字母（「27.6km」）放在同一个 span 里，字距不会被元素边界切断 */
+    /* Merge unwrapped text into one node; adjacent Western/digit/Han text nodes can overlap in Chrome vertical layout. */
+    /* For span coloring, split by class. Otherwise split only by baseline shift, keeping equal-shift letters and digits, such as '27.6km', in one span so element boundaries do not break spacing. */
     const frag = document.createDocumentFragment(), shifts = new Map();
     const shiftOf = o => { if (!shifts.has(o)) shifts.set(o, settingOf(o).shift); return shifts.get(o); };
     const keyOf = o => spanColor ? o : shiftOf(o);
@@ -594,10 +593,10 @@ export function renderPreview() {
     (state.custom.length ? `<span style="--c:var(--c-custom)"><i></i>${esc(T('legendCustom'))}</span>` : '') + `<span>${esc(T('legendBase'))}</span>`;
   root.style.setProperty('--generic', state.generic !== 'auto' ? state.generic : guessGeneric());
 }
-/* ================= 缺字 =================
-   校样里每个字按「本类别的字体 → （例外字符所在类别的字体）→ 汉字基础字体」检查，第一个有这个字的字体就是实际显示它的字体。
-   不是本类别的字体 = 一级（合成字体里的其他字体代替）；都没有 = 二级（落到系统字体）。
-   空白、组合附加符号、格式字符本来就没有宽度，不检查 */
+/* ================= Missing glyphs =================
+   Check each proof character through its class font, the original class font for custom characters, then the Han base. The first font containing it actually renders it.
+   A different composite font gives level 1 fallback; no composite font gives level 2 system fallback.
+   Skip whitespace, combining marks and format characters, which inherently lack independent width. */
 export let missTok = 0, missMap = null;
 export const MISS_SKIP = /[\s\p{M}\p{Cf}]/u;
 export async function checkMiss() {
@@ -611,17 +610,17 @@ export async function checkMiss() {
     const cp = c.codePointAt(0), o = ownerOf(cp), rs = [setAt(o)];
     if (o[0] === '#') rs.push(resolveCls(classOf(cp) || 'han', W, true));
     rs.push(base);
-    const chain = [...new Map(rs.filter(r => r.font).map(usedFont).map(f => [fontKey(f), f])).values()];      // 实际加载的字体，去重
+    const chain = [...new Map(rs.filter(r => r.font).map(usedFont).map(f => [fontKey(f), f])).values()];      // Deduplicate the actual loaded fonts.
     chains.set(c, chain);
     for (const f of chain) { const k = fontKey(f); if (!need.has(k)) need.set(k, new Set()); need.get(k).add(c); }
   }
-  const miss = new Map();      // 字体 → 这个字体没有的字；还在加载的字体不判断（null）
+  const miss = new Map();      // Font -> missing characters; null means still loading and not yet checked.
   await Promise.all([...need].map(async ([k, cs]) => {
     const src = sources.get(k);
     miss.set(k, !src || src.status === 'loading' ? null : src.status === 'error' ? cs : await missingIn(src, [...cs]));
   }));
   if (tok !== missTok) return;
-  missMap = new Map();      // 字 → { lv, from, by }：鼠标停在标出的字上时，提示里用
+  missMap = new Map();      // Character -> { lv, from, by }, used in hover details for marked glyphs.
   for (const [c, chain] of chains) {
     const has = f => { const m = miss.get(fontKey(f)); return !m || !m.has(c); };
     if (has(chain[0])) continue;
@@ -630,7 +629,7 @@ export async function checkMiss() {
   }
   paintMiss();
 }
-/* 鼠标停在标了波浪线的字上：在字旁边弹出说明 */
+/* Show details beside an underlined missing glyph on hover. */
 export function missTipAt(x, y) {
   const tip = $('#missTip');
   const hide = () => { tip.hidden = true; };
@@ -638,7 +637,7 @@ export function missTipAt(x, y) {
   const pos = document.caretPositionFromPoint?.(x, y), rng = pos ? null : document.caretRangeFromPoint?.(x, y);
   const node = pos ? pos.offsetNode : rng?.startContainer, off = pos ? pos.offset : rng?.startOffset;
   if (!node || node.nodeType !== 3 || !$('#proofText').contains(node)) return hide();
-  /* 光标位置在字和字之间：前后两个字都看一下，取鼠标真正落在上面的那个 */
+  /* The caret falls between characters; inspect both neighbors and choose the one actually under the pointer. */
   for (const start of [off, off - 1, off - 2]) {
     if (start < 0 || start >= node.data.length) continue;
     const ch = String.fromCodePoint(node.data.codePointAt(start)), info = missMap.get(ch);
@@ -657,11 +656,11 @@ export function missTipAt(x, y) {
   hide();
 }
 export const checkMissSoon = debounce(checkMiss, 120);
-/* 用 Highlight API 标出缺字，不改 DOM（竖排也不会乱） */
+/* Mark missing glyphs with Highlight API without changing DOM or disturbing vertical layout. */
 export function paintMiss() {
   if (!HL_OK) return;
   const sets = [null, new Highlight(), new Highlight()];
-  sets[1].priority = sets[2].priority = 1;      // 盖在类别着色上面
+  sets[1].priority = sets[2].priority = 1;      // Draw above class colors.
   if (missMap?.size) {
     const walker = document.createTreeWalker($('#proofText'), NodeFilter.SHOW_TEXT);
     while (walker.nextNode()) {
@@ -704,7 +703,7 @@ export function guessGeneric() {
   const l = fontLabel(resolveCls('han').font);
   return /serif|mincho|song|ming|明朝|宋|明|kai|楷|garamond|times/i.test(l) && !/sans/i.test(l) ? 'serif' : 'sans-serif';
 }
-/* 示例页签按界面语言排：简中界面先简体，繁中界面先台湾、香港，日文界面先日文 */
+/* Order samples by UI language: Simplified first for Simplified Chinese, Taiwan/Hong Kong first for Traditional Chinese, Japanese first for Japanese. */
 export const SAMPLE_ORDER = { zh: ['zh', 'tw', 'hk', 'ja'], tw: ['tw', 'hk', 'zh', 'ja'], ja: ['ja', 'zh', 'tw', 'hk'] };
 export const orderedSamples = () => { const first = SAMPLE_ORDER[UI] || SAMPLE_ORDER.zh; return [...first, ...Object.keys(SAMPLES).filter(k => !first.includes(k))]; };
 export function renderSampleTabs() {
@@ -713,10 +712,10 @@ export function renderSampleTabs() {
   $('#sampleTabs').innerHTML = orderedSamples().map(k => [k, SAMPLES[k]]).map(([k, s]) => `<button type="button" role="tab" data-sample="${k}" aria-selected="${cur === k}">${esc(tr(s.label))}</button>`).join('') +
     cs.map((c, i) => `<span class="ctab"><button type="button" role="tab" data-sample="c${i}" aria-selected="${cur === 'c' + i}" aria-controls="sampleBox">${esc(name(i))}</button><button type="button" class="ctab-x" data-act="delcustom" data-i="${i}" aria-label="${esc(T('customDel'))}" title="${esc(T('customDel'))}"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button></span>`).join('') +
     `<button type="button" class="tab-add" data-act="addcustom" aria-label="${esc(T('customAdd'))}" title="${esc(T('customAdd'))}"><svg class="ic" aria-hidden="true"><use href="#i-plus"/></svg></button>`;
-  $('#sampleBox').hidden = !/^c\d+$/.test(cur);      // 只有自定义页签可以编辑
+  $('#sampleBox').hidden = !/^c\d+$/.test(cur);      // Only custom sample tabs are editable.
   tabFade();
 }
-/* 页签放不下时横向滚动：还有没露出来的一侧淡出，提示可以滚 */
+/* Scroll overflowing sample tabs horizontally; fade any hidden edge to signal more content. */
 export function tabFade() {
   const t = $('#sampleTabs'), max = t.scrollWidth - t.clientWidth;
   t.classList.toggle('fade-l', t.scrollLeft > 2);
@@ -725,14 +724,14 @@ export function tabFade() {
 export function renderLangOptions() {
   $('#exLang').innerHTML = `<option value="">${esc(T('anyLang'))}</option>` + TYPO.find(t => t.key === 'lang').values.map(([v, d]) => `<option value="${v}">${esc(tr(d))}</option>`).join('');
 }
-/* 左窗格的「预设 / 字体 / 排版」页签。第一次打开时在预设页签 */
+/* Left-pane Presets / Fonts / Text layout tabs; start in Presets on first launch. */
 export function syncLeftTab() {
   const k = ['fonts', 'typo'].includes(state.view.ltab) ? state.view.ltab : 'presets';
   document.querySelectorAll('.pane-bar [data-ltab]').forEach(b => b.setAttribute('aria-selected', b.dataset.ltab === k));
   $('#panePresets').hidden = k !== 'presets'; $('#paneFonts').hidden = k !== 'fonts'; $('#paneTypo').hidden = k !== 'typo';
   if (k === 'fonts') fitGlyphs();
 }
-/* 只在导出域或界面语言改变时重建节点，拖动滑杆时保持原控件与焦点。 */
+/* Rebuild stops only when export domain or UI language changes, preserving the slider and focus while dragging. */
 export function syncPreviewWeight({ preserveInput = false } = {}) {
   const cont = state.wmode === 'cont', ws = state.weights, v = state.view;
   const wn = $('#vWn'), slider = $('#vWSlider'), ticks = $('#vWTicks');
@@ -748,8 +747,8 @@ export function syncPreviewWeight({ preserveInput = false } = {}) {
     const shortcuts = cont ? [400, 700].filter(n => n >= domain[0] && n <= domain[1]) : [];
     const stops = cont ? [...new Set([...domain, ...shortcuts])].sort((a, b) => a - b) : domain;
     const percent = n => (n - domain[0]) * 100 / (domain[1] - domain[0]);
-    // 同行按实际数值排；固定宽度弹层中，端点离常用字重太近时省略端点文字，保留范围与刻度线。
-    // 常用字重只是跳转按钮，不让连续滑杆吸附到 400 / 700。
+    // Place labels in one row at their true values. Omit endpoint text too close to a shortcut in the fixed-width popup, retaining range and ticks.
+    // Common-weight marks are jump buttons; the continuous slider must not snap to 400 or 700.
     ticks.innerHTML = stops.map((n, i) => {
       const pos = cont ? percent(n) : domain.length === 1 ? 0 : i * 100 / (domain.length - 1);
       const attrs = `style="--tick:${pos}%" data-weight="${esc(n)}"`;
@@ -770,9 +769,9 @@ export function syncToolbar() {
   renderCurrentPreset();
   syncLeftTab();
   renderSampleTabs();
-  if (document.activeElement !== $('#vSize')) $('#vSize').value = v.size;      // 正在输入时不改写框里的字
+  if (document.activeElement !== $('#vSize')) $('#vSize').value = v.size;      // Do not overwrite field text while the user is typing.
   if (document.activeElement !== $('#vLh')) $('#vLh').value = (+v.lh).toFixed(2);
-  $('#vLhOut').textContent = `${+(v.size * v.lh).toFixed(1)}px`;      // 倍数在框里，实际的行距跟在后面
+  $('#vLhOut').textContent = `${+(v.size * v.lh).toFixed(1)}px`;      // The field contains a multiplier; show the actual line height after it.
   $('#vVertical').setAttribute('aria-pressed', v.vertical);
   syncViewTypo();
   $('#vColor').setAttribute('aria-pressed', v.colorize);
@@ -798,18 +797,18 @@ export function syncToolbar() {
   $('#exLang').value = state.scope;
 }
 
-/* 字重的常用名。400 = normal（正文），700 = bold（b、strong、h1–h6 的默认） */
+/* Common weight names: 400 = normal (body); 700 = bold (the default for b, strong and h1-h6). */
 export const W_NAMES = { 100: 'Thin', 200: 'ExtraLight', 300: 'Light', 400: 'Regular', 500: 'Medium', 600: 'SemiBold', 700: 'Bold', 800: 'ExtraBold', 900: 'Black' };
-export const wTag = w => w === 400 || w === 700 ? `<small>${esc(T(w === 400 ? 'w400' : 'w700'))}</small>` : '';      // 按钮上直接写「正文」「粗体」
+export const wTag = w => w === 400 || w === 700 ? `<small>${esc(T(w === 400 ? 'w400' : 'w700'))}</small>` : '';      // Label buttons directly as Body or Bold.
 export const wTip = w => `${w} · ${W_NAMES[w]}` + (w === 400 ? ' — ' + T('w400Tip') : w === 700 ? ' — ' + T('w700Tip') : '');
-/* 浏览器按 CSS 的字重匹配规则，从导出的字重里找最接近的（CSS Fonts 4 §5.2） */
+/* Use CSS weight matching to find the nearest exported weight (CSS Fonts 4 section 5.2). */
 export function matchWeight(ws, want) {
   if (ws.includes(want)) return want;
   const lo = ws.filter(w => w < want).sort((a, b) => b - a), hi = ws.filter(w => w > want).sort((a, b) => a - b);
   if (want >= 400 && want <= 500) return hi.find(w => w <= 500) ?? lo[0] ?? hi[0];
   return want < 400 ? lo[0] ?? hi[0] : hi[0] ?? lo[0];
 }
-/* 导出字重下面的提示：缺了 400 / 700 时说明正文、粗体会怎样显示 */
+/* Explain below export weights how body/bold text resolves when 400 or 700 is missing. */
 export function renderWHint() {
   const el = $('#exWHint'), ws = state.weights, miss = [400, 700].filter(w => !ws.includes(w)), out = [];
   if (miss.includes(400)) out.push(T('wMiss400', { w: matchWeight(ws, 400) }));
@@ -818,10 +817,10 @@ export function renderWHint() {
   if (miss.length) el.innerHTML = esc(out.join('')) + ` <button type="button" class="btn-text" data-act="wadd">${esc(T('wAdd', { w: miss.join(T('joiner')) }))}</button>`;
 }
 
-/* ================= 度量 ================= */
+/* ================= Metrics ================= */
 export let lastMeasure = null, lastRef = null;
 export function cssVar(n) { return getComputedStyle(root).getPropertyValue(n).trim(); }
-/* 汉字字体自带西文的比例：用汉字字体单独排「国」「H」「x」 */
+/* Measure Western proportions in the Han font by rendering a Han reference glyph, H and x separately. */
 export function measureRef() {
   const han = sources.get(fontKey(usedFont(resolveCls('han', state.view.weight, true))));
   if (!han || han.status !== 'ok') return null;
@@ -829,37 +828,37 @@ export function measureRef() {
   c.font = `${fs}px "${han.family}", monospace`; const a = c.measureText('H').width;
   c.font = `${fs}px "${han.family}", serif`; const b = c.measureText('H').width;
   const font = fontLabel(han.font);
-  if (Math.abs(a - b) > 0.01) return { font, none: true };     // 汉字字体里没有 H，回退到了别的字体
+  if (Math.abs(a - b) > 0.01) return { font, none: true };     // The Han font lacks H and fell back to another font.
   const g = c.measureText('国'), face = g.actualBoundingBoxAscent + g.actualBoundingBoxDescent;
   if (face < 1) return null;
   return { font, cap: c.measureText('H').actualBoundingBoxAscent / face, x: c.measureText('x').actualBoundingBoxAscent / face };
 }
-/* 度量参考图：汉字字面为基准，叠上西文（大写高、x 高）、数字（数字高）、假名（假名字面）的参考线。
-   西文、数字、假名可以在「显示」里分别隐藏 */
-/* 度量参考图的显示项：菜单里的项目固定。参考线太多会看不清，所以假名默认只在日文、注音默认只在繁體中文（台灣）时勾选；手动勾过的以手动为准 */
+/* Metric specimen: use the Han ink box as reference, overlaying Western cap/x heights, digit height and kana ink-box guides.
+   Western, digit and kana guides can be hidden independently in View. */
+/* Metric guide options are fixed. Avoid clutter by enabling kana by default only for Japanese, and Zhuyin only for Taiwan Chinese; explicit user choices take precedence. */
 export const specShown = () => ({ latin: true, digit: true, kana: /^ja/.test(state.typo.lang || ''), bopo: state.typo.lang === 'zh-Hant-TW', ...(state.view.specShow || {}) });
 export function drawSpecimen() {
   const cv = $('#spec'), sh = specShown();
   const W = cv.clientWidth || 600;
   const ctx = cv.getContext('2d');
-  /* 右边标签区按最长的标签留宽度（以前固定 150px，右边空出一大块） */
+  /* Size the right label area for its longest label instead of leaving the former fixed 150px gap. */
   ctx.font = `11px ${cssVar('--ui') || 'sans-serif'}`;
   const labKeys = ['gFaceTop', 'gFaceBot', 'gBase', ...(sh.latin ? ['gCap', 'gX', 'gLatBase'] : []), ...(sh.digit ? ['gFig', 'gDigBase'] : []), ...(sh.kana ? ['gKanaTop', 'gKanaBot'] : []), ...(sh.bopo ? ['gBopoTop', 'gBopoBot'] : [])];
   const labelW = Math.min(150, W * 0.3, Math.ceil(Math.max(...labKeys.map(k => ctx.measureText(T(k)).width))) + 8 + 12), plotR = W - labelW;
   const fam = `${liveFamily ? `"${liveFamily}", ` : ''}serif`, fw = state.wmode === 'cont' ? state.view.wcont : state.view.weight;
   const shiftOf = ch => settingOf(ownerOf(ch.codePointAt(0))).shift / 100;
-  /* 画出来的字：汉字总在；假名 あ、注音 ㄅ、西文 Hxg（连在一起，按字体本身的字距）、数字 0 按显示设定 */
+  /* Always draw Han; show kana, Zhuyin, Western Hxg (together to preserve font spacing) and digit 0 according to visibility settings. */
   const show = ['国', ...(sh.kana ? ['あ'] : []), ...(sh.bopo ? ['ㄅ'] : []), ...(sh.latin ? ['Hxg'] : []), ...(sh.digit ? ['0'] : [])];
-  const GAP = 0.2;      // 各组之间的距离（字号的倍数）
-  /* 字号先按宽度定（最大 88px），画布高度再跟着字号走：参考图固定在校样栏底部，不能太高 */
-  const userH = state.view.specH;      // 拖动分界线定的高度：字号跟着高度变（最大是高度的 1/1.6）
+  const GAP = 0.2;      // Inter-group gaps as multiples of font size.
+  /* Choose font size by width, capped at 88px, then derive canvas height. Keep the specimen at the proof pane's bottom from growing too tall. */
+  const userH = state.view.specH;      // A dragged divider sets the height; scale font size with it, capped at height / 1.6.
   let fs = userH ? Math.max(40, Math.floor(userH / 1.6)) : 88;
   ctx.font = `${fw} ${fs}px ${fam}`;
   const span = show.reduce((s, ch) => s + ctx.measureText(ch).width, 0) + fs * GAP * (show.length - 1);
   if (span > plotR - 24) fs = Math.floor(fs * (plotR - 24) / span);
   const nLines = 3 + (sh.latin ? 3 : 0) + (sh.digit ? 2 : 0) + (sh.kana ? 2 : 0) + (sh.bopo ? 2 : 0);
-  const LT = 9;      // 参考线的标签最高排到这里
-  const minH = Math.max(110, nLines * 13 + 16 + LT - 7);      // 右边的参考线标签要放得下
+  const LT = 9;      // Highest position allowed for guide labels.
+  const minH = Math.max(110, nLines * 13 + 16 + LT - 7);      // Leave enough room for guide labels on the right.
   const H = Math.round(userH ? Math.max(minH, userH) : Math.min(200, Math.max(minH, fs * 1.6)));
   const dpr = window.devicePixelRatio || 1;
   cv.style.height = H + 'px';
@@ -871,7 +870,7 @@ export function drawSpecimen() {
   ctx.textBaseline = 'alphabetic';
   const m = ch => { const t = ctx.measureText(ch); return { ch, asc: t.actualBoundingBoxAscent, desc: t.actualBoundingBoxDescent, w: t.width, shift: shiftOf(ch) * fs }; };
   const han = m('国'), cap = m('H'), xg = m('x'), fig = m('0'), kana = m('あ'), bopo = m('ㄅ');
-  const baseY = Math.round(H / 2 + (han.asc - han.desc) / 2);      // 汉字字面放在画布正中
+  const baseY = Math.round(H / 2 + (han.asc - han.desc) / 2);      // Center the Han ink box vertically on the canvas.
   const hanTop = baseY - han.asc - han.shift, hanBot = baseY + han.desc - han.shift;
   const latBase = baseY - cap.shift, capTop = latBase - cap.asc, xTop = baseY - xg.shift - xg.asc;
   const figBase = baseY - fig.shift, figTop = figBase - fig.asc;
@@ -893,7 +892,7 @@ export function drawSpecimen() {
   if (sh.bopo) lines.push({ y: bopoTop, c: C.bopo, t: T('gBopoTop'), dash: [6, 3] }, { y: bopoBot, c: C.bopo, t: T('gBopoBot'), dash: [6, 3] });
   ctx.font = `11px ${cssVar('--ui') || 'sans-serif'}`;
   ctx.textBaseline = 'middle';
-  /* 标签按线的位置排，间距至少 12px；超出画布底部时整体上移 */
+  /* Order labels by guide position with at least 12px spacing; shift the whole set up if it exceeds the canvas bottom. */
   lines.sort((a, b) => a.y - b.y);
   const ly = [];
   lines.forEach((l, i) => { ly[i] = Math.max(l.y, i ? ly[i - 1] + 12 : LT); });
@@ -912,9 +911,9 @@ export function drawSpecimen() {
   for (const g of glyphs) { ctx.fillText(g.ch, x, baseY - g.shift); x += g.w + fs * GAP; }
 
   lastRef = measureRef();
-  /* 两个按钮要用的测量值：大写高、x 高占汉字字面的比例，大写中线和字面中线的差 */
+  /* Measurements for the two alignment buttons: cap/x height relative to Han ink height, and the difference between cap and Han centers. */
   const face = han.asc + han.desc;
   if (face < 1 || cap.asc < 1) { lastMeasure = null; return; }
-  const midPx = ((capTop + latBase) / 2) - ((hanTop + hanBot) / 2);   // 正值 = 大写中线偏低
+  const midPx = ((capTop + latBase) / 2) - ((hanTop + hanBot) / 2);   // Positive means the cap-height center is too low.
   lastMeasure = { capRatio: cap.asc / face, xRatio: xg.asc / face, midEm: midPx / fs };
 }
