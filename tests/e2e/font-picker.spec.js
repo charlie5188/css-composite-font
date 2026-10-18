@@ -287,3 +287,32 @@ test('选择时自动匹配：单档不改变基础设置，取消测量不留�
   await expect.poll(() => page.evaluate(() => [...document.fonts].filter(f => f.family.startsWith('__cf_fit')).length)).toBe(0);
   expect(await matchSettings(page)).toEqual(before);
 });
+
+test('信息层级：预览、应用与详情分组，短列表收紧，数字组件和来源页签支持键盘', async ({ page }) => {
+  await fixture(page);
+  await expect(page.locator('#pkSelectedName')).toHaveText('Noto Serif SC');
+  await expect(page.locator('#gfFamily')).toBeHidden();
+  await expect(page.locator('#pkDetails')).not.toHaveAttribute('open', '');
+  await expect(page.locator('#pkApplied #gfWeightNum')).toBeVisible();
+  const weight = page.locator('#gfWeightNum'); await weight.locator('..').hover();
+  await weight.locator('..').locator('[data-step="up"]').click();
+  await expect(weight).toHaveValue('410');
+  await page.locator('#pkSampleSize').locator('..').hover();
+  await page.locator('#pkSampleSize').locator('..').locator('[data-step="up"]').click();
+  await expect(page.locator('#pkSampleSize')).toHaveValue('33');
+  await page.locator('#picker [data-src="google"]').focus(); await page.keyboard.press('ArrowRight');
+  await expect(page.locator('#picker [data-src="local"]')).toBeFocused(); await page.keyboard.press('End');
+  await expect(page.locator('#picker [data-src="file"]')).toBeFocused();
+  await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
+  await expect(page.locator('#pkOk')).toBeEnabled();
+  expect(await page.locator('#ffOptions').evaluate(el => el.getBoundingClientRect().height)).toBeLessThan(140);
+  await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
+  await page.locator('#pkApplied').scrollIntoViewIfNeeded();
+  await expect(page.locator('#pkOk')).toBeInViewport();
+  expect(await page.locator('#picker').evaluate(el => el.scrollWidth <= el.clientWidth)).toBeTruthy();
+  for (const lang of ['en', 'ja', 'tw', 'zh']) {
+    await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
+    await expect(page.locator('#pkAppliedTitle')).not.toHaveText('pkAppliedTitle');
+    await expect(page.locator('#pkSampleSize').locator('..').locator('[data-step="up"]')).not.toHaveAttribute('aria-label', '');
+  }
+});

@@ -149,6 +149,13 @@ select.cell-in{padding-right:18px;background-position:right 3px center;backgroun
 .cell-step-btn.btn-icon .ic{width:12px;height:12px}
 .cell-step-btn[data-step=up] .ic{transform:rotate(180deg)}
 @media(hover:none){.cell-step-actions{opacity:1}}
+/* Bordered form-field variant keeps the same arrows, keyboard behavior and fixed gutter as table steppers. */
+.cell-step.field-step{border:1px solid var(--line);border-radius:var(--r);background:var(--sheet);padding:0 var(--sp-1) 0 var(--sp-2);width:auto;min-height:var(--ctl-h)}
+.field-step:hover{border-color:var(--faint)}
+.field-step:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.field-step>.cell-num{border:0;padding:var(--sp-1) 0;text-align:left;text-align-last:left;background:transparent}
+.field-step:has(>input[hidden]){display:none}
+
 .cell-in.own{font-weight:500}
 .cell-in.set{color:var(--accent);font-weight:500}
 /* Color field: native color well plus hex input, sharing normal field borders and focus behavior. */
@@ -207,7 +214,7 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 .file-drop{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-3);padding:var(--sp-4);border:1px dashed var(--line);border-radius:var(--r)}
 .file-drop.dragging{border-color:var(--ink);background:color-mix(in srgb,var(--ink) 6%,transparent)}
 /* Font choices share one stable name/specimen layout across font sources. */
-.font-options{display:grid;align-content:start;overflow:auto;min-height:120px;height:320px;gap:var(--sp-1);padding:var(--sp-1);border:1px solid var(--line);border-radius:var(--r)}
+.font-options{display:grid;align-content:start;overflow:auto;min-height:84px;height:min(var(--font-choice-max,320px),calc(var(--font-choice-count,4)*80px + 8px));gap:var(--sp-1);padding:var(--sp-1);border:1px solid var(--line);border-radius:var(--r)}
 .font-option{display:grid;grid-template-rows:auto 32px;gap:var(--sp-1);text-align:left;width:100%;min-height:76px;padding:var(--sp-2) var(--sp-3);border:1px solid transparent;border-radius:var(--r);background:transparent;color:var(--ink);cursor:pointer}
 .font-option:hover{background:color-mix(in srgb,var(--ink) 7%,transparent)}
 .font-option[aria-selected="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
@@ -807,7 +814,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-browse>input{width:100%}
 .pk-filters{display:flex;flex-wrap:wrap;align-items:center;gap:var(--sp-3);font-size:var(--fs-s)}
 .pk-filters label{display:flex;align-items:center;gap:var(--sp-1)}
-@media(max-width:760px){.pk-workspace{grid-template-columns:minmax(0,1fr)}.pk .font-options{height:220px}.pk{padding:var(--sp-4)}}
+@media(max-width:760px){.pk-workspace{grid-template-columns:minmax(0,1fr)}.pk .font-options{--font-choice-max:220px}.pk{padding:var(--sp-4)}}
 .pk h3{margin:0;font-size:var(--fs-xl);font-weight:600}
 .pk h3 span{color:var(--muted);font-weight:400}
 .pk .tabs{margin-top:-6px;box-shadow:inset 0 -1px 0 var(--line);overflow-y:hidden}
@@ -815,20 +822,20 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-grid .field input,.pk-grid .field select{width:100%}
 .pk .field input,.pk .field select{width:100%}
 /* Font picker: font source, preview card, collapsed axes, then scope and actions. */
-.pk-preview{border:1px solid var(--line);border-radius:var(--r);padding:16px 18px 14px;display:grid;gap:10px}
+.pk-preview{border:1px solid var(--line);border-radius:var(--r);padding:var(--sp-4);display:grid;gap:var(--sp-3)}
 #pkSample{font-size:32px;line-height:1.3;overflow-wrap:anywhere;white-space:pre-wrap;max-height:240px;overflow:auto}
 .pk-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:var(--fs-s);color:var(--muted)}
 .pk-punct.bad{color:var(--caution);background:var(--caution-bg);padding:2px 7px;border-radius:var(--r)}
 #pkSample:not([hidden])+.pk-meta{border-top:1px solid var(--rule);padding-top:10px}
 .pk-sample-bar{display:flex;flex-wrap:wrap;gap:var(--sp-2) var(--sp-3);align-items:center}
 .pk-sample-size{display:flex;gap:var(--sp-2);align-items:center;font-size:var(--fs-s);color:var(--muted)}
-.pk-sample-size input{width:70px}
+.pk-sample-size .field-step{width:70px}
 #pkSampleText{width:100%;resize:vertical;min-height:64px;max-height:160px;background:var(--sheet);color:var(--ink);border:1px solid var(--line);border-radius:var(--r);padding:var(--sp-2);font-size:var(--fs-m)}
 .pk-preview-tools{display:grid;gap:var(--sp-2);font-size:var(--fs-s);color:var(--muted)}
 .pk-proof-range{display:grid;grid-template-columns:minmax(0,1fr) 70px;gap:var(--sp-3);align-items:center}
-.pk-proof-range input[type=number]{width:100%}
+.pk-proof-range .field-step{width:100%}
 .pk-proof-shortcuts{display:flex;gap:var(--sp-3)}
-.pk-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:12px 16px;border-top:1px solid var(--line);padding-top:16px}
+.pk-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:var(--sp-3);border-top:1px solid var(--line);padding-top:var(--sp-4)}
 .pk-local{grid-template-columns:minmax(0,1fr) auto;align-items:end}
 .pk-local .btn-text{margin-bottom:9px}
 #lfMsg{margin-top:8px}
@@ -838,6 +845,17 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .file-btn:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
 .vh{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .pk .hint{margin:0}
+.pk-selected{display:grid;gap:var(--sp-1)}
+.pk-selected h4,.pk-apply h4{margin:0;font-size:var(--fs-l);font-weight:600;overflow-wrap:anywhere}
+.pk-apply{display:grid;gap:var(--sp-3)}
+.pk-apply>.field{max-width:180px}
+.pk-disclosure>summary{font-size:var(--fs-s);color:var(--muted);cursor:pointer}
+.pk-disclosure{min-width:0}
+.pk-sources>[data-pane]{display:grid;gap:var(--sp-3)}
+.pk-browse{margin-bottom:0}
+.pk input[type=checkbox],.pk input[type=radio]{accent-color:var(--ink)}
+.pk .pk-auto-fit{margin-top:0}
+
 /* If a local font is missing, show a yellow notice instead of a fallback-font specimen. */
 .vf-tag{display:inline-flex;align-items:center;flex:none;font:600 var(--fs-xs)/1 var(--mono);letter-spacing:.06em;padding:3px 5px 2px;border-radius:var(--r);background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent);white-space:nowrap}
 .pk-cov{display:flex;flex-wrap:wrap;gap:5px}

@@ -1,5 +1,9 @@
 /* UI text: Traditional Chinese (Taiwan). Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkReady: "預覽已就緒",
+  pkAppliedTitle: "套用設定",
+  pkFontDetails: "字型詳細資訊",
+  pkExactFamily: "使用完整字型名稱",
   pkMatching: "正在比對…",
   pkAutoFit: "自動調整以搭配漢字",
   pkNoProofChars: "目前校樣沒有這類字元",

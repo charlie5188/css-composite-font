@@ -1,5 +1,9 @@
 /* UI text: Japanese. Keep one key per line and the same keys in all four languages (checked by tools/check-i18n.mjs). */
 export default {
+  pkReady: "プレビューの準備完了",
+  pkAppliedTitle: "適用する設定",
+  pkFontDetails: "フォントの詳細",
+  pkExactFamily: "正式なファミリー名を入力",
   pkMatching: "調整中…",
   pkAutoFit: "漢字に合わせて自動調整",
   pkNoProofChars: "校正にこのクラスの文字がありません",

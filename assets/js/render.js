@@ -73,8 +73,8 @@ function syncFontMeta() {
   });
 }
 /* Reserve a fixed arrow gutter so showing controls does not shift numbers. Keep keyboard arrows in the field to avoid excessive table tab stops. */
-function stepperCell(control, label) {
-  return `<span class="cell-step">${control}<span class="cell-step-actions">${['up', 'down'].map(dir => {
+export function stepperCell(control, label, variant = '') {
+  return `<span class="cell-step${variant ? ' ' + variant : ''}">${control}<span class="cell-step-actions">${['up', 'down'].map(dir => {
     const text = esc(T(dir === 'up' ? 'stepIncrease' : 'stepDecrease', { field: label }));
     return `<button type="button" class="btn-icon cell-step-btn" data-step="${dir}" tabindex="-1" aria-label="${text}" title="${text}"><svg class="ic" aria-hidden="true"><use href="#i-chevron-down"/></svg></button>`;
   }).join('')}</span></span>`;

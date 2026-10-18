@@ -169,13 +169,13 @@ for a role that already has one; if something is really missing, add it to that 
 - **Other components:** `.seg` (segmented choice), `.chips` (multi-select pills; `.chips.tags` for text labels such as filters), `.sw` (switch), `.cell-in` +
   `.cell-num` (inputs inside tables; `.own` = set in the base settings, `.set` = set for one weight), `.cell-step`
   (table stepper: a numeric input or weight select plus `.cell-step-actions` / `.cell-step-btn`; keep its fixed
-  arrow gutter aligned with the header, keyboard arrows operate the field), `.range-pop` + `.range-ticks`
+  arrow gutter aligned with the header, keyboard arrows operate the field; `.field-step` adds the standard border for form fields), `.range-pop` + `.range-ticks`
   (compact range popover with endpoints and optional `.btn-text` shortcuts in one row; omit endpoint labels
   when they would crowd a shortcut), `.pop` (popover
   surface) with `.menu` / `.mm-item` / `.mm-radio` / `.mm-check`, `.sec-head` + `.sec-title` + `.sec-acts` (section
   heading), `.callout` (yellow notice), `.dlg-form` + `.dlg-act` (small dialog: title, fields, buttons bottom right), `.badge` (count pill), `.info` (the (i) button that opens `#infoPop`), tooltips through `title`.
 - **File drops:** `.file-drop` extends the standard file button with a dashed drop target and `.dragging` feedback. Keep a keyboard-accessible file input and never replace a valid selection with a failed import.
-- **Font choices:** `.font-options` and `.font-option` keep names and real specimens in fixed-height rows. Load visible specimens lazily; asynchronous checks must never reorder a list under the pointer. Unknown metadata stays eligible when filtering.
+- **Font choices:** `.font-options` and `.font-option` keep names and real specimens in fixed-height rows. Load visible specimens lazily; asynchronous checks must never reorder a list under the pointer. Unknown metadata stays eligible when filtering. Size the list from its rendered item count, capped at the shared maximum; background specimen loading must not change its height.
 - **Color fields:** `.color-field` pairs a native color well with an editable hex value and a shared focus ring.
 - **Settings popovers:** use `.pop.settings-pop` for mixed settings, and keep `.menu` for command menus.
   Put each logical group in `.settings-group`; use a native `<hr>` only between groups. The shell owns 8 px

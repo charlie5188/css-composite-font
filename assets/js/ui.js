@@ -7,7 +7,7 @@ import { FIT_SAMPLES, chooseFits, createFitter } from './autofit.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, classOf, inRanges, parseChars, rebuildClassRanges } from './unicode.js';
 import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownFontAt, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, srcError, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
-import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
+import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, stepperCell, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
 /* ================= Interaction: character-class table ================= */
@@ -1272,7 +1272,7 @@ function chooseCatalog(family) {
 export function renderCatalog() {
   const box = $('#gfOptions'), query = $('#gfSearch').value, current = $('#gfFamily').value;
   const entries = filterCatalog(pickCatalog, query, $('#gfStyle').value, $('#gfBold').checked);
-  catalogObserver?.disconnect();
+  catalogObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
   const focusFamily = entries.some(item => item.family === current) ? current : entries[0]?.family;
   box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.family === focusFamily ? 0 : -1}" aria-selected="${item.family === current}" data-family="${esc(item.family)}"><span class="font-option-name">${esc(item.family)}</span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
   const tryButton = $('#gfTry');
@@ -1316,7 +1316,7 @@ function selectLocalFamily(family, keepFace = false) {
 export function renderLocalFonts() {
   const box = $('#lfOptions'), query = $('#lfFamilySearch').value.trim().toLowerCase(), current = $('#lfName').value;
   const groups = localGroups().filter(([family, faces]) => `${family} ${faces.map(f => f.fullName + ' ' + f.postscriptName).join(' ')}`.toLowerCase().includes(query));
-  localObserver?.disconnect();
+  localObserver?.disconnect(); box.style.setProperty('--font-choice-count', groups.length);
   box.innerHTML = groups.length ? groups.map(([family, faces], i) => `<button type="button" class="font-option" role="option" tabindex="${i ? -1 : 0}" aria-selected="${faces.some(f => f.fullName === current)}" data-local-family="${esc(family)}" data-local-face="${esc(faces.find(f => /regular|normal|book/i.test(f.style))?.fullName || faces[0].fullName)}"><span class="font-option-name">${esc(family)}</span><span class="font-option-sample" hidden>Ag 0123</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoLocalResults'))}</p>`;
   localObserver = new IntersectionObserver(entries => entries.forEach(async entry => {
     if (!entry.isIntersecting) return; const el = entry.target; localObserver.unobserve(el);
@@ -1344,7 +1344,7 @@ export function renderImportedFonts() {
   const query = $('#ffSearch').value.trim().toLowerCase(), box = $('#ffOptions');
   const all = [...importedFonts.values()].filter(entry => files.has(entry.font.fileId));
   const entries = all.filter(entry => `${entry.family} ${entry.style} ${entry.font.fileName}`.toLowerCase().includes(query));
-  $('#ffLibrary').hidden = !all.length; fileObserver?.disconnect();
+  $('#ffLibrary').hidden = !all.length; fileObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
   box.innerHTML = entries.length ? entries.map((entry, i) => `<button class="font-option" type="button" role="option" tabindex="${i ? -1 : 0}" aria-selected="${pickCand?.fileId === entry.font.fileId}" data-imported="${esc(entry.font.fileId)}"><span class="font-option-name">${esc(entry.family)}${entry.style ? ' · ' + esc(entry.style) : ''}</span><span class="font-option-sample" hidden>Ag 0123</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
   fileObserver = new IntersectionObserver(events => events.forEach(async entry => {
     if (!entry.isIntersecting) return; const el = entry.target; fileObserver.unobserve(el);
@@ -1370,7 +1370,7 @@ async function acceptFontFiles(list) {
 }
 export function setPickTab(tab) {
   pickTab = tab;
-  picker.querySelectorAll('[data-src]').forEach(b => b.setAttribute('aria-selected', b.dataset.src === tab));
+  picker.querySelectorAll('[data-src]').forEach(b => { b.setAttribute('aria-selected', b.dataset.src === tab); b.tabIndex = b.dataset.src === tab ? 0 : -1; });
   picker.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== tab; });
   if (tab === 'local') renderLocalFonts();
   if (tab === 'file') renderImportedFonts();
@@ -1443,6 +1443,7 @@ export function renderAxes() {
       (rest.length ? `<details class="ax-more"${rest.some(a => a[0] in pickVary) ? ' open' : ''}><summary>${esc(T('axMore', { n: rest.length }))}</summary><div class="ax-body">${rest.map(row).join('')}</div></details>` : '');
   }
   box.innerHTML = `<summary><b>${esc(T('axHead'))}</b><span class="ax-sum"></span></summary><div class="ax-body">${body}</div>`;
+  box.querySelectorAll('input[type="number"]').forEach(pickerNumber);
   updateAxSum();
   applySampleAxes();
 }
@@ -1554,6 +1555,8 @@ function syncPickerProof(f) {
   if (axis) pickerProofWeight = Math.max(axis[0], Math.min(axis[1], pickerProofWeight));
   else if (weights?.length) pickerProofWeight = weights.reduce((a, b) => Math.abs(b - pickerProofWeight) < Math.abs(a - pickerProofWeight) ? b : a);
   $('#pkPreviewTools').hidden = !f;
+  $('#pkApplied').hidden = !f; $('#pkDetails').hidden = !f; $('#gfApplyField').hidden = f?.kind !== 'google';
+  $('#pkSelectedName').textContent = f?.kind === 'file' ? importedFonts.get(f.fileId)?.family || f.fileName : f?.kind === 'google' ? f.family : f?.name || T('pkEmpty');
   $('#pkProofWeight').hidden = !axis; $('#pkProofWeightNum').hidden = !axis;
   $('#pkProofWeightSelect').hidden = !!axis || !weights?.length;
   $('#pkProofStyle').hidden = !!axis || !!weights?.length;
@@ -1600,7 +1603,7 @@ function paintPickerCandidate() {
       if (pickCand !== f || token !== pickerPreviewToken || pickerApplyBusy) return;
       sample.style.fontFamily = `"${s.family}", var(--ui)`;
       sample.hidden = false;
-      st.textContent = f.kind === 'google' ? T('pkGoogleOk', { n: s.faces.length }) : f.kind === 'local' ? T('pkLocalOk') : T('pkFileOk');
+      st.textContent = T('pkReady');
       const ax = f.kind === 'google' ? null : f.axis;
       showVfTag(ax);
       if (f.kind === 'google') vfAxis(f.family).then(a => { if (pickCand === f) showVfTag(a); });
@@ -1626,10 +1629,12 @@ export function updateScope() {
 /* Google weight controls: numeric fields over the wght range for variable fonts; a 100-900 menu for others. */
 /* Variable-font badge, for example 'VF 400-800', with a hover explanation. */
 export function showVfTag(axis) {
-  const tag = $('#pkVfTag');
-  tag.hidden = !axis;
-  if (axis) { tag.textContent = `VF ${axis[0]}–${axis[1]}`; tag.title = T('pkVf', { a: axis[0], b: axis[1] }); }
+  const tag = $('#pkVfTag'), f = pickCand, weights = f?.kind === 'google' ? gfWeights(f.family) : null;
+  tag.hidden = !f;
+  tag.textContent = axis ? `${T('fontWeightContinuous')} ${axis[0]}–${axis[1]}` : weights?.length ? `${T('fontWeightStepped')} ${weights[0]}${weights.length > 1 ? '–' + weights.at(-1) : ''}` : T('fontWeightUnknownLabel');
+  tag.title = axis ? T('fontWeightContinuousHint', { a: axis[0], b: axis[1] }) : weights?.length ? T('fontWeightList', { weights: weights.join(', ') }) : T('fontWeightUnknown');
 }
+
 export function syncGfWeight() {
   const fam = $('#gfFamily').value.trim(), sel = $('#gfWeight'), num = $('#gfWeightNum');
   const axis = fam && fam in vfCache ? vfCache[fam] || null : null;
@@ -1658,6 +1663,7 @@ export function gfWeightVal() {
 }
 export function openPicker(t, W = BASE_W) {      // W is the target weight when opening from a weight row.
   pickTarget = t;
+  $('#gfManual').open = false; $('#pkDetails').open = false;
   $('#pkAutoFitField').hidden = t.type === 'class' && t.id === 'han'; $('#pkAutoFit').checked = true;
   const o = objOf(t), key = keyOf(t);
   pickerProofKey = ''; $('#ffWeightField').hidden = true;
@@ -1780,7 +1786,37 @@ async function applyPicker() {
   const trimmed = changed({ fonts: true, fontChange: true }); refresh('export');
   if (notice) toast([notice, trimmed].filter(Boolean).join(' '));
 }
+function syncPickerNumbers() {
+  picker.querySelectorAll('.field-step').forEach(box => {
+    const input = box.querySelector('input'), field = input.getAttribute('aria-label') || input.labels?.[0]?.textContent || '';
+    box.querySelectorAll('[data-step]').forEach(button => {
+      const text = T(button.dataset.step === 'up' ? 'stepIncrease' : 'stepDecrease', { field });
+      button.setAttribute('aria-label', text); if (button.dataset.tip != null) button.dataset.tip = text; else button.title = text;
+    });
+  });
+}
+function pickerNumber(input) {
+  input.classList.add('cell-in', 'cell-num');
+  const holder = document.createElement('span');
+  holder.innerHTML = stepperCell(input.outerHTML, input.getAttribute('aria-label') || input.labels?.[0]?.textContent || '', 'field-step');
+  input.replaceWith(holder.firstElementChild);
+}
 export function initPicker() {
+  picker.querySelectorAll('input[type="number"]').forEach(pickerNumber);
+  picker.addEventListener('click', e => {
+    const button = e.target.closest('.field-step [data-step]'); if (!button) return;
+    const input = button.closest('.field-step').querySelector('input');
+    if (!input.value) input.value = input.placeholder || input.min || '0';
+    const count = e.shiftKey ? 10 : 1;
+    if (button.dataset.step === 'up') input.stepUp(count); else input.stepDown(count);
+    input.dispatchEvent(new Event('input', { bubbles: true })); input.dispatchEvent(new Event('change', { bubbles: true })); input.focus();
+  });
+  picker.querySelector('.tabs').addEventListener('keydown', e => {
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+    e.preventDefault(); const tabs = [...e.currentTarget.querySelectorAll('[data-src]')], i = tabs.indexOf(e.target);
+    const n = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    tabs[n].click(); tabs[n].focus();
+  });
   $('#pkSampleMode').addEventListener('click', e => { const el = e.target.closest('[data-pk-sample]'); if (!el) return; pickerSampleMode = el.dataset.pkSample; renderPickerSample(); paintPickerCandidate(); });
   $('#pkSampleMode').addEventListener('keydown', e => { if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return; e.preventDefault(); const els = [...e.currentTarget.querySelectorAll('button:not(:disabled)')], i = els.indexOf(e.target), next = e.key === 'Home' ? 0 : e.key === 'End' ? els.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + els.length) % els.length; els[next].click(); els[next].focus(); });
   $('#pkSampleText').addEventListener('input', debounce(() => { pickerCustomText = $('#pkSampleText').value; $('#pkSample').textContent = $('#pkSample').dataset.text = pickerCustomText; paintPickerCandidate(); }, 200));
@@ -1881,6 +1917,7 @@ export function applyUI() {
   document.querySelectorAll('[data-th]').forEach(el => { el.innerHTML = T(el.dataset.th); });
   document.querySelectorAll('[data-ta]').forEach(el => el.dataset.ta.split(';').forEach(p => { const [a, k] = p.split(':'); el.setAttribute(a, T(k)); }));
   document.querySelectorAll('[data-ui]').forEach(el => { el.hidden = el.dataset.ui !== UI; });
+  syncPickerNumbers();
   renderAboutToc();
   document.querySelectorAll('#moreMenu [data-ui-lang]').forEach(b => { b.setAttribute('aria-checked', b.dataset.uiLang === UI); b.tabIndex = b.dataset.uiLang === UI ? 0 : -1; });
   renderLangOptions(); renderPresetCards(); renderTypoRows(); renderEditor();
