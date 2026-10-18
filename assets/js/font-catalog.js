@@ -24,13 +24,14 @@ export function catalogInfo(family) {
   return { family, aliases: ALIASES[family] || '', region, style,
     bold: axis ? axis[2] >= 700 : weights ? weights.some(w => w >= 700) : null };
 }
-export function catalogOrder(category, lang, current) {
+export function sortCatalog(items, category, lang) {
   const region = /^(zh-Hant-HK|zh-HK)/i.test(lang) ? 'hk' : /^zh-(Hant|TW)/i.test(lang) ? 'tw' : /^ja/i.test(lang) ? 'jp' : /^ko/i.test(lang) ? 'kr' : 'sc';
   const wantsLatin = ['latin', 'digit', 'shared'].includes(category), want = wantsLatin ? 'latin' : category === 'kana' ? 'jp' : category === 'bopo' ? 'tw' : region;
   const score = item => item.region === want ? 0 : wantsLatin ? item.region == null ? 1 : 2 : item.region && item.region !== 'latin' ? 1 : item.region == null ? 2 : 3;
-  // Freeze this order when the dialog opens. Async preview/coverage results never change positions or filter eligibility.
-  return [...new Set([...GF_LIST, ...(current ? [current] : [])])].map(catalogInfo)
-    .sort((a, b) => score(a) - score(b) || Number(a.style === 'other') - Number(b.style === 'other') || a.family.localeCompare(b.family, 'en'));
+  return [...items].sort((a, b) => score(a) - score(b) || Number(a.style === 'other') - Number(b.style === 'other') || a.family.localeCompare(b.family, 'en') || (a.kind || '').localeCompare(b.kind || ''));
+}
+export function catalogOrder(category, lang, current) {
+  return sortCatalog([...new Set([...GF_LIST, ...(current ? [current] : [])])].map(catalogInfo), category, lang);
 }
 export function filterCatalog(items, query, style, bold) {
   const q = searchKey(query.trim());

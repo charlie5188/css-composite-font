@@ -1,5 +1,7 @@
 // Open each test with clean state by clearing saved browser settings.
 async function open(page) {
+  // Tests opt into fixture FontData explicitly; never enumerate fonts on the host running the suite.
+  await page.addInitScript(() => { if (typeof window.queryLocalFonts === 'function' && window.queryLocalFonts.toString().includes('[native code]')) Object.defineProperty(window, 'queryLocalFonts', { value: undefined, configurable: true, writable: true }); });
   await page.addInitScript(() => { if (!sessionStorage.getItem('cf-test')) { localStorage.clear(); sessionStorage.setItem('cf-test', '1'); } });
   await page.goto('index.html');
   await page.waitForFunction(() => document.querySelectorAll('.pcard[data-preset]').length > 5);

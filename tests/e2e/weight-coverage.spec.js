@@ -19,9 +19,8 @@ async function fixture(page) {
 }
 async function choose(page, family) {
   await page.locator('.ct-row[data-id="han"] .fsel').selectOption('pick');
-  await page.locator('#gfManual > summary').click();
-  await page.locator('#gfFamily').fill(family);
-  await page.locator('#gfFamily').dispatchEvent('change');
+  await page.locator('#gfSearch').fill(family);
+  await page.locator('#gfSearch').press('Enter');
   await expect(page.locator('#pkOk')).toBeEnabled();
   await page.click('#pkOk');
 }

@@ -1,13 +1,13 @@
 import { refresh } from './refresh.js';
 import { bindPopover, placePopover, searchKey } from './ui-controls.js';
-import { catalogOrder, filterCatalog } from './font-catalog.js';
+import { catalogInfo, catalogOrder, filterCatalog, sortCatalog } from './font-catalog.js';
 import { importFontFile, importedFonts, rememberImportedFont } from './font-files.js';
 import { initShare } from './share.js';
 import { initAppearance } from './appearance.js';
 import { FIT_SAMPLES, chooseFits, createFitter } from './autofit.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, classOf, inRanges, parseChars, rebuildClassRanges } from './unicode.js';
-import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LOCAL_COMMON, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownFontAt, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
+import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownFontAt, ownSize, presetDirty, presetSnap, rebuild, fileStyle, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
 import { PUNCT_CENTER, REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, punctPos, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, stepperCell, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
 import { initFontTab } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
@@ -599,8 +599,6 @@ export function setPreviewWeight(W) { setPreviewW(W); }
 export const SUPPORT = { sizeAdjust: typeof FontFace !== 'undefined' && 'sizeAdjust' in FontFace.prototype };
 export function initToolbar() {
   $('#gfWeight').innerHTML = WEIGHTS.map(w => `<option value="${w}">${w}</option>`).join('');
-  $('#gfList').innerHTML = GF_LIST.map(f => `<option value="${esc(f)}"></option>`).join('');
-  $('#lfList').innerHTML = LOCAL_COMMON.map(([n, , os]) => `<option value="${esc(n)}">${os}</option>`).join('');
   $('#sizeAdjustWarn').hidden = SUPPORT.sizeAdjust;
 
   const v = () => state.view;
@@ -1216,7 +1214,7 @@ let pickerApplyToken = 0, pickerApplyBusy = false, pickerFailedSource = null;
 export let pickW = null;   // When editing a non-400 row with its own font, choose a weight, font name or file only for that step.
 export const picker = $('#picker');
 let pickCatalog = [], catalogObserver;
-let pickerSampleMode = 'class', pickerCustomText = '';
+let pickerSampleMode = 'class', pickerCustomText = '', pickerLibraryKind = 'google';
 function pickerOwns(ch) {
   const owner = ownerOf(ch.codePointAt(0)), key = keyOf(pickTarget);
   return owner === key || key === 'han' && owner === 'other';
@@ -1240,10 +1238,6 @@ function catalogSample(item) {
   if (item?.region === 'latin' && pickTarget?.type === 'class' && ['han', 'kana', 'bopo', 'punct', 'symbol'].includes(pickTarget.id)) return 'Hamburg 0123';
   return pickerClassSample() || 'Ag';
 }
-function chooseCatalog(family) {
-  $('#gfFamily').value = family; syncGfWeight(); updateCand();
-  $('#gfOptions').querySelectorAll('[data-family]').forEach(el => { const selected = el.dataset.family === family; el.setAttribute('aria-selected', selected); });
-}
 const PICKER_LOAD_MS = 12000;
 function waitForPicker(promise) {
   let timer;
@@ -1264,57 +1258,116 @@ async function loadPickerChoice(el, src, unavailable = 'pkPreviewUnavailable') {
     sample.style.fontFamily = `"${src.family}", var(--ui)`; sample.hidden = false; status.hidden = true;
   } catch (error) { if (el.isConnected) status.textContent = T(error.message === 'picker-timeout' ? 'pkSlowSpecimen' : unavailable); }
 }
-export function renderCatalog() {
-  const box = $('#gfOptions'), query = $('#gfSearch').value, current = $('#gfFamily').value;
-  const entries = filterCatalog(pickCatalog, query, $('#gfStyle').value, $('#gfBold').checked);
-  catalogObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
-  const focusFamily = entries.some(item => item.family === current) ? current : entries[0]?.family;
-  box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.family === focusFamily ? 0 : -1}" aria-selected="${item.family === current}" data-family="${esc(item.family)}"><span class="font-option-name">${esc(item.family)}</span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
-  $('#gfResults').textContent = T('pkResults', { n: entries.length });
-  const filters = Number(!!$('#gfStyle').value) + Number($('#gfBold').checked);
-  $('#pkFilterCount').hidden = !filters; $('#pkFilterCount').textContent = filters; $('#pkFilterClear').disabled = !filters;
-  $('#gfReset').hidden = !!entries.length || !query.trim() && !$('#gfStyle').value && !$('#gfBold').checked;
-  const tryButton = $('#gfTry');
-  tryButton.hidden = !query.trim() || entries.some(item => item.family.toLowerCase() === query.trim().toLowerCase());
-  tryButton.textContent = T('pkTryName', { name: query.trim() });
-  // Only visible rows load a short specimen; detailed coverage remains an explicit candidate-selection task.
-  catalogObserver = new IntersectionObserver(events => events.forEach(entry => {
-    if (!entry.isIntersecting) return;
-    const el = entry.target; catalogObserver.unobserve(el);
-    loadPickerChoice(el, source(G(el.dataset.family)));
-  }), { root: box });
-  box.querySelectorAll('[data-family]').forEach(el => catalogObserver.observe(el));
+function chooseCatalog(family) {
+  $('#gfFamily').value = family; syncGfWeight();
+  pickTab = pickerLibraryKind = 'google'; $('#lfFaceField').hidden = true; updateCand(); syncLibrarySelection();
 }
-let localFontRecords = null, localObserver;
+let localFontRecords = null, localReadAttempted = false, localReadPromise = null, localReadError = '';
+let libraryOrder = [];
 function localGroups() {
-  const records = localFontRecords !== null ? localFontRecords : LOCAL_COMMON.map(([fullName, postscriptName]) => ({ fullName, postscriptName, family: fullName.replace(WORD_RE, '').replace(/\s+(?:W\d|Roman)$/, '').trim(), style: fullName.match(WORD_RE)?.[2] || fullName.match(/\bW\d$/)?.[0] || (/\bRoman$/.test(fullName) ? 'Roman' : 'Regular') }));
   const groups = new Map();
-  for (const item of records) { if (!groups.has(item.family)) groups.set(item.family, []); groups.get(item.family).push(item); }
+  for (const item of localFontRecords || []) {
+    if (!groups.has(item.family)) groups.set(item.family, []);
+    groups.get(item.family).push(item);
+  }
   return [...groups].sort(([a], [b]) => a.localeCompare(b));
+}
+function libraryChoices() {
+  const choices = pickCatalog.map(item => ({ ...item, kind: 'google', id: 'google:' + item.family }));
+  for (const [family, faces] of localGroups()) {
+    const known = catalogInfo(family), named = styleOfFont(L(family));
+    // Names can establish a positive match, but absence of a named bold face cannot rule out an unread variable font.
+    const style = known.style || (named !== 'other' ? named : /script|hand|callig|brush/i.test(family) ? 'other' : null);
+    choices.push({ ...known, family, aliases: faces.map(f => f.fullName + ' ' + f.postscriptName).join(' '), style,
+      bold: faces.some(f => /bold|black|heavy|demi|semi|W[6-9]\b/i.test(f.style)) ? true : null,
+      kind: 'local', id: 'local:' + family, face: faces.find(f => /regular|normal|book/i.test(f.style))?.fullName || faces[0].fullName });
+  }
+  if (!libraryOrder.length) libraryOrder = sortCatalog(choices, pickTarget?.id || 'custom', state.typo.lang).map(item => item.id);
+  // Enumeration may finish while a user browses. Append discoveries without moving an existing candidate under the pointer.
+  const seen = new Set(libraryOrder); for (const item of choices) if (!seen.has(item.id)) { libraryOrder.push(item.id); seen.add(item.id); }
+  const order = new Map(libraryOrder.map((id, i) => [id, i]));
+  return choices.sort((a, b) => order.get(a.id) - order.get(b.id));
+}
+function selectedLibraryId() {
+  return pickTab === 'google' ? 'google:' + $('#gfFamily').value : pickTab === 'local' ? 'local:' + localGroups().find(([, faces]) => faces.some(f => f.fullName === $('#lfName').value))?.[0] : '';
+}
+function syncLibrarySelection() {
+  const selected = selectedLibraryId(), options = [...$('#gfOptions').querySelectorAll('[data-choice]')], present = options.some(el => el.dataset.choice === selected);
+  options.forEach(el => { el.setAttribute('aria-selected', el.dataset.choice === selected); if (present) el.tabIndex = el.dataset.choice === selected ? 0 : -1; });
 }
 function selectLocalFamily(family, keepFace = false) {
   const faces = localGroups().find(([name]) => name === family)?.[1]; if (!faces?.length) return;
-  const current = $('#lfName').value, face = (keepFace && faces.find(f => f.fullName === current)) || faces.find(f => /regular|normal|book/i.test(f.style)) || faces[0];
+  const current = $('#lfName').value, query = searchKey($('#gfSearch').value);
+  const exact = faces.find(f => searchKey(f.fullName) === query || searchKey(f.postscriptName) === query);
+  const face = (keepFace && faces.find(f => f.fullName === current)) || exact || faces.find(f => /regular|normal|book/i.test(f.style)) || faces[0];
   $('#lfFaceField').hidden = false;
   $('#lfFace').innerHTML = faces.map(f => `<option value="${esc(f.fullName)}">${esc(f.style)}</option>`).join('');
   $('#lfFace').value = face.fullName; $('#lfName').value = face.fullName;
-  $('#lfOptions').querySelectorAll('[data-local-family]').forEach(el => el.setAttribute('aria-selected', el.dataset.localFamily === family));
-  if (!keepFace) updateCand();
+  if (!keepFace) { pickTab = pickerLibraryKind = 'local'; updateCand(); }
+  syncLibrarySelection();
 }
-export function renderLocalFonts() {
-  const box = $('#lfOptions'), query = searchKey($('#lfFamilySearch').value), current = $('#lfName').value;
-  const groups = localGroups().filter(([family, faces]) => searchKey(`${family} ${faces.map(f => f.fullName + ' ' + f.postscriptName).join(' ')}`).includes(query));
-  localObserver?.disconnect(); box.style.setProperty('--font-choice-count', groups.length);
-  $('#lfResults').textContent = T('pkResults', { n: groups.length });
-  box.innerHTML = groups.length ? groups.map(([family, faces], i) => `<button type="button" class="font-option" role="option" tabindex="${i ? -1 : 0}" aria-selected="${faces.some(f => f.fullName === current)}" data-local-family="${esc(family)}" data-local-face="${esc(faces.find(f => /regular|normal|book/i.test(f.style))?.fullName || faces[0].fullName)}"><span class="font-option-name">${esc(family)}</span><span class="font-option-sample" hidden>${esc(pickerClassSample())}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoLocalResults'))}</p>`;
-  localObserver = new IntersectionObserver(entries => entries.forEach(entry => {
-    if (!entry.isIntersecting) return; const el = entry.target; localObserver.unobserve(el);
-    loadPickerChoice(el, source(L(el.dataset.localFace, localAlt.get(el.dataset.localFace) ? [localAlt.get(el.dataset.localFace)] : [])), 'pkLocalNotConfirmed');
+function chooseLibraryElement(el) {
+  if (el.dataset.localFamily) selectLocalFamily(el.dataset.localFamily);
+  else if (el.dataset.family) chooseCatalog(el.dataset.family);
+}
+function tryExactLocal() {
+  $('#lfName').value = $('#gfSearch').value.trim(); $('#lfVar').checked = false;
+  pickTab = pickerLibraryKind = 'local'; $('#lfFaceField').hidden = true; updateCand(); syncLibrarySelection();
+}
+export function renderCatalog() {
+  const box = $('#gfOptions'), query = $('#gfSearch').value, sourceFilter = $('#pkSource').value;
+  const focused = box.contains(document.activeElement) ? document.activeElement.closest('[data-choice]')?.dataset.choice : null;
+  const entries = filterCatalog(libraryChoices(), query, $('#gfStyle').value, $('#gfBold').checked).filter(item => !sourceFilter || item.kind === sourceFilter);
+  catalogObserver?.disconnect(); box.style.setProperty('--font-choice-count', entries.length);
+  const selected = selectedLibraryId(), focusId = entries.some(item => item.id === selected) ? selected : entries[0]?.id;
+  box.innerHTML = entries.length ? entries.map(item => `<button type="button" class="font-option" role="option" tabindex="${item.id === focusId ? 0 : -1}" aria-selected="${item.id === selected}" data-choice="${esc(item.id)}" ${item.kind === 'google' ? `data-family="${esc(item.family)}"` : `data-local-family="${esc(item.family)}" data-local-face="${esc(item.face)}"`}><span class="font-option-title"><span class="font-option-name" title="${esc(item.family)}">${esc(item.family)}</span><span class="font-option-source">${esc(item.kind === 'google' ? 'Google Fonts' : T('srcLocal'))}</span></span><span class="font-option-sample" hidden>${esc(catalogSample(item))}</span><small data-font-state>${esc(T('pkPreviewLoading'))}</small></button>`).join('') : `<p class="hint">${esc(T('pkNoResults'))}</p>`;
+  $('#gfResults').textContent = T('pkResults', { n: entries.length });
+  const filters = Number(!!sourceFilter) + Number(!!$('#gfStyle').value) + Number($('#gfBold').checked);
+  $('#pkFilterCount').hidden = !filters; $('#pkFilterCount').textContent = filters; $('#pkFilterClear').disabled = !filters;
+  $('#gfReset').hidden = !!entries.length || !query.trim() && !filters;
+  $('#pkExactChoices').hidden = !!entries.length || !query.trim();
+  $('#gfTry').hidden = sourceFilter === 'local'; $('#lfTry').hidden = sourceFilter === 'google';
+  $('#gfTry').textContent = T('pkTryGoogle', { name: query.trim() }); $('#lfTry').textContent = T('pkTryLocal', { name: query.trim() });
+  catalogObserver = new IntersectionObserver(events => events.forEach(entry => {
+    if (!entry.isIntersecting) return;
+    const el = entry.target; catalogObserver.unobserve(el);
+    const local = el.dataset.localFace;
+    loadPickerChoice(el, source(local ? L(local, localAlt.get(local) ? [localAlt.get(local)] : []) : G(el.dataset.family)), local ? 'pkLocalNotConfirmed' : 'pkPreviewUnavailable');
   }), { root: box });
-  box.querySelectorAll('[data-local-family]').forEach(el => localObserver.observe(el));
-  const selected = groups.find(([, faces]) => faces.some(f => f.fullName === current));
-  $('#lfFaceField').hidden = !selected;
-  if (selected) selectLocalFamily(selected[0], true);
+  box.querySelectorAll('[data-choice]').forEach(el => { catalogObserver.observe(el); if (el.dataset.choice === focused) el.focus({ preventScroll: true }); });
+  $('#lfFaceField').hidden = pickTab !== 'local' || !localGroups().some(([, faces]) => faces.some(f => f.fullName === $('#lfName').value));
+  if (!$('#lfFaceField').hidden) selectLocalFamily(localGroups().find(([, faces]) => faces.some(f => f.fullName === $('#lfName').value))[0], true);
+}
+export function renderLocalFonts() { renderCatalog(); }
+function showLocalReadState() {
+  const msg = $('#lfMsg'), button = $('#lfQuery'), key = localReadPromise ? 'lfWait' : localReadError;
+  $('#lfStatus').hidden = !key;
+  msg.textContent = key ? T(key) : ''; msg.classList.toggle('caution', !!localReadError && localReadError !== 'lfNoApi');
+  button.disabled = !!localReadPromise; button.hidden = !!localReadPromise || !localReadError || typeof window.queryLocalFonts !== 'function';
+}
+async function readInstalledFonts() {
+  if (localReadPromise) return localReadPromise;
+  localReadAttempted = true;
+  localReadError = '';
+  if (typeof window.queryLocalFonts !== 'function') {
+    localReadError = 'lfNoApi'; showLocalReadState(); return;
+  }
+  // Call before any await so opening the picker supplies the browser's required user activation.
+  try { localReadPromise = window.queryLocalFonts(); } catch (error) { localReadPromise = Promise.reject(error); }
+  showLocalReadState();
+  try {
+    const list = await localReadPromise, seen = new Set(); localFontRecords = [];
+    for (const f of list) {
+      if (seen.has(f.fullName)) continue; seen.add(f.fullName); localFontRecords.push(f);
+      localAlt.set(f.fullName, f.postscriptName); localData.set(f.fullName, f);
+    }
+    if (picker.open && pickTab !== 'file') renderCatalog();
+  } catch (error) {
+    // Keep an earlier successful list if a later explicit retry fails; a failed read is never an empty installed library.
+    localReadError = error?.name === 'SecurityError' ? 'lfSec' : error?.name === 'NotAllowedError' ? 'lfDenied' : 'pkLocalReadFailed';
+  } finally {
+    localReadPromise = null; showLocalReadState();
+  }
 }
 let fileObserver, fileImportToken = 0;
 function chooseImported(id) {
@@ -1352,12 +1405,15 @@ async function acceptFontFiles(list) {
   $('#ffError').textContent = failed.length ? T('pkFileInvalid', { names: failed.join(T('joiner')) }) : ''; $('#ffError').hidden = !failed.length;
 }
 export function setPickTab(tab) {
+  if (tab === 'library') tab = pickerLibraryKind;
   pickTab = tab;
+  if (tab !== 'file') pickerLibraryKind = tab;
+  const pane = tab === 'file' ? 'file' : 'library';
   for (const id of ['pkFilterPop', 'pkSamplePop']) { const pop = $('#'+id); if (pop.matches(':popover-open')) pop.hidePopover(); }
-  picker.querySelectorAll('[data-src]').forEach(b => { b.setAttribute('aria-selected', b.dataset.src === tab); b.tabIndex = b.dataset.src === tab ? 0 : -1; });
-  picker.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== tab; });
-  if (tab === 'local') { renderLocalFonts(); if ($('#lfQuery').disabled) { $('#lfMsg').hidden = false; $('#lfMsg').textContent = T('lfWait'); } }
-  if (tab === 'file') renderImportedFonts();
+  picker.querySelectorAll('[data-src]').forEach(b => { b.setAttribute('aria-selected', b.dataset.src === pane); b.tabIndex = b.dataset.src === pane ? 0 : -1; });
+  picker.querySelectorAll('[data-pane]').forEach(p => { p.hidden = p.dataset.pane !== pane; });
+  if (pane === 'file') renderImportedFonts();
+  else { renderCatalog(); if (!localReadAttempted) readInstalledFonts(); else showLocalReadState(); }
   updateCand();
 }
 export function candFromFields() {
@@ -1546,6 +1602,7 @@ function syncPickerProof(f) {
   else if (weights?.length) pickerProofWeight = weights.reduce((a, b) => Math.abs(b - pickerProofWeight) < Math.abs(a - pickerProofWeight) ? b : a);
   $('#pkPreviewTools').hidden = !f;
   $('#pkApplied').hidden = !f; $('#pkDetails').hidden = !f; $('#gfApplyField').hidden = f?.kind !== 'google';
+  $('#lfVarField').hidden = f?.kind !== 'local' || localData.has(f.name);
   $('#pkSelectedName').textContent = f?.kind === 'file' ? importedFonts.get(f.fileId)?.family || f.fileName : f?.kind === 'google' ? f.family : f?.name || T('pkEmpty');
   $('#pkProofWeight').hidden = !axis; $('#pkProofWeightNum').hidden = !axis;
   $('#pkProofWeightSelect').hidden = !!axis || !weights?.length;
@@ -1610,12 +1667,6 @@ async function paintPickerCandidate() {
     pickerFailedSource = src; ok.disabled = slow || f.kind !== 'local';
   } finally { if (current()) preview.removeAttribute('aria-busy'); }
 }
-function invalidatePickerDraft() {
-  pickerPreviewToken++; pickCand = null; syncPickerProof(null); resetCoverage();
-  $('#pkOk').disabled = true; $('#pkRetry').hidden = true; $('#pkSample').hidden = true;
-  $('#pkStatus').dataset.state = 'draft'; $('#pkStatus').classList.remove('caution', 'vh'); $('#pkStatus').parentElement.classList.remove('vh'); $('#pkStatus').textContent = T('pkNameDraft');
-  picker.querySelector('.pk-preview').removeAttribute('aria-busy');
-}
 /* Strip weight suffixes, such as W3 or Bold, from local names when checking family identity. */
 export const localStem = n => n.replace(/\bW\d$/, '').replace(WORD_RE, '').trim().toLowerCase();
 /* Check whether this is the row's original font, possibly at another weight, name or file. */
@@ -1662,7 +1713,7 @@ export function gfWeightVal() {
 export function openPicker(t, W = BASE_W) {      // W is the target weight when opening from a weight row.
   pickerApplyToken++; pickerPreviewToken++; setPickerApplyBusy(false);
   pickTarget = t;
-  $('#gfManual').open = false; $('#pkDetails').open = false; $('#pkApplied').open = false;
+  $('#pkDetails').open = false; $('#pkApplied').open = false;
   $('#pkAutoFitField').hidden = t.type === 'class' && t.id === 'han'; $('#pkAutoFit').checked = true;
   const o = objOf(t), key = keyOf(t);
   pickerProofKey = ''; $('#ffWeightField').hidden = true;
@@ -1697,16 +1748,16 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   if (pickW && o.font.kind === 'file') { const g = guessPath(o.font.fileName, W); $('#ffPath').placeholder = g; $('#ffPath').value = state.weightNames[k] || g; }
   fileImportToken++; $('#ffDrop').removeAttribute('aria-busy'); $('#ffSearch').value = ''; $('#ffError').textContent = ''; $('#ffError').hidden = true;
   $('#ffFile').value = ''; $('#ffItal').value = '';
-  $('#lfFamilySearch').value = ''; $('#lfManual').open = false;
-  $('#lfMsg').hidden = true; $('#lfMsg').classList.remove('caution');
+  libraryOrder = []; $('#pkSource').value = '';
+  pickerLibraryKind = (pickW ? (ovf || o.font).kind : cur?.kind) === 'local' ? 'local' : 'google';
   const rowFont = pickW ? (t.type === 'class' ? resolveCls(t.id, W, true) : resolveCustom(o, W, true)).font : cur;
   pickCand = ovf?.kind === 'file' ? ovf : rowFont?.kind === 'file' ? rowFont : null;
   pickerSampleMode = 'class'; pickerCustomText = pickerClassSample(); $('#pkSampleSize').value = 32; $('#pkSample').style.fontSize = '32px'; renderPickerSample();
   pickCatalog = catalogOrder(t.type === 'class' ? t.id : 'custom', state.typo.lang, cur?.kind === 'google' ? cur.family : '');
-  $('#gfSearch').value = ''; $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog();
+  $('#gfSearch').value = ''; $('#pkSource').value = ''; $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog();
   picker.showModal();
   setPickTab(pickW ? (ovf || o.font).kind : cur?.kind || 'google');
-  if (pickTab === 'google') $('#gfSearch').focus();
+  if (pickTab !== 'file') $('#gfSearch').focus();
 }
 /* Build the proposed configuration off-screen. Measurement never changes live settings, so Cancel and a failed check preserve the user's work. */
 function applyPickerChoice(st, d) {
@@ -1804,7 +1855,7 @@ export function initPicker() {
   picker.querySelectorAll('input[type="number"]').forEach(pickerNumber);
   const pickerPops = [['pkFilterPop', 'pkFilterBtn'], ['pkSamplePop', 'pkSampleBtn']];
   pickerPops.forEach(([id, button]) => bindPopover($('#'+id), $('#'+button), { within: picker, inset: 16 }));
-  $('#pkFilterClear').addEventListener('click', () => { $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog(); });
+  $('#pkFilterClear').addEventListener('click', () => { $('#pkSource').value = ''; $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog(); });
   picker.addEventListener('click', e => {
     const button = e.target.closest('.field-step [data-step]'); if (!button) return;
     const input = button.closest('.field-step').querySelector('input');
@@ -1830,41 +1881,45 @@ export function initPicker() {
   $('#ffWeightNum').addEventListener('input', updateCand);
   $('#ffWeightNum').addEventListener('change', updateCand);
   $('#pkScope').addEventListener('change', () => { syncGfWeight(); updateCand(); });
-  $('#lfFamilySearch').addEventListener('input', renderLocalFonts);
-  $('#lfOptions').addEventListener('click', e => { const el = e.target.closest('[data-local-family]'); if (el) selectLocalFamily(el.dataset.localFamily); });
-  $('#lfOptions').addEventListener('keydown', e => { if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(e.key)) return; e.preventDefault(); const els = [...e.currentTarget.querySelectorAll('[data-local-family]')], i = els.indexOf(e.target.closest('[data-local-family]')), n = e.key === 'Home' ? 0 : e.key === 'End' ? els.length - 1 : Math.max(0, Math.min(els.length - 1, i + (e.key === 'ArrowDown' ? 1 : -1))); els.forEach((el, j) => { el.tabIndex = j === n ? 0 : -1; }); els[n]?.focus(); });
   $('#lfFace').addEventListener('change', () => { $('#lfName').value = $('#lfFace').value; updateCand(); });
   $('#gfSearch').addEventListener('input', renderCatalog);
-  $('#gfReset').addEventListener('click', () => { $('#gfSearch').value = ''; $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog(); $('#gfSearch').focus(); });
+  $('#gfReset').addEventListener('click', () => { $('#gfSearch').value = ''; $('#pkSource').value = ''; $('#gfStyle').value = ''; $('#gfBold').checked = false; renderCatalog(); $('#gfSearch').focus(); });
   $('#pkRetry').addEventListener('click', () => {
     // An explicit retry replaces a stuck or rejected face. Late callbacks still hold the previous preview token.
     if (pickerFailedSource && sources.get(pickerFailedSource.key) === pickerFailedSource) sources.delete(pickerFailedSource.key);
     paintPickerCandidate();
   });
   $('#gfSearch').addEventListener('keydown', e => { if (e.key === 'ArrowDown') { e.preventDefault(); $('#gfOptions [tabindex="0"]')?.focus(); } });
+  $('#pkSource').addEventListener('change', () => { renderCatalog(); if ($('#pkSource').value !== 'google' && !localReadAttempted) readInstalledFonts(); });
   $('#gfStyle').addEventListener('change', renderCatalog); $('#gfBold').addEventListener('change', renderCatalog);
-  $('#gfOptions').addEventListener('click', e => { const el = e.target.closest('[data-family]'); if (el) chooseCatalog(el.dataset.family); });
+  $('#gfOptions').addEventListener('click', e => { const el = e.target.closest('[data-choice]'); if (el) chooseLibraryElement(el); });
   $('#gfOptions').addEventListener('keydown', e => {
-    const options = [...e.currentTarget.querySelectorAll('[data-family]')], i = options.indexOf(e.target.closest('[data-family]'));
+    const options = [...e.currentTarget.querySelectorAll('[data-choice]')], i = options.indexOf(e.target.closest('[data-choice]'));
     const next = e.key === 'ArrowDown' ? Math.min(options.length - 1, i + 1) : e.key === 'ArrowUp' ? Math.max(0, i - 1) : e.key === 'Home' ? 0 : e.key === 'End' ? options.length - 1 : null;
     if (next != null) { e.preventDefault(); options.forEach((el, j) => { el.tabIndex = j === next ? 0 : -1; }); options[next]?.focus(); }
   });
   $('#gfTry').addEventListener('click', () => chooseCatalog($('#gfSearch').value.trim()));
+  $('#lfTry').addEventListener('click', tryExactLocal);
+  $('#gfSearch').addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return; e.preventDefault();
+    const options = [...$('#gfOptions').querySelectorAll('[data-choice]')];
+    const exact = options.filter(el => searchKey(el.dataset.family || el.dataset.localFamily) === searchKey($('#gfSearch').value));
+    if (exact.length === 1) chooseLibraryElement(exact[0]);
+    else if (options.length === 1) chooseLibraryElement(options[0]);
+    else if (!options.length && !$('#pkExactChoices').hidden) {
+      const choices = [...$('#pkExactChoices').querySelectorAll('button:not([hidden])')];
+      if (choices.length === 1) choices[0].click(); else choices[0]?.focus();
+    } else $('#gfOptions [tabindex="0"]')?.focus();
+  });
   picker.addEventListener('close', () => {
     // Native close events are queued; an earlier dialog must not cancel one that has already reopened.
     if (picker.open) return;
     for (const [id] of pickerPops) { const pop = $('#'+id); if (pop.matches(':popover-open')) pop.hidePopover(); }
-    pickerPreviewToken++; covTok++; pickerApplyToken++; setPickerApplyBusy(false); fileImportToken++; catalogObserver?.disconnect(); localObserver?.disconnect(); fileObserver?.disconnect(); });
+    pickerPreviewToken++; covTok++; pickerApplyToken++; setPickerApplyBusy(false); fileImportToken++; catalogObserver?.disconnect(); fileObserver?.disconnect(); });
   picker.querySelectorAll('[data-src]').forEach(b => b.addEventListener('click', () => setPickTab(b.dataset.src)));
-  $('#gfFamily').addEventListener('input', invalidatePickerDraft);
-  $('#gfFamily').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); syncGfWeight(); updateCand(); } });
-  $('#gfFamily').addEventListener('change', () => { syncGfWeight(); updateCand(); });
   $('#gfWeight').addEventListener('change', updateCand);
   $('#gfWeightNum').addEventListener('input', updateCand);
   $('#gfWeightNum').addEventListener('change', () => { if ($('#gfWeightNum').value.trim()) $('#gfWeightNum').value = gfWeightVal(); updateCand(); });
-  $('#lfName').addEventListener('input', invalidatePickerDraft);
-  $('#lfName').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); updateCand(); } });
-  $('#lfName').addEventListener('change', updateCand);
   $('#lfVar').addEventListener('change', updateCand);
   $('#ffFile').addEventListener('change', e => acceptFontFiles([...e.target.files]));
   $('#ffSearch').addEventListener('input', renderImportedFonts);
@@ -1898,23 +1953,7 @@ export function initPicker() {
     renderAxes();
   });
   axBox.addEventListener('click', e => { const t = e.target.closest('[data-axreset]')?.dataset.axreset; if (t) { delete pickVary[t]; renderAxes(); } });
-  $('#lfQuery').addEventListener('click', async () => {
-    const msg = $('#lfMsg'), button = $('#lfQuery'), target = pickTarget;
-    if (button.disabled) return;
-    msg.classList.remove('caution'); msg.hidden = false;
-    if (!('queryLocalFonts' in window)) { msg.textContent = T('lfNoApi'); msg.classList.add('caution'); $('#lfManual').open = true; return; }
-    try {
-      button.disabled = true; button.setAttribute('aria-busy', 'true');
-      msg.textContent = T('lfWait');
-      const list = await window.queryLocalFonts();
-      const seen = new Set(), opts = []; localFontRecords = [];
-      for (const f of list) { if (seen.has(f.fullName)) continue; seen.add(f.fullName); localFontRecords.push(f); localAlt.set(f.fullName, f.postscriptName); localData.set(f.fullName, f); opts.push(`<option value="${esc(f.fullName)}">${esc(f.family)} · ${esc(f.style)}</option>`); }
-      $('#lfList').innerHTML = opts.join('');
-      if (picker.open && pickTab === 'local') { msg.textContent = T('lfCount', { n: opts.length }); renderLocalFonts(); if (pickTarget === target) $('#lfFamilySearch').focus(); }
-    } catch (e) {
-      if (picker.open && pickTab === 'local') { msg.textContent = T(e?.name === 'SecurityError' ? 'lfSec' : e?.name === 'NotAllowedError' ? 'lfDenied' : 'pkLocalReadFailed'); $('#lfManual').open = true; msg.classList.add('caution'); }
-    } finally { button.disabled = false; button.removeAttribute('aria-busy'); }
-  });
+  $('#lfQuery').addEventListener('click', readInstalledFonts);
   $('#pkCancel').addEventListener('click', () => picker.close());
   $('#pkOk').addEventListener('click', applyPicker);
 }
@@ -1933,6 +1972,7 @@ export function applyUI() {
   document.querySelectorAll('[data-ta]').forEach(el => el.dataset.ta.split(';').forEach(p => { const [a, k] = p.split(':'); el.setAttribute(a, T(k)); }));
   document.querySelectorAll('[data-ui]').forEach(el => { el.hidden = el.dataset.ui !== UI; });
   syncPickerNumbers();
+  if (picker.open && pickTab !== 'file') { renderCatalog(); showLocalReadState(); }
   renderAboutToc();
   document.querySelectorAll('#moreMenu [data-ui-lang]').forEach(b => { b.setAttribute('aria-checked', b.dataset.uiLang === UI); b.tabIndex = b.dataset.uiLang === UI ? 0 : -1; });
   renderLangOptions(); renderPresetCards(); renderTypoRows(); renderEditor();

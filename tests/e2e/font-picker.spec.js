@@ -68,13 +68,11 @@ test('本机字体：按家族和样式选择，自动读取可变属性，拒�
     ];
   });
   await fixture(page);
-  await page.locator('#picker [data-src="local"]').click();
-  await expect(page.locator('#lfManual')).not.toHaveAttribute('open', '');
-  await page.locator('#lfQuery').click();
-  await expect(page.locator('#lfOptions [data-local-family]')).toHaveCount(1);
-  await page.locator('#lfFamilySearch').fill('Ｆｉｘｔｕｒｅ-Ｓａｎｓ');
-  await expect(page.locator('#lfOptions [data-local-family]')).toHaveCount(1);
-  await page.locator('#lfOptions [data-local-family]').click();
+  await expect(page.locator('#lfQuery')).toBeHidden();
+  await expect(page.locator('#gfOptions [data-local-family]')).toHaveCount(1);
+  await page.locator('#gfSearch').fill('Ｆｉｘｔｕｒｅ-Ｓａｎｓ');
+  await expect(page.locator('#gfOptions [data-local-family]')).toHaveCount(1);
+  await page.locator('#gfOptions [data-local-family]').click();
   await expect(page.locator('#lfFace option')).toHaveCount(2);
   await expect(page.locator('#lfName')).toHaveValue('Fixture Sans Regular');
   await page.locator('#lfFace').selectOption('Fixture Sans Bold');
@@ -83,10 +81,7 @@ test('本机字体：按家族和样式选择，自动读取可变属性，拒�
   await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
   await expect(page.locator('#pkOk')).toBeInViewport();
   expect(await page.locator('#picker').evaluate(el => el.scrollWidth <= el.clientWidth)).toBeTruthy();
-  await page.evaluate(() => { window.queryLocalFonts = async () => { throw new DOMException('Denied', 'NotAllowedError'); }; });
-  await page.locator('#lfQuery').click();
-  await expect(page.locator('#lfManual')).toHaveAttribute('open', '');
-  await expect(page.locator('#lfMsg')).toBeVisible();
+
 });
 
 
@@ -306,8 +301,8 @@ test('选择时自动匹配：单档不改变基础设置，取消测量不留�
 test('信息层级：预览、应用与详情分组，短列表收紧，数字组件和来源页签支持键盘', async ({ page }) => {
   await fixture(page);
   await expect(page.locator('#pkSelectedName')).toHaveText('Noto Serif SC');
-  await expect(page.getByRole('region', { name: '浏览字体', exact: true })).toBeVisible();
-  await expect(page.getByRole('region', { name: '预览与应用', exact: true })).toBeVisible();
+  await expect(page.locator('#pkBrowseTitle,#pkPreviewTitle')).toHaveCount(0);
+  await expect(page.locator('#picker .pk > .tabs [role=tab]')).toHaveCount(2);
   await expect(page.locator('#gfFamily')).toBeHidden();
   await expect(page.locator('#pkDetails')).not.toHaveAttribute('open', '');
   await expect(page.locator('#pkApplied #gfWeightNum')).toBeHidden();
@@ -321,8 +316,7 @@ test('信息层级：预览、应用与详情分组，短列表收紧，数字�
   await page.locator('#pkSampleSize').locator('..').hover();
   await page.locator('#pkSampleSize').locator('..').locator('[data-step="up"]').click();
   await expect(page.locator('#pkSampleSize')).toHaveValue('33');
-  await page.locator('#picker [data-src="google"]').focus(); await page.keyboard.press('ArrowRight');
-  await expect(page.locator('#picker [data-src="local"]')).toBeFocused(); await page.keyboard.press('End');
+  await page.locator('#picker [data-src="library"]').focus(); await page.keyboard.press('ArrowRight');
   await expect(page.locator('#picker [data-src="file"]')).toBeFocused();
   await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
   await expect(page.locator('#pkOk')).toBeEnabled();
@@ -353,11 +347,10 @@ test('状态反馈：无搜索结果保留候选，名称草稿不探测，加�
     requested++;
     return fail ? route.fulfill({ status: 400, body: 'Unavailable' }) : route.fulfill({ contentType: 'text/css', body: "@font-face { font-family: 'PickerRetry'; src: url('http://127.0.0.1:8765/tests/fixtures/Jost%5Bwght%5D.ttf'); }" });
   });
-  await page.locator('#gfManual > summary').click();
-  await page.locator('#gfFamily').fill('Int');
-  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'draft');
-  await expect(page.locator('#pkOk')).toBeDisabled(); expect(requested).toBe(0);
-  await page.locator('#gfFamily').fill('Inter'); await page.locator('#gfFamily').press('Enter');
+  await page.locator('#gfSearch').fill('Int');
+  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('#pkOk')).toBeEnabled(); expect(requested).toBe(0);
+  await page.locator('#gfSearch').fill('Inter'); await page.locator('#gfSearch').press('Enter');
   await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'error');
   await expect(page.locator('#pkStatus')).toContainText('加载失败');
   await expect(page.locator('#pkOk')).toBeDisabled(); await expect(page.locator('#pkRetry')).toBeVisible();
@@ -402,20 +395,26 @@ test('状态反馈：无法完成字符检查时显示未知，避免伪造全�
   await expect(page.locator('#pkCov .cov.ok')).toHaveCount(0);
 });
 
-test('状态反馈：本机授权结果迟到不抢新对话框焦点，已知错误不会冒充拒绝授权', async ({ page }) => {
+test('状态反馈：自动读取本机字体，迟到结果不抢焦点，失败仅显示手动重试', async ({ page }) => {
   await page.addInitScript(() => { window.queryLocalFonts = () => new Promise(resolve => { window.releaseLocalQuery = resolve; }); });
-  await fixture(page); await page.locator('#picker [data-src="local"]').click(); await page.locator('#lfQuery').click();
-  await expect(page.locator('#lfQuery')).toBeDisabled(); await expect(page.locator('#lfMsg')).toHaveText('等待授权…');
+  await fixture(page);
+  await expect(page.locator('#lfQuery')).toBeHidden(); await expect(page.locator('#lfMsg')).toHaveText('等待授权…');
+  const chosen = page.locator('#gfOptions [data-choice]').first(); await chosen.focus(); await chosen.press('Enter');
+  await expect(chosen).toBeFocused();
   await page.locator('#pkCancel').click(); await page.locator('.ct-row[data-id="latin"] .fsel').selectOption('pick');
   await expect(page.locator('#gfSearch')).toBeFocused();
-  await page.locator('#picker [data-src=local]').click(); await expect(page.locator('#lfMsg')).toHaveText('等待授权…');
-  await page.locator('#picker [data-src=google]').click(); await page.locator('#gfSearch').focus();
-  await page.evaluate(() => window.releaseLocalQuery([]));
-  await expect(page.locator('#lfQuery')).toBeEnabled(); await expect(page.locator('#gfSearch')).toBeFocused();
-  await page.locator('#picker [data-src="local"]').click();
-  await page.evaluate(() => { window.queryLocalFonts = async () => { throw new Error('Read failed'); }; });
+  const order = await page.locator('#gfOptions [data-choice]').evaluateAll(els => els.map(el => el.dataset.choice));
+  await page.evaluate(() => window.releaseLocalQuery([{ family: 'Fresh Sans', fullName: 'Fresh Sans Regular', postscriptName: 'FreshSans', style: 'Regular', blob: async () => (await fetch('/tests/fixtures/Jost%5Bwght%5D.ttf')).blob() }]));
+  await expect(page.locator('#gfOptions [data-choice]')).toHaveCount(order.length + 1);
+  expect((await page.locator('#gfOptions [data-choice]').evaluateAll(els => els.map(el => el.dataset.choice))).slice(0, order.length)).toEqual(order);
+  await expect(page.locator('#lfStatus')).toBeHidden(); await expect(page.locator('#gfSearch')).toBeFocused();
+  await page.addInitScript(() => { window.queryLocalFonts = async () => { throw new DOMException('Denied', 'NotAllowedError'); }; });
+  await page.reload(); await page.click('#ltabFonts'); await page.locator('.ct-row[data-id="han"] .fsel').selectOption('pick');
+  await expect(page.locator('#lfQuery')).toBeVisible(); await expect(page.locator('#lfMsg')).toContainText('没有获得权限');
+  await page.evaluate(() => { window.queryLocalFonts = async () => { throw new TypeError('Device failed'); }; });
   await page.locator('#lfQuery').click(); await expect(page.locator('#lfMsg')).toContainText('无法读取本机字体');
-  await expect(page.locator('#lfManual')).toHaveAttribute('open', '');
+  await page.evaluate(() => { window.queryLocalFonts = async () => []; });
+  await page.locator('#lfQuery').click(); await expect(page.locator('#lfStatus')).toBeHidden();
 });
 
 test('状态反馈：上一轮排队的关闭事件不能中止重新打开的预览', async ({ page }) => {
@@ -429,7 +428,8 @@ test('状态反馈：上一轮排队的关闭事件不能中止重新打开的�
     const u = await import('./assets/js/ui.js');
     u.picker.close(); u.openPicker({ type: 'class', id: 'han' });
     // Start another request in the same task, before the browser delivers the previous native close event.
-    const field = document.querySelector('#gfFamily'); field.value = 'Inter'; field.dispatchEvent(new Event('change'));
+    const search = document.querySelector('#gfSearch'); search.value = 'Inter'; search.dispatchEvent(new Event('input'));
+    document.querySelector('#gfOptions [data-family="Inter"]').click();
   });
   await expect(page.locator('#pkSelectedName')).toHaveText('Inter');
   release(); await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'ready');
@@ -451,8 +451,6 @@ test('选字弹层：筛选状态可见且可清除，Escape 只关闭弹层；�
   await page.setViewportSize({ width: 390, height: 844 }); await page.emulateMedia({ colorScheme: 'dark' });
   for (const lang of ['zh', 'tw', 'ja', 'en']) {
     await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
-    await expect(page.locator('#pkBrowseTitle')).not.toHaveText('pkBrowseTitle');
-    await expect(page.locator('#pkPreviewTitle')).not.toHaveText('pkPreviewTitle');
     await expect(page.locator('.pk-actions #pkAutoFit')).toBeInViewport();
     await expect(page.locator('#pkCancel')).toBeInViewport(); await expect(page.locator('#pkOk')).toBeInViewport();
     await page.locator('#pkSampleBtn').click(); await page.locator('[data-pk-sample="custom"]').click();
@@ -463,4 +461,55 @@ test('选字弹层：筛选状态可见且可清除，Escape 只关闭弹层；�
     })).toBeTruthy();
     await page.keyboard.press('Escape'); await expect(page.locator('#picker')).toBeVisible();
   }
+});
+
+test('合并字体库：自动枚举一次、同名字体区分来源，共享筛选保留未知资料并支持精确样式名', async ({ page }) => {
+  await page.addInitScript(() => {
+    window.localQueries = 0;
+    window.queryLocalFonts = async () => {
+      window.localQueries++;
+      return [
+        ['Inter', 'Inter Regular', 'Inter-Regular', 'Regular'],
+        ['Fixture Sans', 'Fixture Sans Regular', 'FixtureSans-Regular', 'Regular'],
+        ['Fixture Sans', 'Fixture Sans Bold', 'FixtureSans-Bold', 'Bold'],
+        ['Mystery Face', 'Mystery Face Regular', 'MysteryFace', 'Regular'],
+      ].map(([family, fullName, postscriptName, style]) => ({ family, fullName, postscriptName, style, blob: async () => (await fetch('/tests/fixtures/Jost%5Bwght%5D.ttf')).blob() }));
+    };
+  });
+  await fixture(page, 'latin');
+  await expect(page.locator('#gfOptions [data-local-family]')).toHaveCount(3);
+  await page.locator('#gfSearch').fill('Inter');
+  await expect(page.locator('#gfOptions [data-family="Inter"]')).toHaveCount(1);
+  await expect(page.locator('#gfOptions [data-local-family="Inter"]')).toHaveCount(1);
+  await expect(page.locator('#gfOptions [data-family="Inter"] .font-option-source')).toHaveText('Google Fonts');
+  await expect(page.locator('#gfOptions [data-local-family="Inter"] .font-option-source')).toHaveText('本机字体');
+  await page.locator('#gfSearch').fill(''); await page.locator('#pkFilterBtn').click();
+  await page.locator('#pkSource').selectOption('local'); await page.locator('#gfStyle').selectOption('serif'); await page.locator('#gfBold').check();
+  await expect(page.locator('#pkFilterCount')).toHaveText('3');
+  await expect(page.locator('#gfOptions [data-family]')).toHaveCount(0);
+  await expect(page.locator('#gfOptions [data-local-family="Fixture Sans"]')).toHaveCount(0);
+  await expect(page.locator('#gfOptions [data-local-family="Mystery Face"]')).toHaveCount(1);
+  await page.locator('#pkFilterClear').click(); await page.keyboard.press('Escape');
+  await page.locator('#gfSearch').fill('FixtureSans-Bold'); await page.locator('#gfSearch').press('Enter');
+  await expect(page.locator('#lfName')).toHaveValue('Fixture Sans Bold'); await expect(page.locator('#lfFace')).toHaveValue('Fixture Sans Bold');
+  await page.locator('#picker [data-src="file"]').click(); await page.locator('#picker [data-src="library"]').click();
+  expect(await page.evaluate(() => window.localQueries)).toBe(1);
+  await expect(page.locator('#lfQuery')).toBeHidden();
+});
+
+test('统一名称输入：未知名称只在明确选用后检查，可直接尝试本机名称，来源筛选限制备用操作', async ({ page }) => {
+  await fixture(page);
+  let probes = 0;
+  await page.route('https://fonts.googleapis.com/**', route => { if (route.request().url().includes('Outside')) probes++; return route.fallback(); });
+  await page.locator('#gfSearch').fill('Outside Catalogue Family');
+  await expect(page.locator('#gfTry')).toBeVisible(); await expect(page.locator('#lfTry')).toBeVisible();
+  expect(probes).toBe(0);
+  await page.locator('#gfSearch').press('Enter'); await expect(page.locator('#gfTry')).toBeFocused(); expect(probes).toBe(0);
+  await page.locator('#gfTry').click(); await expect(page.locator('#pkSelectedName')).toHaveText('Outside Catalogue Family');
+  await expect(page.locator('#pkOk')).toBeEnabled(); expect(probes).toBeGreaterThan(0);
+  await page.locator('#pkFilterBtn').click(); await page.locator('#pkSource').selectOption('local'); await page.keyboard.press('Escape');
+  await page.locator('#gfSearch').fill('Baskerville Full Name'); await expect(page.locator('#gfTry')).toBeHidden();
+  await page.locator('#gfSearch').press('Enter'); await expect(page.locator('#lfName')).toHaveValue('Baskerville Full Name');
+  await expect(page.locator('#pkSelectedName')).toHaveText('Baskerville Full Name');
+  expect(await page.evaluate(async () => (await import('./assets/js/ui.js')).pickCand.kind)).toBe('local');
 });

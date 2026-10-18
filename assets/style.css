@@ -808,11 +808,16 @@ button.wl small{font-family:var(--ui);font-size:var(--fs-xs);margin-left:5px;opa
 dialog{border:1px solid var(--ink);border-radius:var(--r);background:var(--sheet);color:var(--ink);padding:0;width:min(600px,calc(100vw - 32px));max-height:calc(100vh - 48px)}
 dialog::backdrop{background:rgba(8,8,10,.45)}
 #picker{width:min(960px,calc(100vw - 32px))}
-.pk{display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:var(--sp-5);padding:var(--sp-5);max-height:calc(100dvh - 48px)}
+.pk{display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;gap:var(--sp-4);padding:var(--sp-5);max-height:calc(100dvh - 48px)}
 .pk-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:var(--sp-5);overflow:auto;min-height:0}
 .pk-sources,.pk-detail{display:grid;align-content:start;gap:var(--sp-4);min-width:0}
 .pk-browse{display:grid;gap:var(--sp-2);margin-bottom:var(--sp-4)}
 .pk-browse>input{width:100%}
+.pk-name-actions,.pk-local-status{display:grid;gap:var(--sp-2);justify-items:start;font-size:var(--fs-s)}
+.pk-name-actions .btn-text{max-width:100%;text-align:left;overflow-wrap:anywhere}
+.font-option-title{display:flex;align-items:baseline;justify-content:space-between;gap:var(--sp-3)}
+.font-option-title .font-option-name{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.font-option-source{flex:none;font-size:var(--fs-xs);font-weight:400;color:var(--muted)}
 .pk-search{display:flex;gap:var(--sp-2);align-items:center}
 .pk-search>input{width:100%;min-width:0}
 .pk-search .btn-ghost{flex:none}
@@ -858,7 +863,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .vh{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
 .pk .hint{margin:0}
 .pk-selected{display:grid;gap:var(--sp-1)}
-.pk-selected h5{margin:0;font-size:var(--fs-m);font-weight:500;overflow-wrap:anywhere}
+.pk-selected h5{margin:0;font-size:var(--fs-l);font-weight:600;overflow-wrap:anywhere}
 .pk-apply{display:grid;gap:var(--sp-3)}
 .pk-apply>.field{max-width:180px}
 .pk-disclosure>summary{font-size:var(--fs-s);color:var(--muted);cursor:pointer}
