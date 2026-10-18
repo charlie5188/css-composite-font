@@ -654,7 +654,7 @@ export function initToolbar() {
     el.addEventListener('keydown', e => { if (e.key === 'Enter') el.blur(); });
   }
   /* Scrub icons horizontally: font size changes by 1 per 2px; line height by 0.01 per 1px. */
-  const SCRUB = { ...NUM, w: { el: '#vWn', px: 1, get: () => state.wmode === 'cont' ? v().wcont : v().weight, set: setPreviewW } };      // Weight changes by 1 per pixel, snapping to the nearest selected step in stepped mode.
+  const SCRUB = { ...NUM, pickerSize: { el: '#pkSampleSize', px: 0.5, get: () => +$('#pkSampleSize').value, set: setPickerSampleSize }, w: { el: '#vWn', px: 1, get: () => state.wmode === 'cont' ? v().wcont : v().weight, set: setPreviewW } };      // Weight changes by 1 per pixel, snapping to the nearest selected step in stepped mode.
   document.querySelectorAll('[data-scrub]').forEach(ic => {
     let suppressClick = false;
     ic.addEventListener('pointerdown', e => {
@@ -1216,7 +1216,7 @@ export let pickW = null;   // When editing a non-400 row with its own font, choo
 export const picker = $('#picker');
 let pickCatalog = [], catalogObserver;
 const catalogCoverageByFace = new Map();
-let pickerSampleMode = 'class', pickerCustomText = '', pickerLibraryKind = 'google';
+let pickerLibraryKind = 'google';
 function pickerOwns(ch) {
   const owner = ownerOf(ch.codePointAt(0)), key = keyOf(pickTarget);
   return owner === key || key === 'han' && owner === 'other';
@@ -1227,14 +1227,14 @@ function pickerClassSample() {
   const samples = { han, latin: 'Hamburg Aa Gg Rr', digit: '0123456789 11980 2026', kana: 'あいうえお アイウエオ かなカナ', shared: '“ ” ‘ ’ — …… ·', punct: '「 」 『 』 （ ） 、 。 ！ ？', symbol: '①②③ ※ → ℃ ＡＢＣ １２３', bopo: 'ㄅㄆㄇㄈ ㄉㄊㄋㄌ ㄧㄨㄩ ˊˇˋ˙' };
   return [...(samples[pickTarget.id] || CLS[pickTarget.id].sample)].map(ch => /\s/.test(ch) || pickerOwns(ch) ? ch : ' ').join('').replace(/\s+/g, ' ').trim();
 }
-function pickerProofText() {
-  return [...(state.view.text || '')].map(ch => pickerOwns(ch) ? ch : ' ').join('').replace(/\s+/g, ' ').trim();
+function sizePickerSample() {
+  const sample = $('#pkSample');
+  if (!sample.clientWidth) return;
+  sample.style.height = '0px'; sample.style.height = (sample.scrollHeight + 2) + 'px';
 }
-function renderPickerSample() {
-  const proof = pickerProofText(), text = pickerSampleMode === 'proof' ? proof : pickerSampleMode === 'custom' ? pickerCustomText : pickerClassSample();
-  picker.querySelectorAll('[data-pk-sample]').forEach(el => { el.setAttribute('aria-checked', el.dataset.pkSample === pickerSampleMode); el.tabIndex = el.dataset.pkSample === pickerSampleMode ? 0 : -1; if (el.dataset.pkSample === 'proof') { el.disabled = !proof; el.title = proof ? '' : T('pkNoProofChars'); } });
-  $('#pkCustomField').hidden = pickerSampleMode !== 'custom'; $('#pkSampleText').hidden = pickerSampleMode !== 'custom'; $('#pkSampleText').value = pickerCustomText;
-  $('#pkSample').textContent = $('#pkSample').dataset.text = text;
+function setPickerSampleSize(value) {
+  const size = Math.max(8, Math.min(96, Math.round(value) || 32));
+  $('#pkSampleSize').value = size; $('#pkSample').style.fontSize = size + 'px'; sizePickerSample();
 }
 function catalogSample(item) {
   const script = item?.primaryScript || ({ sc: 'Hans', tw: 'Hant', hk: 'Hant', jp: 'Jpan', kr: 'Kore', latin: 'Latn' })[item?.region];
@@ -1359,6 +1359,7 @@ function syncPickerFilters() {
   }
 }
 export function renderCatalog() {
+  $('#gfSearchClear').hidden = !$('#gfSearch').value;
   $('#pkSortLabel').textContent = T('pkSortCurrent', { sort: $('#pkSort input:checked').closest('label').querySelector('span').textContent });
   const box = $('#gfOptions'), query = $('#gfSearch').value, sourceFilter = pickerFilterValues('pkSource');
   const focused = box.contains(document.activeElement) ? document.activeElement.closest('[data-choice]')?.dataset.choice : null;
@@ -1601,7 +1602,7 @@ export async function missingIn(s, chars) {
 export let covTok = 0;
 export async function renderCoverage(s, f) {
   const tok = ++covTok, box = $('#pkCov'), sample = $('#pkSample');
-  const text = sample.dataset.text || sample.textContent;
+  const text = sample.value;
   const sampleChars = [...new Set([...text].filter(c => c.trim() && c !== '·'))];
   const targetChars = [...new Set([...(state.view.text || '')].filter(c => c.trim() && pickerOwns(c)))];
   $('#pkTargetCoverage').textContent = T('pkCheckingCoverage');
@@ -1619,7 +1620,6 @@ export async function renderCoverage(s, f) {
     const mark = cls === 'ok' ? ' ✓' : cls === 'part' ? ` ${have}/${list.length}` : '';
     return `<span class="cov ${cls}" title="${esc(T('covTitle', { n: list.length, k: have }))}">${esc(T(k))}${mark}</span>`;
   }).join('');
-  sample.innerHTML = [...text].map(c => miss.has(c) ? `<span class="miss">${esc(c)}</span>` : esc(c)).join('');
 }
 /* Also show whether picker punctuation is centered (Taiwan/Hong Kong) or lower-left (Mainland/Japan); warn when it differs from the current language. */
 export function renderPunct(s, f, token = pickerPreviewToken, attempts = 0) {
@@ -1636,13 +1636,12 @@ export function resetCoverage() {
   $('#pkPunct').hidden = true;
   covTok++;
   $('#pkCov').innerHTML = ''; $('#pkTargetCoverage').textContent = ''; $('#pkTargetCoverage').className = 'hint';
-  const sample = $('#pkSample');
-  if (sample.dataset.text) sample.textContent = sample.dataset.text;
 }
 function pickerWeightAxis(f) { return f && (f.kind === 'google' ? f.family in vfCache ? Array.isArray(vfCache[f.family]) ? vfCache[f.family] : null : axisOf(f, 'wght')?.slice(1, 3) : f.axis); }
 function setPickerDetailTab(tab) {
   picker.querySelectorAll('[data-pk-detail]').forEach(button => { const selected = button.dataset.pkDetail === tab; button.setAttribute('aria-selected', selected); button.tabIndex = selected ? 0 : -1; });
   $('#pkPreviewPanel').hidden = tab !== 'preview'; $('#pkDetails').hidden = tab !== 'info';
+  if (tab === 'preview') sizePickerSample();
 }
 function syncPickerMetadata(f) {
   const family = f?.kind === 'google' ? f.family : f?.kind === 'file' ? importedFonts.get(f.fileId)?.family : localGroups().find(([, faces]) => faces.some(face => face.fullName === f?.name))?.[0] || f?.name;
@@ -1699,10 +1698,11 @@ async function paintPickerCandidate() {
   const current = () => picker.open && pickCand === f && token === pickerPreviewToken && !pickerApplyBusy;
   pickerFailedSource = null; $('#pkRetry').hidden = true; $('#pkItal').hidden = true;
   $('#pkLocalFallback').hidden = true;
-  st.classList.remove('caution', 'vh'); st.parentElement.classList.remove('vh'); sample.hidden = true; showVfTag(pickerWeightAxis(f)); resetCoverage();
+  st.classList.remove('caution', 'vh'); st.parentElement.classList.remove('vh'); showVfTag(pickerWeightAxis(f)); resetCoverage();
   if (!f) { ok.disabled = true; st.dataset.state = 'empty'; st.textContent = T('pkEmpty'); preview.removeAttribute('aria-busy'); return; }
   const axis = pickerWeightAxis(f), viewed = f.kind === 'google' ? { ...f, ...(axis ? { vf: true } : gfWeights(f.family) ? { weight: pickerProofWeight } : {}) } : f;
   const src = source(previewFont(viewed), { retry: true });
+  sample.style.fontFamily = 'var(--ui)'; sizePickerSample();
   ok.disabled = true; st.dataset.state = 'loading'; st.textContent = T('pkFetching'); preview.setAttribute('aria-busy', 'true');
   try {
     let visible = false;
@@ -1711,10 +1711,10 @@ async function paintPickerCandidate() {
       if (!current()) return;
       if (src.status !== 'ok') throw new Error('source-unavailable');
       st.textContent = T('pkLoadingSample');
-      visible = !!(await document.fonts.load(`32px "${src.family}"`, sample.dataset.text || pickerClassSample() || ' ')).length;
+      visible = !!(await document.fonts.load(`32px "${src.family}"`, sample.value || ' ')).length;
     })());
     if (!current()) return;
-    sample.style.fontFamily = `"${src.family}", var(--ui)`; sample.hidden = !visible;
+    sample.style.fontFamily = `"${src.family}", var(--ui)`; sizePickerSample();
     st.dataset.state = visible ? 'ready' : 'no-glyphs'; st.textContent = T(visible ? 'pkReady' : 'pkNoSampleGlyphs');
     st.parentElement.classList.toggle('vh', visible);
     $('#pkLocalFallback').hidden = f.kind !== 'local' || !src.faces[0]?.buffer;
@@ -1814,7 +1814,7 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   pickerLibraryKind = (pickW ? (ovf || o.font).kind : cur?.kind) === 'local' ? 'local' : 'google';
   const rowFont = pickW ? (t.type === 'class' ? resolveCls(t.id, W, true) : resolveCustom(o, W, true)).font : cur;
   pickCand = ovf?.kind === 'file' ? ovf : rowFont?.kind === 'file' ? rowFont : null;
-  pickerSampleMode = 'class'; pickerCustomText = pickerClassSample(); $('#pkSampleSize').value = 32; $('#pkSample').style.fontSize = '32px'; renderPickerSample();
+  $('#pkSample').value = pickerClassSample(); setPickerSampleSize(32);
   pickCatalog = catalogOrder(cur?.kind === 'google' ? cur.family : '');
   $('#gfSearch').value = ''; clearPickerFilters(); renderCatalog();
   picker.showModal();
@@ -1914,7 +1914,7 @@ function pickerNumber(input) {
   input.replaceWith(holder.firstElementChild);
 }
 export function initPicker() {
-  picker.querySelectorAll('input[type="number"]').forEach(pickerNumber);
+  picker.querySelectorAll('input[type="number"]:not(.nf input)').forEach(pickerNumber);
   for (const [pop, button] of [['pkSourcePop', 'pkSourceBtn'], ['gfStylePop', 'gfStyleBtn'], ['pkWeightTypePop', 'pkWeightTypeBtn'], ['pkCoveragePop', 'pkCoverageBtn'], ['pkSortPop', 'pkSortBtn']]) bindPopover($('#'+pop), $('#'+button), { within: picker, inset: 16, align: button === 'pkSortBtn' ? 'end' : 'start' });
   picker.querySelectorAll('[data-filter-clear]').forEach(button => button.addEventListener('click', () => { $('#'+button.dataset.filterClear).querySelectorAll('input').forEach(input => { input.checked = false; }); renderCatalog(); }));
   $('#pkFilterClear').addEventListener('click', () => { clearPickerFilters(); renderCatalog(); $('#gfSearch').focus(); });
@@ -1939,11 +1939,13 @@ export function initPicker() {
     const next = e.key === 'Home' ? 0 : e.key === 'End' ? tabs.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
     tabs[next].click(); tabs[next].focus();
   });
-  $('#pkSampleMode').addEventListener('click', e => { const el = e.target.closest('[data-pk-sample]'); if (!el) return; pickerSampleMode = el.dataset.pkSample; renderPickerSample(); paintPickerCandidate(); });
-  $('#pkSampleMode').addEventListener('keydown', e => { if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return; e.preventDefault(); const els = [...e.currentTarget.querySelectorAll('button:not(:disabled)')], i = els.indexOf(e.target), next = e.key === 'Home' ? 0 : e.key === 'End' ? els.length - 1 : (i + (e.key === 'ArrowRight' ? 1 : -1) + els.length) % els.length; els[next].click(); els[next].focus(); });
-  $('#pkSampleText').addEventListener('input', debounce(() => { pickerCustomText = $('#pkSampleText').value; $('#pkSample').textContent = $('#pkSample').dataset.text = pickerCustomText; paintPickerCandidate(); }, 200));
-  $('#pkSampleSize').addEventListener('input', e => { const size = +e.target.value; if (size >= 8 && size <= 96) $('#pkSample').style.fontSize = size + 'px'; });
-  $('#pkSampleSize').addEventListener('blur', e => { const size = Math.max(8, Math.min(96, +e.target.value || 32)); e.target.value = size; $('#pkSample').style.fontSize = size + 'px'; });
+  const checkSample = debounce(() => paintPickerCandidate(), 200);
+  $('#pkSample').addEventListener('input', e => { sizePickerSample(); if (!e.isComposing) checkSample(); });
+  $('#pkSample').addEventListener('compositionend', checkSample);
+  let sampleWidth = 0;
+  new ResizeObserver(([entry]) => { if (entry.contentRect.width !== sampleWidth) { sampleWidth = entry.contentRect.width; sizePickerSample(); } }).observe($('#pkSample'));
+  $('#pkSampleSize').addEventListener('input', e => { const size = +e.target.value; if (size >= 8 && size <= 96) setPickerSampleSize(size); });
+  $('#pkSampleSize').addEventListener('blur', e => { setPickerSampleSize(+e.target.value); });
   for (const id of ['pkProofWeight', 'pkProofWeightNum', 'pkProofWeightSelect']) $('#'+id).addEventListener('input', e => { if (e.target.value !== '') setPickerProof(+e.target.value); });
   $('#pkProofWeightNum').addEventListener('blur', () => syncPickerProof(pickCand));
   picker.querySelectorAll('[data-proof-weight]').forEach(el => el.addEventListener('click', () => setPickerProof(+el.dataset.proofWeight)));
@@ -1952,6 +1954,7 @@ export function initPicker() {
   $('#pkScope').addEventListener('change', () => { syncGfWeight(); updateCand(); });
   $('#lfFace').addEventListener('change', () => { $('#lfName').value = $('#lfFace').value; updateCand(); });
   $('#gfSearch').addEventListener('input', renderCatalog);
+  $('#gfSearchClear').addEventListener('click', () => { $('#gfSearch').value = ''; renderCatalog(); $('#gfSearch').focus(); });
   $('#gfReset').addEventListener('click', () => { $('#gfSearch').value = ''; clearPickerFilters(); renderCatalog(); $('#gfSearch').focus(); });
   $('#pkRetry').addEventListener('click', () => {
     // An explicit retry replaces a stuck or rejected face. Late callbacks still hold the previous preview token.

@@ -98,15 +98,15 @@ test('列表样张优先体现字体主要文字，日文混排假名，右侧�
     await page.locator('#gfSearch').fill(family);
     await expect(page.locator('#gfOptions [data-family="'+family+'"] .font-option-sample')).toHaveText(sample);
   }
-  await expect(page.locator('#pkSample')).toContainText('Hamburg');
+  await expect(page.locator('#pkSample')).toHaveValue(/Hamburg/);
   await page.locator('#gfSearch').fill('Hachi Maru Pop');
   await page.locator('#gfOptions [data-family="Hachi Maru Pop"]').click();
-  await expect(page.locator('#pkSample')).toContainText('Hamburg');
-  await expect(page.locator('#pkSample')).not.toContainText('あ');
+  await expect(page.locator('#pkSample')).toHaveValue(/Hamburg/);
+  await expect(page.locator('#pkSample')).not.toHaveValue(/あ/);
   await page.locator('#pkCancel').click(); await openClassPicker(page, 'han');
   await page.locator('#gfSearch').fill('Inter');
   await expect(page.locator('#gfOptions [data-family="Inter"] .font-option-sample')).toHaveText('Hamburg Aa Gg 0123');
-  await expect(page.locator('#pkSample')).toContainText('永国字体');
+  await expect(page.locator('#pkSample')).toHaveValue(/永国字体/);
 });
 
 test('字符覆盖筛选只显示已确认符合的字体；未检查字体清除筛选后仍可查看', async ({ page }) => {
@@ -511,42 +511,43 @@ test('逐档上传字体：读取该档实际粗细，保存单档映射不改�
 });
 
 
-test('类别样张：西文不混入汉字，校样按实际归属提取；自定义文字和字号不进入配置', async ({ page }) => {
+test('直接编辑样张：换行、清空和切换候选保留文字，字号独立于配置且支持拖动', async ({ page }) => {
   await fixture(page, 'latin');
-  await expect(page.locator('#pkSample')).toContainText('Hamburg');
-  await expect(page.locator('#pkSample')).not.toContainText('永');
-  const before = await page.evaluate(async () => JSON.stringify((await import('./assets/js/share.js')).shareSnapshot()));
-  await page.evaluate(async () => {
-    const c = await import('./assets/js/core.js'); c.state.custom = [{ chars: 'A', follow: 'han', font: null, size: null, shift: null }];
-    c.refreshCustomRanges(); c.state.view.text = '汉字 Alpha Beta 123';
-  });
+  await expect(page.locator('#pkSample')).toHaveValue(/Hamburg/);
+  await expect(page.locator('#pkSampleMode,#pkCustomField,#pkSampleText')).toHaveCount(0);
   const configured = await page.evaluate(async () => JSON.stringify((await import('./assets/js/share.js')).shareSnapshot()));
-  await page.locator('#pkSampleMode [data-pk-sample="proof"]').click();
-  await expect(page.locator('#pkSample')).toHaveText('lpha Beta');
-  await page.locator('#pkSampleMode [data-pk-sample="custom"]').click();
-  await page.locator('#pkSampleText').fill('PRIVATE PICKER TEXT');
-  await expect(page.locator('#pkSample')).toHaveText('PRIVATE PICKER TEXT');
-  await page.locator('#pkSampleSize').fill('48');
-  await expect(page.locator('#pkSample')).toHaveCSS('font-size', '48px');
+  const sample = page.locator('#pkSample');
+  await sample.fill('PRIVATE PICKER TEXT'); await sample.press('End'); await sample.press('Enter'); await sample.press('A');
+  await expect(sample).toHaveValue('PRIVATE PICKER TEXT\nA');
+  await expect(sample).toBeFocused();
+  await page.locator('#pkSampleSize').fill('48'); await expect(sample).toHaveCSS('font-size', '48px');
+  const icon = page.locator('[data-scrub="pickerSize"]'), box = await icon.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2); await page.mouse.down(); await page.mouse.move(box.x + box.width / 2 + 20, box.y + box.height / 2); await page.mouse.up();
+  await expect(page.locator('#pkSampleSize')).toHaveValue('58'); await expect(sample).toHaveCSS('font-size', '58px');
   await page.locator('#gfSearch').fill('Inter'); await page.locator('#gfOptions [data-family="Inter"]').click();
-  await expect(page.locator('#pkSample')).toHaveText('PRIVATE PICKER TEXT');
-  expect(await page.evaluate(async () => JSON.stringify((await import('./assets/js/share.js')).shareSnapshot()))).not.toContain('PRIVATE PICKER TEXT');
+  await expect(sample).toHaveValue('PRIVATE PICKER TEXT\nA');
   expect(await page.evaluate(async () => JSON.stringify((await import('./assets/js/share.js')).shareSnapshot()))).toBe(configured);
-  expect(before).not.toContain('PRIVATE PICKER TEXT');
+  await sample.fill(''); await expect(sample).toHaveValue('');
+  await page.locator('#pkInfoTab').click(); await page.locator('#pkPreviewTab').click(); await expect(sample).toHaveValue('');
 });
 
-test('类别样张：繁体汉字、假名、数字与空校样，支持键盘切换样张', async ({ page }) => {
+test('初始样张跟随类别和校样语言，输入法合成期间保留文字与光标', async ({ page }) => {
   await fixture(page);
   await page.locator('#pkCancel').click();
-  await page.evaluate(async () => { const c = await import('./assets/js/core.js'), u = await import('./assets/js/ui.js'); c.state.typo.lang = 'zh-Hant-TW'; c.state.view.text = '漢字'; u.openPicker({ type: 'class', id: 'han' }); });
-  await expect(page.locator('#pkSample')).toContainText('國字體');
+  await page.evaluate(async () => { const c = await import('./assets/js/core.js'), u = await import('./assets/js/ui.js'); c.state.typo.lang = 'zh-Hant-TW'; u.openPicker({ type: 'class', id: 'han' }); });
+  await expect(page.locator('#pkSample')).toHaveValue(/國字體/);
   await page.locator('#pkCancel').click(); await openClassPicker(page, 'kana');
-  await expect(page.locator('#pkSample')).toContainText('あいうえお');
-  await expect(page.locator('#pkSampleMode [data-pk-sample="proof"]')).toBeDisabled();
+  await expect(page.locator('#pkSample')).toHaveValue(/あいうえお/);
   await page.locator('#pkCancel').click(); await openClassPicker(page, 'digit');
-  await expect(page.locator('#pkSample')).toContainText('0123456789');
-  await page.locator('#pkSampleMode [data-pk-sample="class"]').focus(); await page.keyboard.press('ArrowRight');
-  await expect(page.locator('#pkSampleMode [data-pk-sample="custom"]')).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('#pkSample')).toHaveValue(/0123456789/);
+  await page.locator('#pkSample').fill('漢字');
+  await page.locator('#pkSample').evaluate(el => { el.focus(); el.setSelectionRange(1, 1); el.dispatchEvent(new CompositionEvent('compositionstart', { data:'漢' })); el.dispatchEvent(new InputEvent('input', { isComposing:true, data:'漢' })); });
+  await expect(page.locator('#pkSample')).toBeFocused();
+  expect(await page.locator('#pkSample').evaluate(el => el.selectionStart)).toBe(1);
+  await page.locator('#pkSample').evaluate(el => el.dispatchEvent(new CompositionEvent('compositionend', { data:'漢' })));
+  await expect(page.locator('#pkStatus')).toHaveAttribute('data-state', 'ready');
+  await expect(page.locator('#pkSample')).toHaveValue('漢字');
+  expect(await page.locator('#pkSample').evaluate(el => el.selectionStart)).toBe(1);
 });
 
 async function matchingFixture(page, W = 400) {
@@ -634,8 +635,7 @@ test('信息层级：预览、应用与详情分组，短列表收紧，数字�
   const weight = page.locator('#gfWeightNum'); await weight.locator('..').hover();
   await weight.locator('..').locator('[data-step="up"]').click();
   await expect(weight).toHaveValue('410');
-  await page.locator('#pkSampleSize').locator('..').hover();
-  await page.locator('#pkSampleSize').locator('..').locator('[data-step="up"]').click();
+  await page.locator('#pkSampleSize').focus(); await page.keyboard.press('ArrowUp');
   await expect(page.locator('#pkSampleSize')).toHaveValue('33');
   await page.locator('#picker [data-src="library"]').focus(); await page.keyboard.press('ArrowRight');
   await expect(page.locator('#picker [data-src="file"]')).toBeFocused();
@@ -649,7 +649,7 @@ test('信息层级：预览、应用与详情分组，短列表收紧，数字�
   for (const lang of ['en', 'ja', 'tw', 'zh']) {
     await page.evaluate(async lang => { const i = await import('./assets/js/i18n.js'), u = await import('./assets/js/ui.js'); i.setUI(lang); u.applyUI(); }, lang);
     await expect(page.locator('#pkAppliedTitle')).not.toHaveText('pkAppliedTitle');
-    await expect(page.locator('#pkSampleSize').locator('..').locator('[data-step="up"]')).not.toHaveAttribute('aria-label', '');
+    await expect(page.locator('#pkSampleSize')).not.toHaveAttribute('aria-label', '');
   }
 });
 
@@ -657,8 +657,7 @@ test('预览与信息：样张自然撑高、详情标签精简、切换保留�
   await fixture(page, 'latin');
   await page.locator('#gfSearch').fill('BIZ');
   await expect(page.locator('#pkSampleBtn,#pkSamplePop')).toHaveCount(0);
-  await page.locator('[data-pk-sample="custom"]').click();
-  await page.locator('#pkSampleText').fill('Hamburg '.repeat(120));
+  await page.locator('#pkSample').fill('Hamburg '.repeat(120));
   await expect.poll(() => page.locator('#pkSample').evaluate(el => el.getBoundingClientRect().height)).toBeGreaterThan(240);
   expect(await page.locator('#pkSample').evaluate(el => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
   await page.locator('#pkInfoTab').click();
@@ -668,7 +667,7 @@ test('预览与信息：样张自然撑高、详情标签精简、切换保留�
   await expect(page.locator('#pkCov .cov-note')).toHaveCount(0);
   await page.locator('#pkInfoTab').focus(); await page.keyboard.press('ArrowLeft');
   await expect(page.locator('#pkPreviewTab')).toBeFocused(); await expect(page.locator('#pkPreviewPanel')).toBeVisible();
-  await expect(page.locator('#pkSampleText')).toHaveValue('Hamburg '.repeat(120));
+  await expect(page.locator('#pkSample')).toHaveValue('Hamburg '.repeat(120));
   await page.locator('#gfSearch').fill('');
   expect(await page.locator('#picker').evaluate(el => {
     const list = el.querySelector('#gfOptions'), rows = [...list.querySelectorAll('.font-option')], source = el.querySelector('.pk-sources').getBoundingClientRect(), action = el.querySelector('.pk-actions').getBoundingClientRect(), detail = el.querySelector('.pk-detail').getBoundingClientRect();
@@ -810,9 +809,8 @@ test('选字筛选栏：搜索下方直接筛选与清除；手机四语言换�
     await expect(page.locator('#pkWeightTypeBtn')).toBeInViewport();
     await expect(page.locator('.pk-actions #pkAutoFit')).toBeInViewport();
     await expect(page.locator('#pkCancel')).toBeInViewport(); await expect(page.locator('#pkOk')).toBeInViewport();
-    await page.locator('[data-pk-sample="custom"]').click();
-    await page.locator('#pkSampleText').fill('Hamburg');
-    await expect(page.locator('#pkSampleText')).toBeVisible();
+    await page.locator('#pkSample').fill('Hamburg');
+    await expect(page.locator('#pkSample')).toBeVisible();
     expect(await page.locator('#picker').evaluate(el => el.scrollWidth <= el.clientWidth)).toBeTruthy();
     await page.locator('#pkSourceBtn').click();
     await page.keyboard.press('Escape'); await expect(page.locator('#picker')).toBeVisible();
@@ -874,4 +872,20 @@ test('统一名称输入：未知名称只在明确选用后检查，可直接�
   await page.locator('#gfSearch').press('Enter'); await expect(page.locator('#lfName')).toHaveValue('Baskerville Full Name');
   await expect(page.locator('#pkSelectedName')).toHaveText('Baskerville Full Name');
   expect(await page.evaluate(async () => (await import('./assets/js/ui.js')).pickCand.kind)).toBe('local');
+});
+
+test('精简筛选栏：清除搜索保留筛选和候选，行距紧凑，底部操作无横线', async ({ page }) => {
+  await fixture(page, 'latin');
+  await expect(page.locator('[data-src="library"]')).toHaveText('本地字库 + Google Fonts');
+  for (const [id, text] of [['pkSourceBtn','来源'], ['gfStyleBtn','风格'], ['pkWeightTypeBtn','字重'], ['pkCoverageBtn','字符集'], ['pkSortLabel','排序: A–Z']]) await expect(page.locator('#'+id)).toHaveText(text);
+  await expect(page.locator('.filter-toggle')).toContainText('含意大利体');
+  await selectFilter(page, 'pkSource', 'google');
+  await page.locator('#gfSearch').fill('BIZ'); await page.locator('#gfOptions [data-family="BIZ UDGothic"]').click();
+  await expect(page.locator('#gfSearchClear')).toBeVisible();
+  expect(await page.locator('#gfSearchClear').evaluate(el => getComputedStyle(el).color === getComputedStyle(document.querySelector('#pkSelectedName')).color)).toBe(true);
+  expect(await page.locator('#gfOptions .font-option').first().evaluate(el => { const name = el.querySelector('.font-option-title').getBoundingClientRect(), sample = el.querySelector('.font-option-sample').getBoundingClientRect(); return sample.top - name.bottom < 8; })).toBe(true);
+  await page.locator('#gfSearchClear').click(); await expect(page.locator('#gfSearch')).toHaveValue(''); await expect(page.locator('#gfSearch')).toBeFocused(); await expect(page.locator('#gfSearchClear')).toBeHidden();
+  await expect(page.locator('#pkSource input[value="google"]')).toBeChecked(); await expect(page.locator('#pkSelectedName')).toHaveText('BIZ UDGothic');
+  expect(await page.locator('.pk-actions').evaluate(el => getComputedStyle(el).borderTopWidth)).toBe('0px');
+  expect(await page.locator('.pk-browse>.results-toolbar').evaluate(el => getComputedStyle(el).marginTop)).toBe('16px');
 });
