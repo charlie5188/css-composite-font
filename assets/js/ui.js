@@ -600,10 +600,21 @@ $('#grpPop').addEventListener('click', e => {
 export function setPreviewWeight(W) { setPreviewW(W); }
 
 /* ================= Interaction: proof, metrics and export ================= */
-export const SUPPORT = { sizeAdjust: typeof FontFace !== 'undefined' && 'sizeAdjust' in FontFace.prototype };
+function supportsSizeAdjust() {
+  if (typeof FontFace === 'undefined') return false;
+  let accepted = false;
+  try {
+    // Probe the constructor option used by the proof. A missing prototype accessor alone does not prove lack of support.
+    // Unknown Web IDL dictionary members are ignored without reading their getters; this face is never loaded or added.
+    new FontFace('__cf_size_adjust_probe', 'local("__cf_size_adjust_probe")', {
+      get sizeAdjust() { accepted = true; return '100%'; },
+    });
+    return accepted;
+  } catch (e) { return null; }      // A blocked probe is inconclusive, not evidence that scaling is unsupported.
+}
 export function initToolbar() {
   $('#gfWeight').innerHTML = WEIGHTS.map(w => `<option value="${w}">${w}</option>`).join('');
-  $('#sizeAdjustWarn').hidden = SUPPORT.sizeAdjust;
+  $('#sizeAdjustWarn').hidden = supportsSizeAdjust() !== false;
 
   const v = () => state.view;
   /* Multiple custom sample tabs persist independently. The trailing add button starts one from the current text; switching tabs preserves it, and only delete removes it. */

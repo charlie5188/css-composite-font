@@ -430,7 +430,7 @@ export default {
   mTabsAria: "Switch the shown pane",
   save: "Save",
   cancel: "Cancel",
-  warnSizeAdjust: "This browser doesn't support <code>size-adjust</code>, so Western size adjustments have no effect. Use Chrome/Edge 92+, Firefox 92+ or Safari 17+.",
+  warnSizeAdjust: "This browser environment doesn't support <code>size-adjust</code>, so size adjustments by character class have no effect. Check browser settings or extensions, or try another browser.",
   classes: "Character classes",
   proof: "Proof",
   gearAria: "Choose the characters {c} includes",

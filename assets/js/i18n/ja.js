@@ -430,7 +430,7 @@ export default {
   mTabsAria: "表示する列を切り替え",
   save: "保存",
   cancel: "キャンセル",
-  warnSizeAdjust: "このブラウザは <code>size-adjust</code> に対応していないため、欧文のサイズ調整が効きません。Chrome/Edge 92+、Firefox 92+、Safari 17+ を使ってください。",
+  warnSizeAdjust: "現在のブラウザ環境は <code>size-adjust</code> に対応していないため、文字クラスごとのサイズ調整が効きません。ブラウザの設定や拡張機能を確認するか、別のブラウザをお試しください。",
   classes: "文字クラス",
   proof: "校正刷り",
   gearAria: "{c}に含める文字を設定",

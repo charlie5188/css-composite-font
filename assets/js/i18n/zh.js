@@ -430,7 +430,7 @@ export default {
   mTabsAria: "切换显示的栏",
   save: "保存",
   cancel: "取消",
-  warnSizeAdjust: "当前浏览器不支持 <code>size-adjust</code>，西文大小调整不会生效。请使用 Chrome/Edge 92+、Firefox 92+ 或 Safari 17+。",
+  warnSizeAdjust: "当前浏览器环境不支持 <code>size-adjust</code>，按字符类别调整字体大小不会生效。请检查浏览器设置或扩展，或尝试其他浏览器。",
   classes: "字符类别",
   proof: "校样",
   gearAria: "设置{c}包含哪些字符",

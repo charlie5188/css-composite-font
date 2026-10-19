@@ -35,17 +35,17 @@ try {
   "./assets/js/font-metadata.js": "./assets/js/font-metadata.js?v=a7ab38d0",
   "./assets/js/gfmeta.js": "./assets/js/gfmeta.js?v=580fd38c",
   "./assets/js/i18n.js": "./assets/js/i18n.js?v=df942067",
-  "./assets/js/i18n/en.js": "./assets/js/i18n/en.js?v=fb3dda0b",
-  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=fb2c14fd",
-  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=1ef12c49",
-  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=564075ff",
+  "./assets/js/i18n/en.js": "./assets/js/i18n/en.js?v=ed76b822",
+  "./assets/js/i18n/ja.js": "./assets/js/i18n/ja.js?v=8a1a01ce",
+  "./assets/js/i18n/tw.js": "./assets/js/i18n/tw.js?v=2266081c",
+  "./assets/js/i18n/zh.js": "./assets/js/i18n/zh.js?v=5674ba5b",
   "./assets/js/main.js": "./assets/js/main.js?v=65373a49",
   "./assets/js/proof-editor.js": "./assets/js/proof-editor.js?v=9ed5e2bb",
   "./assets/js/refresh.js": "./assets/js/refresh.js?v=1f5b3973",
   "./assets/js/render.js": "./assets/js/render.js?v=1e2690b5",
   "./assets/js/share.js": "./assets/js/share.js?v=801a3686",
   "./assets/js/ui-controls.js": "./assets/js/ui-controls.js?v=bf36b90d",
-  "./assets/js/ui.js": "./assets/js/ui.js?v=80606924",
+  "./assets/js/ui.js": "./assets/js/ui.js?v=b923dcb5",
   "./assets/js/unicode.js": "./assets/js/unicode.js?v=456f28d1"
  }
 }</script>
@@ -309,7 +309,7 @@ try {
         <p>顶栏「导出」左侧的描边「分享」按钮会复制当前配置的链接，无需先存为预设。链接保留点击分享时的字体、大小、字重、基线、可变轴、字符分组、例外字符、排版及导出设置；后续编辑不会改变已经发出的链接。</p>
         <p>链接不包含字体文件、自定义校样正文、历史记录或其他已存预设。接收方会看到内置校样，可以继续编辑或另存预设，也可撤销导入恢复原配置。Google Fonts 会重新加载；本机字体需要接收方安装，上传字体需要重新提供文件，缺失时在字体页提示。配置直接保存在链接片段中，无需服务器存储；链接过长时会提示，剪贴板不可用时可手动复制。</p>
         <h3>大小：size-adjust</h3>
-        <p><code>size-adjust</code> 按百分比缩放一个字体的字形和度量。Chrome/Edge 92+、Firefox 92+、Safari 17+ 支持。它也会放大这个字体的上伸、下伸度量，<code>line-height: normal</code> 时行距可能不均匀，建议写固定的 <code>line-height</code>。</p>
+        <p><code>size-adjust</code> 按百分比缩放一个字体的字形和度量。Chrome/Edge 92+、Firefox 92+、Safari 17+ 支持。不支持时会显示兼容性提示：字体分配仍有效，但当前环境会忽略大小调整；导出字体文件中的缩放不受此限制。它也会放大这个字体的上伸、下伸度量，<code>line-height: normal</code> 时行距可能不均匀，建议写固定的 <code>line-height</code>。</p>
         <p>「基础设定」里的大小和基线，以及「各字重」里的大小，都可直接输入数值，或用输入框右侧的上下箭头每次增减 0.5。键盘按住 Shift 再按 ↑↓ 时，每次增减 5。清空输入框可恢复继承值。箭头在悬停或聚焦时出现，触屏上常显；显示与隐藏不会改变数字的对齐位置。</p>
         <h3>基线偏移需要 JS</h3>
         <p><code>@font-face</code> 没有基线描述符。同一行里所有字形都对齐在字母基线上，CSS 无法按字体单独移动。工具里的「基线」会在导出时附带一段脚本，把对应字符包进 <code>&lt;span&gt;</code> 用相对定位移动，不影响行高。想要纯 CSS，就把所有基线保持为 0。</p>
@@ -395,7 +395,7 @@ try {
         <p>頂端列「匯出」左側的外框「分享」按鈕會複製目前設定的連結，無須先存為預設。連結保留分享當下的字型、大小、字重、基線、可變軸、字元分組、例外字元、排版與匯出設定；後續編輯不會改變已傳送的連結。</p>
         <p>連結不包含字型檔案、自訂校樣內文、歷程紀錄或其他已存預設。接收方會看到內建校樣，可以繼續編輯或另存預設，也可復原導入以恢復原設定。Google Fonts 會重新載入；本機字型需由接收方安裝，上傳字型需重新提供檔案，缺少時會在字型頁提示。設定直接儲存在連結片段中，無須伺服器儲存；連結過長時會提示，剪貼簿無法使用時可手動複製。</p>
         <h3>大小：size-adjust</h3>
-        <p><code>size-adjust</code> 按百分比縮放一個字型的字形和度量。Chrome/Edge 92+、Firefox 92+、Safari 17+ 支援。它也會放大這個字型的上伸、下伸度量，<code>line-height: normal</code> 時行距可能不均勻，建議寫固定的 <code>line-height</code>。</p>
+        <p><code>size-adjust</code> 按百分比縮放一個字型的字形和度量。Chrome/Edge 92+、Firefox 92+、Safari 17+ 支援。不支援時會顯示相容性提示：字型分配仍有效，但目前環境會忽略大小調整；匯出字型檔案中的縮放不受此限制。它也會放大這個字型的上伸、下伸度量，<code>line-height: normal</code> 時行距可能不均勻，建議寫固定的 <code>line-height</code>。</p>
         <p>「基礎設定」裡的大小與基線，以及「各字重」裡的大小，都可直接輸入數值，或使用輸入框右側的上下箭頭每次增減 0.5。鍵盤按住 Shift 再按 ↑↓ 時，每次增減 5。清空輸入框可恢復繼承值。箭頭在滑鼠停留或聚焦時出現，觸控螢幕上持續顯示；顯示與隱藏不會改變數字的對齊位置。</p>
         <h3>基線偏移需要 JS</h3>
         <p><code>@font-face</code> 沒有基線描述子。同一行裡所有字形都對齊在字母基線上，CSS 無法按字型單獨移動。工具裡的「基線」會在匯出時附帶一段 JS，把對應字元包進 <code>&lt;span&gt;</code> 用相對定位移動，不影響行高。想要純 CSS，就把所有基線保持為 0。</p>
@@ -481,7 +481,7 @@ try {
         <p>上部の「書き出し」の左にある枠線付きの「共有」ボタンで、現在の設定のリンクをコピーします。先にプリセットを保存する必要はありません。リンクには共有時点のフォント、サイズ、ウェイト、ベースライン、可変軸、文字の振り分け、例外文字、組版と書き出しの設定が入り、その後の編集は送信済みのリンクに影響しません。</p>
         <p>フォントファイル、独自の校正テキスト、履歴、ほかの保存済みプリセットは含まれません。受信側では標準の校正テキストで表示され、編集やプリセット保存ができ、読み込みを取り消して元の設定に戻すこともできます。Google Fonts は再読み込みされます。ローカルフォントは受信側でインストールし、アップロードフォントはファイルを別途用意してください。不足はフォント画面に表示されます。設定はリンクのフラグメントに入り、サーバーへの保存は不要です。長すぎる場合は通知し、クリップボードが使えない場合は手動でコピーできます。</p>
         <h3>サイズ：size-adjust</h3>
-        <p><code>size-adjust</code> はフォントのグリフとメトリクスをパーセントで拡大縮小します。Chrome/Edge 92+、Firefox 92+、Safari 17+ が対応しています。アセンダーとディセンダーも拡大されるため、<code>line-height: normal</code> では行送りが不揃いになることがあります。<code>line-height</code> は固定値で指定するのがおすすめです。</p>
+        <p><code>size-adjust</code> はフォントのグリフとメトリクスをパーセントで拡大縮小します。Chrome/Edge 92+、Firefox 92+、Safari 17+ が対応しています。非対応の環境では警告が表示されます。フォントの割り当ては有効ですが、その環境ではサイズ調整が無視されます。書き出すフォントファイルの拡大縮小には、この制限はありません。アセンダーとディセンダーも拡大されるため、<code>line-height: normal</code> では行送りが不揃いになることがあります。<code>line-height</code> は固定値で指定するのがおすすめです。</p>
         <p>「基本設定」のサイズとベースライン、および「ウェイト別」のサイズは、数値を直接入力するか、入力欄右側の上下の矢印で 0.5 ずつ調整できます。Shift を押しながらキーボードの ↑↓ を押すと 5 ずつ変わります。入力を消すと継承値に戻ります。矢印はホバー時やフォーカス時に表示され、タッチ画面では常に表示されます。表示が切り替わっても数値の位置は変わりません。</p>
         <h3>ベースラインシフトには JS が必要</h3>
         <p><code>@font-face</code> にはベースラインの記述子がありません。同じ行のグリフはすべて欧文ベースラインにそろうため、CSS だけではフォントごとに上下させられません。ツールの「ベースライン」を使うと、書き出し時に小さなスクリプトが付きます。対象の文字を <code>&lt;span&gt;</code> で包んで相対位置で動かすので、行の高さは変わりません。CSS だけで済ませたい場合は、すべてのベースラインを 0 にしてください。</p>
@@ -567,7 +567,7 @@ try {
         <p>The outlined Share button, to the left of Export, copies a link to the current configuration without saving a preset first. The link captures the fonts, sizes, weights, baselines, variation axes, character groups, exceptions, text layout and export settings at that moment. Later edits do not change links already sent.</p>
         <p>Links exclude font files, custom proof text, history and other saved presets. Recipients see a built-in proof and can edit, save a preset or undo the import to restore their previous settings. Google Fonts load again; local fonts must be installed and uploaded files supplied separately. Missing fonts are shown in Fonts. Configuration data stays in the URL fragment and needs no server storage. Oversized links show a notice; a manual copy field is available when the clipboard cannot be used.</p>
         <h3>Size: size-adjust</h3>
-        <p><code>size-adjust</code> scales a font's glyphs and metrics by a percentage. It is supported in Chrome/Edge 92+, Firefox 92+ and Safari 17+. It also scales the font's ascent and descent, so with <code>line-height: normal</code> the line spacing can become uneven; set a fixed <code>line-height</code>.</p>
+        <p><code>size-adjust</code> scales a font's glyphs and metrics by a percentage. It is supported in Chrome/Edge 92+, Firefox 92+ and Safari 17+. A compatibility warning appears when unsupported: font assignment still works, but size adjustments are ignored in that environment. Scaling in exported font files is unaffected. It also scales the font's ascent and descent, so with <code>line-height: normal</code> the line spacing can become uneven; set a fixed <code>line-height</code>.</p>
         <p>In Base settings, size and baseline can be typed directly or adjusted by 0.5 using the arrows on the right of each input. The size inputs in Weights work the same way. Hold Shift while pressing ↑↓ on the keyboard to adjust by 5. Clear an input to restore its inherited value. Arrows appear on hover or focus and stay visible on touch screens; the numbers stay aligned as the arrows appear or disappear.</p>
         <h3>Baseline shift needs JS</h3>
         <p><code>@font-face</code> has no baseline descriptor. All glyphs on a line sit on the alphabetic baseline, and CSS cannot move them per font. When you use the tool's baseline setting, the export includes a small script that wraps the affected characters in a <code>&lt;span&gt;</code> and moves them with relative positioning, without changing the line height. For pure CSS, keep every baseline at 0.</p>
