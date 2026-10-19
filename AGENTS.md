@@ -56,11 +56,26 @@ it must not replace the default run, since newer Chrome can hide compatibility f
    `index.html`) as part of the same change, in all four `data-ui="zh|tw|ja|en"` blocks. Describe the current
    behaviour, supported cases, export effects and relevant limitations. Rewrite outdated explanations rather
    than appending conflicting notes, and do not describe proposed behaviour as already implemented.
-   Also update the font-file notes (`fxLimits` in i18n) and README.md (English, 日本語, 简体中文, 繁體中文 sections)
-   wherever they explain the affected behaviour.
+   Also update the font-file notes (`fxLimits` in i18n) wherever they explain the affected behaviour.
+   Update README.md only when its product-level highlights or important limitations change; follow the
+   documentation scope below rather than appending implementation details.
 5. Look at the page: `python3 tools/serve.py`, then check desktop width, 390 px width, and dark mode. New UI uses the
    design-system classes and tokens.
 6. Commit message: imperative English summary line, body explaining why.
+
+## Documentation scope
+
+- README.md is a concise product introduction, not a changelog, interaction specification or user manual.
+  Keep each language’s feature introduction to at most six highlights, with one or two short sentences per item.
+  Describe what users can accomplish and why it is useful, rather than cataloguing every capability.
+- Keep the English, Japanese, Simplified Chinese and Taiwan Traditional Chinese sections equivalent in
+  scope. Retain a short set of important access, privacy, licensing and export limitations.
+- Do not add control positions, spacing, colors, keyboard increments, loading behavior, internal metadata
+  rules or exhaustive edge cases to README highlights. User-facing mechanisms and detailed limitations
+  belong in the app’s localized About dialog; contributor invariants belong in AGENTS.md or focused code comments.
+- Edit or replace an existing highlight when the product promise changes. Remove duplication and outdated
+  text; do not append a sentence for every UI change or move accumulated detail into a new README section.
+  Small refinements usually need no README change.
 
 ## Built-in presets
 
