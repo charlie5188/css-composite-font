@@ -186,18 +186,36 @@ test('各字重：窄屏的预览遵守导出选择，连续范围内可点行�
   await expect(page.locator('#wMatrix [data-row="400"]')).toHaveAttribute('aria-current', 'true');
   await expect(page.locator('#wMatrix input[data-wx="700"]')).not.toBeChecked();
   await page.click('#mTabs [data-mv="preview"]');
-  await expect(page.locator('#vWn')).toBeVisible();
+  await expect(page.locator('#vWnLab')).toBeHidden();
   await expect(page.locator('#vWn')).toHaveValue('400');
-  await page.locator('#vWn').press('ArrowDown');
-  await expect(page.locator('#vWn')).toHaveValue('400');
-  await expect(page.locator('#vWSlider')).toBeDisabled();
-  await page.keyboard.press('Escape');
+  await expect(page.locator('#vWPop')).toBeHidden();
+  await expect(page.locator('#vSize')).toBeVisible();
+  await expect(page.locator('#vLh')).toBeVisible();
   await page.click('#mTabs [data-mv="edit"]');
   await page.click('#vWMode [data-m="cont"]');
   await page.locator('#wMatrix [data-row="700"]').click({ position: { x: 2, y: 2 } });
   await expect(page.locator('#wMatrix [data-row="700"]')).toHaveAttribute('aria-current', 'true');
   await page.click('#mTabs [data-mv="preview"]');
   await expect(page.locator('#vWn')).toHaveValue('700');
+});
+
+test('单一输出字重：隐藏主预览控件并关闭已打开的滑杆，恢复多档后可继续调整', async ({ page }) => {
+  await open(page); await page.click('#ltabFonts');
+  await page.locator('#vWBtn').click(); await expect(page.locator('#vWPop')).toBeVisible();
+  await page.evaluate(async () => (await import('./assets/js/ui.js')).setWeights([700]));
+  await expect(page.locator('#vWnLab')).toBeHidden();
+  await expect(page.locator('#vWPop')).toBeHidden();
+  await expect(page.locator('#vWn')).toHaveValue('700');
+  await expect(page.locator('#wMatrix [data-row="700"]')).toHaveAttribute('aria-current','true');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('composite-font:state:v1'))?.weights)).toEqual([700]);
+  await page.reload();
+  await expect(page.locator('#vWnLab')).toBeHidden();
+  await expect(page.locator('#vWn')).toHaveValue('700');
+  await page.locator('#wMatrix input[data-wx="400"]').check();
+  await expect(page.locator('#vWnLab')).toBeVisible();
+  await page.locator('#vWBtn').click(); await expect(page.locator('#vWTicks')).toHaveText('400700');
+  await page.locator('#vWSlider').press('Home'); await expect(page.locator('#vWn')).toHaveValue('400');
+  await page.keyboard.press('Escape');
 });
 
 test('预览字重：滑杆节点、手动输入和当前字重取消都遵守已选档位', async ({ page }) => {

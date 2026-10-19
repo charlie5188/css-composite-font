@@ -705,8 +705,11 @@ export function syncLeftTab() {
 }
 /* Rebuild stops only when export domain or UI language changes, preserving the slider and focus while dragging. */
 export function syncPreviewWeight({ preserveInput = false } = {}) {
-  const continuous = state.wmode === 'cont';
-  syncWeightControl({ input: $('#vWn'), slider: $('#vWSlider'), ticks: $('#vWTicks') }, { continuous, domain: continuous ? state.wrange : state.weights, value: continuous ? state.view.wcont : state.view.weight, label: wTip, locale: UI, preserveInput });
+  const continuous = state.wmode === 'cont', domain = continuous ? state.wrange : state.weights;
+  const adjustable = continuous ? domain[1] > domain[0] : domain.length > 1;
+  $('#vWnLab').hidden = !adjustable;
+  if (!adjustable && $('#vWPop').matches(':popover-open')) $('#vWPop').hidePopover();
+  syncWeightControl({ input: $('#vWn'), slider: $('#vWSlider'), ticks: $('#vWTicks') }, { continuous, domain, value: continuous ? state.view.wcont : state.view.weight, label: wTip, locale: UI, preserveInput });
 }
 
 export function syncToolbar() {
