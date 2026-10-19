@@ -9,7 +9,7 @@ export default {
   pkReadRetry: "ローカルフォントを再読み込み",
   pkAllSources: "取得元",
   pkSource: "取得元",
-  pkLibrary: "ローカルフォント + Google Fonts",
+  pkLibrary: "フォントライブラリ",
   pkPreviewTitle: "プレビューと適用",
   pkBrowseTitle: "フォントを探す",
   pkSampleOptions: "見本の設定",

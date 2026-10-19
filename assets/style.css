@@ -130,7 +130,7 @@ select{-webkit-appearance:none;appearance:none;padding-right:30px;background-ima
 .seg button:hover{color:var(--ink)}
 .seg button[aria-checked="true"]{background:var(--ink);color:var(--sheet)}
 /* Class/weight table fields: borderless by default, underlined on hover, black outline on focus. .cell-num is right-aligned monospaced text.
-   Grey placeholders are derived/inherited; .own marks explicit base settings, .set marks blue per-weight overrides. */
+   Grey placeholders are derived/inherited; blue .own and .set values mark explicit base settings and per-weight overrides. */
 .cell-in{width:100%;min-width:0;padding:5px 4px 4px;border:0;border-bottom:1px solid transparent;border-radius:0;background-color:transparent;font-size:var(--fs-m);color:var(--ink)}
 .cell-in:hover{border-bottom-color:var(--line)}
 .cell-in:focus{border-bottom-color:var(--ink);outline:none;background-color:var(--sheet)}
@@ -156,8 +156,7 @@ select.cell-in{padding-right:18px;background-position:right 3px center;backgroun
 .field-step>.cell-num{border:0;padding:var(--sp-1) 0;text-align:left;text-align-last:left;background:transparent}
 .field-step:has(>input[hidden]){display:none}
 
-.cell-in.own{font-weight:500}
-.cell-in.set{color:var(--accent);font-weight:500}
+.cell-in.own,.cell-in.set{color:var(--accent);font-weight:500}
 /* Color field: native color well plus hex input, sharing normal field borders and focus behavior. */
 .color-field{display:inline-flex;align-items:center;gap:var(--sp-1);height:var(--ctl-h);padding:0 var(--sp-1);border:1px solid var(--line);border-radius:var(--r);background:var(--sheet);min-width:0}
 .color-field:hover{border-color:var(--faint)}
@@ -203,9 +202,10 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 .filter-bar{display:flex;align-items:center;flex-wrap:wrap;gap:var(--sp-2);min-width:0}
 .filter-trigger,.filter-toggle{height:var(--ctl-h);border:1px solid var(--line);border-radius:var(--r-pill);background-color:transparent;font-size:var(--fs-s);color:var(--muted);max-width:100%}
 .filter-toggle{display:inline-flex;align-items:center;gap:var(--sp-2);padding:0 var(--sp-3);cursor:pointer}
-.filter-toggle input{margin:0;accent-color:var(--ink)}
-.filter-trigger[data-active="true"],.filter-toggle:has(:checked){color:var(--ink);border-color:var(--ink);background-color:color-mix(in srgb,var(--ink) 5%,transparent)}
+.filter-toggle input{margin:0;accent-color:var(--accent)}
 .filter-trigger:hover,.filter-toggle:hover{background-color:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink)}
+.filter-trigger[data-active="true"],.filter-toggle:has(:checked){color:var(--accent);border-color:var(--accent);background-color:color-mix(in srgb,var(--accent) 5%,transparent)}
+.filter-trigger[data-active="true"]:hover,.filter-toggle:has(:checked):hover{background-color:color-mix(in srgb,var(--accent) 9%,transparent)}
 .filter-toggle:has(:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
 /* Result counts and ordering belong to the list, separate from search filters. */
 .results-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--sp-1) var(--sp-2);min-width:0}
@@ -656,9 +656,9 @@ button.wm-pw:not(:disabled):hover{text-decoration:underline;text-underline-offse
 .wm-pw small{margin-left:5px;font-family:var(--ui);font-size:var(--fs-xs);color:var(--muted)}
 .wm-row.off .wm-pw{color:var(--muted)}
 .wm-row.cur{background:color-mix(in srgb,var(--accent) 7%,transparent);box-shadow:inset 2px 0 var(--accent)}
-.wm-row.cur .wm-pw{color:var(--accent);font-weight:600}
+.wm-row.cur .wm-pw{font-weight:600}
 .wm-c{position:relative;display:flex;align-items:center;min-width:0}
-/* Matrix numbers match class fields: grey for derived/inherited values, black for explicit base values, blue for per-weight overrides. */
+/* Matrix numbers match class fields: grey for derived/inherited values, blue for explicit base values and per-weight overrides. */
 .wm-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;padding-right:calc(var(--cell-step-w) + var(--sp-1))}
 .wm-name.guess{color:var(--caution)}
 .wm-c.swapped .cell-in{color:var(--accent);font-style:italic}

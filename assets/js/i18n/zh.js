@@ -9,7 +9,7 @@ export default {
   pkReadRetry: "重新读取本机字体",
   pkAllSources: "来源",
   pkSource: "来源",
-  pkLibrary: "本地字库 + Google Fonts",
+  pkLibrary: "现有字库",
   pkPreviewTitle: "预览与应用",
   pkBrowseTitle: "浏览字体",
   pkSampleOptions: "样张设置",

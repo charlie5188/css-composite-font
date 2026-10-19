@@ -878,7 +878,7 @@ test('统一名称输入：未知名称只在明确选用后检查，可直接�
 
 test('精简筛选栏：清除搜索保留筛选和候选，行距紧凑，底部操作无横线', async ({ page }) => {
   await fixture(page, 'latin');
-  await expect(page.locator('[data-src="library"]')).toHaveText('本地字库 + Google Fonts');
+  await expect(page.locator('[data-src="library"]')).toHaveText('现有字库');
   for (const [id, text] of [['pkSourceBtn','来源'], ['gfStyleBtn','风格'], ['pkWeightTypeBtn','字重'], ['pkCoverageBtn','字符集'], ['pkSortLabel','排序: A–Z']]) await expect(page.locator('#'+id)).toHaveText(text);
   await expect(page.locator('.filter-toggle')).toContainText('含意大利体');
   await selectFilter(page, 'pkSource', 'google');

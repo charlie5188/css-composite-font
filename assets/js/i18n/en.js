@@ -9,7 +9,7 @@ export default {
   pkReadRetry: "Retry installed fonts",
   pkAllSources: "Source",
   pkSource: "Source",
-  pkLibrary: "Installed + Google Fonts",
+  pkLibrary: "Font library",
   pkPreviewTitle: "Preview & apply",
   pkBrowseTitle: "Browse fonts",
   pkSampleOptions: "Sample options",
