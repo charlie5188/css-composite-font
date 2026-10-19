@@ -14,7 +14,7 @@ async function setBoldFilter(page, checked = true) {
   await page.locator('#pkWeightTypeBtn').click();
 }
 
-async function openClassPicker(page, category) {
+async function openClassPicker(page, category, { contextual = false } = {}) {
   // Resolve and activate in one task: even an element handle can become detached during metadata refreshes.
   const opened = await page.evaluate(category => {
     const el = document.querySelector(`.ct-row[data-id="${category}"] .fsel`);
@@ -23,6 +23,8 @@ async function openClassPicker(page, category) {
   }, category);
   expect(opened).toBe(true);
   await expect(page.locator('#picker')).toBeVisible();
+  // Keep control-focused fixtures unrestricted; dedicated entry tests exercise contextual defaults.
+  if (!contextual && await page.locator('#pkFilterClear').isVisible()) await page.locator('#pkFilterClear').click();
 }
 
 async function fixture(page, category = 'han') {
@@ -776,6 +778,7 @@ test('状态反馈：上一轮排队的关闭事件不能中止重新打开的�
   await page.evaluate(async () => {
     const u = await import('./assets/js/ui.js');
     u.picker.close(); u.openPicker({ type: 'class', id: 'han' });
+    document.querySelector('#pkFilterClear').click();
     // Start another request in the same task, before the browser delivers the previous native close event.
     const search = document.querySelector('#gfSearch'); search.value = 'Inter'; search.dispatchEvent(new Event('input'));
     document.querySelector('#gfOptions [data-family="Inter"]').click();
@@ -1283,4 +1286,91 @@ test('单字重文件：显示实际数值、隐藏无用字重控件，正文�
   await page.locator('#pkSample').focus(); await expect(page.locator('#pkSample')).toHaveCSS('outline-style', 'none');
   await expect(page.locator('#pkSample')).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)');
   await expect(page.locator('#pkOk')).toBeInViewport();
+});
+
+test('选字入口预填：按字符类别与校样语言筛选，跟随关系不改变目标，来源风格不受限', async ({ page }) => {
+  await fixture(page); await page.locator('#pkCancel').click();
+  const checked = id => page.locator('#'+id+' input:checked').evaluateAll(els => els.map(el => el.value));
+  for (const [language, expected] of [['zh-Hans','sc'], ['zh-Hant-TW','tc'], ['zh-Hant-HK','tc'], ['ja','jp'], ['ko',null], ['en',null]]) {
+    await page.evaluate(async language => { const c = await import('./assets/js/core.js'); c.state.typo.lang = language; (await import('./assets/js/render.js')).renderEditor(); }, language);
+    await openClassPicker(page,'han',{contextual:true});
+    expect(await checked('pkCoverage')).toEqual(expected ? [expected] : []);
+    expect(await checked('pkSource')).toEqual([]); expect(await checked('gfStyle')).toEqual([]);
+    await expect(page.locator('#gfItalic')).not.toBeChecked();
+    await expect(page.locator('#gfSearch')).toHaveValue('');
+    await expect(page.locator('#pkSelectedName')).toHaveText('Noto Serif SC');
+    await page.locator('#pkCancel').click();
+  }
+  await page.evaluate(async () => { (await import('./assets/js/core.js')).state.typo.lang = 'zh-Hant-TW'; (await import('./assets/js/render.js')).renderEditor(); });
+  for (const [category, expected] of [['latin','latin'],['digit','digit'],['shared','shared'],['kana','kana'],['punct','punct'],['symbol','symbol'],['bopo','bopo']]) {
+    await openClassPicker(page,category,{contextual:true});
+    expect(await checked('pkCoverage')).toEqual([expected]);
+    expect(await checked('pkWeightType')).toEqual([]);
+    await expect(page.locator('#gfResults')).not.toHaveText('0 个候选字体');
+    await page.locator('#pkCancel').click();
+  }
+});
+
+test('各字重与连续模式：行菜单与字体名入口共用默认条件，清除和文件页切换不重新加回', async ({ page }) => {
+  await fixture(page); await page.locator('#pkCancel').click();
+  const checked = id => page.locator('#'+id+' input:checked').evaluateAll(els => els.map(el => el.value));
+  await page.locator('[data-wmenu="700"]').click(); await page.locator('#wRowMenu [data-wm-pick="han"]').click();
+  expect(await checked('pkCoverage')).toEqual(['sc']); expect(await checked('pkWeightType')).toEqual(['bold']);
+  await expect(page.locator('#pkProofWeightNum')).toHaveValue('700');
+  await expect(page.locator('#pkSource input:checked,#gfStyle input:checked')).toHaveCount(0);
+  await page.locator('#gfSearch').fill('Noto'); await page.locator('#pkFilterClear').click();
+  expect(await checked('pkCoverage')).toEqual([]); expect(await checked('pkWeightType')).toEqual([]);
+  await expect(page.locator('#gfSearch')).toHaveValue('Noto'); await expect(page.locator('#pkSelectedName')).toHaveText('Noto Serif SC');
+  await page.locator('#picker [data-src="file"]').click(); await page.locator('#picker [data-src="library"]').click();
+  expect(await checked('pkCoverage')).toEqual([]); expect(await checked('pkWeightType')).toEqual([]);
+  await page.locator('#pkCancel').click(); await page.locator('#vWMode [data-m="cont"]').click();
+  await openClassPicker(page,'latin',{contextual:true});
+  expect(await checked('pkCoverage')).toEqual(['latin']); expect(await checked('pkWeightType')).toEqual(['continuous']);
+  await page.locator('#pkCancel').click();
+  await page.locator('[data-wmenu="500"]').click(); await page.locator('#wRowMenu [data-wm-pick="latin"]').click();
+  expect(await checked('pkCoverage')).toEqual(['latin']); expect(await checked('pkWeightType')).toEqual([]);
+  await page.locator('#pkCancel').click();
+  // Static local names expose the other per-weight entry, including custom exception classes.
+  await page.evaluate(async () => {
+    const c = await import('./assets/js/core.js'); c.state.wmode = 'steps';
+    c.state.classes.latin = { ...c.state.classes.latin, follow:null, font:c.L('Entry Regular') };
+    c.state.custom = [{ chars:'AΩ★', follow:null, font:c.L('Entry Regular'), size:null, shift:null }];
+    (await import('./assets/js/render.js')).renderEditor();
+  });
+  await page.locator('[data-act="wpick"][data-k="latin"][data-w="700"]').click();
+  expect(await checked('pkCoverage')).toEqual(['latin']); expect(await checked('pkWeightType')).toEqual(['bold']);
+  await page.locator('#pkCancel').click();
+  await page.locator('[data-act="wpick"][data-k="#0"][data-w="700"]').click();
+  expect(await checked('pkCoverage')).toEqual([]); expect(await checked('pkWeightType')).toEqual(['bold']);
+  await page.locator('#pkCancel').click();
+  await page.locator('#customRows [data-ci="0"] .fsel').selectOption('pick');
+  expect(await checked('pkCoverage')).toEqual([]); expect(await checked('pkWeightType')).toEqual([]);
+});
+
+test('默认条件可见且可撤销：未知本机资料不冒充匹配，窄屏四语言可清除后继续选字', async ({ page }) => {
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.addInitScript(() => { window.queryLocalFonts = async () => [{ family:'Unread Local', fullName:'Unread Local Regular', postscriptName:'UnreadLocal-Regular', style:'Regular', blob:async () => new Blob([await (await fetch('/tests/fixtures/NotoSansJP-Subset.ttf')).arrayBuffer()]) }]; });
+  await fixture(page); await page.locator('#pkCancel').click();
+  await openClassPicker(page,'han',{contextual:true});
+  await expect(page.locator('#pkCoverageBtn')).toHaveText('简体汉字');
+  await expect(page.locator('#gfOptions [data-local-family="Unread Local"]')).toHaveCount(0);
+  await expect(page.locator('#gfOptions [data-family="Noto Serif SC"]')).toHaveCount(1);
+  await expect(page.locator('#gfOptions [data-family="Inter"]')).toHaveCount(0);
+  await page.locator('#gfSearch').fill('NoEntryFixture'); await expect(page.locator('#gfResults')).toHaveText('0 个候选字体');
+  await page.locator('#gfReset').click();
+  await expect(page.locator('#gfSearch')).toHaveValue(''); await expect(page.locator('#pkCoverage input:checked')).toHaveCount(0);
+  await expect(page.locator('#gfOptions [data-local-family="Unread Local"]')).toHaveCount(1);
+  await page.locator('#pkCancel').click(); await openClassPicker(page,'han',{contextual:true});
+  await page.setViewportSize({width:390,height:844}); await page.emulateMedia({colorScheme:'dark'});
+  for (const language of ['en','tw','ja','zh']) {
+    await page.evaluate(async language => { const i=await import('./assets/js/i18n.js'); i.setUI(language); (await import('./assets/js/ui.js')).applyUI(); },language);
+    await expect(page.locator('#pkFilterClear')).toBeVisible();
+    expect(await page.locator('#picker').evaluate(el => el.scrollWidth <= el.clientWidth)).toBe(true);
+    await expect(page.locator('#pkOk')).toBeInViewport();
+  }
+  await page.locator('#pkFilterClear').click();
+  await expect(page.locator('#gfOptions [data-local-family="Unread Local"]')).toHaveCount(1);
+  await page.locator('#gfSearch').fill('Inter'); await page.locator('#gfOptions [data-family="Inter"]').click();
+  await expect(page.locator('#pkSelectedName')).toHaveText('Inter');
+  expect(errors).toEqual([]);
 });

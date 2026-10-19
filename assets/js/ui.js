@@ -1363,6 +1363,16 @@ function clearPickerFilters() {
   for (const id of ['pkSource', 'gfStyle', 'pkWeightType', 'pkCoverage']) $('#'+id).querySelectorAll('input').forEach(el => { el.checked = false; });
   $('#gfItalic').checked = false;
 }
+function seedPickerFilters(t) {
+  clearPickerFilters();
+  // Infer the edited character class, not the font it follows. Mixed exception ranges have no safe representative filter.
+  const han = /^ja(?:-|$)/i.test(state.typo.lang) ? 'jp' : /^zh(?:-|$)/i.test(state.typo.lang) ? /Hant|TW|HK/i.test(state.typo.lang) ? 'tc' : 'sc' : null;
+  const coverage = t.type === 'class' ? t.id === 'han' ? han : ({ latin: 'latin', digit: 'digit', shared: 'shared', kana: 'kana', punct: 'punct', symbol: 'symbol', bopo: 'bopo' })[t.id] : null;
+  if (coverage) $('#pkCoverage input[value="'+coverage+'"]').checked = true;
+  // A replacement for one step may be static even in continuous mode. These are editable browsing defaults, never constraints on application.
+  if (!pickW && state.wmode === 'cont') $('#pkWeightType input[value="continuous"]').checked = true;
+  if (pickW >= 700) $('#gfBold').checked = true;
+}
 function syncPickerFilters() {
   for (const [id, button, any, label] of [['pkSource', 'pkSourceBtn', 'pkAllSources', 'pkSource'], ['gfStyle', 'gfStyleBtn', 'pkAnyStyle', 'pkFilterStyle'], ['pkWeightType', 'pkWeightTypeBtn', 'pkAnyWeightType', 'pkWeightType'], ['pkCoverage', 'pkCoverageBtn', 'pkAnyCoverage', 'pkCoverage']]) {
     const checked = [...$('#'+id).querySelectorAll('input:checked')], trigger = $('#'+button);
@@ -1876,13 +1886,13 @@ export function openPicker(t, W = BASE_W) {      // W is the target weight when 
   if (pickW && o.font.kind === 'file') { const g = guessPath(o.font.fileName, W); $('#ffPath').placeholder = g; $('#ffPath').value = state.weightNames[k] || g; }
   fileImportToken++; $('#ffDrop').removeAttribute('aria-busy'); $('#ffSearch').value = ''; $('#ffError').textContent = ''; $('#ffError').hidden = true;
   $('#ffFile').value = ''; $('#ffItal').value = '';
-  libraryOrder = []; librarySort = 'name'; $('#pkSort input[value="name"]').checked = true; clearPickerFilters();
+  libraryOrder = []; librarySort = 'name'; $('#pkSort input[value="name"]').checked = true;
   pickerLibraryKind = (pickW ? (ovf || o.font).kind : cur?.kind) === 'local' ? 'local' : 'google';
   const rowFont = pickW ? (t.type === 'class' ? resolveCls(t.id, W, true) : resolveCustom(o, W, true)).font : cur;
   pickCand = ovf?.kind === 'file' ? ovf : rowFont?.kind === 'file' ? rowFont : null;
   $('#pkSample').value = pickerClassSample(); setPickerSampleSize(32);
   pickCatalog = catalogOrder(cur?.kind === 'google' ? cur.family : '');
-  $('#gfSearch').value = ''; clearPickerFilters(); renderCatalog();
+  $('#gfSearch').value = ''; seedPickerFilters(t); renderCatalog();
   picker.showModal();
   setPickTab(pickW ? (ovf || o.font).kind : cur?.kind || 'google');
   if (pickTab !== 'file') $('#gfSearch').focus();

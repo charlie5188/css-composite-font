@@ -19,8 +19,11 @@ async function fixture(page) {
 }
 async function choose(page, family) {
   await page.locator('.ct-row[data-id="han"] .fsel').selectOption('pick');
+  // These fixtures intentionally use Latin fonts for Han to isolate weight pruning from character coverage.
+  if (await page.locator('#pkFilterClear').isVisible()) await page.locator('#pkFilterClear').click();
   await page.locator('#gfSearch').fill(family);
   await page.locator('#gfSearch').press('Enter');
+  await expect(page.locator('#pkSelectedName')).toHaveText(family);
   await expect(page.locator('#pkOk')).toBeEnabled();
   await page.click('#pkOk');
 }
