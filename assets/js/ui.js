@@ -1637,7 +1637,7 @@ function renderCharsetCoverage(f, data) {
   for (const key of INFO_CHARSETS) {
     const { have, total, missing } = counts[key], label = CHARSET_LABELS[key];
     const dt = document.createElement('dt'), dd = document.createElement('dd');
-    dt.textContent = ['sc', 'tc', 'jp'].includes(key) ? label : T(label);
+    dt.textContent = T(label);
     dd.className = 'cov-result ' + (have === total ? 'ok' : have ? 'part' : 'none');
     dd.textContent = T('pkCharsetCoverageResult', { percent: percent.format(have / total), have: integer.format(have), total: integer.format(total) });
     if (missing) {

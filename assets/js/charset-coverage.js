@@ -3,7 +3,7 @@ import { CHARSETS } from './charset-data.js';
 export { CHARSETS };
 export const COVERAGE_THRESHOLD = 0.9;
 export const INFO_CHARSETS = ['sc', 'tc', 'jp', 'latin', 'digit', 'kana', 'bopo', 'pinyin'];
-export const CHARSET_LABELS = { sc: 'GB 2312-80', tc: 'Big5', jp: 'JIS X 0208:1990', latin: 'covBasicLatin', digit: 'covBasicDigits', kana: 'covBasicKana', bopo: 'covBopo', pinyin: 'covPinyin', shared: 'pkCoverShared', punct: 'pkCoverPunct', symbol: 'pkCoverSymbol' };
+export const CHARSET_LABELS = { sc: 'covCharsetSC', tc: 'covCharsetTC', jp: 'covCharsetJP', latin: 'covBasicLatin', digit: 'covBasicDigits', kana: 'covBasicKana', bopo: 'covBopo', pinyin: 'covPinyin', shared: 'pkCoverShared', punct: 'pkCoverPunct', symbol: 'pkCoverSymbol' };
 // Counts and filter ratios always refer to the same pinned Unicode repertoires.
 export function charsetCoverage(has) {
   return Object.fromEntries(Object.entries(CHARSETS).map(([key, { chars, total }]) => {

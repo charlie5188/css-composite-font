@@ -1458,7 +1458,7 @@ test('Google 完整文件检测：不把 CSS 全范围当作完整覆盖，失�
   await expect(page.locator('#pkCovStatus')).toContainText('未计算'); await expect(page.locator('#pkCov dd')).toHaveCount(0);
   fail=false;await page.locator('#pkCovRetry').click();
   await expect(page.locator('#pkCov dd')).toHaveCount(8);
-  await expect(page.locator('#pkCov dt').first()).toHaveText('GB 2312-80');
+  await expect(page.locator('#pkCov dt').first()).toHaveText('简体中文（GB 2312-80）');
   await expect(page.locator('#pkCov dd').first()).toContainText('1.63% · 121 / 7,445 字');
   await expect(page.locator('#pkCovNote')).toContainText('完整字体文件');
   await page.locator('#pkCov dd').first().locator('summary').click();
