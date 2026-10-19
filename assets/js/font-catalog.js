@@ -2,6 +2,7 @@ import { G, GF_LIST, axisOf, gfWeights } from './core.js';
 import { CATALOG_COVERAGE } from './font-catalog-data.js';
 import { GF_ITALIC, GF_STYLE, GF_HANDWRITING, GF_PRIMARY_SCRIPT } from './gfmeta.js';
 import { searchKey } from './ui-controls.js';
+import { COVERAGE_THRESHOLD } from './charset-coverage.js';
 
 // These search aliases do not replace the font's canonical family name.
 const ALIASES = {
@@ -104,5 +105,5 @@ export function filterCatalog(items, query, style, bold, weightTypes = [], cover
   return items.filter(item => (!q || searchKey(item.family + item.aliases).includes(q))
     && matchesStyle(item) && (!bold || item.bold !== false) && (!italic || item.italic !== false)
     && (!weightTypes.length || item.weightType == null || weightTypes.includes(item.weightType))
-    && coverage.every(key => item.coverage?.[key] === true));
+    && coverage.every(key => typeof item.coverage?.[key] === 'number' && item.coverage[key] >= COVERAGE_THRESHOLD));
 }

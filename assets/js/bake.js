@@ -70,7 +70,7 @@ export function gfInfo(family) {
   if (g) return g;
   g = { st: 'loading' };
   gfDirs.set(family, g);
-  (async () => {
+  g.promise = (async () => {
     const slug = family.toLowerCase().replace(/[^a-z0-9]/g, ''), ck = 'composite-font:gf2:' + slug;
     let d = lsGet(ck);
     if (!d || Date.now() - d.t > 7 * 864e5) {

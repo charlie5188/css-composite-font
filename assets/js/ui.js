@@ -3,6 +3,7 @@ import { refresh } from './refresh.js';
 import { bindPopover, bindWeightControl, syncWeightControl, showMissingGlyphTip, paintMissingGlyphs, placePopover, searchKey } from './ui-controls.js';
 import { catalogInfo, catalogOrder, catalogStyles, localStyleWeight, localWeightInfo, localItalicInfo, filterCatalog, sortCatalog } from './font-catalog.js';
 import { CATALOG_SAMPLES } from './font-catalog-data.js';
+import { INFO_CHARSETS, CHARSET_LABELS, coverageRatios } from './charset-coverage.js';
 import { readFontMetadata } from './font-metadata.js';
 import { importFontFile, importedFonts, rememberImportedFont } from './font-files.js';
 import { initShare } from './share.js';
@@ -12,7 +13,7 @@ import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from '.
 import { CLASSES, CLS, classOf, inRanges, parseChars, rebuildClassRanges } from './unicode.js';
 import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownFontAt, ownSize, presetDirty, presetSnap, rebuild, fileStyle, fileWeight, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
 import { REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, wTip, MISS_SKIP, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, stepperCell, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
-import { initFontTab } from './bake.js';
+import { initFontTab, gfInfo, gfPick, gfUrl, gfDirs } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
 /* ================= Interaction: character-class table ================= */
 export function targetOf(row) { return row.dataset.id ? { type: 'class', id: row.dataset.id } : { type: 'custom', i: +row.dataset.ci }; }
@@ -1189,7 +1190,8 @@ let pickerApplyToken = 0, pickerApplyBusy = false, pickerFailedSource = null;
 export let pickW = null;   // When editing a non-400 row with its own font, choose a weight, font name or file only for that step.
 export const picker = $('#picker');
 let pickCatalog = [], catalogObserver;
-const catalogCoverageByFace = new Map();
+const catalogCoverageByFace = new Map(), catalogCoverageByGoogle = new Map();
+const QUICK_COVERAGE = Object.fromEntries(Object.entries(CATALOG_SAMPLES).filter(([key]) => !['sc', 'tc', 'jp'].includes(key)));
 let pickerLibraryKind = 'google', pickerMissing = null, showPickerWeightSlider;
 function pickerOwns(ch) {
   const owner = ownerOf(ch.codePointAt(0)), key = keyOf(pickTarget);
@@ -1234,11 +1236,11 @@ async function loadPickerChoice(el, src, unavailable = 'pkPreviewUnavailable') {
     await waitForPicker((async () => {
       await src.promise;
       if (src.status !== 'ok') throw new Error('source-unavailable');
-      const chars = [...new Set([...sample.textContent, ...'Ag0123', ...(src.font.kind === 'local' ? Object.values(CATALOG_SAMPLES).join('') : '')].filter(ch => ch.trim()))];
+      const chars = [...new Set([...sample.textContent, ...'Ag0123', ...(src.font.kind === 'local' ? Object.values(QUICK_COVERAGE).join('') : '')].filter(ch => ch.trim()))];
       let missing;
       try { missing = await missingIn(src, chars); } catch (error) { throw new Error('coverage-unavailable'); }
       if (!missing) throw new Error('coverage-unavailable');
-      if (src.font.kind === 'local') catalogCoverageByFace.set(src.font.name, Object.fromEntries(Object.entries(CATALOG_SAMPLES).map(([key, chars]) => [key, [...chars].every(ch => !missing.has(ch))])));
+      if (src.font.kind === 'local') catalogCoverageByFace.set(src.font.name, { ...Object.fromEntries(Object.entries(QUICK_COVERAGE).map(([key, chars]) => [key, [...chars].filter(ch => !missing.has(ch)).length / [...chars].length])), ...catalogCoverageByFace.get(src.font.name) });
       if ([...sample.textContent].some(ch => ch.trim() && missing.has(ch))) sample.textContent = chars.filter(ch => !missing.has(ch)).slice(0, 24).join('');
       if (!sample.textContent || !(await document.fonts.load(`24px "${src.family}"`, sample.textContent)).length) throw new Error('no-specimen');
     })());
@@ -1263,7 +1265,7 @@ function localGroups() {
   return [...groups].sort(([a], [b]) => a.localeCompare(b));
 }
 function libraryChoices() {
-  const choices = pickCatalog.map(item => ({ ...item, kind: 'google', id: 'google:' + item.family }));
+  const choices = pickCatalog.map(item => ({ ...item, coverage: catalogCoverageByGoogle.get(item.family) || item.coverage, kind: 'google', id: 'google:' + item.family }));
   for (const [family, faces] of localGroups()) {
     const known = catalogInfo(family), named = styleOfFont(L(family));
     // Names can establish a positive match, but absence of a named bold face cannot rule out an unread variable font.
@@ -1523,6 +1525,11 @@ export function localAxesOf(name) {
   if (!fd) return null;
   localAxes.set(name, undefined);
   fd.blob().then(b => b.arrayBuffer()).then(async buf => {
+    try {
+      const metadata = await readFontMetadata(buf, fd.postscriptName);
+      if (!pickerMetadata.get('local:' + name)?.pending) pickerMetadata.set('local:' + name, metadata);
+      if (metadata.coverage) catalogCoverageByFace.set(name, coverageRatios(metadata.coverage));
+    } catch (error) { /* A missing collection face must not reject independent axis/style reads. */ }
     localAxes.set(name, await fileAxes(buf)); localStyle.set(name, await fileStyle(buf)); localWeights.set(name, await fileWeight(buf)); syncLocalWeightLabels();
     if (pickTab === 'local' && $('#lfName').value.trim() === name) updateCand();
   }, () => localAxes.set(name, null));
@@ -1584,19 +1591,6 @@ export function renderItal() {
     : T('pkItalYes', { name: it.kind === 'google' ? `${it.family} Italic` : it.kind === 'local' ? it.name : it.fileName || it.path });
 }
 /* ================= Character coverage ================= */
-/* Sample representative characters per set, including distinct Simplified, Traditional and Japanese Han forms. */
-export const COV_SETS = [
-  ['covLatin', 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'],
-  ['covPinyin', 'āáǎàēéěèīíǐìōóǒòūúǔùǖǘǚǜü'],      // If a Western font lacks Pinyin letters, individual letters fall back to later fonts.
-  ['covDigit', '0123456789'],
-  ['covKana', 'あいうえおかきくけこさしすせそたちつてとなにぬねのはひふへほまみむめもやゆよらりるれろわをんアイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲンー'],
-  ['covSC', CATALOG_SAMPLES.sc],
-  ['covTC', CATALOG_SAMPLES.tc],
-  ['covJP', CATALOG_SAMPLES.jp],
-  ['covHK', '嘅咗嚟啲冇佢喺嘢噉咁哋睇攞乜嗰𠝹𨋢'],      // Cantonese characters; the last two are in Extension B (HKSCS).
-  ['covKR', '가나다라마바사아자차카타파하한글'],
-  ['covSym', '①②③※→℃○■△◎★〒'],
-];
 /* Find missing characters. Google Fonts uses subset unicode-range coverage. For local/uploaded fonts, append a 616-byte blank font
    mapping all characters to zero-width empty glyphs; unsupported source characters then measure as zero width. */
 export const BLANK_FONT = 'data:font/ttf;base64,AAEAAAAKAIAAAwAgT1MvMlQEUR0AAACsAAAAYGNtYXAAIrhhAAABDAAAADRnbHlmAAAAAAAAAUAAAAAMaGVhZF8eQOUAAAFMAAAANmhoZWEDIf87AAABhAAAACRobXR4AAAAAAAAAagAAAAIbG9jYQAGAAYAAAGwAAAABm1heHAAAwACAAABuAAAACBuYW1lBcMVaQAAAdgAAABucG9zdP+fADIAAAJIAAAAIAAEAAABkAAFAAAAAAAAAAAAAAAAAAAAAAAAADIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABOT05FAEAAIP//AyD/OAAAAyAAyAAAAAEAAAAAAAAAAAAAACAAAAAAAAEAAwAKAAAADAANAAAAAAAoAAAAAAAAAAIAAAAgAADX/wAAAAEAAOAAABD//wAAAAEAAAAAAAAAAAAAAAAAAQAAAAEAAC3z3ftfDzz1AAsD6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAgAAAAAAAAABAAADIP84AAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAgAAAAAAAAAAAAAABgAGAAAAAQAAAAIAAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAQANgADAAEECQABAA4AAAADAAEECQACAA4ADgADAAEECQAEAA4AHAADAAEECQAGAA4AKgBDAEYAQgBsAGEAbgBrAFIAZQBnAHUAbABhAHIAQwBGAEIAbABhAG4AawBDAEYAQgBsAGEAbgBrAAAAAwAAAAAAAP+cADIAAAAAAAAAAAAAAAAAAAAAAAAAAA==';
@@ -1619,25 +1613,41 @@ export async function missingIn(s, chars) {
 }
 export let covTok = 0;
 export async function renderCoverage(s, f) {
-  const tok = ++covTok, box = $('#pkCov'), sample = $('#pkSample');
-  const text = sample.value;
-  const sampleChars = [...new Set([...text].filter(c => c.trim() && c !== '·'))];
-  $('#pkCovStatus').textContent = T('pkCheckingCoverage');
+  const tok = ++covTok, sample = $('#pkSample'), text = sample.value;
+  const chars = [...new Set([...text].filter(c => c.trim() && c !== '·'))];
   let miss;
-  try { miss = await waitForPicker(missingIn(s, [...new Set([...COV_SETS.flatMap(([, cs]) => [...cs]), ...sampleChars])])); } catch (error) { miss = null; }
+  try { miss = await waitForPicker(missingIn(s, chars)); } catch (error) { miss = null; }
   if (tok !== covTok || pickCand !== f || !picker.open || sample.value !== text) return;
-  $('#pkCovStatus').textContent = miss ? '' : T('pkCoverageUnknown');
+  $('#pkSampleCovStatus').textContent = miss ? '' : T('pkSampleCoverageUnknown');
   pickerMissing = miss; syncPickerMirror();
-  if (!miss) { box.innerHTML = ''; return; }
-  box.innerHTML = COV_SETS.filter(([key]) => !['covLatin', 'covDigit', 'covKR'].includes(key)).map(([k, cs]) => {
-    const list = [...cs], have = list.filter(c => !miss.has(c)).length;
-    const cls = have === list.length ? 'ok' : have ? 'part' : 'none';
-    return `<dt>${esc(T(k))}</dt><dd class="cov-result ${cls}">${esc(T('pkCoverageResult', { have, total: list.length }))}</dd>`;
-  }).join('');
 }
 export function resetCoverage() {
-  covTok++;
-  $('#pkCov').innerHTML = ''; $('#pkCovStatus').textContent = ''; pickerMissing = null; syncPickerMirror();
+  covTok++; $('#pkSampleCovStatus').textContent = ''; pickerMissing = null; syncPickerMirror();
+}
+// Exact counts come only from cmap data, never CSS ranges or canvas widths.
+function renderCharsetCoverage(f, data) {
+  const box = $('#pkCov'), counts = data?.coverage;
+  box.replaceChildren();
+  $('#pkCovStatus').textContent = !data?.pending && !counts ? T('pkCoverageUnavailable') : '';
+  $('#pkCovRetry').hidden = !data?.error;
+  $('#pkCovNote').hidden = !counts;
+  $('#pkCovNote').textContent = T(f?.kind === 'google' ? 'pkFullFileCoverageNote' : 'pkCharsetCoverageNote');
+  if (!counts) return;
+  const locale = UI === 'tw' ? 'zh-TW' : UI, integer = new Intl.NumberFormat(locale), percent = new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 2 });
+  for (const key of INFO_CHARSETS) {
+    const { have, total, missing } = counts[key], label = CHARSET_LABELS[key];
+    const dt = document.createElement('dt'), dd = document.createElement('dd');
+    dt.textContent = ['sc', 'tc', 'jp'].includes(key) ? label : T(label);
+    dd.className = 'cov-result ' + (have === total ? 'ok' : have ? 'part' : 'none');
+    dd.textContent = T('pkCharsetCoverageResult', { percent: percent.format(have / total), have: integer.format(have), total: integer.format(total) });
+    if (missing) {
+      const detail = document.createElement('details'), summary = document.createElement('summary'), chars = document.createElement('p');
+      detail.className = 'pk-coverage-missing'; summary.textContent = T('pkCoverageMissing', { n: integer.format(total - have) });
+      chars.textContent = missing; chars.tabIndex = 0; chars.setAttribute('aria-label', summary.textContent);
+      detail.append(summary, chars); dd.append(detail);
+    }
+    box.append(dt, dd);
+  }
 }
 function pickerWeightAxis(f) { return f && (f.kind === 'google' ? f.family in vfCache ? Array.isArray(vfCache[f.family]) ? vfCache[f.family] : null : axisOf(f, 'wght')?.slice(1, 3) : f.axis); }
 function setPickerDetailTab(tab) {
@@ -1649,15 +1659,29 @@ function setPickerDetailTab(tab) {
 }
 // Read detailed binary facts only on demand, never while scanning the installed library.
 const pickerMetadata = new Map();
-const metadataKey = f => f?.kind === 'file' ? 'file:' + f.fileId : f?.kind === 'local' ? 'local:' + f.name : '';
+const metadataKey = f => f?.kind === 'file' ? 'file:' + f.fileId : f?.kind === 'local' ? 'local:' + f.name : f?.kind === 'google' ? 'google:' + f.family + ':' + (f.weight || 400) : '';
 function requestPickerMetadata(f) {
   const key = metadataKey(f), file = f?.kind === 'file' ? files.get(f.fileId) : null, record = f?.kind === 'local' ? localData.get(f.name) : null;
-  if (!key || pickerMetadata.has(key) || !file && !record || $('#pkDetails').hidden) return;
+  if (!key || pickerMetadata.has(key) || !file && !record && f?.kind !== 'google' || $('#pkDetails').hidden) return;
   pickerMetadata.set(key, { pending: true });
   (async () => {
-    try { pickerMetadata.set(key, await readFontMetadata(file?.buffer || await (await record.blob()).arrayBuffer())); }
-    catch (error) { pickerMetadata.set(key, { supported: false }); }
-    // A late result must never populate another candidate's information panel.
+    try {
+      const data = await waitForPicker((async () => {
+        if (f.kind !== 'google') return readFontMetadata(file?.buffer || await (await record.blob()).arrayBuffer(), record?.postscriptName);
+        const info = gfInfo(f.family); await info.promise;
+        const selected = info.st === 'ok' && gfPick(info.names, f.weight || 400, false);
+        if (!selected) throw new Error('source-unavailable');
+        const response = await fetch(gfUrl(info.lic, info.slug, selected.name), { signal: AbortSignal.timeout(PICKER_LOAD_MS) });
+        if (!response.ok) throw new Error('source-unavailable');
+        const metadata = await readFontMetadata(await response.arrayBuffer());
+        // Full upstream files are used only for explicit repertoire inspection; web preview remains unchanged.
+        if (!metadata.coverage) throw new Error('character-map-unavailable');
+        return { coverage: metadata.coverage, supported: false };
+      })());
+      pickerMetadata.set(key, data);
+      if (f.kind === 'local' && data.coverage) catalogCoverageByFace.set(f.name, coverageRatios(data.coverage));
+      if (f.kind === 'google' && (f.weight || 400) === 400 && data.coverage) catalogCoverageByGoogle.set(f.family, coverageRatios(data.coverage));
+    } catch (error) { pickerMetadata.set(key, { supported: false, error: true }); }
     if (picker.open && metadataKey(pickCand) === key) syncPickerMetadata(pickCand);
   })();
 }
@@ -1669,6 +1693,7 @@ function showPickerInfoRow(id, visible) {
 function syncPickerMetadata(f) {
   requestPickerMetadata(f);
   const data = pickerMetadata.get(metadataKey(f)), names = data?.names;
+  renderCharsetCoverage(f, data);
   const record = f?.kind === 'local' ? localData.get(f.name) : null;
   const family = names?.family || (f?.kind === 'google' ? f.family : f?.kind === 'file' ? importedFonts.get(f.fileId)?.family : record?.family);
   const known = family ? catalogInfo(family) : null;
@@ -2039,6 +2064,7 @@ export function initPicker() {
   $('#ffWeightNum').addEventListener('change', updateCand);
   $('#pkScope').addEventListener('change', () => { syncGfWeight(); updateCand(); });
   $('#lfFace').addEventListener('change', () => { $('#lfName').value = $('#lfFace').value; updateCand(); });
+  $('#pkCovRetry').addEventListener('click', () => { if (pickCand?.kind === 'google' && gfDirs.get(pickCand.family)?.st === 'err') gfDirs.delete(pickCand.family); pickerMetadata.delete(metadataKey(pickCand)); syncPickerMetadata(pickCand); });
   $('#gfSearch').addEventListener('input', renderCatalog);
   $('#gfSearchClear').addEventListener('click', () => { $('#gfSearch').value = ''; renderCatalog(); $('#gfSearch').focus(); });
   $('#gfReset').addEventListener('click', () => { $('#gfSearch').value = ''; clearPickerFilters(); renderCatalog(); $('#gfSearch').focus(); });

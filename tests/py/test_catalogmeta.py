@@ -12,8 +12,16 @@ spec.loader.exec_module(catalogmeta)
 
 def test_split_and_wildcard_ranges():
     result = catalogmeta.coverage("@font-face {unicode-range: U+30-39, U+4??;} @font-face {unicode-range: U+41-5A,U+61-7A;}")
-    assert result['digit'] and result['latin']
-    assert not result['sc'] and not result['tc'] and not result['jp'] and not result['kana']
+    assert result['digit'] == 1 and result['latin'] == 1
+    # Full repertoires include some Latin/Cyrillic characters, so partial coverage is not zero.
+    assert result['sc'] == 66 / 7445
+    assert 0 < result['tc'] < 0.9 and 0 < result['jp'] < 0.9
+    assert result['kana'] == 0
+
+
+def test_overlapping_ranges_count_each_character_once():
+    assert catalogmeta.coverage('@font-face {unicode-range:U+30-39,U+35-39;}')['digit'] == 1
+    assert catalogmeta.coverage('@font-face {unicode-range:U+30-38;}')['digit'] == 0.9
 
 
 def test_missing_ranges_are_unknown():

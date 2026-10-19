@@ -29,6 +29,11 @@ async function openClassPicker(page, category, { contextual = false } = {}) {
 
 async function fixture(page, category = 'han') {
   await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: "@font-face { font-family: 'PickerFixture'; src: url('http://127.0.0.1:8765/tests/fixtures/Jost%5Bwght%5D.ttf'); }" }));
+  // Exact Info coverage reads the complete upstream binary, independent of web CSS.
+  await page.route('https://raw.githubusercontent.com/google/fonts/main/**', async route => {
+    const name = decodeURIComponent(route.request().url());
+    await route.fulfill(/\.txt$/.test(name) ? { body:'SIL Open Font License' } : { contentType:'font/ttf', body:require('fs').readFileSync(require('path').resolve(__dirname,'../fixtures/Jost[wght].ttf')) });
+  });
   await open(page);
   await page.click('#ltabFonts');
   await openClassPicker(page, category);
@@ -129,7 +134,7 @@ test('字符覆盖筛选只显示已确认符合的字体；未检查字体清�
   await expect(page.locator('#gfOptions [data-local-family="ZZ Unread"]')).toHaveCount(1);
   const matches = await page.evaluate(async () => {
     const { filterCatalog } = await import('./assets/js/font-catalog.js');
-    return filterCatalog([{ family: 'Confirmed', coverage: { sc: true, kana: true } }, { family: 'Partial', coverage: { sc: true } }, { family: 'Unknown' }, { family: 'No Han', coverage: { sc: false, kana: true } }], '', [], false, [], ['sc', 'kana']).map(f => f.family);
+    return filterCatalog([{ family: 'Confirmed', coverage: { sc: 1, kana: 1 } }, { family: 'Partial', coverage: { sc: 1 } }, { family: 'Unknown' }, { family: 'No Han', coverage: { sc: 0, kana: 1 } }], '', [], false, [], ['sc', 'kana']).map(f => f.family);
   });
   expect(matches).toEqual(['Confirmed']);
 });
@@ -236,7 +241,7 @@ test('字体资料：仿宋楷体教科书体独立，圆体兼属黑体，未�
     const { catalogStyles, catalogInfo, filterCatalog } = await import('./assets/js/font-catalog.js');
     const styles = ['STFangsong', 'Kaiti SC', 'DFKai-SB', 'UD Digi Kyokasho', 'Kaisei Tokumin', 'Maruburi', 'Rounded Serif'].map(f => catalogStyles(f, 'serif'));
     styles.splice(4, 0, catalogStyles('Hiragino Maru Gothic ProN', 'sans'));
-    const fonts = [{ family: 'Unknown', aliases: '', styles: null, weightType: null, coverage: null }, { family: 'Known no kana', aliases: '', styles: ['sans'], weightType: 'continuous', coverage: { sc: true, kana: false } }, { family: 'Both', aliases: '', styles: ['kai'], weightType: 'stepped', coverage: { sc: true, kana: true } }];
+    const fonts = [{ family: 'Unknown', aliases: '', styles: null, weightType: null, coverage: null }, { family: 'Known no kana', aliases: '', styles: ['sans'], weightType: 'continuous', coverage: { sc: 1, kana: 0 } }, { family: 'Both', aliases: '', styles: ['kai'], weightType: 'stepped', coverage: { sc: 1, kana: 1 } }];
     return { styles, matches: filterCatalog(fonts, '', ['kai'], false, ['stepped'], ['sc', 'kana']).map(f => f.family), google: ['Inter', 'Klee One', 'Zen Maru Gothic'].map(f => ({ type: catalogInfo(f).weightType, styles: catalogInfo(f).styles })) };
   });
   expect(result.styles).toEqual([['fangsong'], ['kai'], ['kai'], ['textbook'], ['sans', 'rounded'], ['serif'], ['serif'], ['serif', 'rounded']]);
@@ -664,7 +669,7 @@ test('预览与信息：样张自然撑高、详情标签精简、切换保留�
   await page.locator('#pkInfoTab').click();
   await expect(page.locator('#pkDetails')).toBeVisible(); await expect(page.locator('#pkPreviewPanel')).toBeHidden();
   await expect(page.locator('#pkInfoSource')).toHaveText('Google Fonts');
-  await expect(page.locator('#pkCov')).not.toContainText('拉丁字母'); await expect(page.locator('#pkCov')).not.toContainText('数字'); await expect(page.locator('#pkCov')).not.toContainText('韩文');
+  await expect(page.locator('#pkCov')).toContainText('GB 2312-80'); await expect(page.locator('#pkCov')).toContainText('JIS X 0208:1990'); await expect(page.locator('#pkCov')).not.toContainText('韩文');
   await expect(page.locator('#pkCov .cov-note')).toHaveCount(0);
   await page.locator('#pkInfoTab').focus(); await page.keyboard.press('ArrowLeft');
   await expect(page.locator('#pkPreviewTab')).toBeFocused(); await expect(page.locator('#pkPreviewPanel')).toBeVisible();
@@ -742,7 +747,7 @@ test('状态反馈：无法完成字符检查时显示未知，避免伪造全�
   await fixture(page); await page.locator('#picker [data-src="file"]').click();
   await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
   await expect(page.locator('#pkOk')).toBeEnabled();
-  await page.locator('#pkInfoTab').click(); await expect(page.locator('#pkCovStatus')).toContainText('无法确认');
+  await page.locator('#pkInfoTab').click(); await expect(page.locator('#pkSampleCovStatus')).toContainText('无法确认');
   await expect(page.locator('#pkCov .cov.ok')).toHaveCount(0);
 });
 
@@ -1223,8 +1228,8 @@ test('本机分档字体：预览字重切换家族的真实文件，不改变�
 test('详情滚动：字体名与页签固定，检测结果按字段对齐，窄屏页签随详情置顶', async ({ page }) => {
   await fixture(page); await page.locator('#picker [data-src="file"]').click();
   await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
-  await page.locator('#pkInfoTab').click(); await expect(page.locator('#pkCov dd')).toHaveCount(7);
-  await expect(page.locator('#pkCov dd').first()).toContainText('支持');
+  await page.locator('#pkInfoTab').click(); await expect(page.locator('#pkCov dd')).toHaveCount(8);
+  await expect(page.locator('#pkCov dd').first()).toContainText('%');
   expect(await page.locator('#pkItal').evaluate(el => el.closest('.pk-info-group').querySelector('h4').textContent)).toBe('字体特征');
   const before = await page.locator('#pkDetailTabs').boundingBox();
   await page.locator('#pkDetailScroll').evaluate(el => { el.scrollTop = el.scrollHeight; });
@@ -1388,7 +1393,7 @@ test('默认条件可见且可撤销：未知本机资料不冒充匹配，窄�
   await page.addInitScript(() => { window.queryLocalFonts = async () => [{ family:'Unread Local', fullName:'Unread Local Regular', postscriptName:'UnreadLocal-Regular', style:'Regular', blob:async () => new Blob([await (await fetch('/tests/fixtures/NotoSansJP-Subset.ttf')).arrayBuffer()]) }]; });
   await fixture(page); await page.locator('#pkCancel').click();
   await openClassPicker(page,'han',{contextual:true});
-  await expect(page.locator('#pkCoverageBtn')).toHaveText('简体汉字');
+  await expect(page.locator('#pkCoverageBtn')).toHaveText('简体 · GB2312');
   await expect(page.locator('#gfOptions [data-local-family="Unread Local"]')).toHaveCount(0);
   await expect(page.locator('#gfOptions [data-family="Noto Serif SC"]')).toHaveCount(1);
   await expect(page.locator('#gfOptions [data-family="Inter"]')).toHaveCount(0);
@@ -1409,4 +1414,60 @@ test('默认条件可见且可撤销：未知本机资料不冒充匹配，窄�
   await page.locator('#gfSearch').fill('Inter'); await page.locator('#gfOptions [data-family="Inter"]').click();
   await expect(page.locator('#pkSelectedName')).toHaveText('Inter');
   expect(errors).toEqual([]);
+});
+
+test('完整字表覆盖：固定版本与独立 fontTools 计数一致，合集按所选 PostScript 名读取', async ({ page }) => {
+  await fixture(page);
+  const result = await page.evaluate(async () => {
+    const { readFontMetadata } = await import('./assets/js/font-metadata.js'), { CHARSETS } = await import('./assets/js/charset-data.js');
+    const buffers = await Promise.all(['Jost%5Bwght%5D.ttf','NotoSansJP-Subset.ttf'].map(async name => (await fetch('tests/fixtures/'+name)).arrayBuffer()));
+    const originals = await Promise.all(buffers.map(buffer => readFontMetadata(buffer)));
+    // Construct a collection from the same licensed fixtures; table offsets in TTC are absolute.
+    const offsets = [20, 20 + ((buffers[0].byteLength + 3) & ~3)], collection = new Uint8Array(offsets[1] + buffers[1].byteLength), view = new DataView(collection.buffer);
+    view.setUint32(0,0x74746366); view.setUint32(4,0x10000); view.setUint32(8,2);
+    buffers.forEach((buffer,i) => { const base=offsets[i]; view.setUint32(12+i*4,base); collection.set(new Uint8Array(buffer),base); for(let j=0;j<view.getUint16(base+4);j++){ const at=base+12+j*16+8;view.setUint32(at,view.getUint32(at)+base); } });
+    const faces = await Promise.all(originals.map(m => readFontMetadata(collection.buffer,m.names.postscript)));
+    const axes = await (await import('./assets/js/core.js')).fileAxes(collection.buffer);
+    let rejected=false;try{await readFontMetadata(collection.buffer,'Not-a-face');}catch(error){rejected=true;}
+    return { totals:Object.fromEntries(Object.entries(CHARSETS).map(([key,set])=>[key,set.total])), counts:originals.map(m=>Object.fromEntries(Object.entries(m.coverage).map(([key,set])=>[key,set.have]))), originals:originals.map(m=>m.characterCount), faces:faces.map(m=>m.characterCount), axes, rejected };
+  });
+  expect(result.totals).toMatchObject({sc:7445,tc:13703,jp:6879,kana:93,bopo:41});
+  // Expected values were independently checked with fontTools getBestCmap(), not the page reader.
+  expect(result.counts[0]).toEqual({sc:121,tc:93,jp:107,latin:52,digit:10,kana:0,pinyin:17,shared:7,punct:0,symbol:3,bopo:2});
+  expect(result.counts[1]).toEqual({sc:18,tc:20,jp:24,latin:9,digit:10,kana:4,pinyin:0,shared:0,punct:4,symbol:0,bopo:0});
+  expect(result.originals).toEqual([524,52]); expect(result.faces).toEqual(result.originals); expect(result.axes.axes[0][0]).toBe('wght'); expect(result.rejected).toBe(true);
+});
+
+test('基本覆盖筛选：90% 边界、多个字集同时满足，未知和不足不冒充匹配', async ({ page }) => {
+  await fixture(page);
+  const names = await page.evaluate(async () => {
+    const {filterCatalog}=await import('./assets/js/font-catalog.js');
+    const items=[['Exactly',.9,.9],['Near',.999,1],['Below',.899999,1],['Other missing',1,undefined],['Unknown',undefined,undefined]].map(([family,sc,jp])=>({family,aliases:'',coverage:{sc,jp}}));
+    return filterCatalog(items,'',[],false,[],['sc','jp']).map(f=>f.family);
+  });
+  expect(names).toEqual(['Exactly','Near']);
+});
+
+test('Google 完整文件检测：不把 CSS 全范围当作完整覆盖，失败可重试，保留样张草稿', async ({ page }) => {
+  await fixture(page); let fail=true;
+  await page.route('https://raw.githubusercontent.com/google/fonts/main/**/*.ttf', async route => {
+    if(route.request().method()==='HEAD') return route.fulfill({status:200});
+    await route.fulfill(fail ? {status:503,body:''} : {contentType:'font/ttf',body:require('fs').readFileSync(require('path').resolve(__dirname,'../fixtures/Jost[wght].ttf'))});
+  });
+  await page.locator('#pkSample').fill('保留这份样张'); await page.locator('#pkInfoTab').click();
+  await expect(page.locator('#pkCovStatus')).toContainText('未计算'); await expect(page.locator('#pkCov dd')).toHaveCount(0);
+  fail=false;await page.locator('#pkCovRetry').click();
+  await expect(page.locator('#pkCov dd')).toHaveCount(8);
+  await expect(page.locator('#pkCov dt').first()).toHaveText('GB 2312-80');
+  await expect(page.locator('#pkCov dd').first()).toContainText('1.63% · 121 / 7,445 字');
+  await expect(page.locator('#pkCovNote')).toContainText('完整字体文件');
+  await page.locator('#pkCov dd').first().locator('summary').click();
+  await expect(page.locator('#pkCov dd').first().locator('details p')).toBeVisible();
+  expect(await page.locator('#pkCov dd').first().locator('details p').evaluate(el=>[...el.textContent].length)).toBe(7445-121);
+  await page.setViewportSize({width:390,height:844});await page.emulateMedia({colorScheme:'dark'});
+  await page.locator('#pkCov details').nth(1).locator('summary').click();
+  await expect(page.locator('#pkClose')).toBeInViewport();
+  expect(await page.locator('#picker').evaluate(el=>el.scrollTop)).toBe(0);
+  expect(await page.locator('#pkDetails').evaluate(el=>el.scrollWidth<=el.clientWidth)).toBe(true);
+  await page.locator('#pkPreviewTab').click();await expect(page.locator('#pkSample')).toHaveValue('保留这份样张');
 });

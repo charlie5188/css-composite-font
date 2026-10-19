@@ -296,11 +296,11 @@ export async function fileAxes(buf) {
   } catch (e) { /* Treat unreadable data as a regular font. */ }
   return null;
 }
-/* Read one font table as a DataView: TTF/OTF/TTC (first face) directly, WOFF after decompression. Return null for WOFF2's unsupported Brotli data. */
-export async function sfntTable(buf, want) {
+/* Read one font table as a DataView: TTF/OTF/TTC (first face by default, or an explicit face offset) directly, WOFF after decompression. Return null for WOFF2's unsupported Brotli data. */
+export async function sfntTable(buf, want, faceOffset = null) {
   const v = new DataView(buf);
   let sig = v.getUint32(0), base = 0;
-  if (sig === 0x74746366) { base = v.getUint32(12); sig = v.getUint32(base); }      // 'ttcf'
+  if (sig === 0x74746366) { base = faceOffset ?? v.getUint32(12); sig = v.getUint32(base); }      // 'ttcf'
   if (sig === 0x774F4632) return null;      // wOF2
   if (sig === 0x774F4646) {      // wOFF
     for (let i = 0, n = v.getUint16(12); i < n; i++) {

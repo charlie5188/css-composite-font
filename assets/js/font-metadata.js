@@ -1,4 +1,5 @@
 import { sfntTable } from './core.js';
+import { charsetCoverage } from './charset-coverage.js';
 
 // Session-only facts from the selected binary. Never store embedded names or licenses in configuration.
 const cache = new WeakMap();
@@ -51,8 +52,8 @@ const macLanguages = {
   145: "gv", 146: "ga", 147: "to", 148: "el", 149: "kl", 150: "az", 151: "nn"
 };
 const tag = name => [...name].reduce((n, c) => n * 256 + c.charCodeAt(0), 0);
-async function tableOf(buffer, name) {
-  try { return await sfntTable(buffer, tag(name)); } catch (error) { return null; }
+async function tableOf(buffer, name, offset = null) {
+  try { return await sfntTable(buffer, tag(name), offset); } catch (error) { return null; }
 }
 function readNames(table) {
   if (!table || table.byteLength < 6) return null;
@@ -87,11 +88,11 @@ function readNames(table) {
   return { localized, fullName: get(4, 'en'), family: get(16, 'en') || get(1, 'en'), style: get(17, 'en') || get(2, 'en'),
     postscript: get(6, 'en'), designer: get(9, 'en'), manufacturer: get(8, 'en'), license: get(13, 'en'), licenseUrl: get(14, 'en'), version: get(5, 'en') };
 }
-function characterCount(table) {
-  if (!table || table.byteLength < 4) return null;
+function characterCoverage(table, glyphCount) {
+  if (!table || table.byteLength < 4 || glyphCount === 0) return null;
   // Count Unicode scalar values mapped to nonzero glyphs, not maxp's glyph count (which includes alternates).
   const covered = new Uint8Array(0x110000), seen = new Set(); let supported = false;
-  const add = (code, glyph) => { if (glyph && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff)) covered[code] = 1; };
+  const add = (code, glyph) => { if (glyph && (glyphCount == null || glyph < glyphCount) && code <= 0x10ffff && !(code >= 0xd800 && code <= 0xdfff)) covered[code] = 1; };
   try {
     for (let i = 0; i < table.getUint16(2); i++) {
       const rec = 4 + i * 8, platform = table.getUint16(rec), encoding = table.getUint16(rec + 2), at = table.getUint32(rec + 4);
@@ -123,18 +124,30 @@ function characterCount(table) {
         for (let j = 0; j < count; j++) add(first + j, format === 0 ? table.getUint8(at + 6 + j) : table.getUint16(at + (format === 6 ? 10 : 20) + j * 2));
       }
     }
-    return supported ? covered.reduce((sum, n) => sum + n, 0) : null;
+    return supported ? { count: covered.reduce((sum, n) => sum + n, 0), sets: charsetCoverage(code => covered[code] === 1) } : null;
   } catch (error) { return null; }
 }
-export function readFontMetadata(buffer) {
-  if (!cache.has(buffer)) cache.set(buffer, (async () => {
-    const [name, cmap, post, fvar] = await Promise.all(['name', 'cmap', 'post', 'fvar'].map(n => tableOf(buffer, n)));
-    const supported = new DataView(buffer).getUint32(0) !== 0x774f4632;
+export function readFontMetadata(buffer, postscript = '') {
+  if (!cache.has(buffer)) cache.set(buffer, new Map());
+  const faces = cache.get(buffer);
+  if (!faces.has(postscript)) faces.set(postscript, (async () => {
+    const view = new DataView(buffer); let offset = null;
+    // Local Font Access may return a collection. Never inspect a different face's character map.
+    if (view.getUint32(0) === 0x74746366 && postscript) {
+      for (let i = 0; i < view.getUint32(8); i++) {
+        const candidate = view.getUint32(12 + i * 4);
+        if (readNames(await tableOf(buffer, 'name', candidate))?.postscript === postscript) { offset = candidate; break; }
+      }
+      if (offset == null) throw new Error('collection-face-unavailable');
+    }
+    const [name, cmap, post, fvar, maxp] = await Promise.all(['name', 'cmap', 'post', 'fvar', 'maxp'].map(n => tableOf(buffer, n, offset)));
+    const supported = view.getUint32(0) !== 0x774f4632;
     let names = null;
     try { names = readNames(name); } catch (error) { /* One malformed optional table must not reject a usable font. */ }
-    return { names, characterCount: characterCount(cmap), size: buffer.byteLength, supported,
+    const coverage = characterCoverage(cmap, maxp?.byteLength >= 6 ? maxp.getUint16(4) : null);
+    return { names, characterCount: coverage?.count ?? null, coverage: coverage?.sets ?? null, size: buffer.byteLength, supported,
       monospaced: post?.byteLength >= 16 ? !!post.getUint32(12) : null,
       variable: supported ? !!fvar : null };
   })());
-  return cache.get(buffer);
+  return faces.get(postscript);
 }
