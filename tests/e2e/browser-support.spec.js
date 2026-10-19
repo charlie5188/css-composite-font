@@ -34,7 +34,8 @@ for (const hideAccessor of [false, true]) {
     await open(page);
     if (hideAccessor) expect(await page.evaluate(() => 'sizeAdjust' in FontFace.prototype)).toBe(false);
     await expect(page.locator('#sizeAdjustWarn')).toBeHidden();
-    expect(await measuredScale(page)).toBeCloseTo(2, 2);
+    // Glyph advance rounding varies by platform (Linux can measure 1.992x). Check that scaling works, not exact rasterization parity.
+    expect(await measuredScale(page)).toBeCloseTo(2, 1);
   });
 }
 
