@@ -739,7 +739,9 @@ button.wm-pw:not(:disabled):hover{text-decoration:underline;text-underline-offse
 /* Keep CSS/JS tabs and Copy visible while long output scrolls. */
 /* Sticky offsets begin inside scroller padding. Move top padding from the content pane to its tab bar so code cannot peek above the sticky bar. */
 .dlg-body.ex-out{padding-top:0}
-.ex-out .ex-top{position:sticky;top:0;z-index:5;padding:12px 40px 0 0;background:var(--sheet)}      /* Reserve the top-right corner for Close. */
+/* Reserve Close's gutter on the pane, keeping actions aligned with the code below. */
+@media (min-width:761px){.dlg-body.ex-out{padding-right:calc(var(--ctl-h) + var(--sp-4))}}
+.ex-out .ex-top{position:sticky;top:0;z-index:5;padding:12px 0 0;background:var(--sheet)}
 .ex-out .kind-font{padding-top:20px}
 .ex-out .code pre{max-height:none}
 /* About uses the left column for title, introduction and contents. */
