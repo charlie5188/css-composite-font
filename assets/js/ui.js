@@ -1576,7 +1576,7 @@ export const cleanVary = f => { const o = Object.fromEntries(Object.entries(pick
 /* Which font to use for this face's italic export. */
 export function renderItal() {
   const el = $('#pkItal'), f = pickCand;
-  el.hidden = !f; $('#pkItalLabel').hidden = el.hidden;
+  showPickerInfoRow('pkItal', !!f);
   if (el.hidden) return;
   if (f.kind === 'local' && italicLocal(f) === undefined) { el.textContent = T('pkItalChecking'); setTimeout(() => { if (picker.open && pickCand === f) renderItal(); }, 400); return; }
   const it = italOf(f);
@@ -1661,27 +1661,33 @@ function requestPickerMetadata(f) {
     if (picker.open && metadataKey(pickCand) === key) syncPickerMetadata(pickCand);
   })();
 }
+// Hide the label with its value so sparse sources never leave empty definition-list rows.
+function showPickerInfoRow(id, visible) {
+  const value = $('#'+id);
+  value.hidden = !visible; value.previousElementSibling.hidden = !visible;
+}
 function syncPickerMetadata(f) {
   requestPickerMetadata(f);
   const data = pickerMetadata.get(metadataKey(f)), names = data?.names;
   const record = f?.kind === 'local' ? localData.get(f.name) : null;
-  const family = names?.family || (f?.kind === 'google' ? f.family : f?.kind === 'file' ? importedFonts.get(f.fileId)?.family : record?.family || f?.name);
+  const family = names?.family || (f?.kind === 'google' ? f.family : f?.kind === 'file' ? importedFonts.get(f.fileId)?.family : record?.family);
   const known = family ? catalogInfo(family) : null;
   const script = known?.primaryScript || ({ sc: 'Hans', tw: 'Hant', hk: 'Hant', jp: 'Jpan', kr: 'Kore', latin: 'Latn' })[known?.region];
   const labels = { Hans: 'pkCoverSc', Hant: 'pkCoverTc', Jpan: 'pfJp', Hira: 'covKana', Kana: 'covKana', Kore: 'covKR', Hang: 'covKR', Latn: 'covLatin' };
-  const missing = data?.pending ? 'pkMetaReading' : data?.supported ? 'pkMetaAbsent' : 'pkMetaUnavailable';
-  const put = (id, value, fallback = missing) => {
+  const status = $('#pkMetaStatus');
+  status.hidden = !data?.pending; status.textContent = data?.pending ? T('pkMetaReading') : '';
+  const put = (id, value) => {
     const el = $('#'+id), present = value !== null && value !== undefined && value !== '';
-    el.textContent = present ? value : T(fallback); el.toggleAttribute('data-unavailable', !present);
+    el.textContent = present ? value : ''; showPickerInfoRow(id, present);
   };
-  put('pkInfoSource', !f ? '' : f.kind === 'google' ? 'Google Fonts' : f.kind === 'local' ? T('srcLocal') : f.fileName || T('srcFile'));
-  put('pkInfoScript', labels[script] ? T(labels[script]) : '', 'pkMetaUnavailable');
+  put('pkInfoSource', !f ? '' : f.kind === 'google' ? 'Google Fonts' : f.kind === 'local' ? T('srcLocal') : [T('srcFile'), f.fileName].filter(Boolean).join(' · '));
+  put('pkInfoScript', labels[script] ? T(labels[script]) : '');
   const nameList = $('#pkMetaDisplayNames');
   put('pkMetaDisplayNames', null);
   const displayNames = Object.entries(names?.localized || {});
   const languages = new Intl.DisplayNames([UI === 'tw' ? 'zh-TW' : UI], { type: 'language' });
   if (displayNames.length) {
-    nameList.replaceChildren(); nameList.removeAttribute('data-unavailable');
+    nameList.replaceChildren(); showPickerInfoRow('pkMetaDisplayNames', true);
     for (const [language, value] of displayNames) {
       const code = language === 'tw' ? 'zh-Hant' : language;
       const label = language.startsWith('und-') ? T('pkMetaOtherLanguage', { code: language.split('-').slice(2).join('-') }) : languages.of(code);
@@ -1695,10 +1701,10 @@ function syncPickerMetadata(f) {
   put('pkMetaStyle', names?.style || record?.style || (f?.kind === 'file' ? importedFonts.get(f.fileId)?.style : ''));
   put('pkMetaPostscript', names?.postscript || record?.postscriptName);
   const styles = catalogStyles(family || '', f?.cls || known?.style), styleKeys = { serif: 'pkSerif', sans: 'pkSans', other: 'pkOther', fangsong: 'pkFangsong', kai: 'pkKai', rounded: 'pkRounded', textbook: 'pkTextbook', handwriting: 'pkHandwriting', brush: 'pkBrush' };
-  put('pkMetaCategory', styles?.map(key => T(styleKeys[key])).join(T('joiner')), 'pkMetaUnavailable');
+  put('pkMetaCategory', styles?.map(key => T(styleKeys[key])).join(T('joiner')));
   const faces = f?.kind === 'local' ? localGroups().find(([, faces]) => faces.some(face => face.fullName === f.name))?.[1].length
     : f?.kind === 'file' ? [...importedFonts.values()].filter(entry => entry.family === family && files.has(entry.font.fileId)).length : null;
-  put('pkMetaFaces', faces ? T('pkMetaFaceCount', { n: faces }) : null, 'pkMetaUnavailable');
+  put('pkMetaFaces', faces ? T('pkMetaFaceCount', { n: faces }) : null);
   put('pkMetaCharacters', data?.characterCount != null ? T('pkMetaCharacterCount', { n: data.characterCount.toLocaleString(UI === 'tw' ? 'zh-TW' : UI) }) : null);
   put('pkMetaSpacing', data?.monospaced != null ? T(data.monospaced ? 'pkMetaMono' : 'pkMetaProportional') : null);
   const variable = data?.variable ?? (f?.axesUnknown || f?.axis || f?.axes?.length || f?.kind === 'google' && axisOf(f, 'wght') ? true : f?.kind === 'google' && gfWeights(f.family)?.length ? false : null);
@@ -1818,7 +1824,7 @@ export function updateScope() {
 /* Plain weight terminology matches the editor; the tooltip keeps the precise range or available steps. */
 export function showVfTag(axis) {
   const tag = $('#pkVfTag'), f = pickCand, weights = f?.kind === 'google' ? gfWeights(f.family) : f?.kind === 'local' ? localFamilyWeightInfo(f.name).weights : pickerSteppedWeights(f);
-  tag.hidden = !f;
+  showPickerInfoRow('pkVfTag', !!f && (!!axis || !!weights?.length));
   tag.textContent = axis ? `${T('fontWeightContinuous')} ${axis[0]}–${axis[1]}` : weights?.length ? `${T(f?.kind === 'local' && localFamilyWeightInfo(f.name).weightType !== 'stepped' ? 'pkKnownWeights' : 'fontWeightStepped')} ${weights.length <= 2 ? weights.join('/') : weights[0] + '–' + weights.at(-1)}` : T('fontWeightUnknownLabel');
   tag.title = axis ? T('fontWeightContinuousHint', { a: axis[0], b: axis[1] }) : weights?.length ? T('fontWeightList', { weights: weights.join(', ') }) : T('fontWeightUnknown');
 }

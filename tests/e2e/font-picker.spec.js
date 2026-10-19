@@ -1056,8 +1056,12 @@ test('信息面板：统一字段、实际字符数与命名资料，来源缺�
   await fixture(page);
   await page.locator('#pkInfoTab').click();
   await expect(page.locator('#pkMetaFamily')).not.toHaveText('');
-  await expect(page.locator('#pkMetaDesigner')).toHaveText('当前来源未提供');
-  await expect(page.locator('#pkMetaPostscript')).toHaveText('当前来源未提供');
+  await expect(page.locator('#pkDetails > .pk-metadata').first().locator('dd')).toHaveText('Google Fonts');
+  for (const id of ['pkMetaDesigner', 'pkMetaPostscript', 'pkMetaDisplayNames', 'pkMetaStyle', 'pkMetaCharacters', 'pkMetaSpacing', 'pkMetaSize']) {
+    await expect(page.locator('#'+id)).toBeHidden();
+    expect(await page.locator('#'+id).evaluate(el => el.previousElementSibling.hidden)).toBe(true);
+  }
+  await expect(page.locator('.pk-info-group').filter({ has: page.locator('#pkMetaDesigner') })).toBeHidden();
   await page.locator('#picker [data-src="file"]').click();
   await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
   await expect(page.locator('#pkMetaDisplayNames [data-pk-name]')).toHaveText(['Jost Regular（英语）']);
@@ -1065,7 +1069,8 @@ test('信息面板：统一字段、实际字符数与命名资料，来源缺�
   await expect(page.locator('#pkMetaFamily')).toHaveText('Jost');
   await expect(page.locator('#pkMetaStyle')).toHaveText('Regular');
   await expect(page.locator('#pkMetaCharacters')).toHaveText('524 个'); // The fixture has 535 glyphs, but only 524 mapped characters.
-  await expect(page.locator('#pkMetaDesigner')).toHaveText('字体里没有提供');
+  await expect(page.locator('#pkMetaDesigner')).toBeHidden();
+  await expect(page.locator('#pkInfoSource')).toContainText('Jost[wght].ttf');
   await expect(page.locator('#pkMetaVariable')).toHaveText('可变字体');
   await expect(page.locator('#pkMetaSpacing')).toHaveText('非等宽字体');
   await expect(page.locator('#pkMetaSize')).toContainText('KB');
@@ -1096,6 +1101,37 @@ test('信息面板：统一字段、实际字符数与命名资料，来源缺�
   await page.locator('#ffFile').setInputFiles({ name:'Unsafe-license.ttf', mimeType:'font/ttf', buffer:unsafe });
   await expect(page.locator('#pkMetaLicenseUrl')).toHaveText('javascript:alert(1)');
   await expect(page.locator('#pkMetaLicenseUrl a')).toHaveCount(0);
+  await page.locator('#picker [data-src="library"]').click();
+  await expect(page.locator('#pkInfoSource')).toHaveText('Google Fonts');
+  await expect(page.locator('#pkMetaLicenseUrl')).toBeHidden();
+  await expect(page.locator('#pkMetaCharacters')).toBeHidden();
+  await expect(page.locator('#pkMetaDisplayNames')).toBeHidden();
+});
+
+test('信息按来源取舍：本机读取中保留已知名称，失败不补空字段，切换后不残留资料', async ({ page }) => {
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.addInitScript(() => {
+    const pending = new Promise((resolve, reject) => { window.failLocalInfo = () => reject(new Error('Unavailable binary')); });
+    window.queryLocalFonts = async () => [{ family:'Sparse Local', fullName:'Sparse Local Regular', postscriptName:'SparseLocal-Regular', style:'Regular', blob:() => pending }];
+  });
+  await fixture(page);
+  await page.locator('#gfSearch').fill('Sparse Local'); await page.locator('#gfOptions [data-local-family="Sparse Local"]').click();
+  await page.locator('#pkInfoTab').click();
+  await expect(page.locator('#pkInfoSource')).toHaveText('本机字体');
+  await expect(page.locator('#pkMetaStatus')).toHaveText('正在读取…');
+  await expect(page.locator('#pkMetaFamily')).toHaveText('Sparse Local');
+  await expect(page.locator('#pkMetaPostscript')).toHaveText('SparseLocal-Regular');
+  await expect(page.locator('#pkMetaCharacters')).toBeHidden();
+  await page.evaluate(() => window.failLocalInfo());
+  await expect(page.locator('#pkMetaStatus')).toBeHidden();
+  await expect(page.locator('#pkMetaFamily')).toBeVisible();
+  await expect(page.locator('#pkMetaCharacters')).toBeHidden();
+  await page.locator('#gfSearch').fill('Inter'); await page.locator('#gfOptions [data-family="Inter"]').click();
+  await expect(page.locator('#pkInfoSource')).toHaveText('Google Fonts');
+  await expect(page.locator('#pkMetaFamily')).toHaveText('Inter');
+  await expect(page.locator('#pkMetaPostscript')).toBeHidden();
+  await expect(page.locator('#pkMetaStyle')).toBeHidden();
+  expect(errors).toEqual([]);
 });
 
 test('字体资料解析：TTF、OTF、WOFF 与 WOFF2 限制，保留多语言命名', async ({ page }) => {

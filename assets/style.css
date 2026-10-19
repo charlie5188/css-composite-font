@@ -192,7 +192,11 @@ select.cell-in[data-auto]:not(.set) option{color:var(--ink)}
 .settings-label,.settings-note{margin:0;padding:0 var(--sp-2);color:var(--muted);line-height:1.5}
 .settings-label{font-size:var(--fs-xs)}
 .settings-note{font-size:var(--fs-s)}
+/* Option groups leave one standard section gap before their explanatory note. */
+.settings-group+.settings-note{margin-top:var(--sp-4)}
 .settings-row{display:flex;align-items:center;justify-content:space-between;gap:var(--sp-3);min-height:var(--ctl-h);padding:0 var(--sp-2);font-size:var(--fs-m)}
+.settings-item-label{display:inline-flex;align-items:center;gap:var(--sp-2);min-width:0}
+.settings-item-label>.ic{flex:none}
 .settings-row select{height:var(--ctl-h);max-width:65%;font-size:var(--fs-s)}
 .settings-fields{display:grid;grid-template-columns:max-content minmax(0,1fr);align-items:center;gap:var(--sp-1) var(--sp-3);padding:0 var(--sp-2)}
 .settings-fields select{height:var(--ctl-h);font-size:var(--fs-s);padding-top:var(--sp-1);padding-bottom:var(--sp-1)}
@@ -919,12 +923,12 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-sample-controls{display:flex;align-items:center;justify-content:flex-end;gap:var(--sp-2);flex-wrap:wrap}
 .pk-info{display:grid;gap:var(--sp-4)}
 .pk-info-group{display:grid;gap:var(--sp-3);min-width:0}
+.pk-info-group:not(:has(dd:not([hidden]),p:not(:empty))){display:none}
 .pk-info-group>.hint{margin:0}
 .pk-info-group>p:empty{display:none}
 .pk-metadata{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:var(--sp-3);margin:0;font-size:var(--fs-m)}
 .pk-metadata dt{color:var(--muted)}
 .pk-metadata dd{margin:0;min-width:0;overflow-wrap:anywhere;white-space:pre-line}
-.pk-metadata dd[data-unavailable]{color:var(--muted)}
 .pk-display-names{display:grid;gap:var(--sp-2)}
 /* Move the whole language suffix to a new line before splitting long labels in narrow panes. */
 .pk-name-language{display:inline-block;width:max-content;max-width:100%;color:var(--muted)}
