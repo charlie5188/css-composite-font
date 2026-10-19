@@ -1321,7 +1321,7 @@ function hasLocalVariants(f) {
   return f?.kind === 'local' && localGroups().some(([, faces]) => faces.some(face => face.fullName === f.name) && needsLocalFaceSelection(faces));
 }
 function pickerSteppedWeights(f) {
-  return f?.kind === 'google' ? gfWeights(f.family) : f?.kind === 'local' ? [...new Set(localPickerFaces(f).map(item => item.weight))].sort((a, b) => a - b) : null;
+  return f?.kind === 'google' ? gfWeights(f.family) : f?.kind === 'local' ? [...new Set(localPickerFaces(f).map(item => item.weight))].sort((a, b) => a - b) : f?.kind === 'file' && importedFonts.get(f.fileId)?.weight ? [importedFonts.get(f.fileId).weight] : null;
 }
 function pickerViewedFont(f) {
   if (f.kind === 'google') return { ...f, ...(pickerWeightAxis(f) ? { vf: true } : gfWeights(f.family) ? { weight: pickerProofWeight } : {}) };
@@ -1666,22 +1666,20 @@ function syncPickerMetadata(f) {
   };
   put('pkInfoSource', !f ? '' : f.kind === 'google' ? 'Google Fonts' : f.kind === 'local' ? T('srcLocal') : f.fileName || T('srcFile'));
   put('pkInfoScript', labels[script] ? T(labels[script]) : '', 'pkMetaUnavailable');
-  const locale = UI === 'en' ? 'en' : UI;
-  const primaryLocale = names?.localized[locale] ? locale : UI === 'tw' ? 'zh' : UI === 'zh' ? 'tw' : locale;
-  const localizedName = names?.localized[primaryLocale];
-  put('pkMetaLocalized', localizedName);
-  put('pkMetaEnglish', names?.localized.en);
-  const familyLabel = $('#pkMetaFamilyLabel'), nameList = familyLabel.parentElement;
-  nameList.querySelectorAll('[data-pk-name]').forEach(el => el.remove());
+  const nameList = $('#pkMetaDisplayNames');
+  put('pkMetaDisplayNames', null);
+  const displayNames = Object.entries(names?.localized || {});
   const languages = new Intl.DisplayNames([UI === 'tw' ? 'zh-TW' : UI], { type: 'language' });
-  for (const [language, value] of Object.entries(names?.localized || {})) {
-    // The primary and English rows already show these names; expose other embedded language names once.
-    if (language === primaryLocale || language === 'en') continue;
-    const code = language === 'tw' ? 'zh-Hant' : language;
-    const label = language.startsWith('und-') ? T('pkMetaOtherLanguage', { code: language.split('-').slice(2).join('-') }) : languages.of(code);
-    const dt = document.createElement('dt'), dd = document.createElement('dd');
-    dt.dataset.pkName = dd.dataset.pkName = ''; dt.textContent = T('pkMetaLanguageName', { language: label }); dd.textContent = value;
-    nameList.insertBefore(dt, familyLabel); nameList.insertBefore(dd, familyLabel);
+  if (displayNames.length) {
+    nameList.replaceChildren(); nameList.removeAttribute('data-unavailable');
+    for (const [language, value] of displayNames) {
+      const code = language === 'tw' ? 'zh-Hant' : language;
+      const label = language.startsWith('und-') ? T('pkMetaOtherLanguage', { code: language.split('-').slice(2).join('-') }) : languages.of(code);
+      const row = document.createElement('div'), name = document.createElement('bdi'), suffix = document.createElement('span');
+      row.dataset.pkName = ''; name.textContent = value; name.lang = code;
+      suffix.className = 'pk-name-language'; suffix.textContent = T('pkMetaNameLanguage', { language: label });
+      row.append(name, suffix); nameList.append(row);
+    }
   }
   put('pkMetaFamily', family);
   put('pkMetaStyle', names?.style || record?.style || (f?.kind === 'file' ? importedFonts.get(f.fileId)?.style : ''));
@@ -1725,7 +1723,9 @@ function syncPickerProof(f, { preserveInput = false } = {}) {
   if (!pickerProofEdited) pickerProofWeight = f?.weight || (f?.kind === 'local' ? localWeights.get(f.name) ?? localStyleWeight(localData.get(f.name)?.style || '') : null) || 400;
   if (axis) pickerProofWeight = Math.max(axis[0], Math.min(axis[1], pickerProofWeight));
   else if (weights?.length) pickerProofWeight = weights.reduce((a, b) => Math.abs(b - pickerProofWeight) < Math.abs(a - pickerProofWeight) ? b : a);
-  $('#pkWeightControl').hidden = !f;
+  const adjustable = axis ? axis[1] > axis[0] : weights?.length > 1;
+  $('#pkWeightControl').hidden = !adjustable;
+  if (!adjustable && $('#pkWeightPop').matches(':popover-open')) $('#pkWeightPop').hidePopover();
   $('#gfApplyField').hidden = !pickW || f?.kind !== 'google';
   $('#lfVarField').hidden = f?.kind !== 'local' || localData.has(f.name);
   $('#pkSelectedName').textContent = f?.kind === 'file' ? importedFonts.get(f.fileId)?.family || f.fileName : f?.kind === 'google' ? f.family : f?.kind === 'local' ? localData.get(f.name)?.family || f.name : '';
@@ -1807,7 +1807,7 @@ export function updateScope() {
 /* Google weight controls: numeric fields over the wght range for variable fonts; a 100-900 menu for others. */
 /* Plain weight terminology matches the editor; the tooltip keeps the precise range or available steps. */
 export function showVfTag(axis) {
-  const tag = $('#pkVfTag'), f = pickCand, weights = f?.kind === 'google' ? gfWeights(f.family) : f?.kind === 'local' ? localFamilyWeightInfo(f.name).weights : null;
+  const tag = $('#pkVfTag'), f = pickCand, weights = f?.kind === 'google' ? gfWeights(f.family) : f?.kind === 'local' ? localFamilyWeightInfo(f.name).weights : pickerSteppedWeights(f);
   tag.hidden = !f;
   tag.textContent = axis ? `${T('fontWeightContinuous')} ${axis[0]}–${axis[1]}` : weights?.length ? `${T(f?.kind === 'local' && localFamilyWeightInfo(f.name).weightType !== 'stepped' ? 'pkKnownWeights' : 'fontWeightStepped')} ${weights.length <= 2 ? weights.join('/') : weights[0] + '–' + weights.at(-1)}` : T('fontWeightUnknownLabel');
   tag.title = axis ? T('fontWeightContinuousHint', { a: axis[0], b: axis[1] }) : weights?.length ? T('fontWeightList', { weights: weights.join(', ') }) : T('fontWeightUnknown');

@@ -925,6 +925,9 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 .pk-metadata dt{color:var(--muted)}
 .pk-metadata dd{margin:0;min-width:0;overflow-wrap:anywhere;white-space:pre-line}
 .pk-metadata dd[data-unavailable]{color:var(--muted)}
+.pk-display-names{display:grid;gap:var(--sp-2)}
+/* Move the whole language suffix to a new line before splitting long labels in narrow panes. */
+.pk-name-language{display:inline-block;width:max-content;max-width:100%;color:var(--muted)}
 #lfFaceField{max-width:100%}
 #lfFaceField select{width:100%}
 .pk-sample-box{position:relative;min-width:0}
@@ -933,8 +936,7 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 #pkSample{position:relative;resize:none;overflow:hidden;color:transparent;caret-color:var(--ink)}
 #pkSample::selection{color:var(--ink);background:Highlight}
 #pkSample::placeholder{color:var(--faint)}
-#pkSample:hover{border-color:var(--line)}
-#pkSample:focus{border-color:var(--ink);outline:none}
+#pkSample:focus{outline:none}
 .pk-meta{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px;font-size:var(--fs-s);color:var(--muted)}
 #pkSample:not([hidden])+.pk-meta{border-top:1px solid var(--rule);padding-top:10px}
 .pk .settings-pop{max-width:calc(100vw - 64px)}
@@ -1002,4 +1004,3 @@ dialog::backdrop{background:rgba(8,8,10,.45)}
 
 .font-option-source>.ic{flex:none;width:var(--fs-l);height:var(--fs-l)}
 .font-option-weights{min-width:0;overflow:hidden;text-overflow:ellipsis}
-.proof-text:focus-visible{outline:1px solid var(--line);outline-offset:var(--sp-2);border-radius:var(--r)}

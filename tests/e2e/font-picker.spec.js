@@ -1057,8 +1057,7 @@ test('信息面板：统一字段、实际字符数与命名资料，来源缺�
   await expect(page.locator('#pkMetaPostscript')).toHaveText('当前来源未提供');
   await page.locator('#picker [data-src="file"]').click();
   await page.locator('#ffFile').setInputFiles(require('path').resolve(__dirname, '../fixtures/Jost[wght].ttf'));
-  await expect(page.locator('#pkMetaEnglish')).toHaveText('Jost Regular');
-  await expect(page.locator('#pkMetaLocalized')).toHaveText('字体里没有提供');
+  await expect(page.locator('#pkMetaDisplayNames [data-pk-name]')).toHaveText(['Jost Regular（英语）']);
   await expect(page.locator('#pkMetaPostscript')).toHaveText('Jost-Regular');
   await expect(page.locator('#pkMetaFamily')).toHaveText('Jost');
   await expect(page.locator('#pkMetaStyle')).toHaveText('Regular');
@@ -1174,11 +1173,11 @@ test('本机分档字体：预览字重切换家族的真实文件，不改变�
   await page.locator('#gfSearch').fill('Fixture Variants'); await page.locator('#gfOptions [data-local-family]').click();
   await page.locator('#lfFace').selectOption('Fixture Variants Italic');
   await expect(page.locator('#pkStatus')).toHaveAttribute('data-state','ready');
-  await page.locator('#pkProofWeightNum').fill('700'); await page.locator('#pkProofWeightNum').press('Enter'); await expect.poll(shown).toBe('Fixture Variants Italic');
+  await expect(page.locator('#pkWeightControl')).toBeHidden(); await expect.poll(shown).toBe('Fixture Variants Italic');
   await expect(page.locator('#pkProofWeightNum')).toHaveValue('400');
   await page.locator('#lfFace').selectOption('Fixture Variants Condensed Bold');
   await expect(page.locator('#pkStatus')).toHaveAttribute('data-state','ready');
-  await page.locator('#pkProofWeightNum').fill('400'); await page.locator('#pkProofWeightNum').press('Enter'); await expect.poll(shown).toBe('Fixture Variants Condensed Bold');
+  await expect(page.locator('#pkWeightControl')).toBeHidden(); await expect.poll(shown).toBe('Fixture Variants Condensed Bold');
   await expect(page.locator('#pkProofWeightNum')).toHaveValue('700');
 });
 
@@ -1245,13 +1244,43 @@ test('信息页显示其他内嵌语言名称，说明合并且不再显示标�
   font.writeUInt32BE(aligned,directory+8); font.writeUInt32BE(table.length,directory+12);
   await page.locator('#picker [data-src="file"]').click(); await page.locator('#ffFile').setInputFiles({ name:'Multilingual.ttf', mimeType:'font/ttf', buffer:font });
   await page.locator('#pkInfoTab').click();
-  await expect(page.locator('#pkDetails [data-pk-name]')).toHaveText(['日语显示名','テストフォント 標準','阿拉伯语显示名','خط الاختبار']);
+  await expect(page.locator('#pkDetails [data-pk-name]')).toHaveText(['Jost Regular（英语）','テストフォント 標準（日语）','خط الاختبار（阿拉伯语）']);
   await expect(page.locator('#pkPunct')).toHaveCount(0);
   await expect(page.locator('[data-t="pkMetaNameNote"], [data-t="pkMetaReferenceNote"]')).toHaveCount(0);
   await expect(page.locator('[data-t="pkMetaSourceNote"]')).toContainText('授权使用范围');
   await page.evaluate(async () => { const i=await import('./assets/js/i18n.js'), u=await import('./assets/js/ui.js'); i.setUI('ja'); u.applyUI(); });
-  await expect(page.locator('#pkMetaLocalized')).toHaveText('テストフォント 標準');
-  await expect(page.locator('#pkDetails [data-pk-name]')).toHaveText(['アラビア語表示名','خط الاختبار']);
+  await expect(page.locator('#pkDetails [data-pk-name]')).toHaveText(['Jost Regular（英語）','テストフォント 標準（日本語）','خط الاختبار（アラビア語）']);
   await page.locator('#picker [data-src="library"]').click();
   await expect(page.locator('#pkDetails [data-pk-name]')).toHaveCount(0);
+});
+
+
+test('单字重文件：显示实际数值、隐藏无用字重控件，正文与样张编辑均无外框', async ({ page }) => {
+  await fixture(page);
+  await page.locator('#pkSample').hover(); await page.locator('#pkSample').focus();
+  await expect(page.locator('#pkSample')).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)');
+  await expect(page.locator('#pkSample')).toHaveCSS('outline-style', 'none');
+  const source = require('fs').readFileSync(require('path').resolve(__dirname, '../fixtures/NotoSansJP-Subset.ttf'));
+  // A declared numeric weight must win even when the font's style name suggests another weight.
+  for (let i = 0; i < source.readUInt16BE(4); i++) {
+    const at = 12 + i * 16;
+    if (source.toString('ascii', at, at + 4) === 'OS/2') source.writeUInt16BE(700, source.readUInt32BE(at + 8) + 4);
+  }
+  await page.locator('#picker [data-src="file"]').click();
+  await page.locator('#ffFile').setInputFiles({ name:'DeclaredWeight.ttf', mimeType:'font/ttf', buffer:source });
+  await expect(page.locator('#pkWeightControl')).toBeHidden();
+  await expect(page.locator('#pkSampleMirror')).toHaveCSS('font-weight', '700');
+  await expect(page.locator('#pkSampleSize')).toBeVisible();
+  await page.locator('#pkInfoTab').click(); await expect(page.locator('#pkVfTag')).toHaveText('分档字重 700');
+  await page.locator('#pkPreviewTab').click(); await page.locator('#pkSample').fill('编辑后也没有边框');
+  await expect(page.locator('#pkSample')).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)');
+  await page.locator('#pkCancel').click(); await page.locator('#proofText').focus();
+  await expect(page.locator('#proofText')).toHaveCSS('outline-style', 'none');
+  await page.setViewportSize({ width:390, height:844 }); await page.emulateMedia({ colorScheme:'dark' });
+  await openClassPicker(page,'han'); await page.locator('#picker [data-src="file"]').click();
+  await page.locator('#ffOptions [data-imported]').click();
+  await expect(page.locator('#pkWeightControl')).toBeHidden();
+  await page.locator('#pkSample').focus(); await expect(page.locator('#pkSample')).toHaveCSS('outline-style', 'none');
+  await expect(page.locator('#pkSample')).toHaveCSS('border-top-color', 'rgba(0, 0, 0, 0)');
+  await expect(page.locator('#pkOk')).toBeInViewport();
 });
