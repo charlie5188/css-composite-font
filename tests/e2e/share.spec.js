@@ -13,7 +13,7 @@ test('分享当前未保存配置，排除私有正文、预设库和历史；�
     c.state.wOver[700] = { latin: { size: 126, weight: 540 } };
     c.state.classes.digit = { follow: null, font: c.G('Inter', 450), size: 102, shift: 2, vary: { opsz: 'auto' } };
     c.state.custom = [{ chars: 'ABC', follow: 'latin', font: null, size: 121, shift: null }];
-    c.state.moved['shared.quotes'] = true; c.state.typo.autospace = 'no-autospace';
+    c.state.moved['shared.quotes'] = true; c.state.typo.autospace = 'no-autospace'; c.state.typo.vfeat = '"vhal"';
     c.state.name = 'Shared 未保存'; c.state.view.sample = 'c0'; c.state.view.customs = [{ text: 'PRIVATE SENDER PROOF', lang: 'en' }];
     c.state.view.text = 'PRIVATE SENDER PROOF'; c.state.preset = 'user:PRIVATE PRESET'; c.state.presetBase = 'PRIVATE SNAPSHOT';
     u.changed({ fonts: true });

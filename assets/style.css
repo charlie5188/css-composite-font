@@ -686,6 +686,7 @@ button.wm-pw:not(:disabled):hover{text-decoration:underline;text-underline-offse
 .typo-tiles button:hover{border-color:var(--faint)}
 .typo-tiles button[aria-checked="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 .tt-s{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:normal;font-size:var(--tile-fs,22px);line-height:1.25;white-space:nowrap;max-width:100%;overflow:hidden}
+.tt-s.tt-vertical{writing-mode:vertical-rl;text-orientation:upright;height:4em;text-align:start}      /* Equal specimen heights keep labels aligned while vhal changes only glyph advances. */
 .tt-l{font-size:var(--fs-xs);line-height:1.35;color:var(--muted)}
 .tt-l small{display:block;font-size:var(--fs-xs);color:var(--faint)}
 .typo-tiles button[aria-checked="true"] .tt-l{color:var(--ink)}

@@ -81,8 +81,8 @@ function cls(o) {
 /* Rebuild link data field by field so unknown fields never enter state; also reject cycles in following relationships.
    v is the app state version; the link prefix's 1 is the independent share format version. */
 export function cleanConfig(raw) {
-  ensure(obj(raw) && raw.v === 11 && obj(raw.classes) && Array.isArray(raw.custom) && raw.custom.length <= 100);
-  const out = { v: 11, preset: '', name: str(raw.name), classes: {}, custom: [], weights: weights(raw.weights),
+  ensure(obj(raw) && [11, 12].includes(raw.v) && obj(raw.classes) && Array.isArray(raw.custom) && raw.custom.length <= 100);
+  const out = { v: 12, preset: '', name: str(raw.name), classes: {}, custom: [], weights: weights(raw.weights),
     baseMode: choice(raw.baseMode, ['link', 'expand']), generic: choice(raw.generic, ['auto', 'serif', 'sans-serif']),
     scope: choice(raw.scope, ['', 'zh-Hans', 'zh-Hant-TW', 'zh-Hant-HK', 'ja', 'ko', 'en']), wmode: choice(raw.wmode, ['steps', 'cont']),
     italic: raw.italic, lineMetrics: choice(raw.lineMetrics, ['han', 'off']), weightNames: {}, moved: {}, wOver: {}, typo: {} };

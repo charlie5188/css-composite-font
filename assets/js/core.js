@@ -496,6 +496,11 @@ export const TYPO = [
     sup: { chrome: '48', firefox: '34', safari: '9.1' },
     values: [['normal', null], ['"palt"', { zh: '假名标点比例宽', ja: 'かなと約物をプロポーショナルに', tw: '假名標點比例寬', en: 'Proportional kana and punctuation' }], ['"halt"', { zh: '标点半角', ja: '約物を半角に', tw: '標點半形', en: 'Half-width punctuation' }]],
     note: { zh: '日文排版常用的 OpenType 特性。palt 让假名和标点按字形本身的宽度排，字距更紧，适合标题；halt 只把标点压成半宽。正文一般保持 normal。字体没有这些特性时不起作用；思源 / Noto CJK 等字体的标点也支持。', ja: '和文組版でよく使う OpenType 機能です。palt はかなや約物を字形そのものの幅で組み、字間が詰まるので見出し向きです。halt は約物だけを半角にします。本文はふつう normal のままです。フォントにこれらの機能がなければ効きません。源ノ / Noto CJK などのフォントは約物も対応しています。', tw: '日文排版常用的 OpenType 特性。palt 讓假名和標點按字形本身的寬度排，字距更緊，適合標題；halt 只把標點壓成半寬。內文一般保持 normal。字型沒有這些特性時不起作用；思源 / Noto CJK 等字型的標點也支援。', en: 'OpenType features common in Japanese typesetting. palt sets kana and punctuation at their own glyph widths for tighter spacing, good for headings; halt only narrows punctuation to half width. Body text usually stays normal. No effect if the font lacks these features; punctuation in Source Han / Noto CJK fonts supports them too.' } },
+  { key: 'vfeat', grp: 'font', label: { zh: '竖排标点占位', ja: '縦書きの約物幅', tw: '直排標點占位', en: 'Vertical punctuation spacing' }, prop: 'font-feature-settings', def: 'normal', tiles: true, tileW: 112, tileFs: 17, tileCode: true,
+    tileHtml: v => `<span class="tt-s tt-vertical" style="font-feature-settings:${v === 'normal' ? 'normal' : '&quot;vhal&quot;'}" aria-hidden="true">「ア」、</span>`,
+    sup: { chrome: '48', firefox: '34', safari: '9.1' },
+    values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設', en: 'Font default' }], ['"vhal"', { zh: '半字高', ja: '半角', tw: '半字高', en: 'Half height' }]],
+    note: { zh: 'vhal 在竖排中将字体支持的标点占位缩至半字高，不改变字形比例。书写方向仍由校样或使用字体的软件设定；字体不支持时不起作用。与横排的字距特性分别设置。', ja: 'vhal は縦書きで対応する約物の送りを半角にし、字形の縦横比は変えません。文字の向きは校正表示や使用先のアプリで設定します。フォントに機能がなければ効きません。横書きの字詰めとは別に設定できます。', tw: 'vhal 在直排中將字型支援的標點占位縮至半字高，不改變字形比例。書寫方向仍由校樣或使用字型的軟體設定；字型不支援時不會生效。與橫排的字距特性分別設定。', en: 'In vertical text, vhal gives supported punctuation half-em advances without changing glyph proportions. Set the writing direction in the proof or the app using the font. No effect if the font lacks the feature. This setting is independent of horizontal spacing features.' } },
   /* Numeric styles: the same five choices as InDesign. Slashed zero has its own row; export both as one font-variant-numeric declaration.
    tiles uses specimen cards rendered in the current digit font; the third item supplies a usage hint. */
   { key: 'num', grp: 'font', label: { zh: '数字样式', ja: '数字のスタイル', tw: '數字樣式', en: 'Figure style' }, prop: 'font-variant-numeric', def: 'normal', tiles: '11,980', hint: 'numHint',
@@ -518,13 +523,13 @@ export const TYPO = [
     sup: { chrome: '63', firefox: '34', safari: '9.1' },
     values: [['normal', { zh: '字体默认', ja: 'フォントの既定', tw: '字型預設', en: 'Font default' }], ['proportional-width', { zh: '比例宽', ja: 'プロポーショナル', tw: '比例寬', en: 'Proportional' }, { zh: '按字形本身的宽度', ja: '字形そのものの幅', tw: '按字形本身的寬度', en: 'Each glyph\'s own width' }], ['full-width', { zh: '全角', ja: '全角', tw: '全形', en: 'Full-width' }, { zh: '半角假名也变全角', ja: '半角カナも全角に', tw: '半形假名也變全形', en: 'Half-width kana become full-width too' }]] },
 ];
-/* Combine related rows into one CSS property: numeric style + slashed zero -> font-variant-numeric; glyph standard + width -> font-variant-east-asian. */
+/* Combine related rows into one CSS property. Horizontal and vertical spacing stay independent, so one configuration can retain both. */
 /* grp: 'font' controls glyph selection and belongs in Fonts; the remaining settings belong in Text layout. */
 export const isFontTypo = t => t.grp === 'font';
 export const isViewTypo = t => t.grp === 'view';
 export const VIEW_TYPO = new Set(['wrap', 'align', 'justify']);      // Matches TYPO's grp: 'view' entries; list them here because presetSnap may run before TYPO is available.
-export const TYPO_MERGE = { 'font-variant-numeric': ['num', 'zero'], 'font-variant-east-asian': ['eaVar', 'eaWidth'] };
-export const typoValue = t => TYPO_MERGE[t.prop] ? TYPO_MERGE[t.prop].map(k => state.typo[k]).filter(v => v && v !== 'normal').join(' ') || 'normal' : state.typo[t.key];
+export const TYPO_MERGE = { 'font-feature-settings': ['feat', 'vfeat'], 'font-variant-numeric': ['num', 'zero'], 'font-variant-east-asian': ['eaVar', 'eaWidth'] };
+export const typoValue = t => TYPO_MERGE[t.prop] ? TYPO_MERGE[t.prop].map(k => state.typo[k]).filter(v => v && v !== 'normal').join(t.prop === 'font-feature-settings' ? ', ' : ' ') || 'normal' : state.typo[t.key];
 export const typoMergedAway = t => TYPO_MERGE[t.prop] && TYPO_MERGE[t.prop][0] !== t.key;      // Merged into the preceding row; do not export separately.
 /* Map East Asian form values to OpenType features when checking whether the font contains the requested glyph forms. */
 export const EA_FEAT = { jis78: 'jp78', jis83: 'jp83', jis90: 'jp90', jis04: 'jp04', simplified: 'smpl', traditional: 'trad', 'full-width': 'fwid', 'proportional-width': 'pwid' };
@@ -586,7 +591,7 @@ export function freshClasses(p) {
 }
 export function stateFromPreset(p, prev) {
   return {
-    v: 11,
+    v: 12,
     preset: p.id,
     name: prev?.name || 'My Composite',
     weights: prev?.weights || [100, 200, 300, 400, 500, 600, 700, 800, 900],
@@ -695,6 +700,15 @@ export function normalizeState() {
   if (state.v === 10) {      // v11 makes alignment, justification and wrapping preview-only. Remove them from stored preset snapshots to avoid false modified indicators.
     if (state.presetBase) try { const b = JSON.parse(state.presetBase); if (b.typo) for (const k of VIEW_TYPO) delete b.typo[k]; state.presetBase = JSON.stringify(b); } catch (e) { /* Ignore malformed data. */ }
     state.v = 11;
+  }
+  if (state.v === 11) {      // v12 adds independent vertical spacing, defaulting to the font's own metrics without changing existing horizontal features.
+    if (state.presetBase) try {
+      const b = JSON.parse(state.presetBase);
+      b.typo = { ...typoDefaults(b.typo?.lang), ...(b.typo || {}) };
+      for (const k of VIEW_TYPO) delete b.typo[k];
+      state.presetBase = JSON.stringify(b);
+    } catch (e) { /* Ignore malformed data. */ }
+    state.v = 12;
   }
   delete state.view.compare; delete state.view.cmp;      // The comparison view was removed.
   delete state.view.presetsOpen;                                   // Presets no longer collapse into a row after moving into a left-pane tab.

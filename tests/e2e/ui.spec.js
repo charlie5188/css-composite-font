@@ -115,6 +115,54 @@ test('对齐、段落换行只改校样，不写进导出的 CSS', async ({ page
   expect(css).toContain('line-break: strict');      // Layout-tab settings are still exported.
 });
 
+test('Vertical half metrics change punctuation advances and persist independently of horizontal spacing', async ({ page }) => {
+  await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: '@font-face { font-family: Fixture; src: url("http://127.0.0.1:8765/tests/fixtures/NotoSansCJKjp-Subset.otf"); }' }));
+  await open(page);
+  await pick(page, 'gothic-jp');
+  await page.click('#ltabFonts');
+  await page.locator('#proofText').fill('「」、。');
+  await page.evaluate(async () => {
+    const c = await import('./assets/js/core.js'), r = await import('./assets/js/render.js');
+    c.state.typo.trim = 'space-all'; c.state.view.vertical = true; r.renderPreview();
+    await c.rebuildNow(); await document.fonts.ready;
+  });
+  const height = () => page.locator('#proofText').evaluate(el => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect().height; });
+  const fullHeight = await height();
+  expect(fullHeight).toBeGreaterThan(60);
+  const vertical = page.locator('[data-typo="vfeat"]').last();
+  await expect(vertical.locator('.tt-s')).toHaveCSS('writing-mode', 'vertical-rl');
+  await vertical.click();
+  await expect(page.locator('#proofText')).toHaveCSS('font-feature-settings', '"vhal"');
+  await expect.poll(height).toBeLessThan(fullHeight * 0.8);
+  await page.locator('[data-typo="feat"]').filter({ hasText: '"halt"' }).click();
+  await expect(vertical).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('#proofText')).toHaveCSS('font-feature-settings', '"halt", "vhal"');
+  await showExport(page);
+  const css = await page.textContent('#codeOut');
+  expect(css).toContain('font-feature-settings: "halt", "vhal";');
+  expect(css.match(/font-feature-settings:/g)).toHaveLength(1);
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('composite-font:state:v1'))?.typo.vfeat)).toBe('"vhal"');
+  await page.reload();
+  await expect(page.locator('[data-typo="vfeat"]').last()).toHaveAttribute('aria-checked', 'true');
+  await expect(page.locator('[data-typo="feat"]').filter({ hasText: '"halt"' })).toHaveAttribute('aria-checked', 'true');
+  await page.click('#featReset');
+  await expect(page.locator('#proofText')).toHaveCSS('font-feature-settings', 'normal');
+});
+
+test('Existing configurations gain default vertical spacing without becoming modified', async ({ page }) => {
+  await page.route('https://fonts.googleapis.com/**', route => route.abort());
+  await open(page);
+  const migrated = await page.evaluate(async () => {
+    const c = await import('./assets/js/core.js'), sh = await import('./assets/js/share.js');
+    c.state.v = 11; delete c.state.typo.vfeat; c.state.typo.feat = '"halt"';
+    c.state.presetBase = c.presetSnap();
+    const legacyLink = sh.cleanConfig(c.state);
+    c.normalizeState();
+    return { v: c.state.v, vertical: c.state.typo.vfeat, horizontal: c.state.typo.feat, dirty: c.presetDirty(), linkVersion: legacyLink.v };
+  });
+  expect(migrated).toEqual({ v: 12, vertical: 'normal', horizontal: '"halt"', dirty: false, linkVersion: 12 });
+});
+
 test('各字重：改某个字重的大小只写进那个字重，勾选和导出对话框同步', async ({ page }) => {
   await open(page);
   await page.click('#ltabFonts');
