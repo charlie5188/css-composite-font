@@ -202,7 +202,7 @@ export function renderClassRows() {
       ${numCell('size', c.id)}${numCell('shift', c.id)}<span></span>${axRow(c.id, o)}${errRow(c.id, o)}${regionRow(c.id)}
     </div>`;
   }).join('');
-  renderNumHint(); renderEaMarks();      // Recheck numeric and East Asian features after fonts load.
+  renderNumHint(); renderEaMarks(); renderSpacingMarks();      // Recheck feature specimens after fonts load.
   $('#customRows').innerHTML = state.custom.length ? state.custom.map((cu, i) => `<div class="ct-row" data-ci="${i}">
       <input class="chars" type="text" value="${esc(cu.chars)}" placeholder="${esc(T('customPh'))}" aria-label="${esc(T('custom'))}" spellcheck="false">
       <span class="ct-font">${fontCell('#' + i, cu, false, true)}</span>
@@ -427,10 +427,10 @@ export function digitFx() {
 /* Detect OpenType effects by drawing text with each feature separately and comparing against the default pixel by pixel. Identical output means no effect.
    extra(ctx, baseFamily) can collect other measurements. Cache by font + text and call done after measurement. */
 export const featCache = new Map();
-export function featFx(f, text, tags, done, extra) {
+export function featFx(f, text, tags, done, extra, writingMode = '') {
   const s = f && sources.get(fontKey(f));
   if (s?.status !== 'ok') return null;
-  const key = fontKey(f) + '|' + text, c = featCache.get(key);
+  const key = fontKey(f) + '|' + text + (writingMode ? '|' + writingMode : ''), c = featCache.get(key);
   if (c) return c === 'pending' ? null : c.unknown ? null : c;
   featCache.set(key, 'pending');
   (async () => {
@@ -449,12 +449,26 @@ export function featFx(f, text, tags, done, extra) {
     await Promise.allSettled(all.map(ff => ff.load()));
     let out = { unknown: true };      // Loading failed: omit the annotation.
     if (all.length && all.every(ff => ff.status === 'loaded')) {
-      const cv = document.createElement('canvas'); cv.width = 720; cv.height = 80;
-      const ctx = cv.getContext('2d', { willReadFrequently: true });
-      const draw = n => { ctx.clearRect(0, 0, 720, 80); ctx.font = `48px "${n}"`; ctx.fillText(text, 4, 60); return new Uint32Array(ctx.getImageData(0, 0, 720, 80).data.buffer); };
-      const base = draw(names[0]);
-      out = Object.fromEntries(tags.map((t, i) => { const d = draw(names[i + 1]); return [t, d.some((v, j) => v !== base[j])]; }));
-      if (extra) { ctx.font = `48px "${names[0]}"`; Object.assign(out, extra(ctx)); }
+      if (writingMode) {
+        // Shape spacing features on real elements: older canvas engines ignore font-face feature defaults,
+        // and canvas cannot exercise vertical advances at all. Explicit element settings also match the cards.
+        const samples = names.map((name, i) => {
+          const el = document.createElement('span');
+          el.style.cssText = `position:fixed;visibility:hidden;writing-mode:${writingMode};white-space:pre;font:48px "${name}";font-feature-settings:${i ? `"${tags[i - 1]}"` : 'normal'};text-spacing-trim:space-all;text-autospace:no-autospace;`;
+          el.textContent = text; document.body.append(el); return el;
+        });
+        try {
+          const dimension = writingMode === 'vertical-rl' ? 'height' : 'width', base = samples[0].getBoundingClientRect()[dimension];
+          out = Object.fromEntries(tags.map((tag, i) => [tag, Math.abs(samples[i + 1].getBoundingClientRect()[dimension] - base) > 0.5]));
+        } finally { samples.forEach(el => el.remove()); }
+      } else {
+        const cv = document.createElement('canvas'); cv.width = 720; cv.height = 80;
+        const ctx = cv.getContext('2d', { willReadFrequently: true });
+        const draw = n => { ctx.clearRect(0, 0, 720, 80); ctx.font = `48px "${n}"`; ctx.fillText(text, 4, 60); return new Uint32Array(ctx.getImageData(0, 0, 720, 80).data.buffer); };
+        const base = draw(names[0]);
+        out = Object.fromEntries(tags.map((t, i) => { const d = draw(names[i + 1]); return [t, d.some((v, j) => v !== base[j])]; }));
+        if (extra) { ctx.font = `48px "${names[0]}"`; Object.assign(out, extra(ctx)); }
+      }
     }
     all.forEach(ff => document.fonts.delete(ff));
     featCache.set(key, out);
@@ -488,9 +502,31 @@ export function renderNumHint() {
     (none.length ? T('numLacks', { font, list: none.map(numLabel).join(T('joiner')) }) + (f.kind === 'google' ? T('numGoogleShort') : '') : '');
 }
 /* Do not show misleading identical specimens for unsupported feature cards. Show the unavailable label and a dotted border; allow selection with a warning border. */
-function markLack(b, on) {
+function markLack(b, on, label = 'lackTile') {
   b.classList.toggle('lack', on);
-  const s = b.querySelector('.tt-s'); if (s) s.dataset.lack = on ? T('lackTile') : '';
+  const s = b.querySelector('.tt-s'); if (s) s.dataset.lack = on ? T(label) : '';
+}
+/* Spacing samples mix kana and punctuation, which may use different sources. Only claim no change once every
+   relevant source was checked; an unavailable or still-loading font remains unknown, never unsupported. */
+export function renderSpacingMarks() {
+  const check = (text, tags, vertical = false) => {
+    const groups = new Map();
+    for (const ch of text) {
+      const owner = ownerOf(ch.codePointAt(0));
+      const f = usedFont(owner[0] === '#' ? resolveCustom(state.custom[+owner.slice(1)], state.view.weight, true) : resolveCls(owner === 'other' ? 'han' : owner, state.view.weight, true));
+      const key = fontKey(f), group = groups.get(key) || { f, text: '' };
+      group.text += ch; groups.set(key, group);
+    }
+    return [...groups.values()].map(({ f, text }) => featFx(f, text, tags, renderSpacingMarks, null, vertical ? 'vertical-rl' : 'horizontal-tb'));
+  };
+  const horizontal = check('「アイ」、ウ。', ['palt', 'halt']);
+  const vertical = check('「ア」、', ['vhal'], true);
+  document.querySelectorAll('#featRows [data-typo="feat"], #featRows [data-typo="vfeat"]').forEach(b => {
+    const tag = b.dataset.v.replaceAll('"', ''), isVertical = b.dataset.typo === 'vfeat';
+    const unchanged = tag !== 'normal' && (isVertical ? vertical : horizontal).every(fx => fx && !fx[tag]);
+    markLack(b, !!unchanged, 'unchangedTile');
+    b.title = b.dataset.v + (unchanged ? ' — ' + T('spacingUnchanged') : '');
+  });
 }
 /* Dim ineffective glyph-standard and kana/punctuation-width cards; explain below if the font has no supported glyph standards. */
 export const EA_SAMPLE = { eaVar: '辻葛飴鴎国', eaWidth: 'イリ「ア」ﾃｽ' };

@@ -12,7 +12,7 @@ import { FIT_SAMPLES, chooseFits, createFitter } from './autofit.js';
 import { $, LS_UI, T, UI, debounce, esc, lsSet, root, round, setUI, tr } from './i18n.js';
 import { CLASSES, CLS, classOf, inRanges, parseChars, rebuildClassRanges } from './unicode.js';
 import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownFontAt, ownSize, presetDirty, presetSnap, rebuild, fileStyle, fileWeight, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
-import { REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, wTip, MISS_SKIP, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderPreview, renderSampleTabs, stepperCell, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
+import { REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, wTip, MISS_SKIP, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderSpacingMarks, renderPreview, renderSampleTabs, stepperCell, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
 import { initFontTab, gfInfo, gfPick, gfUrl, gfDirs } from './bake.js';
 import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
 /* ================= Interaction: character-class table ================= */
@@ -813,7 +813,7 @@ export function renderTypoRows() {
     return `<div class="typo-row${t.tiles ? ' tiles' : ''}">
       <span class="typo-name lab-i">${t.tiles ? `<b id="tyl-${t.key}">${esc(tr(t.label))}</b>` : `<label for="ty-${t.key}"><b>${esc(tr(t.label))}</b></label>`}${infoButton('typo:' + t.key)}</span>
       ${ctl}
-      <p class="typo-unsup" data-key="${t.key}" hidden>${esc(T('supNo'))}</p>${t.hint ? `<p class="typo-note" id="${t.hint}" hidden></p>` : ''}
+      <p class="typo-unsup" data-key="${t.key}" hidden>${esc(T('supNo'))}</p>${t.diagramNote ? `<p class="typo-note">${esc(T(t.diagramNote))}</p>` : ''}${t.hint ? `<p class="typo-note" id="${t.hint}" hidden></p>` : ''}
     </div>`;
   };
   const rows = TYPO.filter(t => !t.attr && !isViewTypo(t));
@@ -867,7 +867,7 @@ export function techHtml(prop, sup, ok) {
 export function renderTypoStatus() {
   document.querySelectorAll('#typoRows [data-typo], #featRows [data-typo]').forEach(b => b.setAttribute('aria-checked', state.typo[b.dataset.typo] === b.dataset.v));
   document.querySelectorAll('#featRows [data-lm]').forEach(b => b.setAttribute('aria-checked', state.lineMetrics === b.dataset.lm));
-  renderNumHint(); renderEaMarks();
+  renderNumHint(); renderEaMarks(); renderSpacingMarks();
   const changed = TYPO.filter(t => !t.attr && !isViewTypo(t) && state.typo[t.key] !== typoDef(t));
   const n = changed.filter(t => !isFontTypo(t)).length, nf = changed.filter(isFontTypo).length + (state.lineMetrics === 'off' ? 1 : 0);
   $('#typoChanged').textContent = n ? T('typoChanged', { n }) : '';

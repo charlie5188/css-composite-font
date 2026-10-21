@@ -455,28 +455,67 @@ export const TILE_SVG = {
 };
 TILE_SVG.justify = { auto: tJust([3, 4, 4, 3]), 'inter-character': tJust([3, 4, 4, 3]), 'inter-word': tJust([1, 6, 6, 1]), none: tJust([1, 2, 2, 1]) };
 export const tSvgTile = key => v => `<span class="tt-s tt-pic" aria-hidden="true">${tSvg(TILE_SVG[key][v])}</span>`;
-/* Line breaking and punctuation compression: render real text with the current composite in a narrow box; the left line marks the text-area edge. */
-export const tBox = (prop, text, lang, cls = '') => v => `<span class="tt-s tt-box${cls}"${lang ? ` lang="${lang}"` : ''} style="${prop}:${v}" aria-hidden="true">${text}</span>`;
+/* Layout cards explain rules independently of CSS support and the selected font. Only the proof uses real layout.
+   Explicit glyph positions keep the examples stable even when a browser accepts a property but cannot apply it.
+   Examples follow https://www.w3.org/TR/css-text-4/#text-spacing-trim-property and #word-break-property. */
+const tLayout = (body, width = 112, height = 64) => `<span class="tt-s tt-layout"${width !== 112 || height !== 64 ? ` style="--diagram-width:${width}px;--diagram-height:${height}px"` : ''} aria-hidden="true"><svg viewBox="0 0 ${width} ${height}">${body}</svg></span>`;
+const tLetters = (text, x, y, step = 16, emphasis = '') => [...text].map((ch, i) => `<text x="${x + i * step}" y="${y}"${emphasis.includes(ch) ? ' class="tt-demo-focus"' : ''}>${ch}</text>`).join('');
+const tLayoutEdge = '<path d="M8 5v54" class="tt-demo-edge"/>';
+const tTrimLine = (text, y, trimHead) => {
+  const x = 12 + (trimHead ? 0 : 8);
+  return `<path d="M${x + 5} ${y - 13}h-5v13" class="tt-demo-bracket"/>` + tLetters(text, x + 8, y);
+};
+// Compare first-line and continuation-line spacing with the same two Han pairs. This sample has no adjacent
+// punctuation, so normal and space-all intentionally look identical; do not invent a difference between them.
+export const tTrimTile = v => tLayout(tLayoutEdge + tTrimLine('甲乙', 24, v === 'trim-start') + tTrimLine('丙丁', 52, ['space-first', 'trim-start'].includes(v)));
+/* The same Japanese phrase occupies six glyph cells per line. Keep トットちゃん together in the phrase example;
+   these are illustrative breaks, not a prediction of a browser's language-analysis model. */
+export const tWordTile = v => tLayout(tLayoutEdge + (v === 'normal'
+  ? tLetters('窓ぎわのトッ', 12, 24) + tLetters('トちゃん', 12, 52)
+  : tLetters('窓ぎわの', 12, 24) + tLetters('トットちゃん', 12, 52)));
+export const tAutospaceTile = v => {
+  let x = 6, body = '';
+  ['字', 'Ab', '字', '12', '字'].forEach((text, i) => {
+    if (i && v === 'normal') { body += `<path d="M${x} 44h2" class="tt-demo-space"/>`; x += 2; }
+    body += tLetters(text, x, 39, text.length === 1 ? 16 : 10);
+    x += text.length === 1 ? 16 : 20;
+  });
+  return tLayout(body);
+};
+/* Compare the same four-cell-wide paragraph, with explicit line endings instead of abstract break markers.
+   Loose permits small kana at line heads; normal keeps them together; strict also keeps U+301C off the head;
+   anywhere can leave the comma alone on the next line. Auto deliberately does not predict a browser's rules.
+   These are rule illustrations, independent of actual browser support: https://www.w3.org/TR/css-text-3/#line-break-property */
+export const tLineBreakTile = v => {
+  if (v === 'auto') return tLayout('<path d="M8 14h64M8 34h48M8 54h58M8 74h30" class="tt-demo-auto"/>', 88, 80);
+  const lines = {
+    loose: ['おはよう', '〜もうち', 'ょっと', 'ね、'],
+    normal: ['おはよう', '〜もう', 'ちょっと', 'ね、'],
+    strict: ['おはよ', 'う〜もう', 'ちょっと', 'ね、'],
+    anywhere: ['おはよう', '〜もうち', 'ょっとね', '、'],
+  }[v];
+  return tLayout('<path d="M76 1v78" class="tt-demo-edge"/>' + lines.map((line, i) => tLetters(line, 8, 20 + i * 18, 16, '〜ょっ、')).join(''), 88, 80);
+};
 export const TYPO = [
   { key: 'lang', label: { zh: '语言', ja: '言語', tw: '語言', en: 'Language' }, prop: 'lang', attr: true, def: 'zh-Hans',
     values: [['zh-Hans', { zh: '简体中文', ja: '簡体字中国語', tw: '簡體中文', en: 'Simplified Chinese' }], ['zh-Hant-TW', { zh: '繁體中文（台灣）', ja: '繁体字中国語（台湾）', tw: '繁體中文（台灣）', en: 'Traditional Chinese (Taiwan)' }], ['zh-Hant-HK', { zh: '繁體中文（香港）', ja: '繁体字中国語（香港）', tw: '繁體中文（香港）', en: 'Traditional Chinese (Hong Kong)' }], ['ja', { zh: '日本語', ja: '日本語', tw: '日本語', en: 'Japanese' }], ['ko', { zh: '한국어', ja: '韓国語', tw: '한국어', en: 'Korean' }], ['en', { zh: 'English', ja: '英語', tw: 'English', en: 'English' }]],
     note: { zh: 'HTML 的 lang 属性，不是 CSS。它决定字形的地区变体、禁则规则，word-break: auto-phrase 也依赖它。', ja: 'HTML の lang 属性で、CSS ではありません。字形の地域差や禁則を決め、word-break: auto-phrase もこれに依存します。', tw: 'HTML 的 lang 屬性，不是 CSS。它決定字形的地區變體、禁則規則，word-break: auto-phrase 也依賴它。', en: 'The HTML lang attribute, not CSS. It sets regional glyph variants and line breaking rules, and word-break: auto-phrase depends on it.' } },
-  { key: 'autospace', label: { zh: '中西间距', ja: '和欧間のアキ', tw: '中西文間距', en: 'CJK–Western spacing' }, prop: 'text-autospace', def: 'normal', always: true, tiles: '字Ab字12字', tileW: 112, tileFs: 18, tileCode: true,
+  { key: 'autospace', label: { zh: '中西间距', ja: '和欧間のアキ', tw: '中西文間距', en: 'CJK–Western spacing' }, prop: 'text-autospace', def: 'normal', always: true, tiles: true, tileHtml: tAutospaceTile, tileW: 112, tileCode: true,
     sup: { chrome: '140', firefox: '145', safari: '18.4' },
     values: [['normal', { zh: '加 1/8 em', ja: '1/8 em 空ける', tw: '加 1/8 em', en: 'Add 1/8 em' }], ['no-autospace', { zh: '不加', ja: '空けない', tw: '不加', en: 'None' }]],
     note: { zh: '只在没有空格的地方加，已经手动敲了空格的不会再加。Chrome 实测初始值是 no-autospace，所以导出时总会写出这一行。', ja: 'スペースのない箇所にだけ入り、手で入れたスペースには追加されません。Chrome の実際の初期値は no-autospace なので、書き出しでは常にこの行を出力します。', tw: '只在沒有空格的地方加，已經手動敲了空格的不會再加。Chrome 實測初始值是 no-autospace，所以匯出時總會寫出這一行。', en: 'Added only where there is no space; spaces you typed get nothing extra. Chrome\'s actual initial value is no-autospace, so the export always writes this line.' } },
-  { key: 'trim', label: { zh: '标点挤压', ja: '約物の詰め', tw: '標點擠壓', en: 'Punctuation compression' }, prop: 'text-spacing-trim', def: 'trim-start', init: 'normal', tiles: true, tileHtml: tBox('text-spacing-trim', '「甲乙」「丙丁」'), tileW: 112, tileCode: true,
+  { key: 'trim', label: { zh: '标点挤压', ja: '約物の詰め', tw: '標點擠壓', en: 'Punctuation compression' }, prop: 'text-spacing-trim', def: 'trim-start', init: 'normal', tiles: true, tileHtml: tTrimTile, tileW: 112, tileCode: true,
     sup: { chrome: '123', firefox: '—', safari: '—' },
     values: [['normal', { zh: '相邻标点挤压，行首不挤', ja: '隣接する約物を詰める。行頭は詰めない', tw: '相鄰標點擠壓，行首不擠', en: 'Compress adjacent, not at line head' }], ['space-all', { zh: '全部保持全角', ja: 'すべて全角のまま', tw: '全部保持全形', en: 'Keep all full-width' }], ['space-first', { zh: '行首也挤压，段首行除外', ja: '行頭も詰める（段落の 1 行目を除く）', tw: '行首也擠壓，段首行除外', en: 'Also at line head, except first line' }], ['trim-start', { zh: '行首也挤压，包括段首行', ja: '行頭も詰める（1 行目を含む）', tw: '行首也擠壓，包括段首行', en: 'Also at line head, incl. first line' }]],
     note: { zh: '例如「。」」连在一起时，其中一个收成半角。目前只有 Chromium 实现。', ja: 'たとえば「。」」が続くと片方が半角になります。現在は Chromium だけが実装しています。', tw: '例如「。」」連在一起時，其中一個收成半形。目前只有 Chromium 實作。', en: 'For example, when 「。」」 run together, one of them becomes half-width. Currently only Chromium implements this.' } },
-  { key: 'wordBreak', label: { zh: '换行单位', ja: '改行の単位', tw: '換行單位', en: 'Break unit' }, prop: 'word-break', def: 'normal', tiles: true, tileHtml: tBox('word-break', '美しい日本語の文章', 'ja'), tileW: 112, tileCode: true,
+  { key: 'wordBreak', label: { zh: '换行单位', ja: '改行の単位', tw: '換行單位', en: 'Break unit' }, prop: 'word-break', def: 'normal', tiles: true, tileHtml: tWordTile, tileW: 112, tileCode: true,
     sup: { chrome: '119', firefox: '—', safari: '—' },
     values: [['normal', { zh: '逐字', ja: '1 文字ずつ', tw: '逐字', en: 'Per character' }], ['auto-phrase', { zh: '按词组', ja: '文節単位', tw: '按詞組', en: 'By phrase' }]],
     note: { zh: 'auto-phrase 只对 lang="ja" 和 lang="ko" 生效，适合标题和短文。', ja: 'auto-phrase は lang="ja" と lang="ko" でのみ有効で、見出しや短い文に向いています。', tw: 'auto-phrase 只對 lang="ja" 和 lang="ko" 生效，適合標題和短文。', en: 'auto-phrase only works with lang="ja" and lang="ko"; good for headings and short text.' } },
-  { key: 'lineBreak', label: { zh: '禁则', ja: '禁則', tw: '禁則', en: 'Line breaking rules' }, prop: 'line-break', def: 'strict', init: 'auto', tiles: true, tileHtml: tBox('line-break', 'まあ時々、ちょっと', 'ja', ' tt-lb'), tileW: 88, tileCode: true,      /* This sentence wraps differently for all five values in a four-character-wide box (auto matches normal in Chrome). */
+  { key: 'lineBreak', label: { zh: '禁则', ja: '禁則', tw: '禁則', en: 'Line breaking rules' }, prop: 'line-break', def: 'strict', init: 'auto', tiles: true, tileHtml: tLineBreakTile, tileW: 88, tileCode: true, diagramNote: 'lineBreakDiagram',
     sup: { chrome: '58', firefox: '69', safari: '11' },
     values: [['auto', { zh: '由浏览器决定', ja: 'ブラウザに任せる', tw: '由瀏覽器決定', en: 'Browser decides' }], ['loose', { zh: '宽松', ja: 'ゆるい', tw: '寬鬆', en: 'Loose' }], ['normal', { zh: '标准', ja: '標準', tw: '標準', en: 'Normal' }], ['strict', { zh: '严格', ja: '厳しい', tw: '嚴格', en: 'Strict' }], ['anywhere', { zh: '任意处断行', ja: 'どこでも改行', tw: '任意處斷行', en: 'Break anywhere' }]],
-    note: { zh: '哪些字不能放在行首或行尾，例如句号、逗号不放在行首。auto 由浏览器按语言决定；strict 更严格，小写假名（っ、ゃ）和长音「ー」也不放行首，日文正文常用；loose 更宽松，适合窄栏；anywhere 在任何地方都可以断行。', ja: '行頭・行末に置けない文字の規則です（句読点を行頭に置かないなど）。auto はブラウザが言語に応じて決めます。strict はより厳しく、小書きのかな（っ・ゃ）や長音記号「ー」も行頭に置きません（日本語の本文でよく使います）。loose はゆるく、狭い段組み向けです。anywhere はどこでも改行します。', tw: '哪些字不能放在行首或行尾，例如句號、逗號不放在行首。auto 由瀏覽器按語言決定；strict 更嚴格，小寫假名（っ、ゃ）和長音「ー」也不放行首，日文內文常用；loose 更寬鬆，適合窄欄；anywhere 在任何地方都可以斷行。', en: 'Which characters may not start or end a line, e.g. periods and commas never start a line. auto lets the browser decide by language; strict also keeps small kana (っ, ゃ) and the prolonged sound mark 「ー」 off the line head, common in Japanese body text; loose is more relaxed, suited to narrow columns; anywhere can break at any point.' } },
+    note: { zh: '哪些字不能放在行首或行尾，例如句号、逗号不放在行首。auto 由浏览器按语言决定；loose 更宽松，适合窄栏；normal 按常见规则排；strict 更严格；anywhere 在任何字符边界都可以断行。示意用同一段日文比较换行位置，蓝色突出标点与小假名；当前规范中 normal 也禁止小假名放行首，strict 还禁止在「〜」前断行。实际实现可能不同。', ja: '行頭・行末に置けない文字の規則です（句読点を行頭に置かないなど）。auto はブラウザが言語に応じて決め、loose はゆるく、normal は一般的な規則、strict はより厳しい規則で組みます。anywhere はどの文字の境界でも改行できます。同じ文で改行位置を比較し、約物と小書きのかなを青で示しています。現在の仕様では normal も小書きのかなを行頭に置かず、strict は「〜」の前の改行も禁止します。実際の実装は異なる場合があります。', tw: '哪些字不能放在行首或行尾，例如句號、逗號不放在行首。auto 由瀏覽器按語言決定；loose 較寬鬆，適合窄欄；normal 按常見規則排；strict 較嚴格；anywhere 在任何字元邊界都可以換行。示意用同一段日文比較換行位置，藍色標示標點與小寫假名；目前規範中 normal 也禁止小寫假名放行首，strict 還禁止在「〜」前換行。實際實作可能不同。', en: 'Controls which characters may start or end a line, such as keeping commas and periods off the line head. auto lets the browser decide by language; loose uses fewer restrictions, normal uses common rules, strict uses stricter rules, and anywhere allows a break at any character boundary. The illustration wraps the same Japanese text under each rule, highlighting punctuation and small kana in blue. In the current specification normal also keeps small kana off the line head; strict additionally forbids breaks before 「〜」. Browser implementations may differ.' } },
   /* Wrapping, alignment and justification (grp: 'view') are preview-only page layout, not font settings. Keep them in View and out of exported CSS. */
   { key: 'wrap', grp: 'view', label: { zh: '段落换行', ja: '段落の折り返し', tw: '段落換行', en: 'Paragraph wrap' }, prop: 'text-wrap', def: 'wrap', init: 'wrap', tiles: true, tileHtml: tSvgTile('wrap'), tileW: 96, tileCode: true,
     sup: { chrome: 'balance 114 · pretty 117', firefox: 'balance 121', safari: 'balance 17.5 · pretty 26' },

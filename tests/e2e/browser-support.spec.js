@@ -6,6 +6,73 @@ test.beforeEach(async ({ page }) => {
   await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: '' }));
 });
 
+test('Layout cards explain distinct rules even without browser support or a working composite font', async ({ page }) => {
+  await page.addInitScript(() => {
+    const supports = CSS.supports.bind(CSS);
+    CSS.supports = (prop, value) => ['text-autospace', 'text-spacing-trim', 'word-break', 'line-break'].includes(prop) ? false : supports(prop, value);
+  });
+  await open(page);
+  await page.click('#ltabTypo');
+  const cards = page.locator('#typoRows .tt-layout');
+  const before = [];
+  for (const card of await cards.all()) before.push(await card.screenshot());
+  // A failed or different composite font must not erase the distinction between rule choices.
+  await page.evaluate(() => document.documentElement.style.setProperty('--cf', 'monospace'));
+  for (const [i, card] of (await cards.all()).entries()) expect(await card.screenshot()).toEqual(before[i]);
+  for (const key of ['autospace', 'trim', 'wordBreak', 'lineBreak']) {
+    const group = page.locator(`#typoRows [data-typo="${key}"] svg`);
+    const pictures = [];
+    for (const picture of await group.all()) pictures.push((await picture.screenshot()).toString('base64'));
+    // The punctuation sample only compares line heads: normal and space-all differ for adjacent marks,
+    // which are intentionally absent here. Both pictures should agree rather than invent a fourth effect.
+    if (key === 'trim') expect(pictures[0]).toBe(pictures[1]);
+    expect(new Set(pictures).size).toBe(pictures.length - (key === 'trim' ? 1 : 0));
+  }
+  // Rule comparisons must reflow one sample, rather than swap in different text to manufacture differences.
+  for (const value of ['loose', 'normal', 'strict', 'anywhere']) {
+    await expect(page.locator(`[data-typo="lineBreak"][data-v="${value}"] svg`)).toHaveText('おはよう〜もうちょっとね、');
+  }
+  const intervals = await page.locator('[data-typo="autospace"] .tt-demo-space').evaluateAll(marks => marks.map(mark => {
+    const { width, height } = mark.getBBox(); return { width, height };
+  }));
+  expect(intervals).toHaveLength(4);
+  expect(intervals.every(mark => mark.width > 0 && mark.height === 0)).toBe(true);
+  await page.locator('[data-typo="trim"][data-v="space-first"]').click();
+  await expect(page.locator('.typo-unsup[data-key="trim"]')).toBeVisible();
+  await page.locator('[data-typo="wordBreak"][data-v="auto-phrase"]').click();
+  await expect(page.locator('.typo-unsup[data-key="wordBreak"]')).toBeVisible();
+  await page.click('#exToggle');
+  await expect(page.locator('#codeOut')).toContainText('text-spacing-trim: space-first;');
+  await expect(page.locator('#codeOut')).toContainText('word-break: auto-phrase;');
+});
+
+test('Spacing cards distinguish a measured lack of effect from supported and unknown fonts', async ({ page }) => {
+  await open(page);
+  await page.click('#ltabFonts');
+  const setFixture = async (file, status = 'ok') => page.evaluate(async ({ file, status }) => {
+    const c = await import('./assets/js/core.js'), r = await import('./assets/js/render.js');
+    const f = { kind: 'local', name: file }, buffer = await (await fetch('tests/fixtures/' + file)).arrayBuffer();
+    c.sources.set(c.fontKey(f), { status, faces: [{ buffer }] });
+    for (const key of ['han', 'kana', 'punct']) { c.state.classes[key].font = f; c.state.classes[key].follow = null; }
+    r.renderSpacingMarks();
+  }, { file, status });
+  const spacing = page.locator('#featRows [data-typo="feat"]').last();
+  const vertical = page.locator('#featRows [data-typo="vfeat"]').last();
+  // This small derivative of the bundled Noto CJK fixture covers every sample character, with GSUB/GPOS removed.
+  // License: tests/fixtures/OFL-NotoSansCJK.txt. Full coverage avoids testing an unknown system fallback font.
+  await setFixture('SpacingTest-NoFeatures.otf');
+  await expect(spacing).toHaveClass(/lack/);
+  await expect(vertical).toHaveClass(/lack/);
+  await expect(vertical.locator('.tt-s')).toHaveAttribute('data-lack', '样张无变化');
+  await expect(vertical).toBeEnabled();
+  await setFixture('NotoSansCJKjp-Subset.otf');
+  await expect(spacing).not.toHaveClass(/lack/);
+  await expect(vertical).not.toHaveClass(/lack/);
+  await setFixture('SpacingTest-NoFeatures.otf', 'loading');
+  await expect(spacing).not.toHaveClass(/lack/);
+  await expect(vertical).not.toHaveClass(/lack/);
+});
+
 async function measuredScale(page) {
   return page.evaluate(async () => {
     const buffer = await (await fetch('tests/fixtures/Jost%5Bwght%5D.ttf')).arrayBuffer();

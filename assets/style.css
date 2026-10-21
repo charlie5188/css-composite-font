@@ -682,7 +682,7 @@ button.wm-pw:not(:disabled):hover{text-decoration:underline;text-underline-offse
 /* Numeric specimen cards span the full row beneath their heading. */
 .typo-row.tiles{grid-template-columns:minmax(0,1fr)}
 .typo-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(var(--tile-w,86px),100%),1fr));gap:6px}
-.typo-tiles button{display:grid;gap:5px;justify-items:center;align-content:start;padding:10px 6px 8px;border:1px solid var(--line);border-radius:var(--r);background:var(--sheet);color:var(--ink);text-align:center;min-width:0}
+.typo-tiles button{display:grid;grid-template-columns:minmax(0,1fr);gap:5px;justify-items:center;align-content:start;padding:10px 6px 8px;border:1px solid var(--line);border-radius:var(--r);background:var(--sheet);color:var(--ink);text-align:center;min-width:0}
 .typo-tiles button:hover{border-color:var(--faint)}
 .typo-tiles button[aria-checked="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
 .tt-s{font-family:var(--cf),var(--generic);font-weight:var(--fw,400);font-style:normal;font-size:var(--tile-fs,22px);line-height:1.25;white-space:nowrap;max-width:100%;overflow:hidden}
@@ -691,7 +691,7 @@ button.wm-pw:not(:disabled):hover{text-decoration:underline;text-underline-offse
 .tt-l small{display:block;font-size:var(--fs-xs);color:var(--faint)}
 .typo-tiles button[aria-checked="true"] .tt-l{color:var(--ink)}
 .typo-tiles button.lack .tt-s{position:relative;justify-self:stretch;color:transparent}      /* For unsupported features, omit the specimen and show a short explanation. */
-.typo-tiles button.lack .tt-s::after{content:attr(data-lack);position:absolute;inset:0;display:grid;place-items:center;font:var(--fs-xs)/1.3 var(--ui);letter-spacing:0;color:var(--faint);white-space:normal}
+.typo-tiles button.lack .tt-s::after{content:attr(data-lack);position:absolute;inset:0;display:grid;place-items:center;font:var(--fs-xs)/1.3 var(--ui);writing-mode:horizontal-tb;letter-spacing:0;color:var(--faint);white-space:normal}
 .typo-tiles button.lack{border:1px dashed var(--faint)}      /* Unsupported features use a dashed outline; selected ones use a heavier warning outline. */
 .typo-tiles button.lack:hover{border-color:var(--muted)}
 .typo-tiles button.lack[aria-checked="true"]{border:2px dashed var(--caution);box-shadow:none;padding:9px 5px 7px}      /* Reduce padding by 1px when the border thickens so content does not shift. */
@@ -703,11 +703,15 @@ button.wm-pw:not(:disabled):hover{text-decoration:underline;text-underline-offse
 .lm-pic .tt-svg{width:84px;height:52px}      /* Enlarge line-metric illustrations enough to judge spacing consistency. */
 .tt-svg .tt-edge{stroke:var(--accent);stroke-width:.6;stroke-dasharray:1.5 1.5;fill:none}
 .tt-svg .tt-mark{stroke:currentColor;stroke-width:1.1;fill:none}
-/* Render actual text in a four-character-wide box, with a left text-area edge to reveal indentation. */
-.tt-box{display:block;width:4em;font-size:19px;line-height:1.35;white-space:normal;text-align:start;overflow:visible;padding-left:0;box-shadow:-1px 0 0 var(--accent);min-height:2.7em}
-.tt-box[lang="ja"]{width:5em}
-/* Line-breaking samples are four characters wide and three lines high, with fixed punctuation and spacing so only break positions vary. */
-.tt-box.tt-lb{width:4em;min-height:4.05em;text-spacing-trim:space-all;text-autospace:no-autospace;font-feature-settings:normal}
+/* Rule illustrations use positioned glyphs, never the CSS property they explain or the live composite font. */
+.tt-layout{display:block;width:var(--diagram-width,112px);height:var(--diagram-height,64px);line-height:0}
+.tt-layout svg{display:block;width:100%;height:100%;fill:var(--ink);font:16px var(--ui);font-variant:normal;font-feature-settings:normal;letter-spacing:0;word-spacing:0}
+.tt-layout .tt-demo-edge{fill:none;stroke:var(--accent);stroke-width:1;stroke-dasharray:2 2}
+.tt-layout .tt-demo-bracket{fill:none;stroke:var(--ink);stroke-width:1}
+.tt-layout .tt-demo-space{fill:none;stroke:var(--accent);stroke-width:1.25;stroke-linecap:round}
+.tt-layout .tt-demo-focus{fill:var(--accent)}
+.tt-layout .tt-demo-auto{fill:none;stroke:var(--muted);stroke-width:3}
+.typo-diagram-note{margin:0;font-size:var(--fs-s);line-height:1.5;color:var(--muted)}
 .typo-note{grid-column:1/-1;margin:2px 0 0;font-size:var(--fs-s);line-height:1.55;color:var(--muted)}
 .typo-name{display:flex;align-items:center;gap:7px;line-height:1.35}
 .typo-name b{font-size:var(--fs-m);font-weight:600}
