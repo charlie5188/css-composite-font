@@ -457,25 +457,39 @@ export function initTips() {
    Drag, or focus and press Left/Right, to resize the editor; double-click to restore its default width. Narrow screens show one pane without a divider. */
 export const LEFT_MIN = 400, RIGHT_MIN = 420;
 export function applySplit() {
-  const bench = $('.bench'), sp = $('#split'), w = state.view.leftW;
+  const bench = $('.bench'), sp = $('#split'), w = state.view.leftW, max = Math.max(LEFT_MIN, bench.clientWidth - RIGHT_MIN);
+  const x = w ? Math.min(max, Math.max(LEFT_MIN, w)) : null;
   if (w) {
-    const x = Math.min(Math.max(LEFT_MIN, bench.clientWidth - RIGHT_MIN), Math.max(LEFT_MIN, w));
     bench.style.setProperty('--left-w', x + 'px');
   } else bench.style.removeProperty('--left-w');
-  sp.setAttribute('aria-valuemin', LEFT_MIN); sp.setAttribute('aria-valuemax', Math.max(LEFT_MIN, bench.clientWidth - RIGHT_MIN));
-  sp.setAttribute('aria-valuenow', Math.round($('#editor').getBoundingClientRect().width));
+  sp.setAttribute('aria-valuemin', LEFT_MIN); sp.setAttribute('aria-valuemax', max);
+  // The clamped width is already known; reading the editor after writing it would force layout on every drag frame.
+  sp.setAttribute('aria-valuenow', x ?? Math.round($('#editor').getBoundingClientRect().width));
 }
 export function initSplit() {
   const sp = $('#split');
   sp.addEventListener('pointerdown', e => {
+    if (e.button !== 0 || document.body.classList.contains('splitting')) return;
     e.preventDefault(); sp.setPointerCapture(e.pointerId); document.body.classList.add('splitting');
     const left = $('.bench').getBoundingClientRect().left;
-    const move = ev => { state.view.leftW = Math.round(ev.clientX - left); applySplit(); };
-    const up = () => {
-      sp.removeEventListener('pointermove', move); sp.removeEventListener('pointerup', up); sp.removeEventListener('pointercancel', up);
+    let frame = 0;
+    const move = ev => {
+      if (ev.pointerId !== e.pointerId) return;
+      state.view.leftW = Math.round(ev.clientX - left);
+      // Keep both panes live, but apply only the latest pointer position once per display frame.
+      if (!frame) frame = requestAnimationFrame(() => { frame = 0; applySplit(); });
+    };
+    const up = ev => {
+      if (ev.pointerId !== e.pointerId) return;
+      sp.removeEventListener('pointermove', move);
+      for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) sp.removeEventListener(type, up);
+      // A quick release can arrive before the queued frame; commit its last width before saving and stop late updates.
+      if (frame) { cancelAnimationFrame(frame); applySplit(); }
+      if (sp.hasPointerCapture(e.pointerId)) sp.releasePointerCapture(e.pointerId);
       document.body.classList.remove('splitting'); saveState();
     };
-    sp.addEventListener('pointermove', move); sp.addEventListener('pointerup', up); sp.addEventListener('pointercancel', up);
+    sp.addEventListener('pointermove', move);
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) sp.addEventListener(type, up);
   });
   sp.addEventListener('dblclick', () => { delete state.view.leftW; applySplit(); saveState(); });
   sp.addEventListener('keydown', e => {

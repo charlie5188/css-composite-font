@@ -350,7 +350,8 @@ input[type=range]:focus-visible::-moz-range-thumb{box-shadow:0 0 0 2px var(--she
 /* Fill the space below the top bar with editor, proof and specimen panes separated by a thin divider.
    Pane toolbars share height and a continuous bottom rule; controls use the same flat styling. */
 .bench{position:relative;display:grid;grid-template-columns:var(--left-w,minmax(400px,520px)) 0 minmax(0,1fr);min-height:0;background:var(--sheet)}      /* A zero-width middle column holds the divider; --left-w stores the dragged pane width. */
-.bench>*{min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain}      /* Panes scroll independently without chaining at their edges. */
+/* Only the grid uses --left-w. Stop inheritance at the panes so dragging does not invalidate every editor control's style. */
+.bench>*{--left-w:initial;min-width:0;min-height:0;overflow:auto;overscroll-behavior:contain}      /* Panes scroll independently without chaining at their edges. */
 .compose{--px:16px;padding:0 var(--px) 20px;border-right:1px solid var(--line)}
 /* Invisible 9px divider hit area; show its line on hover, drag or keyboard focus. */
 .bench>.split{position:relative;z-index:3;overflow:visible;cursor:col-resize;touch-action:none;outline:none}

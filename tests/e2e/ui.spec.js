@@ -56,6 +56,76 @@ test('整页固定一屏：页面本身不滚动，各栏自己滚动', async ({
   expect(Math.abs(m.specGap)).toBeLessThan(1);      // The specimen stays at the bottom of the proof pane.
 });
 
+test('Pane resizing stays live across editor tabs, respects bounds and supports keyboard reset', async ({ page }) => {
+  await open(page);
+  const editor = page.locator('#editor'), split = page.locator('#split');
+  const width = () => editor.evaluate(el => el.getBoundingClientRect().width);
+  const initial = await width();
+  for (const [tab, target] of [['Presets', 640], ['Fonts', 720], ['Typo', 580]]) {
+    await page.click('#ltab' + tab);
+    await page.mouse.move(await width(), 400);
+    await page.mouse.down();
+    await page.mouse.move(target, 400, { steps: 12 });
+    await expect.poll(width).toBe(target);      // Both panes resize before releasing the pointer.
+    await expect(split).toHaveAttribute('aria-valuenow', String(target));
+    await page.mouse.up();
+  }
+  await split.focus();
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(width).toBe(596);
+  await page.keyboard.press('Shift+ArrowLeft');
+  await expect.poll(width).toBe(532);
+  await page.mouse.move(532, 400); await page.mouse.down();
+  await page.mouse.move(200, 400); await expect.poll(width).toBe(400);
+  await page.mouse.move(1300, 400); await expect.poll(width).toBe(980);
+  await page.mouse.up();
+  await page.mouse.dblclick(980, 400);
+  await expect.poll(width).toBe(initial);
+});
+
+test('Pane width survives reload and narrow layouts without changing font settings', async ({ page }) => {
+  await open(page);
+  const width = () => page.locator('#editor').evaluate(el => el.getBoundingClientRect().width);
+  const config = await page.evaluate(async () => { const { presetSnap, state } = await import('./assets/js/core.js'); return presetSnap(state); });
+  await page.mouse.move(await width(), 400); await page.mouse.down();
+  await page.mouse.move(900, 400); await page.mouse.up();
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('composite-font:state:v1'))?.view.leftW)).toBe(900);
+  await page.reload();
+  await expect.poll(width).toBe(900);
+  await page.setViewportSize({ width: 1100, height: 1000 });
+  await expect.poll(width).toBe(680);      // Shrinking the window preserves room for the proof.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(page.locator('#split')).toBeHidden();
+  await expect(page.locator('#editor')).toBeVisible();
+  await expect.poll(width).toBe(390);
+  await page.click('#mTabs [data-mv="preview"]');
+  await expect(page.locator('.tester')).toBeVisible();
+  await page.click('#mTabs [data-mv="edit"]');
+  await page.setViewportSize({ width: 1400, height: 1000 });
+  await expect.poll(width).toBe(900);      // Restore the chosen width, rather than the temporary clamped width.
+  expect(await page.evaluate(async () => { const { presetSnap, state } = await import('./assets/js/core.js'); return presetSnap(state); })).toEqual(config);
+});
+
+test('A quick release or interrupted pane drag commits the latest width and stops dragging', async ({ page }) => {
+  await open(page);
+  for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+    await page.evaluate(() => document.querySelector('#split').addEventListener('pointerdown', e => { window.splitPointerId = e.pointerId; }, { once: true }));
+    const start = await page.locator('#editor').evaluate(el => el.getBoundingClientRect().width);
+    await page.mouse.move(start, 400); await page.mouse.down();
+    const result = await page.evaluate(type => {
+      const split = document.querySelector('#split'), pointerId = window.splitPointerId;
+      // Deliver several moves and termination in one task, before the display frame can run.
+      for (const x of [600, 620, 640]) split.dispatchEvent(new PointerEvent('pointermove', { pointerId, clientX: x, buttons: 1 }));
+      split.dispatchEvent(new PointerEvent(type, { pointerId }));
+      return { width: document.querySelector('#editor').getBoundingClientRect().width, dragging: document.body.classList.contains('splitting'), captured: split.hasPointerCapture(pointerId) };
+    }, type);
+    expect(result).toEqual({ width: 640, dragging: false, captured: false });
+    await page.mouse.up();
+    await page.mouse.move(800, 400);
+    await expect.poll(() => page.locator('#editor').evaluate(el => el.getBoundingClientRect().width)).toBe(640);
+  }
+});
+
 test('导出对话框：打开、关闭、点背景关闭', async ({ page }) => {
   await open(page);
   await page.click('#exToggle');
