@@ -6,7 +6,21 @@ Combine CJK and Western fonts with separate sizes, baselines and weights, then e
 
 **[Try it in your browser](https://charlie5188.github.io/css-composite-font/)** · English / 简体中文 / 繁體中文 / 日本語
 
-[日本語](#日本語) · [简体中文](#简体中文) · [繁體中文](#繁體中文)
+[Screenshots](#screenshots) · [日本語](#日本語) · [简体中文](#简体中文) · [繁體中文](#繁體中文)
+
+## Screenshots
+
+**Compose and proof.** Adjust fonts by character class while checking mixed-script text and alignment guides.
+
+![Character-class font settings beside a live Chinese and Western text preview, with size and baseline alignment guides below.](docs/screenshots/composition.png)
+
+**Browse fonts.** Compare real specimens, filter the library and try your own text before applying a font.
+
+![Font library with character-set filters, specimens in several Chinese type styles and an editable preview of Ma Shan Zheng.](docs/screenshots/font-library.png)
+
+**Export your composition.** Copy or download CSS for a website, or choose font files for use in other apps.
+
+![Export dialog showing web CSS, font-file and app-code options, with weight settings and generated CSS ready to copy or download.](docs/screenshots/export-css.png)
 
 ## Why
 
@@ -37,6 +51,8 @@ Run `npm run setup` once, then `npm run verify` for the full checks. See [AGENTS
 
 **合成フォント工房**は、InDesign の合成フォントのように、和文と欧文のフォント・サイズ・ベースライン・ウェイトを組み合わせ、Web やデザインアプリ向けに書き出すツールです。
 
+[画面を見る：フォントの組み合わせと校正・フォント選び・書き出し](#screenshots)（英語 UI）
+
 ### 主な機能
 
 - **文字クラスごとに組み合わせる。** 漢字・かな・欧文・数字・約物のフォント、サイズ、ベースラインを指定でき、例外文字も追加できます。
@@ -56,6 +72,8 @@ Run `npm run setup` once, then `npm run verify` for the full checks. See [AGENTS
 
 **复合字体工坊**像 InDesign 的复合字体一样，为中西文字体分别调整大小、基线和字重，再导出到网页或设计软件中使用。
 
+[查看界面：字体搭配与校样、字体库、导出](#screenshots)（英文界面）
+
 ### 功能亮点
 
 - **按字符类别搭配。** 为汉字、假名、西文、数字和标点分别选择字体、大小与基线，也能添加例外字符。
@@ -74,6 +92,8 @@ Run `npm run setup` once, then `npm run verify` for the full checks. See [AGENTS
 ## 繁體中文
 
 **複合字型工坊**像 InDesign 的複合字型一樣，分別調整中西文字型的大小、基線與字重，再匯出至網頁或設計軟體使用。
+
+[查看畫面：字型搭配與校樣、字型庫、匯出](#screenshots)（英文介面）
 
 ### 功能亮點
 
