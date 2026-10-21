@@ -581,7 +581,7 @@ export default {
   gz: " · about {kb} KB gzipped",
   cssHLink: "/* Composite font “{fam}”\n * The Han base font is linked directly from Google Fonts with @import and is second in font-family;\n * only the classes that override it are defined below: unicode-range takes over characters, size-adjust sets the size.\n * Among @font-face rules with the same name, the browser matches from the last one backward. */",
   layoutDiagram: "Cards illustrate rules. Check the proof for actual results.",
-  lineBreakDiagram: "The same Japanese text, wrapped under each rule. Punctuation and small kana are blue.",
+  lineBreakDiagram: "Examples follow the proof language. Blue marks characters relevant to wrapping.",
   unchangedTile: "No visible change",
   spacingUnchanged: "This font makes no visible change to the sample. The feature may be unsupported or already enabled by default.",
   typoFoot: "Text layout cards are fixed rule illustrations, independent of this browser and the selected fonts. Check the proof for actual wrapping and spacing. Font feature cards still show real samples of the selected fonts. The selected values apply to both the proof and the exported <span class=\"mono\">.composite</span> rule. Each item's (i) shows the CSS property name and the browser versions that first supported it (from MDN compatibility data, October 2026; some values may have arrived later). If this browser doesn't support a selected value, a note appears below that item.",

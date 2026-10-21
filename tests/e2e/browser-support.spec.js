@@ -1,5 +1,5 @@
 const { test, expect } = require('@playwright/test');
-const { open, setLang } = require('./helpers');
+const { open, setLang, showExport } = require('./helpers');
 
 test.beforeEach(async ({ page }) => {
   // Keep capability checks independent of remote font services.
@@ -20,23 +20,25 @@ test('Layout cards explain distinct rules even without browser support or a work
   await page.evaluate(() => document.documentElement.style.setProperty('--cf', 'monospace'));
   for (const [i, card] of (await cards.all()).entries()) expect(await card.screenshot()).toEqual(before[i]);
   for (const key of ['autospace', 'trim', 'wordBreak', 'lineBreak']) {
-    const group = page.locator(`#typoRows [data-typo="${key}"] svg`);
+    const group = page.locator(`#typoRows [data-typo="${key}"] .tt-layout`);
     const pictures = [];
-    for (const picture of await group.all()) pictures.push((await picture.screenshot()).toString('base64'));
+    // Compare line-break drawings in their own coordinates; screen-column subpixels can rasterize identical drawings differently.
+    for (const picture of await group.all()) pictures.push(key === 'lineBreak' ? await picture.innerHTML() : (await picture.screenshot()).toString('base64'));
     // The punctuation sample only compares line heads: normal and space-all differ for adjacent marks,
     // which are intentionally absent here. Both pictures should agree rather than invent a fourth effect.
     if (key === 'trim') expect(pictures[0]).toBe(pictures[1]);
-    expect(new Set(pictures).size).toBe(pictures.length - (key === 'trim' ? 1 : 0));
+    if (key === 'lineBreak') expect(pictures[2]).toBe(pictures[3]);      // Chinese normal and strict agree for this sample.
+    expect(new Set(pictures).size).toBe(pictures.length - (['trim', 'lineBreak'].includes(key) ? 1 : 0));
   }
   // Rule comparisons must reflow one sample, rather than swap in different text to manufacture differences.
   for (const value of ['loose', 'normal', 'strict', 'anywhere']) {
-    await expect(page.locator(`[data-typo="lineBreak"][data-v="${value}"] svg`)).toHaveText('おはよう〜もうちょっとね、');
+    await expect(page.locator(`[data-typo="lineBreak"][data-v="${value}"] svg`)).toHaveText('看完了吗？我们（明天）谈。');
   }
   const intervals = await page.locator('[data-typo="autospace"] .tt-demo-space').evaluateAll(marks => marks.map(mark => {
-    const { width, height } = mark.getBBox(); return { width, height };
+    const { width, height } = mark.getBoundingClientRect(); return { width, height };
   }));
   expect(intervals).toHaveLength(4);
-  expect(intervals.every(mark => mark.width > 0 && mark.height === 0)).toBe(true);
+  expect(intervals.every(mark => mark.width === 2 && mark.height <= 1.5)).toBe(true);
   await page.locator('[data-typo="trim"][data-v="space-first"]').click();
   await expect(page.locator('.typo-unsup[data-key="trim"]')).toBeVisible();
   await page.locator('[data-typo="wordBreak"][data-v="auto-phrase"]').click();
@@ -44,6 +46,71 @@ test('Layout cards explain distinct rules even without browser support or a work
   await page.click('#exToggle');
   await expect(page.locator('#codeOut')).toContainText('text-spacing-trim: space-first;');
   await expect(page.locator('#codeOut')).toContainText('word-break: auto-phrase;');
+});
+
+const lineBreakCard = (page, value) => page.locator(`[data-typo="lineBreak"][data-v="${value}"]`);
+async function expectLineBreakSample(page, lang, text) {
+  for (const value of ['auto', 'loose', 'normal', 'strict', 'anywhere']) {
+    await expect(lineBreakCard(page, value).locator('.tt-layout')).toHaveAttribute('lang', lang);
+    if (value !== 'auto') await expect(lineBreakCard(page, value).locator('svg')).toHaveText(text);
+  }
+}
+
+test('Line-breaking illustrations follow the proof language, preserving rule selection and mounted controls', async ({ page }) => {
+  await open(page); await page.click('#ltabTypo');
+  const selected = lineBreakCard(page, 'normal');
+  await selected.click();
+  await selected.evaluate(el => { window.keptLineBreakCard = el; });
+  await setLang(page, 'en');      // UI language must not replace the proof's language.
+  await expectLineBreakSample(page, 'zh-Hans', '看完了吗？我们（明天）谈。');
+  await selected.evaluate(el => { window.keptLineBreakCard = el; });      // UI translation intentionally rebuilds controls.
+  for (const [sample, lang, text] of [
+    ['tw', 'zh-Hant', '看完了嗎？我們（明天）談。'],
+    ['hk', 'zh-Hant', '看完了嗎？我們（明天）談。'],
+    ['ja', 'ja', 'おはよう〜もうちょっとね、'],
+    ['manga', 'ja', 'おはよう〜もうちょっとね、'],
+    ['chars', 'zh-Hans', '看完了吗？我们（明天）谈。'],
+  ]) {
+    await page.locator(`#sampleTabs [data-sample="${sample}"]`).click();
+    await expectLineBreakSample(page, lang, text);
+    await expect(selected).toHaveAttribute('aria-checked', 'true');
+    expect(await selected.evaluate(el => el === window.keptLineBreakCard)).toBe(true);
+  }
+  for (const language of ['en', 'ko']) {
+    await showExport(page); await page.selectOption('#exLang', language); await page.keyboard.press('Escape');
+    await expectLineBreakSample(page, 'en', 'Read a story today.');
+    await expect(selected).toHaveAttribute('aria-checked', 'true');
+    const pictures = [];
+    for (const value of ['loose', 'normal', 'strict', 'anywhere']) pictures.push(await lineBreakCard(page, value).locator('svg').innerHTML());
+    expect(pictures[0]).toBe(pictures[1]); expect(pictures[1]).toBe(pictures[2]); expect(pictures[2]).not.toBe(pictures[3]);
+  }
+  await setLang(page, 'tw'); await expectLineBreakSample(page, 'en', 'Read a story today.');
+  await showExport(page); await expect(page.locator('#codeOut')).toContainText('line-break: normal;');
+});
+
+test('Custom and mixed-script proofs keep their declared example language across editing and reload', async ({ page }) => {
+  await open(page); await page.click('#ltabTypo');
+  await lineBreakCard(page, 'loose').click();
+  await page.locator('#sampleTabs [data-sample="ja"]').click();
+  await page.locator('#proofText').fill('English と中文 123');
+  await expectLineBreakSample(page, 'ja', 'おはよう〜もうちょっとね、');
+  await page.locator('#sampleTabs [data-sample="zh"]').click();
+  await expectLineBreakSample(page, 'zh-Hans', '看完了吗？我们（明天）谈。');
+  await page.locator('#sampleTabs [data-sample="c0"]').click();
+  await expectLineBreakSample(page, 'ja', 'おはよう〜もうちょっとね、');
+  await page.locator('#sampleTabs [data-sample="zh"]').click();
+  await showExport(page); await page.selectOption('#exLang', 'en'); await page.keyboard.press('Escape');
+  await page.locator('#proofText').fill('A custom story 中文');
+  await expectLineBreakSample(page, 'en', 'Read a story today.');
+  await page.locator('#sampleTabs [data-sample="ja"]').click();
+  await page.locator('#sampleTabs [data-sample="c1"]').click();
+  await expectLineBreakSample(page, 'en', 'Read a story today.');
+  await expect(lineBreakCard(page, 'loose')).toHaveAttribute('aria-checked', 'true');
+  await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('composite-font:state:v1'))?.view.sample)).toBe('c1');
+  await page.reload(); await page.waitForFunction(() => document.querySelectorAll('[data-typo="lineBreak"]').length === 5);
+  await expectLineBreakSample(page, 'en', 'Read a story today.');
+  await expect(page.locator('#proofText')).toHaveText('A custom story 中文');
+  await expect(lineBreakCard(page, 'loose')).toHaveAttribute('aria-checked', 'true');
 });
 
 test('Spacing cards distinguish a measured lack of effect from supported and unknown fonts', async ({ page }) => {
@@ -71,6 +138,33 @@ test('Spacing cards distinguish a measured lack of effect from supported and unk
   await setFixture('SpacingTest-NoFeatures.otf', 'loading');
   await expect(spacing).not.toHaveClass(/lack/);
   await expect(vertical).not.toHaveClass(/lack/);
+});
+
+test('CJK–Western spacing illustrations keep natural ASCII letter and digit widths in every language', async ({ page }) => {
+  await open(page);
+  await page.click('#ltabTypo');
+  for (const lang of ['zh', 'tw', 'ja', 'en']) {
+    await setLang(page, lang);
+    const widths = await page.locator('[data-typo="autospace"] .tt-autospace').evaluateAll(samples => samples.flatMap(sample => {
+      const style = getComputedStyle(sample), reference = document.createElement('span');
+      reference.style.cssText = `position:fixed;white-space:pre;font:${style.font};letter-spacing:0;word-spacing:0;text-autospace:no-autospace`;
+      document.body.append(reference);
+      try {
+        return ['Ab', '12'].map(text => {
+          const walker = document.createTreeWalker(sample, NodeFilter.SHOW_TEXT);
+          let node;
+          while ((node = walker.nextNode()) && !node.data.includes(text)) {}
+          if (!node) throw new Error('Missing ASCII sample: ' + text);
+          const range = document.createRange(), start = node.data.indexOf(text);
+          range.setStart(node, start); range.setEnd(node, start + text.length);
+          reference.textContent = text;
+          return { actual: range.getBoundingClientRect().width, natural: reference.getBoundingClientRect().width };
+        });
+      } finally { reference.remove(); }
+    }));
+    expect(widths).toHaveLength(4);
+    for (const { actual, natural } of widths) expect(actual).toBeCloseTo(natural, 1);
+  }
 });
 
 async function measuredScale(page) {

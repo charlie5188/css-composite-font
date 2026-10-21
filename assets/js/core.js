@@ -458,7 +458,7 @@ export const tSvgTile = key => v => `<span class="tt-s tt-pic" aria-hidden="true
 /* Layout cards explain rules independently of CSS support and the selected font. Only the proof uses real layout.
    Explicit glyph positions keep the examples stable even when a browser accepts a property but cannot apply it.
    Examples follow https://www.w3.org/TR/css-text-4/#text-spacing-trim-property and #word-break-property. */
-const tLayout = (body, width = 112, height = 64) => `<span class="tt-s tt-layout"${width !== 112 || height !== 64 ? ` style="--diagram-width:${width}px;--diagram-height:${height}px"` : ''} aria-hidden="true"><svg viewBox="0 0 ${width} ${height}">${body}</svg></span>`;
+const tLayout = (body, width = 112, height = 64, lang = '') => `<span class="tt-s tt-layout"${lang ? ` lang="${lang}"` : ''}${width !== 112 || height !== 64 ? ` style="--diagram-width:${width}px;--diagram-height:${height}px"` : ''} aria-hidden="true"><svg viewBox="0 0 ${width} ${height}">${body}</svg></span>`;
 const tLetters = (text, x, y, step = 16, emphasis = '') => [...text].map((ch, i) => `<text x="${x + i * step}" y="${y}"${emphasis.includes(ch) ? ' class="tt-demo-focus"' : ''}>${ch}</text>`).join('');
 const tLayoutEdge = '<path d="M8 5v54" class="tt-demo-edge"/>';
 const tTrimLine = (text, y, trimHead) => {
@@ -474,27 +474,38 @@ export const tWordTile = v => tLayout(tLayoutEdge + (v === 'normal'
   ? tLetters('窓ぎわのトッ', 12, 24) + tLetters('トちゃん', 12, 52)
   : tLetters('窓ぎわの', 12, 24) + tLetters('トットちゃん', 12, 52)));
 export const tAutospaceTile = v => {
-  let x = 6, body = '';
-  ['字', 'Ab', '字', '12', '字'].forEach((text, i) => {
-    if (i && v === 'normal') { body += `<path d="M${x} 44h2" class="tt-demo-space"/>`; x += 2; }
-    body += tLetters(text, x, 39, text.length === 1 ? 16 : 10);
-    x += text.length === 1 ? 16 : 20;
-  });
-  return tLayout(body);
+  // Shape ASCII runs naturally: fixed per-character positions make proportional digits look full-width.
+  // Only the four CJK–Western boundaries receive a fixed 1/8 em gap, independently of CSS support.
+  const gap = v === 'normal' ? '<span class="tt-demo-space"></span>' : '';
+  return `<span class="tt-s tt-layout tt-autospace" aria-hidden="true"><span>${['字', 'Ab', '字', '12', '字'].join(gap)}</span></span>`;
 };
-/* Compare the same four-cell-wide paragraph, with explicit line endings instead of abstract break markers.
-   Loose permits small kana at line heads; normal keeps them together; strict also keeps U+301C off the head;
-   anywhere can leave the comma alone on the next line. Auto deliberately does not predict a browser's rules.
-   These are rule illustrations, independent of actual browser support: https://www.w3.org/TR/css-text-3/#line-break-property */
-export const tLineBreakTile = v => {
-  if (v === 'auto') return tLayout('<path d="M8 14h64M8 34h48M8 54h58M8 74h30" class="tt-demo-auto"/>', 88, 80);
-  const lines = {
+// Follow the proof's declared language, including custom and mixed-script text; never infer it from UI language or typed characters.
+export const lineBreakDiagramLang = (lang = state.typo.lang) => /^ja(?:-|$)/i.test(lang) ? 'ja' : /^zh(?:-|$)/i.test(lang) ? /^zh-(?:Hant|TW|HK|MO)(?:-|$)/i.test(lang) ? 'zh-Hant' : 'zh-Hans' : 'en';
+/* Reflow one sample per language using explicit line endings, independently of browser support.
+   Keep identical examples when rules agree: Chinese normal/strict, and English loose/normal/strict.
+   Auto deliberately leaves the browser's result unspecified. Other languages use the English example.
+   These are rule illustrations, not measured proof output: https://www.w3.org/TR/css-text-3/#line-break-property */
+export const tLineBreakTile = (v, lang = lineBreakDiagramLang()) => {
+  if (v === 'auto') return tLayout('<path d="M8 14h64M8 34h48M8 54h58M8 74h30" class="tt-demo-auto"/>', 88, 80, lang);
+  const edge = '<path d="M76 1v78" class="tt-demo-edge"/>';
+  if (lang === 'en') {
+    const lines = v === 'anywhere' ? [['Read a ', 's'], ['', 'tory tod'], ['', 'ay.']] : [['Read a ', ''], ['', 'story '], ['', 'today.']];
+    // Keep Latin runs naturally shaped instead of giving proportional letters artificial fixed-width cells.
+    return tLayout(edge + lines.map(([plain, focus], i) => `<text x="8" y="${20 + i * 18}">${plain}${focus ? `<tspan class="tt-demo-focus">${focus}</tspan>` : ''}</text>`).join(''), 88, 80, lang);
+  }
+  const lines = lang === 'ja' ? {
     loose: ['おはよう', '〜もうち', 'ょっと', 'ね、'],
     normal: ['おはよう', '〜もう', 'ちょっと', 'ね、'],
     strict: ['おはよ', 'う〜もう', 'ちょっと', 'ね、'],
     anywhere: ['おはよう', '〜もうち', 'ょっとね', '、'],
+  }[v] : {
+    loose: ['看完了吗', '？我们', '（明天）', '谈。'],
+    normal: ['看完了', '吗？我们', '（明天）', '谈。'],
+    strict: ['看完了', '吗？我们', '（明天）', '谈。'],
+    anywhere: ['看完了吗', '？我们（', '明天）谈', '。'],
   }[v];
-  return tLayout('<path d="M76 1v78" class="tt-demo-edge"/>' + lines.map((line, i) => tLetters(line, 8, 20 + i * 18, 16, '〜ょっ、')).join(''), 88, 80);
+  const traditional = { '吗': '嗎', '们': '們', '谈': '談' };
+  return tLayout(edge + lines.map((line, i) => tLetters(lang === 'zh-Hant' ? [...line].map(ch => traditional[ch] || ch).join('') : line, 8, 20 + i * 18, 16, lang === 'ja' ? '〜ょっ、' : '？（）。')).join(''), 88, 80, lang);
 };
 export const TYPO = [
   { key: 'lang', label: { zh: '语言', ja: '言語', tw: '語言', en: 'Language' }, prop: 'lang', attr: true, def: 'zh-Hans',
@@ -515,7 +526,7 @@ export const TYPO = [
   { key: 'lineBreak', label: { zh: '禁则', ja: '禁則', tw: '禁則', en: 'Line breaking rules' }, prop: 'line-break', def: 'strict', init: 'auto', tiles: true, tileHtml: tLineBreakTile, tileW: 88, tileCode: true, diagramNote: 'lineBreakDiagram',
     sup: { chrome: '58', firefox: '69', safari: '11' },
     values: [['auto', { zh: '由浏览器决定', ja: 'ブラウザに任せる', tw: '由瀏覽器決定', en: 'Browser decides' }], ['loose', { zh: '宽松', ja: 'ゆるい', tw: '寬鬆', en: 'Loose' }], ['normal', { zh: '标准', ja: '標準', tw: '標準', en: 'Normal' }], ['strict', { zh: '严格', ja: '厳しい', tw: '嚴格', en: 'Strict' }], ['anywhere', { zh: '任意处断行', ja: 'どこでも改行', tw: '任意處斷行', en: 'Break anywhere' }]],
-    note: { zh: '哪些字不能放在行首或行尾，例如句号、逗号不放在行首。auto 由浏览器按语言决定；loose 更宽松，适合窄栏；normal 按常见规则排；strict 更严格；anywhere 在任何字符边界都可以断行。示意用同一段日文比较换行位置，蓝色突出标点与小假名；当前规范中 normal 也禁止小假名放行首，strict 还禁止在「〜」前断行。实际实现可能不同。', ja: '行頭・行末に置けない文字の規則です（句読点を行頭に置かないなど）。auto はブラウザが言語に応じて決め、loose はゆるく、normal は一般的な規則、strict はより厳しい規則で組みます。anywhere はどの文字の境界でも改行できます。同じ文で改行位置を比較し、約物と小書きのかなを青で示しています。現在の仕様では normal も小書きのかなを行頭に置かず、strict は「〜」の前の改行も禁止します。実際の実装は異なる場合があります。', tw: '哪些字不能放在行首或行尾，例如句號、逗號不放在行首。auto 由瀏覽器按語言決定；loose 較寬鬆，適合窄欄；normal 按常見規則排；strict 較嚴格；anywhere 在任何字元邊界都可以換行。示意用同一段日文比較換行位置，藍色標示標點與小寫假名；目前規範中 normal 也禁止小寫假名放行首，strict 還禁止在「〜」前換行。實際實作可能不同。', en: 'Controls which characters may start or end a line, such as keeping commas and periods off the line head. auto lets the browser decide by language; loose uses fewer restrictions, normal uses common rules, strict uses stricter rules, and anywhere allows a break at any character boundary. The illustration wraps the same Japanese text under each rule, highlighting punctuation and small kana in blue. In the current specification normal also keeps small kana off the line head; strict additionally forbids breaks before 「〜」. Browser implementations may differ.' } },
+    note: { zh: '哪些字不能放在行首或行尾，例如句号、逗号不放在行首。auto 由浏览器按语言决定；loose 更宽松，适合窄栏；normal 按常见规则排；strict 更严格；anywhere 在任何字符边界都可以断行。示例跟随校样语言，其他语言暂用英文；蓝色突出断行相关字符。相同效果使用相同示例，切换语言不改变已选值。实际实现可能不同。', ja: '行頭・行末に置けない文字の規則です（句読点を行頭に置かないなど）。auto はブラウザが言語に応じて決め、loose はゆるく、normal は一般的な規則、strict はより厳しい規則で組みます。anywhere はどの文字の境界でも改行できます。例は校正刷りの言語に応じて切り替わり、その他の言語には英語を使います。青は改行に関係する文字です。同じ効果の選択肢には同じ例を使い、言語を切り替えても選択値は変わりません。実際の実装は異なる場合があります。', tw: '哪些字不能放在行首或行尾，例如句號、逗號不放在行首。auto 由瀏覽器按語言決定；loose 較寬鬆，適合窄欄；normal 按常見規則排；strict 較嚴格；anywhere 在任何字元邊界都可以換行。範例隨校樣語言切換，其他語言暫用英文；藍色標示換行相關字元。相同效果使用相同範例，切換語言不改變選取值。實際實作可能不同。', en: 'Controls which characters may start or end a line, such as keeping commas and periods off the line head. auto lets the browser decide by language; loose uses fewer restrictions, normal uses common rules, strict uses stricter rules, and anywhere allows a break at any character boundary. Illustrations follow the proof language, using English for other languages. Blue marks characters relevant to wrapping. Options with the same effect share an example; changing languages preserves the selected rule. Browser implementations may differ.' } },
   /* Wrapping, alignment and justification (grp: 'view') are preview-only page layout, not font settings. Keep them in View and out of exported CSS. */
   { key: 'wrap', grp: 'view', label: { zh: '段落换行', ja: '段落の折り返し', tw: '段落換行', en: 'Paragraph wrap' }, prop: 'text-wrap', def: 'wrap', init: 'wrap', tiles: true, tileHtml: tSvgTile('wrap'), tileW: 96, tileCode: true,
     sup: { chrome: 'balance 114 · pretty 117', firefox: 'balance 121', safari: 'balance 17.5 · pretty 26' },

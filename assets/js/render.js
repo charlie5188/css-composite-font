@@ -2,7 +2,7 @@ import { redrawProof } from './proof-editor.js';
 import { showMissingGlyphTip, paintMissingGlyphs, syncWeightControl } from './ui-controls.js';
 import { $, T, UI, debounce, esc, root, tr } from './i18n.js';
 import { CLASSES, CLS, GROUPS, classOf, fmtRanges, inRanges, isMoved } from './unicode.js';
-import { BASE_W, EA_FEAT, autoNames, clampW, defaultFontWeight, contFont, stepSpan, NUM_FEAT, NUM_TAGS, SAMPLES, TYPO, WEIGHTS, anyShift, axesOf, axisLabel, axisOf, finalFont, fontAtWeight, fontKey, gfWeights, weightChain, fontLabel, inheritedShift, inheritedSize, liveFamily, numLabel, numTags, objByKey, ownFontAt, ownSize, ownerOf, resolveCls, resolveCustom, settingOf, sources, srcError, state, typoValue, usedFont, vfAxisNow } from './core.js';
+import { BASE_W, EA_FEAT, autoNames, clampW, defaultFontWeight, contFont, stepSpan, NUM_FEAT, NUM_TAGS, SAMPLES, TYPO, WEIGHTS, anyShift, axesOf, axisLabel, axisOf, finalFont, fontAtWeight, fontKey, gfWeights, weightChain, fontLabel, inheritedShift, inheritedSize, lineBreakDiagramLang, liveFamily, numLabel, numTags, objByKey, ownFontAt, ownSize, ownerOf, resolveCls, resolveCustom, settingOf, sources, srcError, state, tLineBreakTile, typoValue, usedFont, vfAxisNow } from './core.js';
 import { LIMITS, loadBlank, missingIn, renderTypoStatus, renderCurrentPreset, syncViewTypo } from './ui.js';
 /* ================= Render: character-class table (InDesign composite-font dialog) ================= */
 export const GLYPH = { han: '永', latin: 'Ag', digit: '01', kana: 'あ', bopo: 'ㄅ', punct: '」、', symbol: '※', shared: '“…' };
@@ -582,8 +582,16 @@ export function renderChipsStatus() {
 }
 
 /* ================= Render: proof ================= */
+function syncLineBreakDiagrams() {
+  const lang = lineBreakDiagramLang();
+  for (const button of document.querySelectorAll('#typoRows [data-typo="lineBreak"]')) {
+    // Replace only the illustration when the proof language changes; keep selected values, controls and focus intact.
+    if (button.firstElementChild.lang !== lang) button.firstElementChild.outerHTML = tLineBreakTile(button.dataset.v, lang);
+  }
+}
 export function renderPreview() {
   const v = state.view, pt = $('#proofText');
+  syncLineBreakDiagrams();
   $('#sheet').classList.toggle('vertical', v.vertical);
   $('#sheet').classList.toggle('rules', !!v.rules);
   root.classList.toggle('show-colors', v.colorize);
