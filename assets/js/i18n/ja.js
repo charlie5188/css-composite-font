@@ -264,7 +264,7 @@ export default {
   fxRmShift: "ベースライン {v}%",
   fxRmNotes: "インストール：.ttf ファイルをダブルクリックします。ウェイトごとに 1 ファイルです。イタリックは欧文だけが斜体で、漢字・かなは正体のままです。\nブラウザは和欧間に 1/8 em のアキを自動で入れます（text-autospace）が、Figma や Keynote などのアプリでは入りません。",
   fxRmMade: "{date} 作成 · {url}",
-  eaWNone: "{font} にはプロポーショナルと全角の字形がなく、選んでも変わりません。",
+  eaWNone: "{font} ではこのサンプルの幅に目に見える変化がありません。非対応か、すでに既定の効果である可能性があります。",
   addCustomRow: "例外文字を追加",
   featTitle: "フォントの機能",
   tabFonts: "フォント",

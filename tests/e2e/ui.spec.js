@@ -201,6 +201,13 @@ test('Vertical half metrics change punctuation advances and persist independentl
   expect(fullHeight).toBeGreaterThan(60);
   const vertical = page.locator('[data-typo="vfeat"]').last();
   await expect(vertical.locator('.tt-s')).toHaveCSS('writing-mode', 'vertical-rl');
+  // Guides follow real character advances: punctuation becomes half-height while the Han cell keeps its height.
+  const guideHeights = card => card.locator('.tt-vcell').evaluateAll(cells => cells.map(cell => +cell.getAttribute('height')));
+  await expect(vertical.locator('.tt-vcell')).toHaveCount(4);
+  const defaultGuides = await guideHeights(page.locator('[data-typo="vfeat"]').first()), halfGuides = await guideHeights(vertical);
+  for (const i of [0, 2, 3]) expect(halfGuides[i]).toBeCloseTo(defaultGuides[i] / 2, 1);
+  expect(halfGuides[1]).toBeCloseTo(defaultGuides[1], 1);
+  expect(+await vertical.locator('.tt-vreference').getAttribute('height')).toBeCloseTo(defaultGuides.reduce((a, b) => a + b, 0), 1);
   await vertical.click();
   await expect(page.locator('#proofText')).toHaveCSS('font-feature-settings', '"vhal"');
   await expect.poll(height).toBeLessThan(fullHeight * 0.8);

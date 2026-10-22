@@ -264,7 +264,7 @@ export default {
   fxRmShift: "baseline {v}%",
   fxRmNotes: "To install, double-click the .ttf files. There is one file per weight; in italics only Western text is slanted, Han and kana stay upright.\nBrowsers automatically add a 1/8 em space between CJK and Western text (text-autospace); Figma, Keynote and similar apps don't.",
   fxRmMade: "Made on {date} · {url}",
-  eaWNone: "{font} has no proportional or full-width glyphs; this setting changes nothing.",
+  eaWNone: "{font} makes no visible width change to this sample. The features may be unsupported or already enabled by default.",
   addCustomRow: "Add exception characters",
   featTitle: "Font features",
   tabFonts: "Fonts",

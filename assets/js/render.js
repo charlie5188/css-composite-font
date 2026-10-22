@@ -2,7 +2,7 @@ import { redrawProof } from './proof-editor.js';
 import { showMissingGlyphTip, paintMissingGlyphs, syncWeightControl } from './ui-controls.js';
 import { $, T, UI, debounce, esc, root, tr } from './i18n.js';
 import { CLASSES, CLS, GROUPS, classOf, fmtRanges, inRanges, isMoved } from './unicode.js';
-import { BASE_W, EA_FEAT, autoNames, clampW, defaultFontWeight, contFont, stepSpan, NUM_FEAT, NUM_TAGS, SAMPLES, TYPO, WEIGHTS, anyShift, axesOf, axisLabel, axisOf, finalFont, fontAtWeight, fontKey, gfWeights, weightChain, fontLabel, inheritedShift, inheritedSize, lineBreakDiagramLang, liveFamily, numLabel, numTags, objByKey, ownFontAt, ownSize, ownerOf, resolveCls, resolveCustom, settingOf, sources, srcError, state, tLineBreakTile, typoValue, usedFont, vfAxisNow } from './core.js';
+import { BASE_W, EA_FEAT, FONT_FEATURE_SAMPLES, autoNames, clampW, defaultFontWeight, contFont, stepSpan, NUM_FEAT, NUM_TAGS, SAMPLES, TYPO, WEIGHTS, anyShift, axesOf, axisLabel, axisOf, finalFont, fontAtWeight, fontKey, gfWeights, weightChain, fontLabel, inheritedShift, inheritedSize, lineBreakDiagramLang, liveFamily, numLabel, numTags, objByKey, ownFontAt, ownSize, ownerOf, resolveCls, resolveCustom, settingOf, sources, srcError, state, tLineBreakTile, typoValue, usedFont, vfAxisNow } from './core.js';
 import { LIMITS, loadBlank, missingIn, renderTypoStatus, renderCurrentPreset, syncViewTypo } from './ui.js';
 /* ================= Render: character-class table (InDesign composite-font dialog) ================= */
 export const GLYPH = { han: '永', latin: 'Ag', digit: '01', kana: 'あ', bopo: 'ㄅ', punct: '」、', symbol: '※', shared: '“…' };
@@ -185,6 +185,7 @@ export function fitGlyphs() {
     const w = r.getBoundingClientRect().width, room = el.clientWidth + 8;
     if (w > room) el.style.fontSize = Math.max(14, Math.floor(parseFloat(getComputedStyle(el).fontSize) * room / w)) + 'px';
   }
+  renderVerticalGuides();      // Reuse font-load and tab-reveal measurements for the feature specimen overlays.
 }
 export function renderClassRows() {
   $('#classRows').innerHTML = visibleClasses().map(c => {
@@ -506,42 +507,70 @@ function markLack(b, on, label = 'lackTile') {
   b.classList.toggle('lack', on);
   const s = b.querySelector('.tt-s'); if (s) s.dataset.lack = on ? T(label) : '';
 }
-/* Spacing samples mix kana and punctuation, which may use different sources. Only claim no change once every
-   relevant source was checked; an unavailable or still-loading font remains unknown, never unsupported. */
-export function renderSpacingMarks() {
-  const check = (text, tags, vertical = false) => {
-    const groups = new Map();
-    for (const ch of text) {
-      const owner = ownerOf(ch.codePointAt(0));
-      const f = usedFont(owner[0] === '#' ? resolveCustom(state.custom[+owner.slice(1)], state.view.weight, true) : resolveCls(owner === 'other' ? 'han' : owner, state.view.weight, true));
-      const key = fontKey(f), group = groups.get(key) || { f, text: '' };
-      group.text += ch; groups.set(key, group);
+/* Han, punctuation, full-width digits and ASCII digits can use different sources, including custom exceptions.
+   Only claim no effect once every source actually used by the card has been checked. */
+function specimenFx(text, tags, done, writingMode = '') {
+  const groups = new Map();
+  for (const ch of text) {
+    const owner = ownerOf(ch.codePointAt(0));
+    const f = usedFont(owner[0] === '#' ? resolveCustom(state.custom[+owner.slice(1)], state.view.weight, true) : resolveCls(owner === 'other' ? 'han' : owner, state.view.weight, true));
+    const key = fontKey(f), group = groups.get(key) || { f, text: '' };
+    group.text += ch; groups.set(key, group);
+  }
+  return [...groups.values()].map(({ f, text }) => ({ f, fx: featFx(f, text, tags, done, null, writingMode) }));
+}
+/* Measure a single shaped text node so the guides show real advances, including default features and
+   different source sizes. Wrapping characters in separate elements could change the shaping being explained. */
+export function renderVerticalGuides() {
+  const samples = [...document.querySelectorAll('#featRows [data-typo="vfeat"] .tt-vspecimen')].map(box => {
+    const text = box.querySelector('.tt-s'), node = text.firstChild;
+    const bounds = text.getBoundingClientRect();
+    if (!bounds.width || !node) return null;      // Measure hidden tabs when fitGlyphs runs on reveal.
+    const em = parseFloat(getComputedStyle(text).fontSize), range = document.createRange(), cells = [];
+    let offset = 0;
+    for (const ch of node.textContent) {
+      range.setStart(node, offset); offset += ch.length; range.setEnd(node, offset);
+      const rect = range.getBoundingClientRect();
+      cells.push({ y: rect.top - bounds.top, h: rect.height });
     }
-    return [...groups.values()].map(({ f, text }) => featFx(f, text, tags, renderSpacingMarks, null, vertical ? 'vertical-rl' : 'horizontal-tb'));
-  };
-  const horizontal = check('「アイ」、ウ。', ['palt', 'halt']);
-  const vertical = check('「ア」、', ['vhal'], true);
+    return { box, svg: box.querySelector('svg'), em, width: bounds.width, cells, end: Math.max(0, ...cells.map(c => c.y + c.h)) };
+  }).filter(Boolean);
+  if (!samples.length) return;
+  const reference = samples[0].end, height = Math.max(reference, ...samples.map(s => Math.max(s.end, s.em * 4)));
+  for (const { box, svg, em, width, cells } of samples) {
+    box.style.height = `${height}px`;      // Keep both labels aligned even when a character class has a different size.
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const x = (width - em) / 2;
+    svg.innerHTML = `<rect class="tt-vreference" x="${x}" y="0" width="${em}" height="${reference}"/>` +
+      cells.map(({ y, h }) => `<rect class="tt-vcell" x="${x}" y="${y}" width="${em}" height="${h}"/>`).join('');
+  }
+}
+export function renderSpacingMarks() {
+  const horizontal = specimenFx(FONT_FEATURE_SAMPLES.feat, ['palt', 'halt'], renderSpacingMarks, 'horizontal-tb');
+  const vertical = specimenFx(FONT_FEATURE_SAMPLES.vfeat, ['vhal'], renderSpacingMarks, 'vertical-rl');
   document.querySelectorAll('#featRows [data-typo="feat"], #featRows [data-typo="vfeat"]').forEach(b => {
     const tag = b.dataset.v.replaceAll('"', ''), isVertical = b.dataset.typo === 'vfeat';
-    const unchanged = tag !== 'normal' && (isVertical ? vertical : horizontal).every(fx => fx && !fx[tag]);
+    const unchanged = tag !== 'normal' && (isVertical ? vertical : horizontal).every(({ fx }) => fx && !fx[tag]);
     markLack(b, !!unchanged, 'unchangedTile');
     b.title = b.dataset.v + (unchanged ? ' — ' + T('spacingUnchanged') : '');
   });
+  renderVerticalGuides();
 }
-/* Dim ineffective glyph-standard and kana/punctuation-width cards; explain below if the font has no supported glyph standards. */
-export const EA_SAMPLE = { eaVar: '辻葛飴鴎国', eaWidth: 'イリ「ア」ﾃｽ' };
+/* Dim ineffective glyph-standard and width cards, checking the fonts that render the visible specimen. */
 export function renderEaMarks() {
-  const W = state.view.weight, fonts = { eaVar: usedFont(resolveCls('han', W, true)), eaWidth: usedFont(resolveCls('kana', W, true)) };
-  const fx = {};
+  const fonts = {}, names = {}, fx = {};
   for (const k of ['eaVar', 'eaWidth']) {
     const t = TYPO.find(x => x.key === k), tags = t.values.map(v => EA_FEAT[v[0]]).filter(Boolean);
-    fx[k] = featFx(fonts[k], EA_SAMPLE[k], tags, renderEaMarks);
+    const samples = specimenFx(FONT_FEATURE_SAMPLES[k], tags, renderEaMarks, k === 'eaWidth' ? 'horizontal-tb' : '');
+    fonts[k] = samples.map(({ f }) => f);
+    names[k] = [...new Set(fonts[k].map(shortName))].join(T('joiner'));
+    fx[k] = samples.every(s => s.fx) ? Object.fromEntries(tags.map(tag => [tag, samples.some(s => s.fx[tag])])) : null;
     /* If only one JIS option is unchanged while the others differ, it is the default standard (for example JIS2004 in ProN), not an unsupported feature. */
     const jisAny = fx[k] && ['jp78', 'jp83', 'jp90', 'jp04'].some(t => fx[k][t]);
     document.querySelectorAll(`#featRows [data-typo="${k}"]`).forEach(b => {
       const tag = EA_FEAT[b.dataset.v], none = !!(tag && fx[k] && !fx[k][tag]), isDef = none && /^jp/.test(tag) && jisAny;
-      markLack(b, none && !isDef);
-      b.title = b.dataset.v + (none ? ' — ' + T(isDef ? 'eaDefault' : 'eaLack', { font: shortName(fonts[k]) }) : '');
+      markLack(b, none && !isDef, k === 'eaWidth' ? 'unchangedTile' : 'lackTile');
+      b.title = b.dataset.v + (none ? ' — ' + T(k === 'eaWidth' ? 'spacingUnchanged' : isDef ? 'eaDefault' : 'eaLack', { font: names[k] }) : '');
     });
   }
   /* When both proportional and full-width options have no effect, explain below the cards why their specimens look identical. */
@@ -549,12 +578,12 @@ export function renderEaMarks() {
   if (wh) {
     const noneW = fx.eaWidth && !['pwid', 'fwid'].some(t => fx.eaWidth[t]);
     wh.hidden = !noneW;
-    if (noneW) wh.textContent = T('eaWNone', { font: shortName(fonts.eaWidth) }) + (fonts.eaWidth.kind === 'google' ? T('eaGoogle') : '');
+    if (noneW) wh.textContent = T('eaWNone', { font: names.eaWidth }) + (fonts.eaWidth.some(f => f.kind === 'google') ? T('eaGoogle') : '');
   }
   const el = $('#eaHint'); if (!el) return;
   const none = fx.eaVar && !['jp78', 'jp83', 'jp90', 'jp04', 'smpl', 'trad'].some(t => fx.eaVar[t]);
   el.hidden = !none;
-  if (none) el.textContent = T('eaNone', { font: shortName(fonts.eaVar) }) + (fonts.eaVar.kind === 'google' ? T('eaGoogle') : '');
+  if (none) el.textContent = T('eaNone', { font: names.eaVar }) + (fonts.eaVar.some(f => f.kind === 'google') ? T('eaGoogle') : '');
 }
 /* After editing a cell, update other inherited values without rebuilding the table or losing focus. */
 export function refreshInherited() {

@@ -264,7 +264,7 @@ export default {
   fxRmShift: "基線 {v}%",
   fxRmNotes: "安裝：雙擊 .ttf 檔案。每個字重一個檔案；斜體只有西文是斜的，漢字保持正體。\n瀏覽器會自動在中西文之間加 1/8 em 的間距（text-autospace），Figma、Keynote 等軟體不會。",
   fxRmMade: "產生於 {date} · {url}",
-  eaWNone: "{font} 沒有比例寬和全形的字形，選了也不會變。",
+  eaWNone: "{font} 在此範例中沒有可見的寬度變化，可能不支援這些特性，或已是預設效果。",
   addCustomRow: "新增例外字元",
   featTitle: "字型特性",
   tabFonts: "字型",

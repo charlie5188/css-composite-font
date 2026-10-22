@@ -125,16 +125,18 @@ test('Spacing cards distinguish a measured lack of effect from supported and unk
   }, { file, status });
   const spacing = page.locator('#featRows [data-typo="feat"]').last();
   const vertical = page.locator('#featRows [data-typo="vfeat"]').last();
-  // This small derivative of the bundled Noto CJK fixture covers every sample character, with GSUB/GPOS removed.
-  // License: tests/fixtures/OFL-NotoSansCJK.txt. Full coverage avoids testing an unknown system fallback font.
+  // Compare the sample punctuation in a derivative with GSUB/GPOS removed against the original font.
+  // License: tests/fixtures/OFL-NotoSansCJK.txt. These fixtures do not include the sample's Han characters.
   await setFixture('SpacingTest-NoFeatures.otf');
   await expect(spacing).toHaveClass(/lack/);
   await expect(vertical).toHaveClass(/lack/);
   await expect(vertical.locator('.tt-s')).toHaveAttribute('data-lack', '样张无变化');
+  await expect(vertical.locator('.tt-vguides')).toBeHidden();
   await expect(vertical).toBeEnabled();
   await setFixture('NotoSansCJKjp-Subset.otf');
   await expect(spacing).not.toHaveClass(/lack/);
   await expect(vertical).not.toHaveClass(/lack/);
+  await expect(vertical.locator('.tt-vguides')).toBeVisible();
   await setFixture('SpacingTest-NoFeatures.otf', 'loading');
   await expect(spacing).not.toHaveClass(/lack/);
   await expect(vertical).not.toHaveClass(/lack/);
