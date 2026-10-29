@@ -119,6 +119,7 @@ assets/js/export.js      Exported CSS / baseline JS
 assets/js/bake.js        Font-file export: plan, downloads, license checks, Pyodide worker, result UI
 assets/js/appcode.js     App code export (experimental): one data model, Swift / Kotlin / Dart generators
 assets/js/image.js       Image export: the proof as a PNG, rendered through an SVG foreignObject with the live faces embedded
+assets/js/outline.js     Outlined SVG export: browser positions, glyphs shaped by HarfBuzz from full font files
 assets/py/bake_core.py   Font baking (fontTools). Runs in the worker; also used by tests and tools/bake.py
 assets/py/*.whl          fontTools wheel the worker installs (PyPI blocks cross-origin downloads)
 assets/js/i18n.js        T(key, params), UI language; texts in assets/js/i18n/{zh,tw,ja,en}.js, one key per line
@@ -170,6 +171,12 @@ tests/e2e/               Playwright: CSS snapshots per preset, UI, layout, font-
   same engine as the proof. The SVG must be a `data:` URL; a `blob:` SVG with `foreignObject` taints the canvas in Chromium.
   Overlays (Highlight API class colors, missing-glyph marks, line rules) stay out. Options live in `state.view.img`, outside
   history and shares. `tests/e2e/image-export.spec.js` compares the PNG with a screenshot of the proof; keep it passing.
+  PNG renders re-warm the embedded fonts each time and wait until the drawn image stops changing: the browser can evict the font cache.
+- **Outlined SVG.** `outline.js` keeps the browser's character boxes (line breaks, justification, autospace, trimming, baseline shifts) and
+  draws glyphs from full font files: Google Fonts through the font-file export lookup (`gfInfo` / `fxFetch`), uploaded TTF/OTF, or installed
+  fonts through Local Font Access. HarfBuzz (`harfbuzzjs`, MIT, pinned in `HB_URL`) is the one runtime package besides Pyodide; it loads
+  from jsDelivr only for SVG export. Keep the `package.json` dev dependency on the same version: the tests serve it from `node_modules`.
+  Each character uses the last declared live rule whose range contains it and whose font has it, as CSS does. Horizontal proofs only.
 
 ## Design system
 

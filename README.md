@@ -32,7 +32,7 @@ A `font-family` fallback chooses a font for each character, but does not balance
 - **Match fonts across weights.** Auto-adjust size, baseline and available weights, then fine-tune individual steps or use a continuous variable-font range.
 - **Bring your fonts.** Search Google Fonts and installed families, or import font files. Inspect font information and character-set coverage before applying a choice.
 - **Proof as you work.** Edit proof text directly and check mixed-script text, missing glyphs and regional typography in a live preview.
-- **Export where you need it.** Generate CSS, TTF / OTF / WOFF2 files for design and office apps, or a PNG of the proof for places that can’t load fonts. Swift / Kotlin / Flutter code export is experimental.
+- **Export where you need it.** Generate CSS, TTF / OTF / WOFF2 files for design and office apps, or a PNG or outlined SVG of the proof for places that can’t load fonts. Swift / Kotlin / Flutter code export is experimental.
 - **Save and share.** Keep presets in your browser or share an editable configuration link without an account.
 
 ## Important notes
@@ -59,7 +59,7 @@ Run `npm run setup` once, then `npm run verify` for the full checks. See [AGENTS
 - **ウェイトを通してバランスを整える。** サイズ・ベースライン・利用可能なウェイトを自動調整し、段階ごとの微調整や可変フォントの連続範囲にも対応します。
 - **手持ちのフォントを使う。** Google Fonts とインストール済みフォントを検索し、ファイルも取り込めます。適用前にフォント情報や文字セットの収録率を確認できます。
 - **編集しながら校正する。** 校正テキストを直接編集し、和欧混植、欠字、地域ごとの組版をリアルタイムで確認できます。
-- **用途に合わせて書き出す。** CSS、デザイン・オフィスアプリ向けの TTF / OTF / WOFF2、フォントを読み込めない場所向けの校正刷りの PNG を生成します。Swift / Kotlin / Flutter コードの書き出しは試験的な機能です。
+- **用途に合わせて書き出す。** CSS、デザイン・オフィスアプリ向けの TTF / OTF / WOFF2、フォントを読み込めない場所向けの校正刷りの PNG やアウトライン化した SVG を生成します。Swift / Kotlin / Flutter コードの書き出しは試験的な機能です。
 - **保存して共有する。** ブラウザにプリセットを保存し、アカウントなしで編集可能な設定リンクを共有できます。
 
 ### 利用時の注意
@@ -80,7 +80,7 @@ Run `npm run setup` once, then `npm run verify` for the full checks. See [AGENTS
 - **匹配不同字重。** 自动调整大小、基线和可用字重，再按档微调；也支持可变字体的连续字重范围。
 - **使用已有字体。** 搜索 Google Fonts 和本机字体，或导入字体文件；选用前可查看字体资料与字符集覆盖率。
 - **边编辑边校样。** 直接编辑校样正文，实时检查中西文混排、缺字和地区排版差异。
-- **导出到需要的地方。** 生成 CSS、供设计和办公软件使用的 TTF / OTF / WOFF2 文件，或用在无法加载字体之处的校样 PNG；Swift / Kotlin / Flutter 代码导出为实验功能。
+- **导出到需要的地方。** 生成 CSS、供设计和办公软件使用的 TTF / OTF / WOFF2 文件，或用在无法加载字体之处的校样 PNG 和轮廓化 SVG；Swift / Kotlin / Flutter 代码导出为实验功能。
 - **保存与分享。** 在浏览器中保存预设，或分享可继续编辑的配置链接，无须账号。
 
 ### 使用须知
@@ -101,7 +101,7 @@ Run `npm run setup` once, then `npm run verify` for the full checks. See [AGENTS
 - **搭配不同字重。** 自動調整大小、基線與可用字重，再依各段微調；也支援可變字型的連續字重範圍。
 - **使用現有字型。** 搜尋 Google Fonts 與本機字型，或匯入字型檔案；選用前可查看字型資訊與字元集涵蓋率。
 - **編輯時即時校樣。** 直接編輯校樣內文，即時檢查中西文混排、缺字及地區排版差異。
-- **匯出至需要的地方。** 產生 CSS、供設計和辦公軟體使用的 TTF / OTF / WOFF2 檔案，或用在無法載入字型之處的校樣 PNG；Swift / Kotlin / Flutter 程式碼匯出為實驗功能。
+- **匯出至需要的地方。** 產生 CSS、供設計和辦公軟體使用的 TTF / OTF / WOFF2 檔案，或用在無法載入字型之處的校樣 PNG 和外框化 SVG；Swift / Kotlin / Flutter 程式碼匯出為實驗功能。
 - **儲存與分享。** 在瀏覽器中儲存預設集，或分享可繼續編輯的設定連結，無須帳號。
 
 ### 使用須知

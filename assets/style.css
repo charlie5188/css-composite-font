@@ -792,6 +792,7 @@ button.wl small{font-family:var(--ui);font-size:var(--fs-xs);margin-left:5px;opa
 /* Font-file export: used fonts/licenses, output choices, then progress and results. */
 /* Proof image preview at its CSS size, shrinking to fit; transparent backgrounds show a checkerboard. */
 .img-out{padding:0 0 20px;transition:opacity .2s}
+.img-note{margin:0 0 14px}
 .img-out.busy{opacity:.5}
 .img-out img{display:block;max-width:100%;height:auto;border:1px solid var(--line)}
 .img-out.clear img{background:repeating-conic-gradient(var(--rule) 0 25%,transparent 0 50%) 0 0/16px 16px}

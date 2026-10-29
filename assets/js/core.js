@@ -1069,7 +1069,7 @@ export function expandPlan(plan, live) {
 }
 
 /* ================= Live preview fonts ================= */
-export let gen = 0, liveFaces = [], liveFamily = '', liveSpecs = [];      // liveSpecs: the source and descriptors behind each live face, for image export.
+export let gen = 0, liveFaces = [], liveFamily = '', liveSpecs = [];      // liveSpecs: the source, descriptors and plan rule behind each live face, for image export.
 export function loadText() {
   return (state.view.text.slice(0, 2500) + '国Hxg' + CLASSES.map(c => c.sample).join('') + state.custom.map(c => c.chars).join(''));
 }
@@ -1095,7 +1095,7 @@ export async function rebuildNow() {
       if (x.p.size !== 100) d.sizeAdjust = `${x.p.size}%`;
       const ov = x.p !== pl[0] && overridesFor(x.p, sg.plan[0]);
       if (ov) Object.assign(d, { ascentOverride: ov.ascent, descentOverride: ov.descent, lineGapOverride: ov.lineGap });
-      try { faces.push(new FontFace(fam, x.face.buffer || x.face.src, d)); specs.push({ src: x.face.buffer || x.face.src, d, range: x.range }); } catch (e) { /* Ignore invalid rules. */ }
+      try { faces.push(new FontFace(fam, x.face.buffer || x.face.src, d)); specs.push({ src: x.face.buffer || x.face.src, d, range: x.range, p: x.p }); } catch (e) { /* Ignore invalid rules. */ }
     }
   }
   faces.forEach(f => document.fonts.add(f));

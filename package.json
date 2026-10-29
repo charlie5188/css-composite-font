@@ -13,6 +13,7 @@
     "verify": "npm run check && npm run test:py && npm test"
   },
   "devDependencies": {
-    "@playwright/test": "1.48.2"
+    "@playwright/test": "1.48.2",
+    "harfbuzzjs": "1.6.0"
   }
 }
