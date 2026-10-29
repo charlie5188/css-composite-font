@@ -186,7 +186,8 @@ test('对齐、段落换行只改校样，不写进导出的 CSS', async ({ page
 });
 
 test('Vertical half metrics change punctuation advances and persist independently of horizontal spacing', async ({ page }) => {
-  await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: '@font-face { font-family: Fixture; src: url("http://127.0.0.1:8765/tests/fixtures/NotoSansCJKjp-Subset.otf"); }' }));
+  // This subset also covers the Han character in the vertical specimen, so its guide measures the fixture rather than a system fallback.
+  await page.route('https://fonts.googleapis.com/**', route => route.fulfill({ contentType: 'text/css', body: '@font-face { font-family: Fixture; src: url("http://127.0.0.1:8765/tests/fixtures/NotoSansJP-Subset.ttf"); }' }));
   await open(page);
   await pick(page, 'gothic-jp');
   await page.click('#ltabFonts');
@@ -202,10 +203,12 @@ test('Vertical half metrics change punctuation advances and persist independentl
   const vertical = page.locator('[data-typo="vfeat"]').last();
   await expect(vertical.locator('.tt-s')).toHaveCSS('writing-mode', 'vertical-rl');
   // Guides follow real character advances: punctuation becomes half-height while the Han cell keeps its height.
+  // Linux Chromium places glyphs on whole pixels, so half of the 17 px em measures 9 px there and 8.5 px on macOS.
   const guideHeights = card => card.locator('.tt-vcell').evaluateAll(cells => cells.map(cell => +cell.getAttribute('height')));
   await expect(vertical.locator('.tt-vcell')).toHaveCount(4);
   const defaultGuides = await guideHeights(page.locator('[data-typo="vfeat"]').first()), halfGuides = await guideHeights(vertical);
-  for (const i of [0, 2, 3]) expect(halfGuides[i]).toBeCloseTo(defaultGuides[i] / 2, 1);
+  for (const i of [0, 2, 3]) expect(Math.abs(halfGuides[i] - defaultGuides[i] / 2)).toBeLessThanOrEqual(0.5);
+  expect(halfGuides[1]).toBeGreaterThan(0);
   expect(halfGuides[1]).toBeCloseTo(defaultGuides[1], 1);
   expect(+await vertical.locator('.tt-vreference').getAttribute('height')).toBeCloseTo(defaultGuides.reduce((a, b) => a + b, 0), 1);
   await vertical.click();
