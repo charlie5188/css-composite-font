@@ -1069,7 +1069,7 @@ export function expandPlan(plan, live) {
 }
 
 /* ================= Live preview fonts ================= */
-export let gen = 0, liveFaces = [], liveFamily = '';
+export let gen = 0, liveFaces = [], liveFamily = '', liveSpecs = [];      // liveSpecs: the source and descriptors behind each live face, for image export.
 export function loadText() {
   return (state.view.text.slice(0, 2500) + '国Hxg' + CLASSES.map(c => c.sample).join('') + state.custom.map(c => c.chars).join(''));
 }
@@ -1082,7 +1082,7 @@ export async function rebuildNow() {
   if (lmOn()) await Promise.all(segs.map(sg => ensureLineMetrics(sg.plan[0].font)));
   if (my !== gen) return;
   const fam = `__cf_live_${my}`;
-  const faces = [];
+  const faces = [], specs = [];
   for (const sg of segs) for (const [pl, style] of [[sg.plan, 'normal'], [sg.iplan, 'italic']]) {
     if (!pl) continue;
     for (const x of expandPlan(italFallback(pl), true)) {
@@ -1095,7 +1095,7 @@ export async function rebuildNow() {
       if (x.p.size !== 100) d.sizeAdjust = `${x.p.size}%`;
       const ov = x.p !== pl[0] && overridesFor(x.p, sg.plan[0]);
       if (ov) Object.assign(d, { ascentOverride: ov.ascent, descentOverride: ov.descent, lineGapOverride: ov.lineGap });
-      try { faces.push(new FontFace(fam, x.face.buffer || x.face.src, d)); } catch (e) { /* Ignore invalid rules. */ }
+      try { faces.push(new FontFace(fam, x.face.buffer || x.face.src, d)); specs.push({ src: x.face.buffer || x.face.src, d, range: x.range }); } catch (e) { /* Ignore invalid rules. */ }
     }
   }
   faces.forEach(f => document.fonts.add(f));
@@ -1105,7 +1105,7 @@ export async function rebuildNow() {
   try { await Promise.race([Promise.allSettled(loads), sleep(6000)]); } catch (e) { /* Keep displaying the preview when some fonts fail to load. */ }
   if (my !== gen) { faces.forEach(f => document.fonts.delete(f)); return; }
   const old = liveFaces;
-  liveFaces = faces; liveFamily = fam;
+  liveFaces = faces; liveFamily = fam; liveSpecs = specs;
   root.style.setProperty('--cf', `"${fam}"`);
   requestAnimationFrame(fitGlyphs);      // Changing fonts can change the class-table sample widths.
   root.style.setProperty('--fw', cont ? state.view.wcont : W);

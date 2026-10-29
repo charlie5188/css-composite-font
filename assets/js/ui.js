@@ -14,7 +14,8 @@ import { CLASSES, CLS, classOf, inRanges, parseChars, rebuildClassRanges } from 
 import { BASE_W, ENGINE, tSvg, G, GF_LIST, L, LS_PRESETS, PRESETS, SAMPLES, TYPO, WEIGHTS, isViewTypo, WORD_RE, autoLocal, defaultFontWeight, axisLabel, axisOf, defaultPresetId, extraAxes, fileAxes, files, fontAtWeight, fontKey, gfWeights, freshClasses, guessPath, inheritedSize, isFontTypo, italOf, italicLocal, localAlt, normalizeState, previewWeight, constrainPreviewWeight, objByKey, ownerOf, ownFontAt, ownSize, presetDirty, presetSnap, rebuild, fileStyle, fileWeight, styleOfFont, canRedo, canUndo, hist, histSnap, recordHistory, stepHistory, rebuildNow, refreshCustomRanges, resolveCls, resolveCustom, saveState, setBusy, setFontAxes, setSizeAt, setState, source, sources, state, stateFromPreset, stepSpan, typoDef, typoSupported, uncoveredWeights, userPresets, vfAxis, vfAxisNow, vfCache } from './core.js';
 import { REGION_OF_LANG, formsOf, keyName, shortName, wKeys, wRowAdjusted, wTip, MISS_SKIP, drawSpecimen, fitGlyphs, markPreviewRow, renderClassRows, missTipAt, orderedSamples, refreshInherited, refreshVAutospace, renderEaMarks, renderEditor, renderGroups, renderLangOptions, renderNumHint, renderSpacingMarks, renderPreview, renderSampleTabs, stepperCell, specShown, syncLeftTab, syncPreviewWeight, syncToolbar, syncWeightRange, tabFade } from './render.js';
 import { initFontTab, gfInfo, gfPick, gfUrl, gfDirs } from './bake.js';
-import { appFileName, cssFamilyName, exKind, exTab, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
+import { appFileName, exKind, exTab, fileSlug, lastExport, renderExport, setExKind, setExTab, showExport } from './export.js';
+import { imgBlob, renderImage, setImgOpt } from './image.js';
 /* ================= Interaction: character-class table ================= */
 export function targetOf(row) { return row.dataset.id ? { type: 'class', id: row.dataset.id } : { type: 'custom', i: +row.dataset.ci }; }
 export const keyOf = t => t.type === 'class' ? t.id : '#' + t.i;
@@ -804,10 +805,27 @@ export function initToolbar() {
     const js = exTab === 'js', app = exKind === 'app';
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([lastExport], { type: app ? 'text/plain' : js ? 'text/javascript' : 'text/css' }));
-    a.download = app ? appFileName() : (cssFamilyName().replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'composite-font') + (js ? '-baseline.js' : '.css');
+    a.download = app ? appFileName() : fileSlug() + (js ? '-baseline.js' : '.css');
     document.body.append(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
+  /* Image export: options are preview-only view state, kept out of history, presets and shares. */
+  for (const [id, k] of [['exImgScale', 'scale'], ['exImgBg', 'bg'], ['exImgPad', 'pad']])
+    $('#' + id).addEventListener('click', e => { const b = e.target.closest('[data-v]'); if (b) { setImgOpt(k, k === 'bg' ? b.dataset.v : +b.dataset.v); saveState(); renderImage(); } });
+  $('#imgDl').hidden = !canDownload;
+  $('#imgDl').addEventListener('click', () => {
+    if (!imgBlob) return;
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(imgBlob); a.download = fileSlug() + '.png';
+    document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+  $('#imgCopy').addEventListener('click', async () => {
+    if (!imgBlob) return;
+    try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': imgBlob })]); toast(T('tImgCopied')); }
+    catch (e) { toast(T('tImgCopyFail')); }
+  });
+  $('#imgBtn').addEventListener('click', () => { setExKind('img', false); saveState(); showExport(); });
   $('#copyBtn').addEventListener('click', async () => {
     try { await navigator.clipboard.writeText(lastExport); toast(T('tCopied')); }
     catch (e) {

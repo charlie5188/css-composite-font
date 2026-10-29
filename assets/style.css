@@ -745,7 +745,7 @@ button.wm-pw:not(:disabled):hover{text-decoration:underline;text-underline-offse
 .ex-kinds [role="tab"]:hover{border-color:var(--faint);color:var(--ink-2)}
 .ex-kinds [role="tab"][aria-selected="true"]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink);color:var(--ink)}
 .ex-kinds [role="tab"][aria-selected="true"] span{color:var(--muted)}
-.export[data-kind="css"] :is(.kind-font,.kind-app),.export[data-kind="font"] :is(.kind-css,.kind-app,.kind-code),.export[data-kind="app"] :is(.kind-css,.kind-font){display:none}      /* Each export kind has separate settings and output; .kind-code is shared by web and app code. */
+.export[data-kind="css"] :is(.kind-font,.kind-app,.kind-img),.export[data-kind="font"] :is(.kind-css,.kind-app,.kind-code,.kind-img),.export[data-kind="app"] :is(.kind-css,.kind-font,.kind-img),.export[data-kind="img"] :is(.kind-css,.kind-font,.kind-app,.kind-code,.ex-name){display:none}      /* Each export kind has separate settings and output; .kind-code is shared by web and app code. */
 .ex-side .ex-fields{padding-top:16px;border-top:1px solid var(--line)}
 .ex-side .ex-fields .ex-fields{padding-top:0;border-top:0}
 /* Keep CSS/JS tabs and Copy visible while long output scrolls. */
@@ -769,6 +769,7 @@ button.wm-pw:not(:disabled):hover{text-decoration:underline;text-underline-offse
 .ex-actions{display:flex;gap:10px;flex-wrap:wrap;padding:6px 0}
 @media (max-width:560px){.ex-actions{order:-1;flex-basis:100%}}      /* On narrow screens, place actions above tabs, with tabs touching the divider. */
 .field{display:grid;gap:6px}
+.field>.seg{justify-self:start}
 /* Show font/language mismatches directly below the export language field. */
 .field label,.field .flabel{font-size:var(--fs-s);color:var(--muted)}
 .field input{width:210px}
@@ -789,6 +790,11 @@ button.wl small{font-family:var(--ui);font-size:var(--fs-xs);margin-left:5px;opa
 .tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
 .ex-bar{padding:0 0 12px}
 /* Font-file export: used fonts/licenses, output choices, then progress and results. */
+/* Proof image preview at its CSS size, shrinking to fit; transparent backgrounds show a checkerboard. */
+.img-out{padding:0 0 20px;transition:opacity .2s}
+.img-out.busy{opacity:.5}
+.img-out img{display:block;max-width:100%;height:auto;border:1px solid var(--line)}
+.img-out.clear img{background:repeating-conic-gradient(var(--rule) 0 25%,transparent 0 50%) 0 0/16px 16px}
 .fx{display:grid;gap:22px;padding:6px 0 20px;max-width:76ch}
 .fx p{margin:0;line-height:1.7;color:var(--ink-2)}
 .fx-intro{font-size:var(--fs-l)}

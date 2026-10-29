@@ -118,6 +118,7 @@ assets/js/share.js       Configuration links, bounded codec, validation, clipboa
 assets/js/export.js      Exported CSS / baseline JS
 assets/js/bake.js        Font-file export: plan, downloads, license checks, Pyodide worker, result UI
 assets/js/appcode.js     App code export (experimental): one data model, Swift / Kotlin / Dart generators
+assets/js/image.js       Image export: the proof as a PNG, rendered through an SVG foreignObject with the live faces embedded
 assets/py/bake_core.py   Font baking (fontTools). Runs in the worker; also used by tests and tools/bake.py
 assets/py/*.whl          fontTools wheel the worker installs (PyPI blocks cross-origin downloads)
 assets/js/i18n.js        T(key, params), UI language; texts in assets/js/i18n/{zh,tw,ja,en}.js, one key per line
@@ -142,7 +143,7 @@ tests/e2e/               Playwright: CSS snapshots per preset, UI, layout, font-
 - **Import map.** Modules import each other by plain path (`./core.js`); `index.html`'s import map, generated
   by `tools/rehash.py`, maps each to a `?v=<hash>` URL. Never edit the map or the `?v=` values by hand.
 - **Typography settings** (`TYPO` in `core.js`): `grp: 'font'` rows live in the Fonts tab; `grp: 'view'`
-  (alignment, `text-wrap`) are preview-only, live in the tester's View menu, and are never exported; the rest
+  (alignment, `text-wrap`) are preview-only, live in the tester's View menu, and are never written into exported CSS or code (image export draws the proof as shown); the rest
   are in the Text layout tab and go into the exported CSS when they differ from the browser default.
   None of them affect font files.
 - **Font files.** `bake.js` builds a plan (same rules as the CSS), downloads sources (google/fonts on GitHub
@@ -159,10 +160,16 @@ tests/e2e/               Playwright: CSS snapshots per preset, UI, layout, font-
   tester, each scrolling on its own. Export and About are `<dialog class="side-dlg">`. Below 1000 px one pane
   is shown at a time (`.app[data-mview]`, bottom tabs).
 - **Appearance.** Theme and proof colors use their own `composite-font:appearance:v1` preference. Keep them out
-  of presets, undo, share links and exports. The small validated head script restores them before the first
+  of presets, undo, share links and CSS / code / font-file exports; image export is the one exception and draws with the proof
+  colors (the background only when chosen). The small validated head script restores them before the first
   paint; `appearance.js` handles controls and system changes. Proof colors apply only to proof surfaces and
   specimen glyphs; editing controls keep theme tokens. Theme selection lives in top-bar Settings; proof color controls live
   in the proof toolbar’s View popover alongside the other preview controls.
+- **Image export.** `image.js` clones `#proofText` with computed styles into an SVG `foreignObject`, embeds the live faces
+  (`liveSpecs` in `core.js`, recorded beside `liveFaces`) as data URLs, and draws it onto a canvas, so the PNG is laid out by the
+  same engine as the proof. The SVG must be a `data:` URL; a `blob:` SVG with `foreignObject` taints the canvas in Chromium.
+  Overlays (Highlight API class colors, missing-glyph marks, line rules) stay out. Options live in `state.view.img`, outside
+  history and shares. `tests/e2e/image-export.spec.js` compares the PNG with a screenshot of the proof; keep it passing.
 
 ## Design system
 

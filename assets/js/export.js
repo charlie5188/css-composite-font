@@ -4,6 +4,7 @@ import { LM, TYPO, WEIGHTS, isViewTypo, buildPlan, buildSegments, customRanges, 
 import { guessGeneric, renderLangWarn } from './render.js';
 import { renderFontFields, renderFontTab } from './bake.js';
 import { appModel, buildDart, buildKotlin, buildSwift, typeName } from './appcode.js';
+import { renderImageSoon } from './image.js';
 /* ================= Export ================= */
 export const ownerName = o => o[0] === '#' ? T('customName', { c: (state.custom[+o.slice(1)]?.chars || '').slice(0, 16) }) : tr(CLS[o].name);
 export const fmtRangeShort = ([a, b]) => a === b ? `U+${a.toString(16).toUpperCase()}` : `U+${a.toString(16).toUpperCase()}-${b.toString(16).toUpperCase()}`;
@@ -26,6 +27,7 @@ export function srcFor(x) {
   return x.face.src.replace(/'/g, '"');
 }
 export function cssFamilyName() { return (state.name || '').trim().replace(/["\\]/g, '') || 'My Composite'; }
+export const fileSlug = () => cssFamilyName().replace(/[^\w-]+/g, '-').replace(/^-|-$/g, '').toLowerCase() || 'composite-font';
 /* The Han base may directly @import Google's CSS when weight is not fine-tuned, no axes are fixed, and it has no italics needed by italic export (typical for Han fonts). */
 export const canLinkBase = plan => plan[0].font?.kind === 'google' && plan[0].size === 100 && !(plan[0].font.weight % 100) && !plan[0].fvs && !(state.italic && italOf(plan[0].font));
 /* Export groups: one per weight in stepped mode (font-weight: 700), or per interval in continuous mode (font-weight: 551 650). */
@@ -203,11 +205,11 @@ export function highlight(code, lang) {
   return h;
 }
 export let exKind = 'css', exTab = 'css', lastExport = '';
-export function setExTab(k) { exTab = k; }      // exKind: web CSS / font files / app code; exTab: css / js, or swift / kotlin / dart.
+export function setExTab(k) { exTab = k; }      // exKind: web CSS / font files / app code / proof image; exTab: css / js, or swift / kotlin / dart.
 export const APP_TABS = ['swift', 'kotlin', 'dart'];
 /* Switch the export kind, replacing the whole settings and results area. */
 export function setExKind(k, render = true) {
-  exKind = ['font', 'app'].includes(k) ? k : 'css';
+  exKind = ['font', 'app', 'img'].includes(k) ? k : 'css';
   if (exKind === 'app' && !APP_TABS.includes(exTab)) exTab = 'swift';
   if (exKind === 'css' && APP_TABS.includes(exTab)) exTab = 'css';
   state.view.exKind = exKind;
@@ -219,6 +221,7 @@ export function setExKind(k, render = true) {
 export function showExport() {
   const d = $('#exDlg'); if (!d.open) d.showModal();
   $('#exToggle').classList.remove('ready');
+  if (exKind === 'img') renderExport();      // The image follows the proof, which cannot change while the dialog is open; render it on opening.
 }
 export function ensureExportSources() {
   for (const g of exportGroups()) for (const p of [...g.plan, ...(g.iplan || [])]) {
@@ -246,6 +249,7 @@ export function renderWRange() {
 }
 export let gzTok = 0;
 export function renderExport() {
+  if (exKind === 'img') { if ($('#exDlg').open) renderImageSoon(); return; }      // The image uses only the proof's fonts; skip loading every export weight.
   ensureExportSources();
   if (exKind === 'font') { renderFontFields(); renderFontTab(); return; }
   document.querySelectorAll('.ex-tabs [data-tab]').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === exTab));
