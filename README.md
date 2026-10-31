@@ -72,7 +72,8 @@ Run `npm run setup` once, then `npm run verify` for the full checks. See [AGENTS
 
 **复合字体工坊**像 InDesign 的复合字体一样，为中西文字体分别调整大小、基线和字重，再导出到网页或设计软件中使用。
 
-[查看界面：字体搭配与校样、字体库、导出](#screenshots)（英文界面）
+https://github.com/user-attachments/assets/36ca5b18-9eb5-42fd-9b90-f0fe12183bf2
+
 
 ### 功能亮点
 
