@@ -10,6 +10,8 @@ Combine CJK and Western fonts with separate sizes, baselines and weights, then e
 
 ## Screenshots
 
+https://github.com/user-attachments/assets/205a8825-3a9c-4136-967a-de57a92cb8c9
+
 **Compose and proof.** Adjust fonts by character class while checking mixed-script text and alignment guides.
 
 ![Character-class font settings beside a live Chinese and Western text preview, with size and baseline alignment guides below.](docs/screenshots/composition.png)
@@ -51,7 +53,7 @@ Run `npm run setup` once, then `npm run verify` for the full checks. See [AGENTS
 
 **合成フォント工房**は、InDesign の合成フォントのように、和文と欧文のフォント・サイズ・ベースライン・ウェイトを組み合わせ、Web やデザインアプリ向けに書き出すツールです。
 
-[画面を見る：フォントの組み合わせと校正・フォント選び・書き出し](#screenshots)（英語 UI）
+https://github.com/user-attachments/assets/eb8a75e3-b421-47f5-86d2-dcd1d35dbcfc
 
 ### 主な機能
 
@@ -74,7 +76,6 @@ Run `npm run setup` once, then `npm run verify` for the full checks. See [AGENTS
 
 https://github.com/user-attachments/assets/36ca5b18-9eb5-42fd-9b90-f0fe12183bf2
 
-
 ### 功能亮点
 
 - **按字符类别搭配。** 为汉字、假名、西文、数字和标点分别选择字体、大小与基线，也能添加例外字符。
@@ -94,7 +95,7 @@ https://github.com/user-attachments/assets/36ca5b18-9eb5-42fd-9b90-f0fe12183bf2
 
 **複合字型工坊**像 InDesign 的複合字型一樣，分別調整中西文字型的大小、基線與字重，再匯出至網頁或設計軟體使用。
 
-[查看畫面：字型搭配與校樣、字型庫、匯出](#screenshots)（英文介面）
+https://github.com/user-attachments/assets/3412048c-812c-4b38-86a6-f712cd4df42c
 
 ### 功能亮點
 
